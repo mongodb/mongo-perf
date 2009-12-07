@@ -9,5 +9,5 @@ C++ build environment
 
 To test:
 scons benchmark
-runner.py [git-branch-or-tag] # uses master if no version is specified
+./runner.py [git-branch-or-tag] # uses master if no version is specified
 
