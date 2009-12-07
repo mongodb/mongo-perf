@@ -2,3 +2,8 @@ tmp/*
 
 .scon*
 config.log
+
+tags
+
+*.o
+benchmark
