@@ -97,9 +97,28 @@ namespace {
                     end = boost::posix_time::microsec_clock::universal_time();
                     double ten_micros = (end-start).total_microseconds() / 1000000.0;
 
-                    cout << test->name() << ": " << one_micros << " " << two_micros << " " << four_micros << " " << ten_micros << endl;
-                    cout << test->name() << " (ops): " << iterations / one_micros << " " << iterations / two_micros  <<" " << iterations / four_micros << " " << iterations / ten_micros << endl;
-                    cout << test->name() << " (speedup): " << one_micros / two_micros << " " <<  one_micros / four_micros << " " <<  one_micros / ten_micros << endl;
+                    BSONObj out =
+                        BSON( "name" << test->name()
+                           << "results" <<
+                               BSON( "one" <<
+                                        BSON( "time" << one_micros
+                                           << "ops_per_sec" << iterations / one_micros
+                                           << "speedup" << one_micros / one_micros)
+                                  << "two" <<
+                                        BSON( "time" << two_micros
+                                           << "ops_per_sec" << iterations / two_micros
+                                           << "speedup" << one_micros / two_micros)
+                                  << "four" <<
+                                        BSON( "time" << four_micros
+                                           << "ops_per_sec" << iterations / four_micros
+                                           << "speedup" << one_micros / four_micros)
+                                  << "ten" <<
+                                        BSON( "time" << ten_micros
+                                           << "ops_per_sec" << iterations / ten_micros
+                                           << "speedup" << one_micros / ten_micros)
+                                  )
+                           );
+                    cout << out.jsonString(Strict) << endl;
                 }
             }
         private:
