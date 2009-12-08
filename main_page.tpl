@@ -22,6 +22,16 @@
 </head> 
 <body>
     <h1>MongoDB Benchmark Results</h1>
+
+    <form action="/">
+        <label for="metric">Metric</label>
+        <select name="metric">
+            %for m in ['ops_per_sec', 'time', 'speedup']:
+            <option {{"selected" if m == metric else ""}}>{{m}}</option>
+            %end
+        </select>
+        <input type="submit" value="Go" />
+    </form>
  
     %for k, (outer_result, flot_data) in enumerate(zip(results, flot_results)):
     <h2>{{outer_result['name']}}</h2>
@@ -45,10 +55,10 @@
                 <td>{{i}}</td>
                 <td>{{result['version']}}</td>
                 <td>{{result['date']}}</td>
-                <td>{{result['one']['ops_per_sec']}}</td>
-                <td>{{result['two']['ops_per_sec']}}</td>
-                <td>{{result['four']['ops_per_sec']}}</td>
-                <td>{{result['ten']['ops_per_sec']}}</td>
+                <td>{{result['one'][metric]}}</td>
+                <td>{{result['two'][metric]}}</td>
+                <td>{{result['four'][metric]}}</td>
+                <td>{{result['ten'][metric]}}</td>
             </tr>
             %end
         </thead>

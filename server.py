@@ -38,6 +38,8 @@ def raw_data():
 
 @route("/")
 def main_page():
+    metric = request.GET.get('metric', 'ops_per_sec')
+
     results = raw_data()
 
     flot_results = []
@@ -45,14 +47,14 @@ def main_page():
         out = []
         for i, result in enumerate(outer_result['results']):
             out.append({'label': result['version'],
-                        'data': [[1, result['one']['ops_per_sec']],
-                                 [2, result['two']['ops_per_sec']],
-                                 [4, result['four']['ops_per_sec']],
-                                 [10, result['ten']['ops_per_sec']]]})
+                        'data': [[1, result['one'][metric]],
+                                 [2, result['two'][metric]],
+                                 [4, result['four'][metric]],
+                                 [10, result['ten'][metric]]]})
         flot_results.append(json.dumps(out))
 
 
-    return template('main_page.tpl', results=results, flot_results=flot_results)
+    return template('main_page.tpl', results=results, flot_results=flot_results, metric=metric)
     
 
 if __name__ == '__main__':
