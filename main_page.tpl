@@ -23,6 +23,9 @@
 <body>
     <h1>MongoDB Benchmark Results</h1>
 
+    % metric = request.GET.get('metric', 'ops_per_sec')
+    % versions = request.GET.get('versions', '')
+
     <form action="/">
         <label for="metric">Metric</label>
         <select name="metric">
@@ -30,6 +33,12 @@
             <option {{"selected" if m == metric else ""}}>{{m}}</option>
             %end
         </select>
+        <br />
+
+        <label for="versions">Versions (space-separated)</label>
+        <input type="text" name="versions" value="{{versions}}" />
+        <br />
+
         <input type="submit" value="Go" />
     </form>
  

@@ -15,7 +15,13 @@ def static_file(filename):
 def raw_data():
     out = []
 
-    cursor = db.raw.find().sort([('name',1), ('mongodb_date',-1)])
+    versions = request.GET.get('versions', '').split()
+    if versions:
+        q = {'mongodb_version': {'$in': versions}}
+    else:
+        q = {}
+
+    cursor = db.raw.find(q).sort([('name',1), ('mongodb_date',-1)])
 
     name = None
     results = []
@@ -54,7 +60,7 @@ def main_page():
         flot_results.append(json.dumps(out))
 
 
-    return template('main_page.tpl', results=results, flot_results=flot_results, metric=metric)
+    return template('main_page.tpl', results=results, flot_results=flot_results, request=request)
     
 
 if __name__ == '__main__':
