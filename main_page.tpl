@@ -1,0 +1,77 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> 
+<html> 
+<head> 
+  <title>MongoDB Benchmark Results</title> 
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" > 
+  <link rel="stylesheet" href="/static/css/page.css">
+
+  <script src="static/jquery-1.3.2.min.js"></script>
+  <script src="static/jquery.dataTables.min.js"></script>
+  <script src="static/jquery.flot.min.js"></script>
+  <script>
+    $(document).ready(function(){
+        $('table').dataTable({
+            "bPaginate": false,
+            "bLengthChange": false,
+            "bFilter": false,
+            "bInfo": false,
+            "bAutoWidth": true
+        });
+    });
+  </script>
+</head> 
+<body>
+    <h1>MongoDB Benchmark Results</h1>
+ 
+    %for k, (outer_result, flot_data) in enumerate(zip(results, flot_results)):
+    <h2>{{outer_result['name']}}</h2>
+
+    <table class="display">
+        <thead>
+            <tr>
+                <th>Num</th>
+                <th>Version</th>
+                <th>Date</th>
+                <th>one thread</th>
+                <th>two threads</th>
+                <th>four threads</th>
+                <th>ten threads</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            %for i, result in enumerate(outer_result['results']):
+            <tr>
+                <td>{{i}}</td>
+                <td>{{result['version']}}</td>
+                <td>{{result['date']}}</td>
+                <td>{{result['one']['ops_per_sec']}}</td>
+                <td>{{result['two']['ops_per_sec']}}</td>
+                <td>{{result['four']['ops_per_sec']}}</td>
+                <td>{{result['ten']['ops_per_sec']}}</td>
+            </tr>
+            %end
+        </thead>
+    </table>
+
+    <div id="flot_{{k}}" style="width:600px;height:300px;"> </div>
+    <script>
+        $(function(){
+            var data = {{flot_data}};
+            $.plot(
+                $('#flot_{{k}}'), data,
+                {
+                   series: { lines: { show: true }, points: { show: true } },
+                   xaxis: {ticks : [1,2,4,10]}
+                }
+           );
+       });
+    </script>
+
+    <hr>
+    %end
+
+</body>
+</html>
+ 
+%# vim: set ft=html:
