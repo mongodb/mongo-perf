@@ -381,6 +381,81 @@ namespace Queries{
         }
     };
 
+    struct TwoIntsBothGood{
+        void reset() {
+            clearDB();
+            conn[0].ensureIndex(ns, BSON("x" << 1));
+            conn[0].ensureIndex(ns, BSON("y" << 1));
+            for (int i=0; i < iterations; i++){
+                conn[0].insert(ns, BSON("x" << i << "y" << (iterations-i)));
+            }
+            conn[0].getLastError();
+        }
+
+        void run(int t, int n){
+            int base = t * (iterations/n);
+            for (int i=0; i < iterations / n; i++){
+                conn[t].findOne(ns, BSON("x" << base + i << "y" << (iterations-(base+i))));
+            }
+        }
+    };
+
+    struct TwoIntsFirstGood{
+        void reset() {
+            clearDB();
+            conn[0].ensureIndex(ns, BSON("x" << 1));
+            conn[0].ensureIndex(ns, BSON("y" << 1));
+            for (int i=0; i < iterations; i++){
+                conn[0].insert(ns, BSON("x" << i << "y" << (i%13)));
+            }
+            conn[0].getLastError();
+        }
+
+        void run(int t, int n){
+            int base = t * (iterations/n);
+            for (int i=0; i < iterations / n; i++){
+                conn[t].findOne(ns, BSON("x" << base + i << "y" << ((base+i)%13)));
+            }
+        }
+    };
+
+    struct TwoIntsSecondGood{
+        void reset() {
+            clearDB();
+            conn[0].ensureIndex(ns, BSON("x" << 1));
+            conn[0].ensureIndex(ns, BSON("y" << 1));
+            for (int i=0; i < iterations; i++){
+                conn[0].insert(ns, BSON("x" << (i%13) << "y" << i));
+            }
+            conn[0].getLastError();
+        }
+
+        void run(int t, int n){
+            int base = t * (iterations/n);
+            for (int i=0; i < iterations / n; i++){
+                conn[t].findOne(ns, BSON("x" << ((base+i)%13) << "y" << base+i));
+            }
+        }
+    };
+    struct TwoIntsBothBad{
+        void reset() {
+            clearDB();
+            conn[0].ensureIndex(ns, BSON("x" << 1));
+            conn[0].ensureIndex(ns, BSON("y" << 1));
+            for (int i=0; i < iterations; i++){
+                conn[0].insert(ns, BSON("x" << (i%503) << "y" << (i%509))); // both are prime
+            }
+            conn[0].getLastError();
+        }
+
+        void run(int t, int n){
+            int base = t * (iterations/n);
+            for (int i=0; i < iterations / n; i++){
+                conn[t].findOne(ns, BSON("x" << ((base+i)%503) << "y" << ((base+i)%509)));
+            }
+        }
+    };
+
 }
 
 namespace{
@@ -406,6 +481,10 @@ namespace{
             add< Queries::IntNonID >();
             add< Queries::IntNonIDRange >();
             add< Queries::IntNonIDFindOne >();
+            add< Queries::TwoIntsBothBad >();
+            add< Queries::TwoIntsBothGood >();
+            add< Queries::TwoIntsFirstGood >();
+            add< Queries::TwoIntsSecondGood >();
 
         }
     } theTestSuite;
