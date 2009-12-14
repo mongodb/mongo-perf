@@ -35,14 +35,12 @@ subprocess.check_call(['git', 'checkout', branch], cwd='./tmp/mongo')
 if branch == 'master':
     subprocess.check_call(['git', 'pull'], cwd='./tmp/mongo')
 
-git_info = subprocess.Popen(['git', 'log', '-1', '--date=iso'], cwd='./tmp/mongo', stdout=subprocess.PIPE).communicate()[0]
-git_info = git_info.split('\n')
-mongodb_git = git_info[0].split()[1]
-mongodb_date = git_info[2].split(':',1)[1].strip()
+git_info = subprocess.Popen(['git', 'log', '-1', '--pretty=format:%H %ai'], cwd='./tmp/mongo', stdout=subprocess.PIPE).communicate()[0]
+mongodb_git, mongodb_date = git_info.split(' ', 1)
 
 subprocess.check_call(['scons'], cwd='./tmp/mongo')
 
-mongod = subprocess.Popen(['./tmp/mongo/mongod', '--dbpath', './tmp/data/', '--port', opts.port])
+mongod = subprocess.Popen(['./tmp/mongo/mongod', '--quiet', '--dbpath', './tmp/data/', '--port', opts.port])
 
 time.sleep(1) # wait for server to start up
 
