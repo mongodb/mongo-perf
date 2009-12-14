@@ -165,6 +165,16 @@ namespace Insert{
         }
     };
 
+    template <int BatchSize>
+    struct EmptyBatched : Base{
+        void run(int t, int n) {
+            for (int i=0; i < iterations / BatchSize / n; i++){
+                vector<BSONObj> objs(BatchSize);
+                conn[t].insert(ns, objs);
+            }
+        }
+    };
+
     struct EmptyCapped : Base{
         void run(int t, int n) {
             for (int i=0; i < iterations / n; i++){
@@ -464,6 +474,10 @@ namespace{
             add< Overhead::DoNothing >();
 
             add< Insert::Empty >();
+            add< Insert::EmptyBatched<2> >();
+            add< Insert::EmptyBatched<10> >();
+            add< Insert::EmptyBatched<100> >();
+            add< Insert::EmptyBatched<1000> >();
             add< Insert::EmptyCapped >();
             add< Insert::JustID >();
             add< Insert::IntID >();
