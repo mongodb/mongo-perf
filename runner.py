@@ -23,6 +23,7 @@ if not versions:
 
 if not os.path.exists('./tmp/mongo'):
     subprocess.check_call(['git', 'clone', 'http://github.com/mongodb/mongo.git'], cwd='./tmp')
+subprocess.check_call(['git', 'fetch'], cwd='./tmp/mongo')
 
 if os.path.exists('./tmp/data/'):
     shutil.rmtree('./tmp/data/')
