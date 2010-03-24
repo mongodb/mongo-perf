@@ -31,13 +31,12 @@ def raw_data():
                 out.append({'name':name, 'results':results})
             name = result['name']
             results = []
-        results.append(dict(version=result['mongodb_version']
-                           ,date=result['mongodb_date']
-                           ,one=result['results']['one']
-                           ,two=result['results']['two']
-                           ,four=result['results']['four']
-                           ,ten=result['results']['ten']
-                           ))
+
+        row = dict(version=result['mongodb_version'], date=result['mongodb_date'])
+        for (n, res) in result['results'].iteritems():
+            row[n] = res
+
+        results.append(row)
 
     out.append({'name':name, 'results':results})
     return out
@@ -48,26 +47,28 @@ def main_page():
 
     results = raw_data()
 
+    threads = set()
     flot_results = []
     for outer_result in results:
         out = []
         for i, result in enumerate(outer_result['results']):
-            out.append({'label': result['version'],
-                        'data': [[1, result['one'][metric]],
-                                 [2, result['two'][metric]],
-                                 [4, result['four'][metric]],
-                                 [10, result['ten'][metric]]]})
+            out.append({'label': result['version']
+                       ,'data': sorted([int(k), v[metric]] for (k,v) in result.iteritems() if k.isdigit())
+                       })
+            threads.update(int(k) for k in result if k.isdigit())
         flot_results.append(json.dumps(out))
 
-
-    return template('main_page.tpl', results=results, flot_results=flot_results, request=request)
-    
+    return template('main_page.tpl'
+                   ,results=results
+                   ,flot_results=flot_results
+                   ,request=request
+                   ,threads=sorted(threads)
+                   )
 
 if __name__ == '__main__':
     do_reload = '--reload' in sys.argv
     debug(do_reload)
     run(reloader=do_reload)
- 
 
 
 

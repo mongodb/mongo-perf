@@ -4,6 +4,7 @@
 #include <vector>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/bind.hpp>
+#include <boost/foreach.hpp>
 
 #ifndef _WIN32
 #include <cxxabi.h>
@@ -12,7 +13,9 @@
 using namespace std;
 using namespace mongo;
 
+
 namespace {
+    const int thread_nums[] = {1,2,4,10};
     const int max_threads = 10;
     // Global connections
     DBClientConnection conn[max_threads];
@@ -73,50 +76,29 @@ namespace {
 
                     cerr << "########## " << test->name() << " ##########" << endl;
 
-                    test->reset();
-                    start = boost::posix_time::microsec_clock::universal_time();
-                    test->run(0, 1);
-                    end = boost::posix_time::microsec_clock::universal_time();
-                    double one_micros = (end-start).total_microseconds() / 1000000.0;
+                    BSONObjBuilder results;
 
-                    test->reset();
-                    start = boost::posix_time::microsec_clock::universal_time();
-                    launch_subthreads(2, test);
-                    end = boost::posix_time::microsec_clock::universal_time();
-                    double two_micros = (end-start).total_microseconds() / 1000000.0;
+                    double one_micros;
+                    BOOST_FOREACH(int nthreads, thread_nums){
+                        test->reset();
+                        start = boost::posix_time::microsec_clock::universal_time();
+                        launch_subthreads(nthreads, test);
+                        end = boost::posix_time::microsec_clock::universal_time();
+                        double micros = (end-start).total_microseconds() / 1000000.0;
 
-                    test->reset();
-                    start = boost::posix_time::microsec_clock::universal_time();
-                    launch_subthreads(4, test);
-                    end = boost::posix_time::microsec_clock::universal_time();
-                    double four_micros = (end-start).total_microseconds() / 1000000.0;
+                        if (nthreads == 1) 
+                            one_micros = micros;
 
-                    test->reset();
-                    start = boost::posix_time::microsec_clock::universal_time();
-                    launch_subthreads(max_threads, test);
-                    end = boost::posix_time::microsec_clock::universal_time();
-                    double ten_micros = (end-start).total_microseconds() / 1000000.0;
+                        results.append(BSONObjBuilder::numStr(nthreads),
+                                       BSON( "time" << micros
+                                          << "ops_per_sec" << iterations / micros
+                                          << "speedup" << one_micros / micros
+                                          ));
+                    }
 
                     BSONObj out =
                         BSON( "name" << test->name()
-                           << "results" <<
-                               BSON( "one" <<
-                                        BSON( "time" << one_micros
-                                           << "ops_per_sec" << iterations / one_micros
-                                           << "speedup" << one_micros / one_micros)
-                                  << "two" <<
-                                        BSON( "time" << two_micros
-                                           << "ops_per_sec" << iterations / two_micros
-                                           << "speedup" << one_micros / two_micros)
-                                  << "four" <<
-                                        BSON( "time" << four_micros
-                                           << "ops_per_sec" << iterations / four_micros
-                                           << "speedup" << one_micros / four_micros)
-                                  << "ten" <<
-                                        BSON( "time" << ten_micros
-                                           << "ops_per_sec" << iterations / ten_micros
-                                           << "speedup" << one_micros / ten_micros)
-                                  )
+                           << "results" << results.obj()
                            );
                     cout << out.jsonString(Strict) << endl;
                 }

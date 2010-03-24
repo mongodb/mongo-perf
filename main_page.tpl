@@ -51,10 +51,9 @@
                 <th>Num</th>
                 <th>Version</th>
                 <th>Date</th>
-                <th>one thread</th>
-                <th>two threads</th>
-                <th>four threads</th>
-                <th>ten threads</th>
+                %for thread in threads:
+                <th>{{thread}} thread{{'' if thread == 1 else 's'}}</th>
+                %end
             </tr>
         </thead>
 
@@ -64,10 +63,9 @@
                 <td>{{i}}</td>
                 <td>{{result['version']}}</td>
                 <td>{{result['date']}}</td>
-                <td>{{result['one'][metric]}}</td>
-                <td>{{result['two'][metric]}}</td>
-                <td>{{result['four'][metric]}}</td>
-                <td>{{result['ten'][metric]}}</td>
+                %for thread in threads:
+                <td>{{result.get(str(thread), {metric:'--'})[metric]}}</td>
+                %end
             </tr>
             %end
         </thead>
@@ -84,7 +82,7 @@
                 $('#flot_{{k}}'), data,
                 {
                    series: { lines: { show: true }, points: { show: true } },
-                   xaxis: {ticks : [1,2,4,10]},
+                   xaxis: {ticks : {{threads}} },
                    yaxis: {min : 0},
                 }
            );
