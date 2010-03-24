@@ -73,7 +73,10 @@
         </thead>
     </table>
 
+    <br />
     <div id="flot_{{k}}" style="width:600px;height:300px;"> </div>
+    <div style="height:50px"> </div>
+
     <script>
         $(function(){
             var data = {{flot_data}};
@@ -81,7 +84,8 @@
                 $('#flot_{{k}}'), data,
                 {
                    series: { lines: { show: true }, points: { show: true } },
-                   xaxis: {ticks : [1,2,4,10]}
+                   xaxis: {ticks : [1,2,4,10]},
+                   yaxis: {min : 0},
                 }
            );
        });
