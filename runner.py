@@ -39,9 +39,9 @@ if branch == 'master':
 git_info = subprocess.Popen(['git', 'log', '-1', '--pretty=format:%H %ai'], cwd='./tmp/mongo', stdout=subprocess.PIPE).communicate()[0]
 mongodb_git, mongodb_date = git_info.split(' ', 1)
 
-subprocess.check_call(['scons'], cwd='./tmp/mongo')
+subprocess.check_call(['scons', 'mongod'], cwd='./tmp/mongo')
 
-mongod = subprocess.Popen(['./tmp/mongo/mongod', '--quiet', '--dbpath', './tmp/data/', '--port', opts.port])
+mongod = subprocess.Popen(['./tmp/mongo/mongod', '--quiet', '--dbpath', './tmp/data/', '--port', opts.port], stdout=open(os.devnull))
 
 time.sleep(1) # wait for server to start up
 
