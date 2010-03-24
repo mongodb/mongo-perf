@@ -391,6 +391,32 @@ namespace Queries{
         }
     };
 
+    struct RegexPrefixFindOne{
+        RegexPrefixFindOne(){
+            for (int i=0; i<100; i++)
+                nums[i] = "^" + BSONObjBuilder::numStr(i+1);
+        }
+        void reset() {
+            clearDB();
+            conn[0].ensureIndex(ns, BSON("x" << 1));
+            for (int i=0; i < iterations; i++){
+                conn[0].insert(ns, BSON("x" << BSONObjBuilder::numStr(i)));
+            }
+            conn[0].getLastError();
+        }
+
+        void run(int t, int n){
+            for (int i=0; i < iterations / n / 100; i++){
+                for (int j=0; j<100; j++){
+                    BSONObjBuilder b;
+                    b.appendRegex("x", nums[j]);
+                    conn[t].findOne(ns, b.obj());
+                }
+            }
+        }
+        string nums[100];
+    };
+
     struct TwoIntsBothGood{
         void reset() {
             clearDB();
@@ -495,6 +521,7 @@ namespace{
             add< Queries::IntNonID >();
             add< Queries::IntNonIDRange >();
             add< Queries::IntNonIDFindOne >();
+            add< Queries::RegexPrefixFindOne >();
             add< Queries::TwoIntsBothBad >();
             add< Queries::TwoIntsBothGood >();
             add< Queries::TwoIntsFirstGood >();
