@@ -257,6 +257,34 @@ namespace Insert{
     };
 }
 
+namespace Update{
+    struct Base{
+        void reset(){ clearDB(); }
+    };
+
+    struct IncNoIndex : Base{
+        void run(int t, int n) {
+            const int incs = iterations/n/100;
+            for (int i=0; i<100; i++){
+                for (int j=0; j<incs; j++){
+                    conn[t].update(ns, BSON("_id" << i), BSON("$inc" << BSON("count" << 1)), 1);
+                }
+            }
+        }
+    };
+    struct IncWithIndex : Base{
+        void reset(){ clearDB(); conn[0].ensureIndex(ns, BSON("count" << 1));}
+        void run(int t, int n) {
+            const int incs = iterations/n/100;
+            for (int i=0; i<100; i++){
+                for (int j=0; j<incs; j++){
+                    conn[t].update(ns, BSON("_id" << i), BSON("$inc" << BSON("count" << 1)), 1);
+                }
+            }
+        }
+    };
+}
+
 namespace Queries{
     struct Empty{
         void reset() {
@@ -512,6 +540,9 @@ namespace{
             add< Insert::JustNumIndexedBefore >();
             add< Insert::JustNumIndexedAfter >();
             add< Insert::NumAndID >();
+            
+            add< Update::IncNoIndex >();
+            add< Update::IncWithIndex >();
 
             add< Queries::Empty >();
             add< Queries::HundredTableScans >();
@@ -526,7 +557,6 @@ namespace{
             add< Queries::TwoIntsBothGood >();
             add< Queries::TwoIntsFirstGood >();
             add< Queries::TwoIntsSecondGood >();
-
         }
     } theTestSuite;
 }
