@@ -9,7 +9,7 @@ if 'darwin' == os.sys.platform:
 
 conf = Configure( env )
 libs = [ "mongoclient" ]
-boostLibs = [ "thread" , "filesystem" ]
+boostLibs = [ "thread" , "filesystem" , 'program_options', 'system']
 
 def checkLib( n ):
     if conf.CheckLib( n ):
@@ -27,8 +27,6 @@ def makeBoost( x ):
 
 for x in boostLibs:
     checkLib( makeBoost( x ) )
-
-conf.CheckLib( makeBoost( "system" ) )
 
 env = conf.Finish()
 
