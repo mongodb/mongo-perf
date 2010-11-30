@@ -296,6 +296,39 @@ namespace Update{
             }
         }
     };
+    struct IncNoIndex_QueryOnSecondary : Base{
+        void reset(){
+            clearDB(); 
+            conn[0].ensureIndex(ns, BSON("i" << 1));
+            for (int i=0; i<100; i++)
+                conn[0].insert(ns, BSON("_id" << i << "i" << i << "count" << 0));
+        }
+        void run(int t, int n) {
+            const int incs = iterations/n/100;
+            for (int i=0; i<100; i++){
+                for (int j=0; j<incs; j++){
+                    conn[t].update(ns, BSON("i" << i), BSON("$inc" << BSON("count" << 1)));
+                }
+            }
+        }
+    };
+    struct IncWithIndex_QueryOnSecondary : Base{
+        void reset(){
+            clearDB(); 
+            conn[0].ensureIndex(ns, BSON("count" << 1));
+            conn[0].ensureIndex(ns, BSON("i" << 1));
+            for (int i=0; i<100; i++)
+                conn[0].insert(ns, BSON("_id" << i << "i" << i << "count" << 0));
+        }
+        void run(int t, int n) {
+            const int incs = iterations/n/100;
+            for (int i=0; i<100; i++){
+                for (int j=0; j<incs; j++){
+                    conn[t].update(ns, BSON("i" << i), BSON("$inc" << BSON("count" << 1)));
+                }
+            }
+        }
+    };
 }
 
 namespace Queries{
@@ -554,10 +587,12 @@ namespace{
             add< Insert::JustNumIndexedAfter >();
             //add< Insert::NumAndID >();
             
-            //add< Update::IncNoIndexUpsert >();
-            //add< Update::IncWithIndexUpsert >();
+            add< Update::IncNoIndexUpsert >();
+            add< Update::IncWithIndexUpsert >();
             add< Update::IncNoIndex >();
             add< Update::IncWithIndex >();
+            add< Update::IncNoIndex_QueryOnSecondary >();
+            add< Update::IncWithIndex_QueryOnSecondary >();
 
             //add< Queries::Empty >();
             add< Queries::HundredTableScans >();
