@@ -15,6 +15,7 @@ from optparse import OptionParser
 optparser = OptionParser()
 optparser.add_option('-p', '--port', dest='port', help='port for mongodb to test', type='string', default='30027')
 optparser.add_option('-n', '--iterations', dest='iterations', help='number of iterations to test', type='string', default='100000')
+optparser.add_option('-s', '--mongos', dest='mongos', help='send all requests through mongos', action='store_true', default=False)
 
 (opts, versions) = optparser.parse_args()
 if not versions:
@@ -31,6 +32,7 @@ os.mkdir('./tmp/data/')
 
 #TODO support multiple versions
 branch = versions[0]
+mongodb_version = branch
 subprocess.check_call(['git', 'checkout', branch], cwd='./tmp/mongo')
 
 if branch == 'master':
@@ -41,9 +43,16 @@ mongodb_git, mongodb_date = git_info.split(' ', 1)
 
 subprocess.check_call(['scons', 'mongod'], cwd='./tmp/mongo')
 
-mongod = subprocess.Popen(['./tmp/mongo/mongod', '--quiet', '--dbpath', './tmp/data/', '--port', opts.port], stdout=open(os.devnull))
+if opts.mongos:
+    mongod = subprocess.Popen(['simple-setup.py', '--path=./tmp/mongo', '--port='+opts.port])#, stdout=open(os.devnull))
+    mongodb_version += '-mongos'
+    mongodb_git += '-mongos'
+else:
+    mongod = subprocess.Popen(['./tmp/mongo/mongod', '--quiet', '--dbpath', './tmp/data/', '--port', opts.port], stdout=open(os.devnull))
 
-time.sleep(1) # wait for server to start up
+print 'pid:', mongod.pid
+
+time.sleep(10) # wait for server to start up
 
 benchmark_results=''
 try:
@@ -69,7 +78,7 @@ for line in benchmark_results.split('\n'):
     if line:
         print line
         obj = json.loads(line, object_hook=object_hook)
-        obj['mongodb_version'] = branch
+        obj['mongodb_version'] = mongodb_version
         obj['mongodb_date'] = mongodb_date
         obj['mongodb_git'] = mongodb_git
         obj['ran_at'] = datetime.datetime.now()
