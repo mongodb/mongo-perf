@@ -3,11 +3,14 @@ This is a benchmark script for the MongoDB server.
 Dependencies:
 Scons
 Python >= 2.5
-MongoDB >= 1.1.4 installed
+MongoDB installed (including headers)
 git
 C++ build environment
 
 To test:
 scons benchmark
+start a mongod on 27017 to record the results
 ./runner.py [git-branch-or-tag] # uses master if no version is specified
+python server.py
+go to http://localhost:8080 to see the results
 
