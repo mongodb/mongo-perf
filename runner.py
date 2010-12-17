@@ -16,6 +16,8 @@ optparser = OptionParser()
 optparser.add_option('-p', '--port', dest='port', help='port for mongodb to test', type='string', default='30027')
 optparser.add_option('-n', '--iterations', dest='iterations', help='number of iterations to test', type='string', default='100000')
 optparser.add_option('-s', '--mongos', dest='mongos', help='send all requests through mongos', action='store_true', default=False)
+optparser.add_option('-l', '--label', dest='label', help='name to record',
+        type='string', default='<git version>')
 
 (opts, versions) = optparser.parse_args()
 if not versions:
@@ -32,7 +34,7 @@ os.mkdir('./tmp/data/')
 
 #TODO support multiple versions
 branch = versions[0]
-mongodb_version = branch
+mongodb_version = (branch if opts.label=='<git version>' else opts.label)
 subprocess.check_call(['git', 'checkout', branch], cwd='./tmp/mongo')
 
 if branch == 'master':
@@ -49,6 +51,13 @@ if opts.mongos:
     mongodb_git += '-mongos'
 else:
     mongod = subprocess.Popen(['./tmp/mongo/mongod', '--quiet', '--dbpath', './tmp/data/', '--port', opts.port], stdout=open(os.devnull))
+
+if opts.label != '<git version>':
+    mongodb_git = opts.label
+
+subprocess.check_call(['scons'], cwd='./tmp/mongo')
+
+mongod = subprocess.Popen(['./tmp/mongo/mongod', '--quiet', '--dbpath', './tmp/data/', '--port', opts.port], stdout=open('/dev/null'))
 
 print 'pid:', mongod.pid
 
