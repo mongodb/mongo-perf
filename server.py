@@ -21,7 +21,7 @@ def raw_data():
     else:
         q = {}
 
-    cursor = db.raw.find(q).sort([('name',1), ('mongodb_date',-1)])
+    cursor = db.raw.find(q).sort([('name',1), ('mongodb_date',-1), ('mongodb_git',1)])
 
     name = None
     results = []
