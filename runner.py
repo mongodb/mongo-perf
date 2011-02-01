@@ -62,6 +62,8 @@ if not opts.nolaunch:
     print 'pid:', mongod.pid
 
     time.sleep(10) # wait for server to start up
+else:
+    mongodb_git="nolaunch"
 
 if opts.label != '<git version>':
     mongodb_git = opts.label
