@@ -9,6 +9,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
+#include <boost/thread.hpp>
 
 #ifndef _WIN32
 #include <cxxabi.h>
@@ -212,6 +213,9 @@ namespace Insert{
         void reset(){ clearDB(); }
     };
 
+    /*
+     * inserts empty documents.
+     */
     struct Empty : Base{
         void run(int t, int n) {
             for (int i=0; i < iterations / n; i++){
@@ -220,6 +224,9 @@ namespace Insert{
         }
     };
 
+    /*
+     * inserts batches of empty documents.
+     */
     template <int BatchSize>
     struct EmptyBatched : Base{
         void run(int t, int n) {
@@ -230,6 +237,9 @@ namespace Insert{
         }
     };
 
+    /*
+     * inserts empty documents into capped collections.
+     */
     struct EmptyCapped : Base{
         void run(int t, int n) {
             for (int i=0; i < iterations / n; i++){
@@ -246,6 +256,9 @@ namespace Insert{
         }
     };
 
+    /*
+     * inserts documents just containing the field '_id' as an ObjectId.
+     */
     struct JustID : Base{
         void run(int t, int n) {
             for (int i=0; i < iterations / n; i++){
@@ -256,6 +269,9 @@ namespace Insert{
         }
     };
 
+    /*
+     * inserts documents just containing the field '_id' as an incrementing integer.
+     */
     struct IntID : Base{
         void run(int t, int n) {
             int base = t * (iterations/n);
@@ -265,6 +281,9 @@ namespace Insert{
         }
     };
 
+    /*
+     * upserts documents just containing the field '_id' as an incrementing integer.
+     */
     struct IntIDUpsert : Base{
         void run(int t, int n) {
             int base = t * (iterations/n);
@@ -274,6 +293,9 @@ namespace Insert{
         }
     };
 
+    /*
+     * inserts documents just containing the field 'x' as an incrementing integer.
+     */
     struct JustNum : Base{
         void run(int t, int n) {
             int base = t * (iterations/n);
@@ -283,6 +305,10 @@ namespace Insert{
         }
     };
 
+    /*
+     * inserts documents just containing the field 'x' as an incrementing integer.
+     * An index on 'x' is created before the run.
+     */
     struct JustNumIndexedBefore : Base{
         void run(int t, int n) {
             ensureIndex(t, BSON("x" << 1));
@@ -293,6 +319,10 @@ namespace Insert{
         }
     };
 
+    /*
+     * inserts documents just containing the field 'x' as an incrementing integer.
+     * An index on 'x' is created after the run.
+     */
     struct JustNumIndexedAfter : Base{
         void run(int t, int n) {
             int base = t * (iterations/n);
@@ -303,6 +333,9 @@ namespace Insert{
         }
     };
 
+    /*
+     * inserts documents containing the field '_id' as an ObjectId and the field 'x' as an incrementing integer.
+     */
     struct NumAndID : Base{
         void run(int t, int n) {
             int base = t * (iterations/n);
@@ -321,6 +354,10 @@ namespace Update{
         void reset(){ clearDB(); }
     };
 
+    /*
+     * Upserts 100 distinct documents based on an incrementing integer id.
+     * For each document the '$inc' operator is called multiple times to increment the field 'count'.
+     */
     struct IncNoIndexUpsert : Base{
         void run(int t, int n) {
             const int incs = iterations/n/100;
@@ -331,6 +368,12 @@ namespace Update{
             }
         }
     };
+
+    /*
+     * Upserts 100 distincts documents based on an incrementing integer id.
+     * For each document the '$inc' operator is called multiple times to increment the field 'count'.
+     * An index on 'count' is created before the run.
+     */
     struct IncWithIndexUpsert : Base{
         void reset(){ clearDB(); ensureIndex(-1, BSON("count" << 1));}
         void run(int t, int n) {
@@ -342,6 +385,11 @@ namespace Update{
             }
         }
     };
+
+    /*
+     * Inserts 100 documents with an incrementing integer id and a 'count' field.
+     * For each document an update with the '$inc' operator is called multiple times to increment the field 'count'.
+     */
     struct IncNoIndex : Base{
         void reset(){
             clearDB(); 
@@ -357,6 +405,12 @@ namespace Update{
             }
         }
     };
+
+    /*
+     * Inserts 100 documents with an incrementing integer id and a 'count' field.
+     * For each document an update with the '$inc' operator is called multiple times to increment the field 'count'.
+     * An index on 'count' is created before the run.
+     */
     struct IncWithIndex : Base{
         void reset(){
             clearDB(); 
@@ -373,6 +427,12 @@ namespace Update{
             }
         }
     };
+
+    /*
+     * Inserts 100 documents with an incrementing integer id, a field 'i' equals to the id, and a 'count' field.
+     * For each document an update with the '$inc' operator is called multiple times to increment the field 'count', using a query on 'i'.
+     * An index on 'i' is created before the run.
+     */
     struct IncNoIndex_QueryOnSecondary : Base{
         void reset(){
             clearDB(); 
@@ -389,6 +449,12 @@ namespace Update{
             }
         }
     };
+
+    /*
+     * Inserts 100 documents with an incrementing integer id, a field 'i' equals to the id, and a 'count' field.
+     * For each document an update with the '$inc' operator is called multiple times to increment the field 'count', using a query on 'i'.
+     * Indexes on 'i' and 'count' are created before the run.
+     */
     struct IncWithIndex_QueryOnSecondary : Base{
         void reset(){
             clearDB(); 
@@ -409,6 +475,11 @@ namespace Update{
 }
 
 namespace Queries{
+
+    /*
+     * Does one query using an empty pattern, then iterates over results.
+     * The documents are inserted as empty objects.
+     */
     struct Empty{
         void reset() {
             clearDB();
@@ -425,6 +496,10 @@ namespace Queries{
         }
     };
 
+    /*
+     * Does a total of 100 queries (across threads) using a match on a nonexistent field, triggering table scans.
+     * The documents are inserted as empty objects.
+     */
     struct HundredTableScans{
         void reset() {
             clearDB();
@@ -441,6 +516,10 @@ namespace Queries{
         }
     };
 
+    /*
+     * Does one query using an empty pattern, then iterates over results.
+     * The documents are inserted with an incrementing integer id.
+     */
     struct IntID{
         void reset() {
             clearDB();
@@ -457,6 +536,10 @@ namespace Queries{
         }
     };
 
+    /*
+     * Does one query using a range on the id, then iterates over results.
+     * The documents are inserted with an incrementing integer id.
+     */
     struct IntIDRange{
         void reset() {
             clearDB();
@@ -473,6 +556,10 @@ namespace Queries{
         }
     };
 
+    /*
+     * Issues findOne queries with a match on id.
+     * The documents are inserted with an incrementing integer id.
+     */
     struct IntIDFindOne{
         void reset() {
             clearDB();
@@ -490,6 +577,10 @@ namespace Queries{
         }
     };
 
+    /*
+     * Does one query using an empty pattern, then iterates over results.
+     * The documents are inserted with an incrementing integer field 'x' that is indexed.
+     */
     struct IntNonID{
         void reset() {
             clearDB();
@@ -507,6 +598,10 @@ namespace Queries{
         }
     };
 
+    /*
+     * Does one query using a range on field 'x', then iterates over results.
+     * The documents are inserted with an incrementing integer field 'x' that is indexed.
+     */
     struct IntNonIDRange{
         void reset() {
             clearDB();
@@ -524,6 +619,10 @@ namespace Queries{
         }
     };
 
+    /*
+     * Issues findOne queries with a match on 'x' field.
+     * The documents are inserted with an incrementing integer field 'x' that is indexed.
+     */
     struct IntNonIDFindOne{
         void reset() {
             clearDB();
@@ -542,6 +641,10 @@ namespace Queries{
         }
     };
 
+    /*
+     * Issues findOne queries with a left-rooted regular expression on the 'x' field.
+     * The documents are inserted with an incrementing integer field 'x' that is converted to a string and indexed.
+     */
     struct RegexPrefixFindOne{
         RegexPrefixFindOne(){
             for (int i=0; i<100; i++)
@@ -568,6 +671,10 @@ namespace Queries{
         string nums[100];
     };
 
+    /*
+     * Issues findOne queries with a match on 'x' and 'y' field.
+     * The documents are inserted with an incrementing integer field 'x' and decrementing field 'y' that are indexed.
+     */
     struct TwoIntsBothGood{
         void reset() {
             clearDB();
@@ -587,6 +694,10 @@ namespace Queries{
         }
     };
 
+    /*
+     * Issues findOne queries with a match on 'x' and 'y' field.
+     * The documents are inserted with an incrementing integer field 'x' and a field 'y' using modulo (low cardinality), that are indexed.
+     */
     struct TwoIntsFirstGood{
         void reset() {
             clearDB();
@@ -606,6 +717,10 @@ namespace Queries{
         }
     };
 
+    /*
+     * Issues findOne queries with a match on 'x' and 'y' field.
+     * The documents are inserted with a field 'x' using modulo (low cardinality) and an incrementing integer field 'y', that are indexed.
+     */
     struct TwoIntsSecondGood{
         void reset() {
             clearDB();
@@ -624,6 +739,11 @@ namespace Queries{
             }
         }
     };
+
+    /*
+     * Issues findOne queries with a match on 'x' and 'y' field.
+     * The documents are inserted with fields 'x' and 'y' both using modulos (low cardinality)
+     */
     struct TwoIntsBothBad{
         void reset() {
             clearDB();
