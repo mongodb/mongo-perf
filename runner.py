@@ -9,7 +9,7 @@ import pymongo
 import json
 import pprint
 import datetime
-from pymongo.json_util import object_hook
+from bson.json_util import object_hook
 from optparse import OptionParser
 
 optparser = OptionParser()
