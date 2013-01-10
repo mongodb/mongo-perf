@@ -68,7 +68,7 @@ def main_page():
 if __name__ == '__main__':
     do_reload = '--reload' in sys.argv
     debug(do_reload)
-    run(reloader=do_reload, host='0.0.0.0')
+    run(reloader=do_reload, host='0.0.0.0', server=AutoServer)
 
 
 
