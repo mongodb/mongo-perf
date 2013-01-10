@@ -9,8 +9,11 @@ import pymongo
 import json
 import pprint
 import datetime
-from pymongo.json_util import object_hook
 from optparse import OptionParser
+try:
+    from bson.json_util import object_hook
+except ImportError:
+    from pymongo.json_util import object_hook
 
 optparser = OptionParser()
 optparser.add_option('-p', '--port', dest='port', help='port for mongodb to test', type='string', default='30027')
