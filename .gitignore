@@ -5,5 +5,9 @@ config.log
 
 tags
 
+*.pyc
+
 *.o
+*.a
 benchmark
+mongo-cxx-driver/build/*

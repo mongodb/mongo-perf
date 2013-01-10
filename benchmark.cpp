@@ -1,7 +1,3 @@
-#ifndef MONGO_EXPOSE_MACROS
-# define MONGO_EXPOSE_MACROS
-#endif
-
 #include <mongo/client/dbclient.h>
 #include <iostream>
 #include <cstdlib>
@@ -14,6 +10,10 @@
 #ifndef _WIN32
 #include <cxxabi.h>
 #endif
+
+// use MONGO convenience macros
+#define PRINT(x) MONGO_PRINT(x)
+#define PRINTFL  MONGO_PRINTFL
 
 using namespace std;
 using namespace mongo;
@@ -30,7 +30,6 @@ namespace {
     const char* _db = "benchmarks";
     const char* _coll = "collection";
     string ns[max_threads];
-
 
     // wrapper funcs to route to different dbs. thread == -1 means all dbs
     void ensureIndex(int thread, const BSONObj& obj) {
