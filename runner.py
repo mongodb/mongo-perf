@@ -10,6 +10,7 @@ import json
 import pprint
 import datetime
 from optparse import OptionParser
+
 try:
     from bson.json_util import object_hook
 except ImportError:
@@ -21,7 +22,7 @@ optparser.add_option('-n', '--iterations', dest='iterations', help='number of it
 optparser.add_option('-s', '--mongos', dest='mongos', help='send all requests through mongos', action='store_true', default=False)
 optparser.add_option('--nolaunch', dest='nolaunch', help='use mongod already running on port', action='store_true', default=False)
 optparser.add_option('-m', '--multidb', dest='multidb', help='use a separate db for each connection', action='store_true', default=False)
-optparser.add_option('-l', '--label', dest='label', help='name to record', type='string', default='<git version>')
+optparser.add_option('-l', '--label', dest='label', help='name to record (useful with nolaunch)', type='string', default='<git version>')
 
 (opts, versions) = optparser.parse_args()
 if not versions:
