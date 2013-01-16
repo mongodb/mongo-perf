@@ -10,9 +10,9 @@ if 'darwin' == os.sys.platform:
     env.Append(CPPPATH=['/opt/local/include'])
     env.Append(LIBPATH=['/opt/local/lib'])
 
-env.Append(CPPPATH='mongo-cxx-driver/src')
-env.Append(CPPPATH='mongo-cxx-driver/src/mongo')
-env.Append(LIBPATH='mongo-cxx-driver')
+env.Append(CPPPATH=['mongo-cxx-driver/src'])
+env.Append(CPPPATH=['mongo-cxx-driver/src/mongo'])
+env.Append(LIBPATH=['mongo-cxx-driver'])
 
 conf = Configure( env )
 libs = [ "mongoclient",  "boost_thread" , "boost_filesystem" , 'boost_program_options', 'boost_system']
