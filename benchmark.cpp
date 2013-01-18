@@ -99,6 +99,7 @@ namespace {
     struct TestBase{
         virtual void run(int thread, int nthreads) = 0;
         virtual void reset() = 0;
+        virtual bool readOnly() = 0; // if true only reset before first run
         virtual string name() = 0;
         virtual ~TestBase() {}
     };
@@ -111,6 +112,11 @@ namespace {
         }
         virtual void reset(){
             test.reset();
+            getLastError(); //wait for operation to complete
+        }
+
+        virtual bool readOnly(){
+            return test.readOnly();
         }
         
         virtual string name(){
@@ -148,8 +154,13 @@ namespace {
                     BSONObjBuilder results;
 
                     double one_micros;
+                    bool resetDone = false;
                     BOOST_FOREACH(int nthreads, thread_nums){
-                        test->reset();
+
+                        if (!test->readOnly() || !resetDone) {
+                            test->reset();
+                            resetDone = true;
+                        }
                         startTime = boost::posix_time::microsec_clock::universal_time();
                         launch_subthreads(nthreads, test);
                         endTime = boost::posix_time::microsec_clock::universal_time();
@@ -202,6 +213,7 @@ namespace {
 namespace Overhead{
     // this tests the overhead of the system
     struct DoNothing{
+        bool readOnly() { return false; }
         void run(int t, int n) {}
         void reset(){ clearDB(); }
     };
@@ -209,6 +221,7 @@ namespace Overhead{
 
 namespace Insert{
     struct Base{
+        bool readOnly() { return false; }
         void reset(){ clearDB(); }
     };
 
@@ -350,6 +363,7 @@ namespace Insert{
 
 namespace Update{
     struct Base{
+        bool readOnly() { return false; }
         void reset(){ clearDB(); }
     };
 
@@ -474,12 +488,15 @@ namespace Update{
 }
 
 namespace Queries{
+    struct Base{
+        bool readOnly() { return true; }
+    };
 
     /*
      * Does one query using an empty pattern, then iterates over results.
      * The documents are inserted as empty objects.
      */
-    struct Empty{
+    struct Empty : Base{
         void reset() {
             clearDB();
             for (int i=0; i < iterations; i++){
@@ -499,7 +516,7 @@ namespace Queries{
      * Does a total of 100 queries (across threads) using a match on a nonexistent field, triggering table scans.
      * The documents are inserted as empty objects.
      */
-    struct HundredTableScans{
+    struct HundredTableScans : Base{
         void reset() {
             clearDB();
             for (int i=0; i < iterations; i++){
@@ -519,7 +536,7 @@ namespace Queries{
      * Does one query using an empty pattern, then iterates over results.
      * The documents are inserted with an incrementing integer id.
      */
-    struct IntID{
+    struct IntID : Base{
         void reset() {
             clearDB();
             for (int i=0; i < iterations; i++){
@@ -539,7 +556,7 @@ namespace Queries{
      * Does one query using a range on the id, then iterates over results.
      * The documents are inserted with an incrementing integer id.
      */
-    struct IntIDRange{
+    struct IntIDRange : Base{
         void reset() {
             clearDB();
             for (int i=0; i < iterations; i++){
@@ -559,7 +576,7 @@ namespace Queries{
      * Issues findOne queries with a match on id.
      * The documents are inserted with an incrementing integer id.
      */
-    struct IntIDFindOne{
+    struct IntIDFindOne : Base{
         void reset() {
             clearDB();
             for (int i=0; i < iterations; i++){
@@ -580,7 +597,7 @@ namespace Queries{
      * Does one query using an empty pattern, then iterates over results.
      * The documents are inserted with an incrementing integer field 'x' that is indexed.
      */
-    struct IntNonID{
+    struct IntNonID : Base{
         void reset() {
             clearDB();
             ensureIndex(-1, BSON("x" << 1));
@@ -601,7 +618,7 @@ namespace Queries{
      * Does one query using a range on field 'x', then iterates over results.
      * The documents are inserted with an incrementing integer field 'x' that is indexed.
      */
-    struct IntNonIDRange{
+    struct IntNonIDRange : Base{
         void reset() {
             clearDB();
             ensureIndex(-1, BSON("x" << 1));
@@ -622,7 +639,7 @@ namespace Queries{
      * Issues findOne queries with a match on 'x' field.
      * The documents are inserted with an incrementing integer field 'x' that is indexed.
      */
-    struct IntNonIDFindOne{
+    struct IntNonIDFindOne : Base{
         void reset() {
             clearDB();
             ensureIndex(-1, BSON("x" << 1));
@@ -644,7 +661,7 @@ namespace Queries{
      * Issues findOne queries with a left-rooted regular expression on the 'x' field.
      * The documents are inserted with an incrementing integer field 'x' that is converted to a string and indexed.
      */
-    struct RegexPrefixFindOne{
+    struct RegexPrefixFindOne : Base{
         RegexPrefixFindOne(){
             for (int i=0; i<100; i++)
                 nums[i] = "^" + BSONObjBuilder::numStr(i+1);
@@ -674,7 +691,7 @@ namespace Queries{
      * Issues findOne queries with a match on 'x' and 'y' field.
      * The documents are inserted with an incrementing integer field 'x' and decrementing field 'y' that are indexed.
      */
-    struct TwoIntsBothGood{
+    struct TwoIntsBothGood : Base{
         void reset() {
             clearDB();
             ensureIndex(-1, BSON("x" << 1));
@@ -697,7 +714,7 @@ namespace Queries{
      * Issues findOne queries with a match on 'x' and 'y' field.
      * The documents are inserted with an incrementing integer field 'x' and a field 'y' using modulo (low cardinality), that are indexed.
      */
-    struct TwoIntsFirstGood{
+    struct TwoIntsFirstGood : Base{
         void reset() {
             clearDB();
             ensureIndex(-1, BSON("x" << 1));
@@ -720,7 +737,7 @@ namespace Queries{
      * Issues findOne queries with a match on 'x' and 'y' field.
      * The documents are inserted with a field 'x' using modulo (low cardinality) and an incrementing integer field 'y', that are indexed.
      */
-    struct TwoIntsSecondGood{
+    struct TwoIntsSecondGood : Base{
         void reset() {
             clearDB();
             ensureIndex(-1, BSON("x" << 1));
@@ -743,7 +760,7 @@ namespace Queries{
      * Issues findOne queries with a match on 'x' and 'y' field.
      * The documents are inserted with fields 'x' and 'y' both using modulos (low cardinality)
      */
-    struct TwoIntsBothBad{
+    struct TwoIntsBothBad : Base{
         void reset() {
             clearDB();
             ensureIndex(-1, BSON("x" << 1));
