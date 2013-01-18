@@ -20,8 +20,8 @@ using namespace mongo;
 
 
 namespace {
-    const int thread_nums[] = {1,2,4,5,8,10};
-    const int max_threads = 10;
+    const int thread_nums[] = {1,2,4,6,8,12,16};
+    const int max_threads = 16;
     // Global connections
     DBClientConnection _conn[max_threads];
 
