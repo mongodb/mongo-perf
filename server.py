@@ -15,9 +15,12 @@ def static_file(filename):
 def raw_data():
     out = []
 
-    versions = request.GET.get('versions', '').split()
+    versions = request.GET.get('versions', '')
     if versions:
-        q = {'mongodb_version': {'$in': versions}}
+        if versions.startswith('/') and versions.endswith('/'):
+            q = {'mongodb_version': {'$regex': versions[1:-1]}}
+        else:
+            q = {'mongodb_version': {'$in': versions.split()}}
     else:
         q = {}
 

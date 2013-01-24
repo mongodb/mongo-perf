@@ -35,7 +35,7 @@
         </select>
         <br />
 
-        <label for="versions">Versions (space-separated)</label>
+        <label for="versions">Versions (space-separated or /regex/)</label>
         <input type="text" name="versions" value="{{versions}}" />
         <br />
 
