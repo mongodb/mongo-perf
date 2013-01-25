@@ -84,7 +84,11 @@ namespace {
 
     void getLastError(int thread=-1) {
         if (thread != -1){
-            _conn[thread].getLastError();
+            string err = _conn[thread].getLastError();
+            if (err != "") {
+                cerr << err << endl;
+                exit(1);
+            }
             return;
         }
 
@@ -826,16 +830,40 @@ namespace{
 
 int main(int argc, const char **argv){
     if (argc < 3){
-        cout << argv[0] << " [port] [iterations] [multidb (1 or 0)]" << endl;
+        cerr << argv[0] << " <port> <iterations> [<multidb (1 or 0)>] [<username>] [<password>]" << endl;
         return 1;
     }
 
+    string username;
+    string password;
+
+    if (argc > 4) {
+        username = argv[4];
+    }
+    if (argc > 5) {
+        password = argv[5];
+    }
+
+    if (!username.empty() && password.empty()) {
+        cerr << "Cannot provide username without also providing password" << endl;
+    }
+
     for (int i=0; i < max_threads; i++){
-        ns[i] = _db + BSONObjBuilder::numStr(i) + '.' + _coll;
+        string dbname = _db + BSONObjBuilder::numStr(i);
+        ns[i] = dbname + '.' + _coll;
         string errmsg;
         if ( ! _conn[i].connect( string( "127.0.0.1:" ) + argv[1], errmsg ) ) {
-            cout << "couldn't connect : " << errmsg << endl;
+            cerr << "couldn't connect : " << errmsg << endl;
             return 1;
+        }
+
+        // Handle authentication if necessary
+        if (!username.empty()) {
+            cerr << "authenticating as user: " << username << " with password: " << password << endl;
+            if (!_conn[i].auth((multi_db ? dbname : "admin"), username, password, errmsg)) {
+                cerr << "Auth failed : " << errmsg << endl;
+                return 1;
+            }
         }
     }
 
