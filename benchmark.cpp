@@ -31,6 +31,15 @@ namespace {
     const char* _coll = "collection";
     string ns[max_threads];
 
+
+    string nsToDatabase(string ns) {
+        size_t i = ns.find('.');
+        if (i == string::npos) {
+            return ns;
+        }
+        return ns.substr(0, i);
+    }
+
     // wrapper funcs to route to different dbs. thread == -1 means all dbs
     void ensureIndex(int thread, const BSONObj& obj) {
         if (!multi_db){
@@ -80,6 +89,12 @@ namespace {
     auto_ptr<DBClientCursor> query(int thread, const Query& q, int limit=0, int skip=0) {
         assert(thread != -1); // cant run on all conns
         return _conn[thread].query(ns[multi_db?thread:0], q, limit, skip);
+    }
+
+    bool command(int thread, const BSONObj& obj) {
+        assert(thread != -1); // can't run on all conns
+        BSONObj info;
+        return _conn[thread].runCommand(nsToDatabase(ns[multi_db?thread:0]), obj, info);
     }
 
     void getLastError(int thread=-1) {
@@ -785,6 +800,66 @@ namespace Queries{
 
 }
 
+namespace Commands {
+
+    /*
+     * Performs a count command to get the total number of documents in the collection
+     */
+    struct CountsFullCollection {
+        bool readOnly() { return true; }
+        void reset() {
+            clearDB();
+            for (int i = 0; i < iterations; i++) {
+                insert(-1, BSONObj());
+            }
+            getLastError();
+        }
+        void run(int t, int n) {
+            for (int i = 0; i < iterations / n; i++) {
+                command(t, BSON("count" << _coll));
+            }
+        }
+    };
+
+    /*
+     * Performs a count using a range on the id.
+     * The documents are inserted with an incrementing integer id.
+     */
+    struct CountsIntIDRange {
+        bool readOnly() { return true; }
+        void reset() {
+            clearDB();
+            for (int i=0; i < iterations; i++){
+                insert(-1, BSON("_id" << i));
+            }
+            getLastError();
+        }
+        void run(int t, int n) {
+            int chunk = iterations / n;
+            command(t, BSON("count" << _coll <<
+                            "query" << BSON("_id" << GTE << chunk * t << LT << chunk * (t+1))));
+        }
+    };
+
+    /*
+     * Uses findAndModify to insert documents containing _id as an incrementing integer
+     */
+    struct FindAndModifyInserts {
+        bool readOnly() { return false; }
+        void reset() { clearDB(); }
+        void run(int t, int n) {
+            int base = t * (iterations/n);
+            for (int i = 0; i < iterations / n; i++) {
+                command(t, BSON("findAndModify" << _coll
+                              << "upsert" << true
+                              << "query" << BSON("_id" << base + i)
+                              << "update" << BSON("_id" << base + i)));
+
+            }
+        }
+    };
+} // namespace Commands
+
 namespace{
     struct TheTestSuite : TestSuite{
         TheTestSuite(){
@@ -824,6 +899,11 @@ namespace{
             //add< Queries::TwoIntsBothGood >();
             //add< Queries::TwoIntsFirstGood >();
             //add< Queries::TwoIntsSecondGood >();
+
+            add< Commands::CountsFullCollection >();
+            add< Commands::CountsIntIDRange >();
+            add< Commands::FindAndModifyInserts >();
+
         }
     } theTestSuite;
 }
