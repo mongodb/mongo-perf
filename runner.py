@@ -77,7 +77,7 @@ if opts.label != '<git version>':
 benchmark_results=''
 try:
     multidb = '1' if opts.multidb else '0'
-    benchmark = subprocess.Popen(['./benchmark', opts.host, opts.iterations, multidb, opts.username, opts.password], stdout=subprocess.PIPE)
+    benchmark = subprocess.Popen(['./benchmark', opts.port, opts.iterations, multidb, opts.username, opts.password], stdout=subprocess.PIPE)
     benchmark_results = benchmark.communicate()[0]
     time.sleep(1) # wait for server to clean up connections
 finally:
