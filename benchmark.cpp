@@ -221,8 +221,13 @@ namespace {
 
     void clearDB(){
         for (int i=0; i<max_threads; i++) {
-            _conn[0].dropDatabase(_db + BSONObjBuilder::numStr(i));
-            _conn[0].getLastError();
+            string dbname = _db + BSONObjBuilder::numStr(i);
+            BSONObj userObj = _conn[i].findOne(dbname + ".system.users", Query());
+            _conn[i].dropDatabase(dbname);
+            if (!userObj.isEmpty()) {
+                _conn[i].insert(dbname + ".system.users", userObj);
+            }
+            _conn[i].getLastError();
             if (!multi_db)
                 return;
         }
@@ -909,13 +914,18 @@ namespace{
 }
 
 int main(int argc, const char **argv){
-    if (argc < 3){
+    if (argc < 3 || argc > 6){
         cerr << argv[0] << " <port> <iterations> [<multidb (1 or 0)>] [<username>] [<password>]" << endl;
         return 1;
     }
 
     string username;
     string password;
+
+    iterations = atoi(argv[2]);
+
+    if (argc > 3)
+        multi_db = (argv[3][0] == '1');
 
     if (argc > 4) {
         username = argv[4];
@@ -946,11 +956,6 @@ int main(int argc, const char **argv){
             }
         }
     }
-
-    iterations = atoi(argv[2]);
-
-    if (argc > 3)
-        multi_db = (argv[3][0] == '1');
 
     theTestSuite.run();
 
