@@ -226,6 +226,9 @@ namespace {
             _conn[i].dropDatabase(dbname);
             if (!userObj.isEmpty()) {
                 _conn[i].insert(dbname + ".system.users", userObj);
+            } else {
+                // Insert an empty document just to make sure the data file is preallocated.
+                _conn[i].insert(dbname + ".file_alloc", BSONObj());
             }
             _conn[i].getLastError();
             if (!multi_db)
