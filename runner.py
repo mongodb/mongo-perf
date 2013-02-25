@@ -89,7 +89,7 @@ finally:
 
 connection = None
 try:
-    connection = pymongo.Connection(host=opts.host)
+    connection = pymongo.Connection(host=opts.host,port=int(opts.port))
     results = connection.bench_results.raw
     #results.ensure_index('mongodb_git')
     results.ensure_index('name')
