@@ -34,7 +34,8 @@ if not versions:
 #TODO support multiple versions
 branch = versions[0]
 mongodb_version = (branch if opts.label=='<git version>' else opts.label)
-mongodb_date = None
+now = datetime.datetime.now()
+mongodb_date = now.strftime("%Y-%m-%d")
 
 mongod = None # set in following block
 if not opts.nolaunch:
@@ -104,7 +105,7 @@ for line in benchmark_results.split('\n'):
         obj['mongodb_version'] = mongodb_version
         obj['mongodb_date'] = mongodb_date
         obj['mongodb_git'] = mongodb_git
-        obj['ran_at'] = datetime.datetime.now()
+        obj['ran_at'] = now
         if connection: results.insert(obj)
         
 
