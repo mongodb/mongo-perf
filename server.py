@@ -18,13 +18,22 @@ def raw_data():
     versions = request.GET.get('versions', '')
     if versions:
         if versions.startswith('/') and versions.endswith('/'):
-            q = {'mongodb_version': {'$regex': versions[1:-1]}}
+            version_query = {'mongodb_version': {'$regex': versions[1:-1]}}
         else:
-            q = {'mongodb_version': {'$in': versions.split()}}
+            version_query = {'mongodb_version': {'$in': versions.split()}}
     else:
-        q = {}
+        version_query = {}
 
-    cursor = db.raw.find(q).sort([('name',1), ('mongodb_version',1), ('mongodb_git',1)])
+    date = request.GET.get('date', '')
+    if date:
+        if date.startswith('/') and date.endswith('/'):
+            date_query = {'mongodb_date': {'$regex': date[1:-1]}}
+        else:
+            date_query = {'mongodb_date': {'$in': date.split()}}
+    else:
+        date_query = {}
+
+    cursor = db.raw.find({"$and":[date_query, version_query]}).sort([('name',1), ('mongodb_version',1), ('mongodb_git',1), ('mongodb_date',1)])
 
     name = None
     results = []
