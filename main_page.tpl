@@ -25,6 +25,7 @@
 
     % metric = request.GET.get('metric', 'ops_per_sec')
     % versions = request.GET.get('versions', '')
+    % date = request.GET.get('date', '')
 
     <form action="/">
         <label for="metric">Metric</label>
@@ -37,6 +38,10 @@
 
         <label for="versions">Versions (space-separated or /regex/)</label>
         <input type="text" name="versions" value="{{versions}}" />
+        <br />
+
+        <label for="versions">Date (space-separated or /regex/)</label>
+        <input type="text" name="date" value="{{date}}" />
         <br />
 
         <input type="submit" value="Go" />
