@@ -17,6 +17,7 @@ except ImportError:
     from pymongo.json_util import object_hook
 
 optparser = OptionParser()
+optparser.add_option('--host', dest='host', help='host for mongodb to write results to', type='string', default='localhost')
 optparser.add_option('-p', '--port', dest='port', help='port for mongodb to test', type='string', default='30027')
 optparser.add_option('-n', '--iterations', dest='iterations', help='number of iterations to test', type='string', default='100000')
 optparser.add_option('-s', '--mongos', dest='mongos', help='send all requests through mongos', action='store_true', default=False)
@@ -87,7 +88,7 @@ finally:
 
 connection = None
 try:
-    connection = pymongo.Connection()
+    connection = pymongo.Connection(host=opts.host)
     results = connection.bench_results.raw
     results.ensure_index('mongodb_git')
     results.ensure_index('name')
