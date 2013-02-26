@@ -106,9 +106,7 @@ for line in benchmark_results.split('\n'):
         obj['mongodb_date'] = mongodb_date
         obj['mongodb_git'] = mongodb_git
         obj['ran_at'] = now
-        if connection: results.insert(obj)
-        
-
+        if connection: results.update({ 'mongodb_version' : mongodb_version, 'mongodb_date' : mongodb_date, 'name' : obj['name'] }, obj, upsert=True)
 
 
 
