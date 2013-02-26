@@ -91,12 +91,9 @@ connection = None
 try:
     connection = pymongo.Connection(host=opts.host,port=int(opts.port))
     results = connection.bench_results.raw
-    #results.ensure_index('mongodb_git')
     results.ensure_index('name')
     results.ensure_index('mongodb_date')
-    results.ensure_index('mongodb_version')
-    #results.remove({'mongodb_git': mongodb_git})
-    results.ensure_index([("mongodb_version", pymongo.ASCENDING), ("mongodb_date", pymongo.ASCENDING)], unique=True)
+    results.ensure_index([("mongodb_version", pymongo.ASCENDING), ("mongodb_date", pymongo.ASCENDING), ("name", pymongo.ASCENDING)], unique=True)
 except pymongo.errors.ConnectionFailure:
     pass
 
