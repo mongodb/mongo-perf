@@ -33,7 +33,7 @@ def raw_data():
     else:
         date_query = {}
 
-    cursor = db.raw.find({"$and":[date_query, version_query]}).sort([('name',1), ('mongodb_version',1), ('mongodb_git',1), ('mongodb_date',1)])
+    cursor = db.raw.find({"$and":[date_query, version_query]}).sort([('name',pymongo.ASCENDING), ('mongodb_version',pymongo.DESCENDING), ('mongodb_date',pymongo.DESCENDING)])
 
     name = None
     results = []
