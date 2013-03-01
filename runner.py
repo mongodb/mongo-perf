@@ -17,8 +17,9 @@ except ImportError:
     from pymongo.json_util import object_hook
 
 optparser = OptionParser()
-optparser.add_option('--host', dest='host', help='host for mongodb to write results to', type='string', default='localhost')
-optparser.add_option('-p', '--port', dest='port', help='port for mongodb to test', type='string', default='30027')
+optparser.add_option('--rhost', dest='rhost', help='remote host for mongodb to write results to', type='string', default='localhost')
+optparser.add_option('--rport', dest='rport', help='remote port for mongodb to write results to', type='string', default='30000')
+optparser.add_option('-p', '--port', dest='port', help='test port for mongo-perf to run against', type='string', default='30000')
 optparser.add_option('-n', '--iterations', dest='iterations', help='number of iterations to test', type='string', default='100000')
 optparser.add_option('-s', '--mongos', dest='mongos', help='send all requests through mongos', action='store_true', default=False)
 optparser.add_option('--nolaunch', dest='nolaunch', help='use mongod already running on port', action='store_true', default=False)
@@ -89,7 +90,7 @@ finally:
 
 connection = None
 try:
-    connection = pymongo.Connection(host=opts.host,port=int(opts.port))
+    connection = pymongo.Connection(host=opts.rhost, port=int(opts.rport))
     results = connection.bench_results.raw
     results.ensure_index('name')
     results.ensure_index('mongodb_date')
