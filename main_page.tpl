@@ -54,6 +54,7 @@
         <thead>
             <tr>
                 <th>Num</th>
+                <th>Platform</th>
                 <th>Version</th>
                 <th>Date</th>
                 <th>Commit</th>
@@ -67,6 +68,7 @@
             %for i, result in enumerate(outer_result['results']):
             <tr>
                 <td>{{i}}</td>
+                <td>{{result['platform']}}</td>
                 <td>{{result['version']}}</td>
                 <td>{{result['date']}}</td>
                 <td><a href="https://github.com/mongodb/mongo/commit/{{result['commit']}}">

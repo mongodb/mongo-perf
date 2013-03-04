@@ -48,6 +48,7 @@ def raw_data():
 
         row = dict(version=result['build_info']['version'], 
                     commit=result['build_info']['gitVersion'],
+                    platform=result['testbed_info']['os']['name'],
                     date=result['run_date'])
         for (n, res) in result['results'].iteritems():
             row[n] = res
