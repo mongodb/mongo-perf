@@ -44,11 +44,13 @@ except:
 
 connection = None
 build_info = None
+testbed_info = None
 
 try:
     connection = pymongo.Connection(host=opts.rhost, port=int(opts.rport))
     results = connection.bench_results.raw
-    build_info = connection.bench_results.command('buildinfo')
+    build_info = connection.bench_results.command('buildInfo')
+    testbed_info = connection.bench_results.command('hostInfo')
     results.ensure_index('name')
     results.ensure_index('run_date')
     results.ensure_index('build_info.gitVersion')
@@ -62,6 +64,7 @@ for line in benchmark_results.split('\n'):
         print line
         obj = json.loads(line, object_hook=object_hook)
         obj['build_info'] = build_info
+        obj['testbed_info'] = testbed_info
         # TODO get mongodb_date from local mongo git dir
         # subprocess.Popen(['git', 'show', '-s', '--format='%ci'', build_info['gitVersion']], stdout=subprocess.PIPE).communicate()[0]
         obj['run_date'] = now.strftime("%Y-%m-%d")
