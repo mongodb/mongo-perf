@@ -89,9 +89,11 @@ finally:
         mongod.wait()
 
 connection = None
+build_info = None
 try:
     connection = pymongo.Connection(host=opts.rhost, port=int(opts.rport))
     results = connection.bench_results.raw
+    build_info = connection.bench_results.command("buildinfo")
     results.ensure_index('name')
     results.ensure_index('mongodb_date')
     results.ensure_index([("mongodb_version", pymongo.ASCENDING), ("mongodb_date", pymongo.ASCENDING), ("name", pymongo.ASCENDING)], unique=True)
@@ -106,6 +108,7 @@ for line in benchmark_results.split('\n'):
         obj['mongodb_version'] = mongodb_version
         obj['mongodb_date'] = mongodb_date
         obj['mongodb_git'] = mongodb_git
+        obj['build_info'] = build_info
         obj['ran_at'] = now
         if connection: results.update({ 'mongodb_version' : mongodb_version, 'mongodb_date' : mongodb_date, 'name' : obj['name'] }, obj, upsert=True)
 
