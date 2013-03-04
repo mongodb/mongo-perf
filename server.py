@@ -12,8 +12,18 @@ def static_file(filename):
     send_file(filename, root='./static')
 
 @route("/host_info")
-def host_info():
-    return template('host_info.tpl')
+def host_info(*args):
+    analysis_info = db.info.find_one({  "build_info.version" : result['version'],
+                                        "platform.os.name" : result['platform'], 
+                                        "build_info.bits" : result['bits'],
+                                        "run_date" : result['bits'],
+                                        "options" : result['options']
+                                    })
+    for record in analysis_info:
+        print record
+        print '\n'
+    return template('host_info.tpl'
+        , details=analysis_info)
 
 @route("/raw")
 def raw_data():
@@ -50,10 +60,12 @@ def raw_data():
             name = result['name']
             results = []
 
-        row = dict(version=result['build_info']['version'], 
-                    commit=result['build_info']['gitVersion'],
-                    platform=result['testbed_info']['os']['name'],
-                    date=result['run_date'])
+        row = dict( platform=result['platform'],
+                    version=result['version'], 
+                    commit=result['commit'],
+                    date=result['run_date'],
+                    options=result['options'],
+                    bits=result['bits'],)
         for (n, res) in result['results'].iteritems():
             row[n] = res
 
@@ -89,6 +101,7 @@ def main_page():
 if __name__ == '__main__':
     do_reload = '--reload' in sys.argv
     debug(do_reload)
+    debug(True)
     run(reloader=do_reload, host='0.0.0.0', server=AutoServer)
 
 

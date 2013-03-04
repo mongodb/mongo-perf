@@ -47,6 +47,7 @@
         <input type="submit" value="Go" />
     </form>
  
+    %import urllib
     %for k, (outer_result, flot_data) in enumerate(zip(results, flot_results)):
     <h2>{{outer_result['name']}}</h2>
 
@@ -66,9 +67,12 @@
 
         <tbody>
             %for i, result in enumerate(outer_result['results']):
+            %host_keys = ['version', 'date', 'platform', 'bits']
+            %filtered = {key:result[key] for key in host_keys}
+            %host_info = urllib.urlencode(filtered)
             <tr>
                 <td>{{i}}</td>
-                <td><a href="host_info">{{result['platform']}}</a></td>
+                <td><a href="host_info/result={{host_info}}">{{result['platform']}}</a></td>
                 <td>{{result['version']}}</td>
                 <td>{{result['date']}}</td>
                 <td><a href="https://github.com/mongodb/mongo/commit/{{result['commit']}}">

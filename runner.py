@@ -24,7 +24,7 @@ optparser.add_option('-n', '--iterations', dest='iterations', help='number of it
 optparser.add_option('-s', '--mongos', dest='mongos', help='send all requests through mongos', action='store_true', default=False)
 optparser.add_option('--nolaunch', dest='nolaunch', help='use mongod already running on port', action='store_true', default=False)
 optparser.add_option('-m', '--multidb', dest='multidb', help='use a separate db for each connection', action='store_true', default=False)
-optparser.add_option('-l', '--label', dest='label', help='name to record (useful with nolaunch)', type='string', default='<git version>')
+optparser.add_option('-l', '--label', dest='label', help='meta information to include for run (for test options)', type='string', default='')
 optparser.add_option('-u', '--username', dest='username', help='Username to use for authentication.', type='string', default='')
 optparser.add_option('--password', dest='password', help='Password to use for authentication.', type='string', default='')
 
@@ -32,7 +32,7 @@ optparser.add_option('--password', dest='password', help='Password to use for au
 if not versions:
     versions = ['master']
 
-now = datetime.datetime.now()
+now = datetime.datetime.now() # + datetime.timedelta(days=24)
 benchmark_results=''
 try:
     multidb = '1' if opts.multidb else '0'
@@ -45,16 +45,28 @@ except:
 connection = None
 build_info = None
 testbed_info = None
+run_date = now.strftime("%Y-%m-%d")
 
 try:
     connection = pymongo.Connection(host=opts.rhost, port=int(opts.rport))
     results = connection.bench_results.raw
+    analysis = connection.bench_results.info
     build_info = connection.bench_results.command('buildInfo')
     testbed_info = connection.bench_results.command('hostInfo')
+    analysis_info = dict({'platform' : testbed_info, 'build_info' : build_info})
+    analysis_info['run_date'] = run_date     
+    analysis_info['options'] = opts.label       
+    analysis.update({   'build_info.version' : build_info['version'],
+                        'platform.os' : testbed_info['os'],
+                        'run_date' : run_date,
+                        'options' : opts.label
+                    } , analysis_info, upsert=True)
+
     results.ensure_index('name')
     results.ensure_index('run_date')
     results.ensure_index('build_info.gitVersion')
-    results.ensure_index([('build_info.version', pymongo.ASCENDING), ('run_date', pymongo.ASCENDING), ('name', pymongo.ASCENDING)], unique=True)
+    results.ensure_index([('version', pymongo.ASCENDING), ('run_date', pymongo.ASCENDING), ('name', pymongo.ASCENDING)], unique=True)
+    analysis.ensure_index([('build_info.version', pymongo.ASCENDING), ('platform.os', pymongo.ASCENDING), ('run_date', pymongo.ASCENDING)], unique=True)
 except pymongo.errors.ConnectionFailure:
     pass
 
@@ -63,12 +75,20 @@ for line in benchmark_results.split('\n'):
     if line:
         print line
         obj = json.loads(line, object_hook=object_hook)
-        obj['build_info'] = build_info
-        obj['testbed_info'] = testbed_info
-        # TODO get mongodb_date from local mongo git dir
-        # subprocess.Popen(['git', 'show', '-s', '--format='%ci'', build_info['gitVersion']], stdout=subprocess.PIPE).communicate()[0]
-        obj['run_date'] = now.strftime("%Y-%m-%d")
-        if connection: results.update({ 'build_info.version' : build_info['version'], 'run_date' : obj['run_date'], 'name' : obj['name'] }, obj, upsert=True)
+        obj['run_date'] = run_date
+        obj['platform'] = testbed_info['os']['name']
+        obj['bits'] = testbed_info['system']['cpuAddrSize']
+        obj['commit'] = build_info['gitVersion']
+        obj['version'] = build_info['version']
+        obj['options'] = opts.label
+        obj['run_date'] = run_date
+        if connection:
+            results.update({'platform' : obj['platform'],
+                            'run_date' : obj['run_date'],
+                            'version' : obj['version'],
+                            'options' : opts.label,
+                            'name' : obj['name']
+                            }, obj, upsert=True)
 
 
 
