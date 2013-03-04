@@ -46,7 +46,9 @@ def raw_data():
             name = result['name']
             results = []
 
-        row = dict(version=result['build_info']['version'], date=result['run_date'])
+        row = dict(version=result['build_info']['version'], 
+                    commit=result['build_info']['gitVersion'],
+                    date=result['run_date'])
         for (n, res) in result['results'].iteritems():
             row[n] = res
 

@@ -56,6 +56,7 @@
                 <th>Num</th>
                 <th>Version</th>
                 <th>Date</th>
+                <th>Commit</th>
                 %for thread in threads:
                 <th>{{thread}} thread{{'' if thread == 1 else 's'}}</th>
                 %end
@@ -68,6 +69,8 @@
                 <td>{{i}}</td>
                 <td>{{result['version']}}</td>
                 <td>{{result['date']}}</td>
+                <td><a href="https://github.com/mongodb/mongo/commit/{{result['commit']}}">
+                    {{result['commit'][:7]}}</a></td>
                 %for thread in threads:
                 <td>{{result.get(str(thread), {metric:'--'})[metric]}}</td>
                 %end
