@@ -68,7 +68,7 @@
             %for i, result in enumerate(outer_result['results']):
             <tr>
                 <td>{{i}}</td>
-                <td>{{result['platform']}}</td>
+                <td><a href="host_info">{{result['platform']}}</a></td>
                 <td>{{result['version']}}</td>
                 <td>{{result['date']}}</td>
                 <td><a href="https://github.com/mongodb/mongo/commit/{{result['commit']}}">

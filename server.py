@@ -11,6 +11,10 @@ db = pymongo.Connection('localhost', 27017)['bench_results']
 def static_file(filename):
     send_file(filename, root='./static')
 
+@route("/host_info")
+def host_info():
+    return template('host_info.tpl')
+
 @route("/raw")
 def raw_data():
     out = []
