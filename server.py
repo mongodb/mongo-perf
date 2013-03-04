@@ -18,22 +18,24 @@ def raw_data():
     versions = request.GET.get('versions', '')
     if versions:
         if versions.startswith('/') and versions.endswith('/'):
-            version_query = {'mongodb_version': {'$regex': versions[1:-1]}}
+            version_query = {'build_info.version': {'$regex': versions[1:-1]}}
         else:
-            version_query = {'mongodb_version': {'$in': versions.split()}}
+            version_query = {'build_info.version': {'$in': versions.split()}}
     else:
         version_query = {}
 
     date = request.GET.get('date', '')
     if date:
         if date.startswith('/') and date.endswith('/'):
-            date_query = {'mongodb_date': {'$regex': date[1:-1]}}
+            date_query = {'run_date': {'$regex': date[1:-1]}}
         else:
-            date_query = {'mongodb_date': {'$in': date.split()}}
+            date_query = {'run_date': {'$in': date.split()}}
     else:
         date_query = {}
 
-    cursor = db.raw.find({"$and":[date_query, version_query]}).sort([('name',pymongo.ASCENDING), ('mongodb_version',pymongo.ASCENDING), ('mongodb_date',pymongo.DESCENDING)])
+    cursor = db.raw.find({"$and":[date_query, version_query]}).sort([
+    ('name',pymongo.ASCENDING), ('build_info.version',pymongo.ASCENDING), 
+    ('run_date',pymongo.DESCENDING)])
 
     name = None
     results = []
@@ -44,7 +46,7 @@ def raw_data():
             name = result['name']
             results = []
 
-        row = dict(version=result['mongodb_version'], date=result['mongodb_date'])
+        row = dict(version=result['build_info']['version'], date=result['run_date'])
         for (n, res) in result['results'].iteritems():
             row[n] = res
 
