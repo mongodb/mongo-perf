@@ -67,6 +67,7 @@ try:
     results.ensure_index('name')
     results.ensure_index('label')
     results.ensure_index('run_date')
+    results.ensure_index('version')
     results.ensure_index([('version', pymongo.ASCENDING)
                         , ('run_date', pymongo.ASCENDING)
                         , ('label', pymongo.ASCENDING)
