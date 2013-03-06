@@ -11,17 +11,20 @@ db = pymongo.Connection('localhost', 27017)['bench_results']
 def static_file(filename):
     send_file(filename, root='./static')
 
-@route("/host_info")
-def host_info(*args):
+@route("/host_info/")
+def host_info():
+    result = {}
+    result['date'] = request.GET.get('date', '')
+    result['platform'] = request.GET.get('platform', '')
+    result['version'] = request.GET.get('version', '')
+    result['bits'] = request.GET.get('bits', '')
+    result['options'] = request.GET.get('options', '')
     analysis_info = db.info.find_one({  "build_info.version" : result['version'],
                                         "platform.os.name" : result['platform'], 
-                                        "build_info.bits" : result['bits'],
-                                        "run_date" : result['bits'],
+                                        "build_info.bits" : int(result['bits']),
+                                        "run_date" : result['date'],
                                         "options" : result['options']
                                     })
-    for record in analysis_info:
-        print record
-        print '\n'
     return template('host_info.tpl'
         , details=analysis_info)
 

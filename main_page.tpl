@@ -72,7 +72,7 @@
             %host_info = urllib.urlencode(filtered)
             <tr>
                 <td>{{i}}</td>
-                <td><a href="host_info/result={{host_info}}">{{result['platform']}}</a></td>
+                <td><a href="host_info/?{{host_info}}">{{result['platform']}}</a></td>
                 <td>{{result['version']}}</td>
                 <td>{{result['date']}}</td>
                 <td><a href="https://github.com/mongodb/mongo/commit/{{result['commit']}}">
