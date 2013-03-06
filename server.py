@@ -15,15 +15,11 @@ def static_file(filename):
 def host_info():
     result = {}
     result['date'] = request.GET.get('date', '')
-    result['platform'] = request.GET.get('platform', '')
+    result['label'] = request.GET.get('label', '')
     result['version'] = request.GET.get('version', '')
-    result['bits'] = request.GET.get('bits', '')
-    result['options'] = request.GET.get('options', '')
     analysis_info = db.info.find_one({  "build_info.version" : result['version'],
-                                        "platform.os.name" : result['platform'], 
-                                        "build_info.bits" : int(result['bits']),
-                                        "run_date" : result['date'],
-                                        "options" : result['options']
+                                        "label" : result['label'], 
+                                        "run_date" : result['date']
                                     })
     return template('host_info.tpl'
         , details=analysis_info)
@@ -35,22 +31,31 @@ def raw_data():
     versions = request.GET.get('versions', '')
     if versions:
         if versions.startswith('/') and versions.endswith('/'):
-            version_query = {'build_info.version': {'$regex': versions[1:-1]}}
+            version_query = {'version': {'$regex': versions[1:-1]}}
         else:
-            version_query = {'build_info.version': {'$in': versions.split()}}
+            version_query = {'version': {'$in': versions.split()}}
     else:
         version_query = {}
 
-    date = request.GET.get('date', '')
-    if date:
-        if date.startswith('/') and date.endswith('/'):
-            date_query = {'run_date': {'$regex': date[1:-1]}}
+    dates = request.GET.get('dates', '')
+    if dates:
+        if dates.startswith('/') and dates.endswith('/'):
+            date_query = {'run_date': {'$regex': dates[1:-1]}}
         else:
-            date_query = {'run_date': {'$in': date.split()}}
+            date_query = {'run_date': {'$in': dates.split()}}
     else:
         date_query = {}
 
-    cursor = db.raw.find({"$and":[date_query, version_query]}).sort([
+    labels = request.GET.get('labels', '')
+    if labels:
+        if labels.startswith('/') and labels.endswith('/'):
+            label_query = {'label': {'$regex': labels[1:-1]}}
+        else:
+            label_query = {'label': {'$in': labels.split()}}
+    else:
+        label_query = {}
+
+    cursor = db.raw.find({"$and":[label_query, date_query, version_query]}).sort([
     ('name',pymongo.ASCENDING), ('build_info.version',pymongo.ASCENDING), 
     ('run_date',pymongo.DESCENDING)])
 
@@ -63,12 +68,11 @@ def raw_data():
             name = result['name']
             results = []
 
-        row = dict( platform=result['platform'],
+        row = dict( label=result['label'],
+                    platform=result['platform'], 
                     version=result['version'], 
                     commit=result['commit'],
-                    date=result['run_date'],
-                    options=result['options'],
-                    bits=result['bits'],)
+                    date=result['run_date'])
         for (n, res) in result['results'].iteritems():
             row[n] = res
 
@@ -88,7 +92,7 @@ def main_page():
     for outer_result in results:
         out = []
         for i, result in enumerate(outer_result['results']):
-            out.append({'label': result['version']
+            out.append({'label': result['label']
                        ,'data': sorted([int(k), v[metric]] for (k,v) in result.iteritems() if k.isdigit())
                        })
             threads.update(int(k) for k in result if k.isdigit())

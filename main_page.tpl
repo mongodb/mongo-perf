@@ -25,7 +25,8 @@
 
     % metric = request.GET.get('metric', 'ops_per_sec')
     % versions = request.GET.get('versions', '')
-    % date = request.GET.get('date', '')
+    % dates = request.GET.get('dates', '')
+    % labels = request.GET.get('labels', '')
 
     <form action="/">
         <label for="metric">Metric</label>
@@ -40,8 +41,12 @@
         <input type="text" name="versions" value="{{versions}}" />
         <br />
 
-        <label for="versions">Date (space-separated or /regex/)</label>
-        <input type="text" name="date" value="{{date}}" />
+        <label for="dates">Dates (space-separated or /regex/)</label>
+        <input type="text" name="dates" value="{{dates}}" />
+        <br />
+
+        <label for="labels">Labels (space-separated or /regex/)</label>
+        <input type="text" name="labels" value="{{labels}}" />
         <br />
 
         <input type="submit" value="Go" />
@@ -55,6 +60,7 @@
         <thead>
             <tr>
                 <th>Num</th>
+                <th>Label</th>
                 <th>Platform</th>
                 <th>Version</th>
                 <th>Date</th>
@@ -67,12 +73,13 @@
 
         <tbody>
             %for i, result in enumerate(outer_result['results']):
-            %host_keys = ['version', 'date', 'platform', 'bits']
-            %filtered = {key:result[key] for key in host_keys}
+            %host_keys = ['date', 'label', 'version']
+            %filtered = { key:result[key] for key in host_keys }
             %host_info = urllib.urlencode(filtered)
             <tr>
                 <td>{{i}}</td>
-                <td><a href="host_info/?{{host_info}}">{{result['platform']}}</a></td>
+                <td><a href="host_info/?{{host_info}}">{{result['label']}}</a></td>
+                <td>{{result['platform']}}</td>
                 <td>{{result['version']}}</td>
                 <td>{{result['date']}}</td>
                 <td><a href="https://github.com/mongodb/mongo/commit/{{result['commit']}}">
