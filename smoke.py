@@ -85,6 +85,7 @@ class mongod(object):
     def stop(self):
         if not self.proc:
             print >> sys.stderr, "probable bug: self.proc unset in stop()"
+            raise Exception("Failed to stop mongod")
             return
         try:
             if os.sys.platform == "win32":
