@@ -37,13 +37,13 @@ if not versions:
 now = datetime.datetime.now()
 benchmark_results=''
 mongod_handle=None
-print opts
+
 try:
     multidb = '1' if opts.multidb else '0'
     # start mongod
     mongod_handle = mongod(mongod=opts.mongod, port=opts.port)
-    # mongod_handle.start()
-    benchmark = subprocess.Popen(['./benchmark', int(opts.port), opts.iterations, multidb, opts.username, opts.password], stdout=subprocess.PIPE)
+    mongod_handle.start()
+    benchmark = subprocess.Popen(['./benchmark', opts.port, opts.iterations, multidb, opts.username, opts.password], stdout=subprocess.PIPE)
     benchmark_results = benchmark.communicate()[0]
     time.sleep(1) # wait for server to clean up connections
 except:
@@ -105,4 +105,4 @@ for line in benchmark_results.split('\n'):
                             'name' : obj['name']
                             }, obj, upsert=True)
 
-# mongod_handle.stop()
+mongod_handle.stop()
