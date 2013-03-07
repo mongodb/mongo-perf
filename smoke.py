@@ -34,7 +34,7 @@ class mongod(object):
     def start(self):
         if self.proc:
             print >> sys.stderr, "probable bug: self.proc already set in start()"
-            return
+            raise Exception("Failed to start mongod")
         if not os.path.exists(self.mongod):
             raise Exception("no mongod found in this directory.")
 
