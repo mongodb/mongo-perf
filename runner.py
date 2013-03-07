@@ -9,7 +9,7 @@ import pymongo
 import json
 import pprint
 import datetime
-from smoke import mongod
+from mongomgr import mongod
 from optparse import OptionParser
 
 try:
