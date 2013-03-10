@@ -2,16 +2,16 @@
 <html lang="us">
 <head>
   <meta charset="utf-8">
-  <link href="static/css/pepper-grinder/jquery-ui-1.10.1.custom.css" rel="stylesheet">
-  <link href="static/css/style.css" rel="stylesheet">
-  <link rel="stylesheet" href="static/css/page.css">
     <title>MongoDB Performance Benchmarks</title>
-  <script type="text/javascript" src="static/js/jquery-1.9.1.js"></script>
-  <script type="text/javascript" src="static/js/jquery-ui-1.10.1.custom.js"></script>
-  <script type="text/javascript" src="static/js/javascript.js"></script>
-  <script type="text/javascript" src="static/js/jquery.dataTables.min.js"></script>
-  <script type="text/javascript" src="static/js/jquery.flot.min.js"></script>
-  <script>
+    <link href="static/css/pepper-grinder/jquery-ui-1.10.1.custom.min.css" rel="stylesheet">
+    <link href="static/css/style.css" rel="stylesheet">
+    <link rel="stylesheet" href="static/css/page.css">
+    <script type="text/javascript" src="static/js/jquery-1.9.1.min.js"></script>
+    <script type="text/javascript" src="static/js/jquery-ui-1.10.1.custom.min.js"></script>
+    <script type="text/javascript" src="static/js/perf_lib.js"></script>
+    <script type="text/javascript" src="static/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="static/js/jquery.flot.min.js"></script>
+    <script>
     $(document).ready(function(){
         $('table').dataTable({
             "bPaginate": false,
