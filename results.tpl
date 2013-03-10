@@ -1,13 +1,16 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> 
-<html> 
-<head> 
-  <title>MongoDB Benchmark Results</title> 
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" > 
-  <link rel="stylesheet" href="/static/css/page.css">
-
-  <script src="static/jquery-1.3.2.min.js"></script>
-  <script src="static/jquery.dataTables.min.js"></script>
-  <script src="static/jquery.flot.min.js"></script>
+<!doctype html>
+<html lang="us">
+<head>
+  <meta charset="utf-8">
+  <link href="static/css/pepper-grinder/jquery-ui-1.10.1.custom.css" rel="stylesheet">
+  <link href="static/css/style.css" rel="stylesheet">
+  <link rel="stylesheet" href="static/css/page.css">
+    <title>MongoDB Performance Benchmarks</title>
+  <script type="text/javascript" src="static/js/jquery-1.9.1.js"></script>
+  <script type="text/javascript" src="static/js/jquery-ui-1.10.1.custom.js"></script>
+  <script type="text/javascript" src="static/js/javascript.js"></script>
+  <script type="text/javascript" src="static/js/jquery.dataTables.min.js"></script>
+  <script type="text/javascript" src="static/js/jquery.flot.min.js"></script>
   <script>
     $(document).ready(function(){
         $('table').dataTable({
@@ -22,19 +25,32 @@
 </head> 
 <body>
     <h1>MongoDB Benchmark Results</h1>
-
+    % platforms = ' '.join(request.GET.getall('platforms'))
+    % versions = ' '.join(request.GET.getall('versions'))
+    % labels = ' '.join(request.GET.getall('labels'))
+    % dates = ' '.join(request.GET.getall('dates'))
     % metric = request.GET.get('metric', 'ops_per_sec')
-    % versions = request.GET.get('versions', '')
-    % dates = request.GET.get('dates', '')
-    % labels = request.GET.get('labels', '')
+    % start = request.GET.get('start')
+    % end = request.GET.get('end')
+    % if start and end:
+    % dates = start + " to " + end
+    % end
 
-    <form action="/">
+    <form action="/details">
         <label for="metric">Metric</label>
         <select name="metric">
             %for m in ['ops_per_sec', 'time', 'speedup']:
             <option {{"selected" if m == metric else ""}}>{{m}}</option>
             %end
         </select>
+        <br />
+
+        <label for="labels">Labels (space-separated or /regex/)</label>
+        <input type="text" name="labels" value="{{labels}}" />
+        <br />
+
+        <label for="platforms">Platforms (space-separated or /regex/)</label>
+        <input type="text" name="platforms" value="{{platforms}}" />
         <br />
 
         <label for="versions">Versions (space-separated or /regex/)</label>
@@ -44,11 +60,6 @@
         <label for="dates">Dates (space-separated or /regex/)</label>
         <input type="text" name="dates" value="{{dates}}" />
         <br />
-
-        <label for="labels">Labels (space-separated or /regex/)</label>
-        <input type="text" name="labels" value="{{labels}}" />
-        <br />
-
         <input type="submit" value="Go" />
     </form>
  
@@ -75,10 +86,10 @@
             %for i, result in enumerate(outer_result['results']):
             %host_keys = ['date', 'label', 'version']
             %filtered = { key:result[key] for key in host_keys }
-            %host_info = urllib.urlencode(filtered)
+            %host = urllib.urlencode(filtered)
             <tr>
                 <td>{{i}}</td>
-                <td><a href="host_info/?{{host_info}}">{{result['label']}}</a></td>
+                <td><a href="host?{{host}}">{{result['label']}}</a></td>
                 <td>{{result['platform']}}</td>
                 <td>{{result['version']}}</td>
                 <td>{{result['date']}}</td>

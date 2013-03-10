@@ -11,7 +11,7 @@ db = pymongo.Connection('localhost', 27017)['bench_results']
 def static_file(filename):
     send_file(filename, root='./static')
 
-@route("/host_info/")
+@route("/host")
 def host_info():
     result = {}
     result['date'] = request.GET.get('date', '')
@@ -21,43 +21,69 @@ def host_info():
                                         "label" : result['label'], 
                                         "run_date" : result['date']
                                     })
-    return template('host_info.tpl'
+    return template('host.tpl'
         , details=analysis_info)
 
 @route("/raw")
-def raw_data():
+def raw_data(versions, labels, dates, platforms, start, end, limit):
     out = []
 
-    versions = request.GET.get('versions', '')
+    if not limit:
+        limit = 10
+    else:
+        limit = int(limit)
+
+    if start:
+        start_query = {'run_date': {'$gt': start } }
+    else:
+        start_query = {}
+
+    if end:
+        end_query = {'run_date': {'$lt': end } }
+    else:
+        end_query = {}
+
     if versions:
         if versions.startswith('/') and versions.endswith('/'):
             version_query = {'version': {'$regex': versions[1:-1]}}
         else:
-            version_query = {'version': {'$in': versions.split()}}
+            version_query = {'version': {'$in': versions.split(" ")}}
     else:
         version_query = {}
 
-    dates = request.GET.get('dates', '')
+    if platforms:
+        if platforms.startswith('/') and platforms.endswith('/'):
+            platforms_query = {'platform': {'$regex': platforms[1:-1]}}
+        else:
+            platforms_query = {'platform': {'$in': platforms.split(" ")}}
+    else:
+        platforms_query = {}
+
     if dates:
         if dates.startswith('/') and dates.endswith('/'):
             date_query = {'run_date': {'$regex': dates[1:-1]}}
         else:
-            date_query = {'run_date': {'$in': dates.split()}}
+            date_query = {'run_date': {'$in': dates.split(" ")}}
     else:
         date_query = {}
 
-    labels = request.GET.get('labels', '')
     if labels:
         if labels.startswith('/') and labels.endswith('/'):
             label_query = {'label': {'$regex': labels[1:-1]}}
         else:
-            label_query = {'label': {'$in': labels.split()}}
+            label_query = {'label': {'$in': labels.split(" ")}}
     else:
         label_query = {}
 
-    cursor = db.raw.find({"$and":[label_query, date_query, version_query]}).sort([
-    ('name',pymongo.ASCENDING), ('build_info.version',pymongo.ASCENDING), 
-    ('run_date',pymongo.DESCENDING)])
+    cursor = db.raw.find({"$and":[label_query
+                                , date_query
+                                , platforms_query
+                                , version_query
+                                , end_query
+                                , start_query]}).sort([
+                                ('name',pymongo.ASCENDING)
+                                , ('build_info.version',pymongo.ASCENDING)
+                                , ('run_date',pymongo.DESCENDING)]).limit(limit)
 
     name = None
     results = []
@@ -81,29 +107,59 @@ def raw_data():
     out.append({'name':name, 'results':results})
     return out
 
-@route("/")
-def main_page():
+@route("/results")
+def results_page():
     metric = request.GET.get('metric', 'ops_per_sec')
-
-    results = raw_data()
+    versions = ' '.join(request.GET.getall('versions'))
+    dates = ' '.join(request.GET.getall('dates'))
+    labels = ' '.join(request.GET.getall('labels'))
+    platforms = ' '.join(request.GET.getall('platforms'))
+    limit = ' '.join(request.GET.getall('limit'))
+    start = request.GET.get('start')
+    end = request.GET.get('end')
+    results = raw_data(versions, labels, dates, platforms, start, end, limit)
 
     threads = set()
     flot_results = []
     for outer_result in results:
         out = []
         for i, result in enumerate(outer_result['results']):
-            out.append({'label': result['label']
+            out.append({'label': "_".join((result['label'], result['version'], result['date']))  # + " (" + result['commit'][:7] + ")"
                        ,'data': sorted([int(k), v[metric]] for (k,v) in result.iteritems() if k.isdigit())
                        })
             threads.update(int(k) for k in result if k.isdigit())
         flot_results.append(json.dumps(out))
 
-    return template('main_page.tpl'
+    return template('results.tpl'
                    ,results=results
                    ,flot_results=flot_results
                    ,request=request
                    ,threads=sorted(threads)
                    )
+
+@route("/")
+def main_page():
+    # db.info.distinct("platform.os.name")
+    platforms = db.raw.distinct("platform")
+    num_tests = len(db.raw.distinct("name"))
+    num_labels = len(db.raw.distinct("labels"))
+    rows = None
+    versions = sorted(db.info.distinct("build_info.version"), reverse=True)
+    if versions:
+        cursor = db.raw.find({"version" : versions[0]}).sort([
+        ('run_date',pymongo.DESCENDING), 
+        ('platform',pymongo.DESCENDING), 
+        ('build_info.version',pymongo.DESCENDING)]).limit(num_labels * num_tests)
+        needed = ['label', 'platform', 'run_date', 'version']
+        rows = []
+        for record in cursor:
+            rows.append({ key : record[key] for key in needed })
+        rows = sorted([dict(t) for t in set([tuple(d.items()) for d in rows])], reverse=True)
+
+    return template('main.tpl',
+                    rows=rows,
+                    versions=versions,
+                    platforms=platforms)
 
 if __name__ == '__main__':
     do_reload = '--reload' in sys.argv
