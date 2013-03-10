@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
     <title>MongoDB Performance Benchmarks</title>
-    <link href="static/css/pepper-grinder/jquery-ui-1.10.1.custom.min.css" rel="stylesheet">
-    <link href="static/css/style.css" rel="stylesheet">
+    <link href="static/css/jquery-ui-1.10.1.custom.min.css" rel="stylesheet">
     <link rel="stylesheet" href="static/css/page.css">
+    <link href="static/css/perf_style.css" rel="stylesheet">
     <script type="text/javascript" src="static/js/jquery-1.9.1.min.js"></script>
     <script type="text/javascript" src="static/js/jquery-ui-1.10.1.custom.min.js"></script>
     <script type="text/javascript" src="static/js/perf_lib.js"></script>
@@ -36,7 +36,7 @@
     % dates = start + " to " + end
     % end
 
-    <form action="/details">
+    <form action="/results">
         <label for="metric">Metric</label>
         <select name="metric">
             %for m in ['ops_per_sec', 'time', 'speedup']:

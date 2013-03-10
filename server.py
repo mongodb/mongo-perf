@@ -75,16 +75,17 @@ def raw_data(versions, labels, dates, platforms, start, end, limit):
     else:
         label_query = {}
 
+    # print label_query, date_query, platforms_query, version_query, end_query, start_query
     cursor = db.raw.find({"$and":[label_query
                                 , date_query
                                 , platforms_query
                                 , version_query
                                 , end_query
                                 , start_query]}).sort([
-                                ('name',pymongo.ASCENDING)
+                                  ('name',pymongo.ASCENDING)
                                 , ('build_info.version',pymongo.ASCENDING)
                                 , ('run_date',pymongo.DESCENDING)]).limit(limit)
-
+    # print cursor.count()
     name = None
     results = []
     for result in cursor:
@@ -124,7 +125,7 @@ def results_page():
     for outer_result in results:
         out = []
         for i, result in enumerate(outer_result['results']):
-            out.append({'label': "_".join((result['label'], result['version'], result['date']))  # + " (" + result['commit'][:7] + ")"
+            out.append({'label': " - ".join((result['label'], result['version'], result['date']))  # + " (" + result['commit'][:7] + ")"
                        ,'data': sorted([int(k), v[metric]] for (k,v) in result.iteritems() if k.isdigit())
                        })
             threads.update(int(k) for k in result if k.isdigit())

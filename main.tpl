@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <title>MongoDB Performance Benchmarks</title>
-  <link href="static/css/pepper-grinder/jquery-ui-1.10.1.custom.min.css" rel="stylesheet">
-  <link href="static/css/style.css" rel="stylesheet">
+  <link href="static/css/jquery-ui-1.10.1.custom.min.css" rel="stylesheet">
+  <link href="static/css/perf_style.css" rel="stylesheet">
   <script type="text/javascript" src="static/js/jquery-1.9.1.min.js"></script>
   <script type="text/javascript" src="static/js/jquery-ui-1.10.1.custom.min.js"></script>
   <script type="text/javascript" src="static/js/perf_lib.js"></script>
@@ -57,8 +57,8 @@
 
   <div id="custom">
     <form name="custom_form" id="custom_form" action="results" method="get">
-      <h2>From: <input type="text" name="start" class="datepicker"/>
-      <h2>To:   <input type="text" name="end" class="datepicker"/>
+      <h2>From: <input type="text" size="6" name="start" class="datepicker"/>
+      <h2>To:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="text" size="6" name="end" class="datepicker"/>
       <h2>Platforms</h2>
       %for platform in platforms:
       <input type="checkbox" name="platforms" value={{platform}}>{{platform}}<br>
