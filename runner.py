@@ -43,7 +43,10 @@ try:
     # start mongod
     mongod_handle = mongod(mongod=opts.mongod, port=opts.port)
     mongod_handle.start()
-    benchmark = subprocess.Popen(['./benchmark', opts.port, opts.iterations, multidb, opts.username, opts.password], stdout=subprocess.PIPE)
+    benchmark_cmd = './benchmark'
+    if os.sys.platform.startswith( "win" ):
+        benchmark_cmd = "benchmark.exe"
+    benchmark = subprocess.Popen([benchmark_cmd, opts.port, opts.iterations, multidb, opts.username, opts.password], stdout=subprocess.PIPE)
     benchmark_results = benchmark.communicate()[0]
     time.sleep(1) # wait for server to clean up connections
 except:
@@ -93,7 +96,7 @@ for line in benchmark_results.split('\n'):
         obj = json.loads(line, object_hook=object_hook)
         obj['run_date'] = run_date
         obj['label'] = opts.label
-        obj['platform'] = testbed_info['os']['name']
+        obj['platform'] = testbed_info['os']['name'].replace(" ", "_")
         obj['commit'] = build_info['gitVersion']
         obj['version'] = build_info['version']
         obj['run_date'] = run_date

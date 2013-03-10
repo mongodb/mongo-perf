@@ -5,7 +5,7 @@ import sys
 import socket
 
 class mongod(object):
-    def __init__(self, mongod="./mongod", port=27017, **kwargs):
+    def __init__(self, mongod="mongod", port=27017, **kwargs):
         self.kwargs = kwargs
         self.proc = None
         self.mongod = mongod
@@ -39,12 +39,11 @@ class mongod(object):
             raise Exception("no mongod found in this directory.")
 
         path = "/data/db"
-        if os.sys.platform == "win32":
-            path = "C:\data\db"
-        argv = ["mkdir", "-p", path]
-        subprocess.Popen(argv).communicate()
 
-        argv = [self.mongod, "--fork", "--syslog", "--port", self.port]
+        mkdir = ["mkdir", "-p", path]
+        subprocess.Popen(mkdir).communicate()
+
+        argv = [self.mongod, "--port", self.port]
         print "running " + " ".join(argv)
         self.proc = self._start(argv)
 
@@ -60,7 +59,7 @@ class mongod(object):
         """
         proc = subprocess.Popen(argv)
 
-        if os.sys.platform == "win32":
+        if os.sys.platform.startswith( "win" ):
             # Create a job object with the "kill on job close"
             # flag; this is inherited by child processes (ie
             # the mongod started on our behalf by buildlogger)
@@ -95,12 +94,11 @@ class mongod(object):
                 # Windows doesn't seem to kill the process immediately, so give it some time to die
                 time.sleep(5) 
             else:
-                # This actually works
-                mongo_executable = os.path.abspath(os.path.join(self.mongod, '..', 'mongo'))
-                argv = [mongo_executable, "--port", self.port, "--eval", "db.getSiblingDB('admin').shutdownServer()"]
-                proc = subprocess.Popen(argv)
                 # This function not available in Python 2.5
                 self.proc.terminate()
+                # The above didn't work on Mac OS X
+                # argv = [self.mongod, "--port", self.port, "--eval", "db.getSiblingDB('admin').shutdownServer()"]
+                # proc = subprocess.Popen(argv)
         except AttributeError:
             from os import kill
             kill(self.proc.pid, 15)
@@ -110,3 +108,4 @@ class mongod(object):
 
         self.proc.wait()
         sys.stderr.flush()
+        sys.stdout.flush()

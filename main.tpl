@@ -68,7 +68,7 @@
       <input type="checkbox" name="versions" value={{version}}>{{version}}<br>
       %end
       <h2>Limit</h2>
-      <input type="text" name="limit" size="2" value="5"/><br>
+      <input type="text" name="limit" size="2" value="5"/><br><br>
 
     <button action='submit'>Submit</button>
     </form>

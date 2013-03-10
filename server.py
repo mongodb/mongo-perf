@@ -45,7 +45,7 @@ def raw_data(versions, labels, dates, platforms, start, end, limit):
 
     if versions:
         if versions.startswith('/') and versions.endswith('/'):
-            version_query = {'version': {'$regex': versions[1:-1]}}
+            version_query = {'version': {'$regex': versions[1:-1], '$options' : 'i'}}
         else:
             version_query = {'version': {'$in': versions.split(" ")}}
     else:
@@ -53,7 +53,7 @@ def raw_data(versions, labels, dates, platforms, start, end, limit):
 
     if platforms:
         if platforms.startswith('/') and platforms.endswith('/'):
-            platforms_query = {'platform': {'$regex': platforms[1:-1]}}
+            platforms_query = {'platform': {'$regex': platforms[1:-1], '$options' : 'i'}}
         else:
             platforms_query = {'platform': {'$in': platforms.split(" ")}}
     else:
@@ -61,7 +61,7 @@ def raw_data(versions, labels, dates, platforms, start, end, limit):
 
     if dates:
         if dates.startswith('/') and dates.endswith('/'):
-            date_query = {'run_date': {'$regex': dates[1:-1]}}
+            date_query = {'run_date': {'$regex': dates[1:-1], '$options' : 'i'}}
         else:
             date_query = {'run_date': {'$in': dates.split(" ")}}
     else:
@@ -69,7 +69,7 @@ def raw_data(versions, labels, dates, platforms, start, end, limit):
 
     if labels:
         if labels.startswith('/') and labels.endswith('/'):
-            label_query = {'label': {'$regex': labels[1:-1]}}
+            label_query = {'label': {'$regex': labels[1:-1], '$options' : 'i'}}
         else:
             label_query = {'label': {'$in': labels.split(" ")}}
     else:
@@ -143,7 +143,7 @@ def main_page():
     # db.info.distinct("platform.os.name")
     platforms = db.raw.distinct("platform")
     num_tests = len(db.raw.distinct("name"))
-    num_labels = len(db.raw.distinct("labels"))
+    num_labels = len(db.raw.distinct("label"))
     rows = None
     versions = sorted(db.info.distinct("build_info.version"), reverse=True)
     if versions:
