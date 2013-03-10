@@ -30,11 +30,6 @@
     % labels = ' '.join(request.GET.getall('labels'))
     % dates = ' '.join(request.GET.getall('dates'))
     % metric = request.GET.get('metric', 'ops_per_sec')
-    % start = request.GET.get('start')
-    % end = request.GET.get('end')
-    % if start and end:
-    % dates = start + " to " + end
-    % end
 
     <form action="/results">
         <label for="metric">Metric</label>
@@ -45,19 +40,19 @@
         </select>
         <br />
 
-        <label for="labels">Labels (space-separated or /regex/)</label>
+        <label for="labels">Labels (space-separated or /regex/)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
         <input type="text" name="labels" value="{{labels}}" />
         <br />
 
-        <label for="platforms">Platforms (space-separated or /regex/)</label>
+        <label for="platforms">Platforms (space-separated or /regex/)&nbsp;</label>
         <input type="text" name="platforms" value="{{platforms}}" />
         <br />
 
-        <label for="versions">Versions (space-separated or /regex/)</label>
+        <label for="versions">Versions (space-separated or /regex/)&nbsp;&nbsp;</label>
         <input type="text" name="versions" value="{{versions}}" />
         <br />
 
-        <label for="dates">Dates (space-separated or /regex/)</label>
+        <label for="dates">Dates (space-separated or /regex/)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
         <input type="text" name="dates" value="{{dates}}" />
         <br />
         <input type="submit" value="Go" />
@@ -88,7 +83,7 @@
             %filtered = { key:result[key] for key in host_keys }
             %host = urllib.urlencode(filtered)
             <tr>
-                <td>{{i}}</td>
+                <td>{{i+1}}</td>
                 <td><a href="host?{{host}}">{{result['label']}}</a></td>
                 <td>{{result['platform']}}</td>
                 <td>{{result['version']}}</td>

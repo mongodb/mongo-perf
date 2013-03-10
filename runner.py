@@ -98,7 +98,7 @@ for line in benchmark_results.split('\n'):
         obj['label'] = opts.label
         obj['platform'] = testbed_info['os']['name'].replace(" ", "_")
         obj['commit'] = build_info['gitVersion']
-        obj['version'] = build_info['version']
+        obj['version'] = build_info['version'].replace(" ", "_")
         obj['run_date'] = run_date
         if connection:
             results.update({'label' : obj['label'],
