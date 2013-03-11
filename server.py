@@ -116,15 +116,18 @@ def results_page():
     end = request.GET.get('end')
     if multi:
         results = []
-        from ast import literal_eval
-        for platform in literal_eval(multi):
-            result = literal_eval(json.dumps(platform))
-            result = { attrib : '/' + result[attrib] + '/' for attrib in result }
-            tmp = raw_data(result['version'], result['label'], 
-            result['run_date'], result['platform'], None, None)
-            for result in tmp:
-                results.append(result)
-        results = merge(results)
+        try:
+            from ast import literal_eval
+            for platform in literal_eval(multi):
+                result = literal_eval(json.dumps(platform))
+                result = { attrib : '/' + result[attrib] + '/' for attrib in result }
+                tmp = raw_data(result['version'], result['label'], 
+                result['run_date'], result['platform'], None, None)
+                for result in tmp:
+                    results.append(result)
+            results = merge(results)
+        except:
+            pass
     else:
         results = raw_data(versions, labels, dates, platforms, start, end)
 
