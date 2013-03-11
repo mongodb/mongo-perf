@@ -56,7 +56,7 @@ namespace mongo {
 
         /**
          * Constructs a StringData explicitly, for the case where the length of the string is
-         * already known. 'c' must be a pointer to a null-terminated string, and strlenOfc must
+         * already known. 'c' must be a pointer to a null-terminated string, and len must
          * be the length that strlen(c) would return, a.k.a the index of the terminator in c.
          */
         StringData( const char* c, size_t len )
@@ -96,16 +96,27 @@ namespace mongo {
         // finders
         //
 
-        size_t find( char c ) const;
+        size_t find( char c , size_t fromPos = 0 ) const;
         size_t find( const StringData& needle ) const;
+
+        /**
+         * Returns true if 'prefix' is a substring of this instance, anchored at position 0.
+         */
+        bool startsWith( const StringData& prefix ) const;
+
+        /**
+         * Returns true if 'suffix' is a substring of this instance, anchored at the end.
+         */
+        bool endsWith( const StringData& suffix ) const;
 
         //
         // accessors
         //
 
         /**
-         * this is not guaranteed to be null-terminated,
-         * if you use this without all using size(), you are likely doing something wrong
+         * Get the pointer to the first byte of StringData.  This is not guaranteed to be
+         * null-terminated, so if using this without checking size(), you are likely doing
+         * something wrong.
          */
         const char* rawData() const { return _data; }
 

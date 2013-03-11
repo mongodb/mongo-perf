@@ -48,7 +48,6 @@ namespace mongo {
         static std::string actionToString(const ActionType& action);
 
         static const ActionType addShard;
-        static const ActionType applyOps;
         static const ActionType captrunc;
         static const ActionType clean;
         static const ActionType clone;
@@ -61,6 +60,7 @@ namespace mongo {
         static const ActionType connPoolStats;
         static const ActionType connPoolSync;
         static const ActionType convertToCapped;
+        static const ActionType copyDBTarget;
         static const ActionType cpuProfiler;
         static const ActionType createCollection;
         static const ActionType cursorInfo;
@@ -83,9 +83,11 @@ namespace mongo {
         static const ActionType getShardVersion;
         static const ActionType handshake;
         static const ActionType hostInfo;
+        static const ActionType indexRead;
         static const ActionType indexStats;
         static const ActionType inprog;
         static const ActionType insert;
+        static const ActionType killCursors;
         static const ActionType killop;
         static const ActionType listDatabases;
         static const ActionType listShards;
@@ -141,7 +143,6 @@ namespace mongo {
 
         enum ActionTypeIdentifier {
             addShardValue,
-            applyOpsValue,
             captruncValue,
             cleanValue,
             cloneValue,
@@ -154,6 +155,7 @@ namespace mongo {
             connPoolStatsValue,
             connPoolSyncValue,
             convertToCappedValue,
+            copyDBTargetValue,
             cpuProfilerValue,
             createCollectionValue,
             cursorInfoValue,
@@ -176,9 +178,11 @@ namespace mongo {
             getShardVersionValue,
             handshakeValue,
             hostInfoValue,
+            indexReadValue,
             indexStatsValue,
             inprogValue,
             insertValue,
+            killCursorsValue,
             killopValue,
             listDatabasesValue,
             listShardsValue,

@@ -23,16 +23,20 @@ namespace mongo {
 
     // Extracts an array into a vector
     template<typename T>
-    bool FieldParser::extract(BSONObj doc,
+    FieldParser::FieldState FieldParser::extract(BSONObj doc,
                               const BSONField<vector<T> >& field,
-                              const vector<T>& def,
                               vector<T>* out,
                               string* errMsg)
     {
         BSONElement elem = doc[field.name()];
         if (elem.eoo()) {
-            *out = def;
-            return true;
+            if (field.hasDefault()) {
+                *out = field.getDefault();
+                return FIELD_DEFAULT;
+            }
+            else {
+                return FIELD_NONE;
+            }
         }
 
         if (elem.type() == Array) {
@@ -47,11 +51,10 @@ namespace mongo {
             BSONObjIterator objIt(arr);
             while (objIt.more()) {
                 BSONElement next = objIt.next();
-                BSONField<T> fieldFor(next.fieldName());
+                BSONField<T> fieldFor(next.fieldName(), out->at(initialSize + i));
 
                 if (!FieldParser::extract(arr,
                                           fieldFor,
-                                          out->at(initialSize + i),
                                           &out->at(initialSize + i),
                                           &elErrMsg))
                 {
@@ -59,33 +62,37 @@ namespace mongo {
                         *errMsg = stream() << "error parsing element " << i << " of field "
                                            << field() << causedBy(elErrMsg);
                     }
-                    return false;
+                    return FIELD_INVALID;
                 }
                 i++;
             }
 
-            return true;
+            return FIELD_SET;
         }
 
         if (errMsg) {
             *errMsg = stream() << "wrong type for '" << field() << "' field, expected "
                                << "vector array" << ", found " << doc[field.name()].toString();
         }
-        return false;
+        return FIELD_INVALID;
     }
 
     // Extracts an object into a map
     template<typename K, typename T>
-    bool FieldParser::extract(BSONObj doc,
+    FieldParser::FieldState FieldParser::extract(BSONObj doc,
                               const BSONField<map<K, T> >& field,
-                              const map<K, T>& def,
                               map<K, T>* out,
                               string* errMsg)
     {
         BSONElement elem = doc[field.name()];
         if (elem.eoo()) {
-            *out = def;
-            return true;
+            if (field.hasDefault()) {
+                *out = field.getDefault();
+                return FIELD_DEFAULT;
+            }
+            else {
+                return FIELD_NONE;
+            }
         }
 
         if (elem.type() == Object) {
@@ -95,26 +102,26 @@ namespace mongo {
             BSONObjIterator objIt(obj);
             while (objIt.more()) {
                 BSONElement next = objIt.next();
-                BSONField<T> fieldFor(next.fieldName());
-
                 T& value = (*out)[next.fieldName()];
-                if (!FieldParser::extract(obj, fieldFor, value, &value, &elErrMsg)) {
+
+                BSONField<T> fieldFor(next.fieldName(), value);
+                if (!FieldParser::extract(obj, fieldFor, &value, &elErrMsg)) {
                     if (errMsg) {
                         *errMsg = stream() << "error parsing map element " << next.fieldName()
                                            << " of field " << field() << causedBy(elErrMsg);
                     }
-                    return false;
+                    return FIELD_INVALID;
                 }
             }
 
-            return true;
+            return FIELD_SET;
         }
 
         if (errMsg) {
             *errMsg = stream() << "wrong type for '" << field() << "' field, expected "
                                << "vector array" << ", found " << doc[field.name()].toString();
         }
-        return false;
+        return FIELD_INVALID;
     }
 
 } // namespace mongo

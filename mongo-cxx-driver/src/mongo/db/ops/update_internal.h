@@ -50,6 +50,10 @@ namespace mongo {
         // to off would not throw errors.
         bool strictApply;
 
+        // Determines if an index is going to be updated as part of the application of this
+        // mod.
+        bool isIndexed;
+
         BSONElement elt; // x:5 note: this is the actual element from the updateobj
         boost::shared_ptr<Matcher> matcher;
         bool matcherOnPrimitive;
@@ -58,6 +62,7 @@ namespace mongo {
             op = o;
             elt = e;
             strictApply = !forReplication;
+            isIndexed = false;
             if ( op == PULL && e.type() == Object ) {
                 BSONObj t = e.embeddedObject();
                 if ( t.firstElement().getGtLtOp() == 0 ) {
@@ -133,75 +138,6 @@ namespace mongo {
             }
         }
 
-        static bool isIndexed( const string& fullName , const set<string>& idxKeys ) {
-            const char * fieldName = fullName.c_str();
-            // check if there is an index key that is a parent of mod
-            for( const char* dot = strchr( fieldName, '.' ); dot; dot = strchr( dot + 1, '.' ) )
-                if ( idxKeys.count( string( fieldName, dot - fieldName ) ) )
-                    return true;
-
-            // check if there is an index key equal to mod
-            if ( idxKeys.count(fullName) )
-                return true;
-            // check if there is an index key that is a child of mod
-            set< string >::const_iterator j = idxKeys.upper_bound( fullName );
-            if ( j != idxKeys.end() && j->find( fullName ) == 0 && (*j)[fullName.size()] == '.' )
-                return true;
-
-            return false;
-        }
-
-        bool isIndexed( const set<string>& idxKeys ) const {
-            string fullName = fieldName;
-
-            if ( isIndexed( fullName , idxKeys ) )
-                return true;
-
-            if ( strstr( fieldName , "." ) ) {
-                // check for a.0.1
-                StringBuilder buf;
-                for ( size_t i=0; i<fullName.size(); i++ ) {
-                    char c = fullName[i];
-
-                    if ( c == '$' &&
-                            i > 0 && fullName[i-1] == '.' &&
-                            i+1<fullName.size() &&
-                            fullName[i+1] == '.' ) {
-                        i++;
-                        continue;
-                    }
-
-                    buf << c;
-
-                    if ( c != '.' )
-                        continue;
-
-                    if ( ! isdigit( fullName[i+1] ) )
-                        continue;
-
-                    bool possible = true;
-                    size_t j=i+2;
-                    for ( ; j<fullName.size(); j++ ) {
-                        char d = fullName[j];
-                        if ( d == '.' )
-                            break;
-                        if ( isdigit( d ) )
-                            continue;
-                        possible = false;
-                        break;
-                    }
-
-                    if ( possible )
-                        i = j;
-                }
-                string x = buf.str();
-                if ( isIndexed( x , idxKeys ) )
-                    return true;
-            }
-
-            return false;
-        }
-
         void apply( BSONBuilderBase& b , BSONElement in , ModState& ms ) const;
 
         /**
@@ -252,7 +188,7 @@ namespace mongo {
         }
 
         long long getSlice() const {
-            // The $slice may be the second or the third elemen in the field object.
+            // The $slice may be the second or the third element in the field object.
             // { <field name>: { $each: [<each array>], $slice: -N, $sort: <pattern> } }
             // 'elt' here is the BSONElement above.
             BSONObj obj = elt.embeddedObject();
@@ -330,7 +266,8 @@ namespace mongo {
     class ModSet : boost::noncopyable {
         typedef map<string,Mod> ModHolder;
         ModHolder _mods;
-        int _isIndexed;
+        int _numIndexMaybeUpdated;
+        int _numIndexAlwaysUpdated;
         bool _hasDynamicArray;
 
         static Mod::Op opFromStr( const char* fn ) {
@@ -412,26 +349,22 @@ namespace mongo {
 
         ModSet() {}
 
-        void updateIsIndexed( const Mod& m, const set<string>& idxKeys, const set<string>* backgroundKeys ) {
-            if ( m.isIndexed( idxKeys ) ||
-                    (backgroundKeys && m.isIndexed(*backgroundKeys)) ) {
-                _isIndexed++;
-            }
-        }
+        /**
+         * if if applying this mod would require updating an index, set such condition in 'm',
+         * and update the number of indices touched in 'this' ModSet.
+         */
+        void setIndexedStatus( Mod& m, const IndexPathSet& idxKeys );
 
     public:
 
         ModSet( const BSONObj& from,
-                const set<string>& idxKeys = set<string>(),
-                const set<string>* backgroundKeys = 0,
+                const IndexPathSet& idxKeys = IndexPathSet(),
                 bool forReplication = false );
 
         /**
          * re-check if this mod is impacted by indexes
          */
-        void updateIsIndexed( const set<string>& idxKeys, const set<string>* backgroundKeys );
-
-
+        void setIndexedStatus( const IndexPathSet& idxKeys );
 
         // TODO: this is inefficient - should probably just handle when iterating
         ModSet * fixDynamicArray( const string& elemMatchKey ) const;
@@ -441,8 +374,10 @@ namespace mongo {
         /**
          * creates a ModSetState suitable for operation on obj
          * doesn't change or modify this ModSet or any underlying Mod
+         *
+         * flag 'insertion' differentiates between obj existing prior to this update.
          */
-        auto_ptr<ModSetState> prepare( const BSONObj& obj ) const;
+        auto_ptr<ModSetState> prepare( const BSONObj& obj, bool insertion = false ) const;
 
         /**
          * given a query pattern, builds an object suitable for an upsert
@@ -450,7 +385,7 @@ namespace mongo {
          */
         BSONObj createNewFromQuery( const BSONObj& query );
 
-        int isIndexed() const { return _isIndexed; }
+        int maxNumIndexUpdated() const { return _numIndexMaybeUpdated + _numIndexAlwaysUpdated; }
 
         unsigned size() const { return _mods.size(); }
 
@@ -486,46 +421,12 @@ namespace mongo {
      */
     struct ProjectKeyCmp {
         BSONObj sortPattern;
-        BSONObj projectionPattern;
 
-        ProjectKeyCmp( BSONObj pattern ) : sortPattern( pattern ) {
-            BSONObjBuilder projectBuilder;
-            BSONObjIterator i( sortPattern );
-            while ( i.more() ) {
-                BSONElement elem = i.next();
-                uassert( 16645, "sort pattern must be numeric", elem.isNumber() );
+        ProjectKeyCmp( BSONObj pattern ) : sortPattern( pattern) {}
 
-                double val = elem.Number();
-                uassert( 16646, "sort pattern must contain 1 or -1", val*val == 1.0);
-
-                //
-                // If there are dots in the field name, check that they form a proper
-                // field path (e.g., no empty field parts).
-                //
-
-                StringData field( elem.fieldName() );
-                uassert( 16651, "sort pattern field name cannot be empty" , field.size() );
-
-                size_t pos = field.find('.');
-                while ( pos != string::npos ) {
-
-                    uassert( 16639,
-                             "empty field in dotted sort pattern",
-                             (pos > 0) && (pos != field.size() - 1) );
-
-                    field = field.substr( pos+1 );
-                    pos = field.find('.');
-                }
-
-                projectBuilder.append( elem.fieldName(), 1 );
-
-            }
-            projectionPattern = projectBuilder.obj();
-        }
-
-        int operator()( const BSONObj& left, const BSONObj& right ) {
-            BSONObj keyLeft = left.extractFields( projectionPattern, true );
-            BSONObj keyRight = right.extractFields( projectionPattern, true );
+        int operator()( const BSONObj& left, const BSONObj& right ) const {
+            BSONObj keyLeft = left.extractFields( sortPattern, true );
+            BSONObj keyRight = right.extractFields( sortPattern, true );
             return keyLeft.woCompare( keyRight, sortPattern ) < 0;
         }
     };
@@ -594,6 +495,7 @@ namespace mongo {
             }
         }
 
+        const char* getOpLogName() const;
         void appendForOpLog( BSONObjBuilder& b ) const;
 
         void apply( BSONBuilderBase& b , BSONElement in ) {
@@ -631,9 +533,15 @@ namespace mongo {
         ModStateHolder _mods;
         bool _inPlacePossible;
         BSONObj _newFromMods; // keep this data alive, as oplog generation may depend on it
+        int _numIndexAlwaysUpdated;
+        int _numIndexMaybeUpdated;
 
-        ModSetState( const BSONObj& obj )
-            : _obj( obj ) , _mods( LexNumCmp( true ) ) , _inPlacePossible(true) {
+        ModSetState( const BSONObj& obj , int numIndexAlwaysUpdated , int numIndexMaybeUpdated )
+            : _obj( obj )
+            , _mods( LexNumCmp( true ) )
+            , _inPlacePossible(true)
+            , _numIndexAlwaysUpdated( numIndexAlwaysUpdated )
+            , _numIndexMaybeUpdated( numIndexMaybeUpdated ) {
         }
 
         /**
@@ -699,7 +607,6 @@ namespace mongo {
                     }
                     else if ( m.isSliceAndSort() ) {
                         long long slice = m.getSlice();
-                        BSONObj sortPattern = m.getSort();
 
                         // Sort the $each array over sortPattern.
                         vector<BSONObj> workArea;
@@ -707,7 +614,8 @@ namespace mongo {
                         while ( j.more() ) {
                             workArea.push_back( j.next().Obj() );
                         }
-                        sort( workArea.begin(), workArea.end(), ProjectKeyCmp( sortPattern) );
+                        ProjectKeyCmp cmp( m.getSort() );
+                        sort( workArea.begin(), workArea.end(), cmp );
 
                         // Slice to the appropriate size. If slice is zero, that's equivalent
                         // to resetting the array, ie, a no-op.
@@ -816,6 +724,16 @@ namespace mongo {
             return _inPlacePossible;
         }
 
+        bool isUpdateIndexed() const {
+            if ( _numIndexAlwaysUpdated != 0 ) {
+                return true;
+            }
+
+            return isUpdateIndexedSlow();
+        }
+
+        bool isUpdateIndexedSlow() const;
+
         /**
          * modified underlying _obj
          * @param isOnDisk - true means this is an on disk object, and this update needs to be made durable
@@ -833,12 +751,7 @@ namespace mongo {
             return false;
         }
 
-        BSONObj getOpLogRewrite() const {
-            BSONObjBuilder b;
-            for ( ModStateHolder::const_iterator i = _mods.begin(); i != _mods.end(); i++ )
-                i->second->appendForOpLog( b );
-            return b.obj();
-        }
+        BSONObj getOpLogRewrite() const;
 
         bool DEPRECATED_haveArrayDepMod() const {
             for ( ModStateHolder::const_iterator i = _mods.begin(); i != _mods.end(); i++ )

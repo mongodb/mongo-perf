@@ -20,9 +20,12 @@
 #include <v8.h>
 #include <vector>
 
-#include "mongo/scripting/engine.h"
-
 #include "mongo/base/disallow_copying.h"
+#include "mongo/client/dbclientinterface.h"
+#include "mongo/client/dbclientcursor.h"
+#include "mongo/scripting/engine.h"
+#include "mongo/scripting/v8_deadline_monitor.h"
+#include "mongo/scripting/v8_profiler.h"
 
 /**
  * V8_SIMPLE_HEADER must be placed in any function called from a public API
@@ -39,23 +42,74 @@ namespace mongo {
 
     class V8ScriptEngine;
     class V8Scope;
+    class BSONHolder;
 
     typedef v8::Handle<v8::Value> (*v8Function)(V8Scope* scope, const v8::Arguments& args);
 
-    class BSONHolder {
+    /**
+     * The ObjTracker class keeps track of all weakly referenced v8 objects.  This is
+     * required because v8 does not invoke the WeakReferenceCallback when shutting down
+     * the context/isolate.  To track a new object, add an ObjTracker<MyObjType> member
+     * variable to the V8Scope (if one does not already exist for that type).  Instead
+     * of calling v8::Persistent::MakeWeak() directly, simply invoke track() with the
+     * persistent handle and the pointer to be freed.
+     */
+    template <typename _ObjType>
+    class ObjTracker {
     public:
-        BSONHolder(BSONObj obj) {
-            _obj = obj.getOwned();
-            _modified = false;
-            v8::V8::AdjustAmountOfExternalAllocatedMemory(_obj.objsize());
+        /** Track an object to be freed when it is no longer referenced in JavaScript.
+         * @param  instanceHandle  persistent handle to the weakly referenced object
+         * @param  rawData         pointer to the object instance
+         */
+        void track(v8::Persistent<v8::Value> instanceHandle, _ObjType* instance) {
+            TrackedPtr* collectionHandle = new TrackedPtr(instance, this);
+            instanceHandle.MakeWeak(collectionHandle, deleteOnCollect);
         }
-        ~BSONHolder() {
-            v8::V8::AdjustAmountOfExternalAllocatedMemory(-_obj.objsize());
+        /**
+         * Free any remaining objects which are being tracked.  Invoked when
+         * the V8Scope is destructed.
+         */
+        ~ObjTracker() {
+            if (!_container.empty())
+                LOG(1) << "freeing " << _container.size() << " uncollected "
+                       << typeid(_ObjType).name() << " objects" << endl;
+            typename set<_ObjType*>::iterator it = _container.begin();
+            while (it != _container.end()) {
+                delete *it;
+                _container.erase(it++);
+            }
         }
-        BSONObj _obj;
-        bool _modified;
-        list<string> _extra;
-        set<string> _removed;
+    private:
+        /**
+         * Simple struct which contains a pointer to the tracked object, and a pointer
+         * to the ObjTracker which owns it.  This is the argument supplied to v8's
+         * WeakReferenceCallback and MakeWeak().
+         */
+        struct TrackedPtr {
+        public:
+            TrackedPtr(_ObjType* instance, ObjTracker<_ObjType>* tracker) :
+                _objPtr(instance),
+                _tracker(tracker) { }
+            _ObjType* _objPtr;
+            ObjTracker<_ObjType>* _tracker;
+        };
+
+        /**
+         * v8 callback for weak persistent handles that have been marked for removal by the
+         * garbage collector.  Signature conforms to v8's WeakReferenceCallback.
+         * @param  instanceHandle  persistent handle to the weakly referenced object
+         * @param  rawData         pointer to the TrackedPtr instance
+         */
+        static void deleteOnCollect(v8::Persistent<v8::Value> instanceHandle, void* rawData) {
+            TrackedPtr* trackedPtr = static_cast<TrackedPtr*>(rawData);
+            trackedPtr->_tracker->_container.erase(trackedPtr->_objPtr);
+            delete trackedPtr->_objPtr;
+            delete trackedPtr;
+            instanceHandle.Dispose();
+        }
+
+        // container for all instances of the tracked _ObjType
+        set<_ObjType*> _container;
     };
 
     /**
@@ -91,9 +145,17 @@ namespace mongo {
         /** check if there is a pending killOp request */
         bool isKillPending() const;
 
+        /**
+         * Connect to a local database, create a Mongo object instance, and load any
+         * server-side js into the global object
+         */
         virtual void localConnect(const char* dbName);
 
         virtual void externalSetup();
+
+        virtual void installDBAccess();
+
+        virtual void installBSONTypes();
 
         virtual string getError() { return _error; }
 
@@ -143,8 +205,10 @@ namespace mongo {
         void injectV8Function(const char* field, v8Function func, v8::Handle<v8::Object>& obj);
         void injectV8Function(const char* field, v8Function func, v8::Handle<v8::Template>& t);
         v8::Handle<v8::FunctionTemplate> createV8Function(v8Function func);
-        virtual ScriptingFunction _createFunction(const char* code);
-        v8::Local<v8::Function> __createFunction(const char* code);
+        virtual ScriptingFunction _createFunction(const char* code,
+                                                  ScriptingFunction functionNumber = 0);
+        v8::Local<v8::Function> __createFunction(const char* code,
+                                                 ScriptingFunction functionNumber = 0);
 
         /**
          * Convert BSON types to v8 Javascript types
@@ -180,7 +244,7 @@ namespace mongo {
                                v8::Handle<v8::Object> obj);
         void v8ToMongoRegex(BSONObjBuilder& b,
                             const string& elementName,
-                            string& regex);
+                            v8::Handle<v8::Object> v8Regex);
         void v8ToMongoDBRef(BSONObjBuilder& b,
                             const string& elementName,
                             v8::Handle<v8::Object> obj);
@@ -198,22 +262,21 @@ namespace mongo {
         v8::Local<v8::Value> newId(const OID& id);
 
         /**
+         * Convert a JavaScript exception to a stl string.  Requires
+         * access to the V8Scope instance to report source context information.
+         */
+        std::string v8ExceptionToSTLString(const v8::TryCatch* try_catch);
+
+        /**
          * GC callback for weak references to BSON objects (via BSONHolder)
          */
         v8::Persistent<v8::Object> wrapBSONObject(v8::Local<v8::Object> obj, BSONHolder* data);
-        v8::Persistent<v8::Object> wrapArrayObject(v8::Local<v8::Object> obj, char* data);
-
-        /**
-         * Get a V8 string from the scope's cache, creating one if needed (NOTE: this may be
-         * dangerous due to use in multiple threads without changing the v8Locker)
-         */
-        v8::Handle<v8::String> getV8Str(string str);
 
         /**
          * Create a V8 string with a local handle
          */
-        inline v8::Handle<v8::String> getLocalV8Str(string str) {
-            return v8::String::New(str.c_str());
+        static inline v8::Handle<v8::String> v8StringData(StringData str) {
+            return v8::String::New(str.rawData());
         }
 
         /**
@@ -227,33 +290,10 @@ namespace mongo {
          */
         v8::Persistent<v8::Context> getContext() { return _context; }
 
-        /**
-         * Static v8 strings for various identifiers
-         */
-        v8::Handle<v8::String> V8STR_CONN;
-        v8::Handle<v8::String> V8STR_ID;
-        v8::Handle<v8::String> V8STR_LENGTH;
-        v8::Handle<v8::String> V8STR_LEN;
-        v8::Handle<v8::String> V8STR_TYPE;
-        v8::Handle<v8::String> V8STR_ISOBJECTID;
-        v8::Handle<v8::String> V8STR_NATIVE_FUNC;
-        v8::Handle<v8::String> V8STR_NATIVE_DATA;
-        v8::Handle<v8::String> V8STR_V8_FUNC;
-        v8::Handle<v8::String> V8STR_RETURN;
-        v8::Handle<v8::String> V8STR_ARGS;
-        v8::Handle<v8::String> V8STR_T;
-        v8::Handle<v8::String> V8STR_I;
-        v8::Handle<v8::String> V8STR_EMPTY;
-        v8::Handle<v8::String> V8STR_MINKEY;
-        v8::Handle<v8::String> V8STR_MAXKEY;
-        v8::Handle<v8::String> V8STR_NUMBERLONG;
-        v8::Handle<v8::String> V8STR_NUMBERINT;
-        v8::Handle<v8::String> V8STR_DBPTR;
-        v8::Handle<v8::String> V8STR_BINDATA;
-        v8::Handle<v8::String> V8STR_WRAPPER;
-        v8::Handle<v8::String> V8STR_RO;
-        v8::Handle<v8::String> V8STR_FULLNAME;
-        v8::Handle<v8::String> V8STR_BSON;
+        ObjTracker<BSONHolder> bsonHolderTracker;
+        ObjTracker<DBClientWithCommands> dbClientWithCommandsTracker;
+        ObjTracker<DBClientBase> dbClientBaseTracker;
+        ObjTracker<DBClientCursor> dbClientCursorTracker;
 
     private:
 
@@ -276,6 +316,10 @@ namespace mongo {
         static v8::Handle<v8::Value> Print(V8Scope* scope, const v8::Arguments& args);
         static v8::Handle<v8::Value> Version(V8Scope* scope, const v8::Arguments& args);
         static v8::Handle<v8::Value> GCV8(V8Scope* scope, const v8::Arguments& args);
+
+        static v8::Handle<v8::Value> startCpuProfiler(V8Scope* scope, const v8::Arguments& args);
+        static v8::Handle<v8::Value> stopCpuProfiler(V8Scope* scope, const v8::Arguments& args);
+        static v8::Handle<v8::Value> getCpuProfile(V8Scope* scope, const v8::Arguments& args);
 
         /** Signal that this scope has entered a native (C++) execution context.
          *  @return  false if execution has been interrupted
@@ -300,9 +344,25 @@ namespace mongo {
         void unregisterOpId();
 
         /**
+        * Creates a new instance of the MinKey object
+        */
+        v8::Local<v8::Object> newMinKeyInstance();
+
+        /**
+         * Creates a new instance of the MaxKey object
+         */
+        v8::Local<v8::Object> newMaxKeyInstance();
+
+        /**
          * Create a new function; primarily used for BSON/V8 conversion.
          */
         v8::Local<v8::Value> newFunction(const char *code);
+
+        template <typename _HandleType>
+        bool checkV8ErrorState(const _HandleType& resultHandle,
+                               const v8::TryCatch& try_catch,
+                               bool reportError = true,
+                               bool assertOnError = true);
 
         V8ScriptEngine* _engine;
 
@@ -314,8 +374,6 @@ namespace mongo {
         enum ConnectState { NOT, LOCAL, EXTERNAL };
         ConnectState _connectState;
 
-        std::map <string, v8::Persistent<v8::String> > _strCache;
-
         v8::Persistent<v8::FunctionTemplate> lzFunctionTemplate;
         v8::Persistent<v8::ObjectTemplate> lzObjectTemplate;
         v8::Persistent<v8::ObjectTemplate> roObjectTemplate;
@@ -323,6 +381,7 @@ namespace mongo {
         v8::Persistent<v8::ObjectTemplate> internalFieldObjects;
 
         v8::Isolate* _isolate;
+        V8CpuProfiler _cpuProfiler;
 
         mongo::mutex _interruptLock; // protects interruption-related flags
         bool _inNativeExecution;     // protected by _interruptLock
@@ -358,11 +417,84 @@ namespace mongo {
 
         std::string printKnownOps_inlock();
 
+        /**
+         * Get the deadline monitor instance for the v8 ScriptEngine
+         */
+        DeadlineMonitor<V8Scope>* getDeadlineMonitor() { return &_deadlineMonitor; }
+
         typedef map<unsigned, V8Scope*> OpIdToScopeMap;
         mongo::mutex _globalInterruptLock;  // protects map of all operation ids -> scope
         OpIdToScopeMap _opToScopeMap;       // map of mongo op ids to scopes (protected by
                                             // _globalInterruptLock).
+        DeadlineMonitor<V8Scope> _deadlineMonitor;
     };
+
+    class BSONHolder {
+    MONGO_DISALLOW_COPYING(BSONHolder);
+    public:
+        explicit BSONHolder(BSONObj obj) :
+            _scope(NULL),
+            _obj(obj.getOwned()),
+            _modified(false) {
+            // give hint v8's GC
+            v8::V8::AdjustAmountOfExternalAllocatedMemory(_obj.objsize());
+        }
+        ~BSONHolder() {
+            if (_scope && _scope->getIsolate())
+                // if v8 is still up, send hint to GC
+                v8::V8::AdjustAmountOfExternalAllocatedMemory(-_obj.objsize());
+        }
+        V8Scope* _scope;
+        BSONObj _obj;
+        bool _modified;
+        list<string> _extra;
+        set<string> _removed;
+    };
+
+    /**
+     * Check for an error condition (e.g. empty handle, JS exception, OOM) after executing
+     * a v8 operation.
+     * @resultHandle         handle storing the result of the preceeding v8 operation
+     * @try_catch            the active v8::TryCatch exception handler
+     * @param reportError    if true, log an error message
+     * @param assertOnError  if true, throw an exception if an error is detected
+     *                       if false, return value indicates error state
+     * @return true if an error was detected and assertOnError is set to false
+     *         false if no error was detected
+     */
+    template <typename _HandleType>
+    bool V8Scope::checkV8ErrorState(const _HandleType& resultHandle,
+                                    const v8::TryCatch& try_catch,
+                                    bool reportError,
+                                    bool assertOnError) {
+        bool haveError = false;
+
+        if (try_catch.HasCaught() && try_catch.CanContinue()) {
+            // normal JS exception
+            _error = string("JavaScript execution failed: ") + v8ExceptionToSTLString(&try_catch);
+            haveError = true;
+        }
+        else if (hasOutOfMemoryException()) {
+            // out of memory exception (treated as terminal)
+            _error = "JavaScript execution failed -- v8 is out of memory";
+            haveError = true;
+        }
+        else if (resultHandle.IsEmpty() || try_catch.HasCaught()) {
+            // terminal exception (due to empty handle, termination, etc.)
+            _error = "JavaScript execution failed";
+            haveError = true;
+        }
+
+        if (haveError) {
+            if (reportError)
+                log() << _error << endl;
+            if (assertOnError)
+                uasserted(16722, _error);
+            return true;
+        }
+
+        return false;
+    }
 
     extern ScriptEngine* globalScriptEngine;
 

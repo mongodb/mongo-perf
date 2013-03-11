@@ -1,7 +1,7 @@
-// repl_block.h - blocking on writes for replication
+// index_set.h
 
 /**
-*    Copyright (C) 2008 10gen Inc.
+*    Copyright (C) 2013 10gen Inc.
 *
 *    This program is free software: you can redistribute it and/or  modify
 *    it under the terms of the GNU Affero General Public License, version 3,
@@ -18,26 +18,31 @@
 
 #pragma once
 
-#include "mongo/pch.h"
-#include "client.h"
-#include "curop.h"
+#include <set>
 
-/**
-   local.slaves  - current location for all slaves
+#include "mongo/base/string_data.h"
 
- */
 namespace mongo {
 
-    void updateSlaveLocation( CurOp& curop, const char * oplog_ns , OpTime lastOp );
+    /**
+     * a.$ -> a
+     * @return true if out is set and we made a change
+     */
+    bool getCanonicalIndexField( const StringData& fullName, std::string* out );
 
-    /** @return true if op has made it to w servers */
-    bool opReplicatedEnough( OpTime op , int w );
-    bool opReplicatedEnough( OpTime op , BSONElement w );
+    class IndexPathSet {
+    public:
+        void addPath( const StringData& path );
 
-    bool waitForReplication( OpTime op , int w , int maxSecondsToWait );
+        void clear();
 
-    std::vector<BSONObj> getHostsWrittenTo(OpTime& op);
+        bool mightBeIndexed( const StringData& path ) const;
 
-    void resetSlaveCache();
-    unsigned getSlaveCount();
+    private:
+
+        bool _startsWith( const StringData& a, const StringData& b ) const;
+
+        std::set<std::string> _canonical;
+    };
+
 }

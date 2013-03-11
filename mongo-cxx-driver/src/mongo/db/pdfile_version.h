@@ -1,7 +1,5 @@
-// repl_block.h - blocking on writes for replication
-
 /**
-*    Copyright (C) 2008 10gen Inc.
+*    Copyright (C) 2013 10gen Inc.
 *
 *    This program is free software: you can redistribute it and/or  modify
 *    it under the terms of the GNU Affero General Public License, version 3,
@@ -18,26 +16,16 @@
 
 #pragma once
 
-#include "mongo/pch.h"
-#include "client.h"
-#include "curop.h"
-
-/**
-   local.slaves  - current location for all slaves
-
- */
 namespace mongo {
 
-    void updateSlaveLocation( CurOp& curop, const char * oplog_ns , OpTime lastOp );
+    // pdfile versions
+    const int PDFILE_VERSION = 4;
+    const int PDFILE_VERSION_MINOR_22_AND_OLDER = 5;
+    const int PDFILE_VERSION_MINOR_24_AND_NEWER = 6;
 
-    /** @return true if op has made it to w servers */
-    bool opReplicatedEnough( OpTime op , int w );
-    bool opReplicatedEnough( OpTime op , BSONElement w );
+    // For backward compatibility with versions before 2.4.0 all new DBs start
+    // with PDFILE_VERSION_MINOR_22_AND_OLDER and are converted when the first
+    // index using a new plugin is created. See the logic in
+    // prepareToBuildIndex() and upgradeMinorVersionOrAssert() for details
 
-    bool waitForReplication( OpTime op , int w , int maxSecondsToWait );
-
-    std::vector<BSONObj> getHostsWrittenTo(OpTime& op);
-
-    void resetSlaveCache();
-    unsigned getSlaveCount();
-}
+} // namespace mongo

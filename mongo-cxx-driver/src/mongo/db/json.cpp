@@ -354,15 +354,21 @@ namespace mongo {
         }
         errno = 0;
         char* endptr;
-        int64_t millis = strtoll(_input, &endptr, 10);
-        if (errno == ERANGE) {
-            return parseError("Date milliseconds overflow");
-        }
+        Date_t date = static_cast<unsigned long long>(strtoll(_input, &endptr, 10));
         if (_input == endptr) {
             return parseError("Date expecting integer milliseconds");
         }
+        if (errno == ERANGE) {
+            /* Need to handle this because jsonString outputs the value of Date_t as unsigned.
+            * See SERVER-8330 and SERVER-8573 */
+            errno = 0;
+            date = strtoull(_input, &endptr, 10);
+            if (errno == ERANGE) {
+                return parseError("Date milliseconds overflow");
+            }
+        }
         _input = endptr;
-        builder.appendDate(fieldName, millis);
+        builder.appendDate(fieldName, date);
         return Status::OK();
     }
 
@@ -571,18 +577,24 @@ namespace mongo {
         }
         errno = 0;
         char* endptr;
-        int64_t millis = strtoll(_input, &endptr, 10);
-        if (errno == ERANGE) {
-            return parseError("Date milliseconds overflow");
-        }
+        Date_t date = static_cast<unsigned long long>(strtoll(_input, &endptr, 10));
         if (_input == endptr) {
             return parseError("Date expecting integer milliseconds");
+        }
+        if (errno == ERANGE) {
+            /* Need to handle this because jsonString outputs the value of Date_t as unsigned.
+            * See SERVER-8330 and SERVER-8573 */
+            errno = 0;
+            date = strtoull(_input, &endptr, 10);
+            if (errno == ERANGE) {
+                return parseError("Date milliseconds overflow");
+            }
         }
         _input = endptr;
         if (!accept(RPAREN)) {
             return parseError("Expecting ')'");
         }
-        builder.appendDate(fieldName, millis);
+        builder.appendDate(fieldName, date);
         return Status::OK();
     }
 
@@ -725,7 +737,7 @@ namespace mongo {
         std::size_t i;
         for (i = 0; i < opt.size(); i++) {
             if (!match(opt[i], JOPTIONS)) {
-                return parseError("Bad regex option: " + opt[i]);
+                return parseError(string("Bad regex option: ") + opt[i]);
             }
         }
         return Status::OK();

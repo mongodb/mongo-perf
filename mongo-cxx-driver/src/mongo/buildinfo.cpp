@@ -5,7 +5,7 @@
 #include "mongo/util/version.h"
 
 namespace mongo {
-    const char * gitVersion() { return "e03279bb3d581b87b01486fa496267b57bf6b304"; }
+    const char * gitVersion() { return "3018a05958ccfba1cd08b476fdcd103835e3fde8"; }
     const char * compiledJSEngine() { return "V8"; }
     const char * allocator() { return "tcmalloc"; }
     const char * loaderFlags() { return "-fPIC -pthread -rdynamic"; }
