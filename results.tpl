@@ -24,7 +24,7 @@
   </script>
 </head> 
 <body>
-    <h1>MongoDB Benchmark Results</h1>
+    <h1>MongoDB Benchmark Results (<a href="/">Home</a>)</h1>
     % platforms = ' '.join(request.GET.getall('platforms'))
     % versions = ' '.join(request.GET.getall('versions'))
     % labels = ' '.join(request.GET.getall('labels'))

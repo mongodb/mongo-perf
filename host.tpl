@@ -17,6 +17,6 @@
 </head> 
 
 <body>
-<h1>MongoDB Benchmark Host</h1>
+<h1>MongoDB Benchmark Host (<a href="/">Home</a>)</h1>
 </body>
 </html>
