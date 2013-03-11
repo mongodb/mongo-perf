@@ -30,6 +30,7 @@
     % labels = ' '.join(request.GET.getall('labels'))
     % dates = ' '.join(request.GET.getall('dates'))
     % metric = request.GET.get('metric', 'ops_per_sec')
+    % limit = request.GET.get('limit', '0')
 
     <form action="/results">
         <label for="metric">Metric</label>
@@ -80,8 +81,8 @@
         <tbody>
             %for i, result in enumerate(outer_result['results']):
             %host_keys = ['date', 'label', 'version']
-            %filtered = { key:result[key] for key in host_keys }
-            %host = urllib.urlencode(filtered)
+            %host = urllib.urlencode({ key:result[key] for key in host_keys })
+            %if limit != '0' and i == int(limit): break
             <tr>
                 <td>{{i+1}}</td>
                 <td><a href="host?{{host}}">{{result['label']}}</a></td>

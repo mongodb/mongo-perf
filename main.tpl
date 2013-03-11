@@ -21,18 +21,12 @@
   </ul>
   <div id="dash">Recent Benchmark Tests:
     <ul>
-      %recent_labels = set()
-      %recent_dates = set()
-      %recent_versions = set()
       %if rows:
       %for row in rows:
-      %recent_labels.add(row['label'])
-      %recent_dates.add(row['run_date'])
-      %recent_versions.add(row['version'])
       <li><a href="results?versions=/{{row['version']}}/&amp;dates=/{{row['run_date']}}/&amp;labels=/{{row['label']}}$/">
         {{row['label']}} - {{row['platform']}} - {{row['version']}} - {{row['run_date']}}</a></li>
       %end
-      <li><a href="results?versions=/{{"|".join(recent_versions)}}/&amp;dates=/{{"|".join(recent_dates)}}/&amp;labels=/{{"|".join(recent_labels)}}/"s>See all</a></li>
+      <li><a href="results?multi={{rows}}">See all</a></li>
       %end
     </ul>
   </div>

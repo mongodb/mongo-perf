@@ -25,13 +25,8 @@ def host_page():
         , host=host)
 
 @route("/raw")
-def raw_data(versions, labels, dates, platforms, start, end, limit):
+def raw_data(versions, labels, dates, platforms, start, end):
     out = []
-
-    if not limit:
-        limit = 10
-    else:
-        limit = int(limit)
 
     if start:
         start_query = {'run_date': {'$gt': start } }
@@ -76,6 +71,7 @@ def raw_data(versions, labels, dates, platforms, start, end, limit):
         label_query = {}
 
     # print label_query, date_query, platforms_query, version_query, end_query, start_query
+
     cursor = db.raw.find({"$and":[label_query
                                 , date_query
                                 , platforms_query
@@ -84,7 +80,7 @@ def raw_data(versions, labels, dates, platforms, start, end, limit):
                                 , start_query]}).sort([
                                   ('name',pymongo.ASCENDING)
                                 , ('build_info.version',pymongo.ASCENDING)
-                                , ('run_date',pymongo.DESCENDING)]).limit(limit)
+                                , ('run_date',pymongo.DESCENDING)])
     # print cursor.count()
     name = None
     results = []
@@ -115,10 +111,22 @@ def results_page():
     dates = ' '.join(request.GET.getall('dates'))
     labels = ' '.join(request.GET.getall('labels'))
     platforms = ' '.join(request.GET.getall('platforms'))
-    limit = ' '.join(request.GET.getall('limit'))
+    multi = ' '.join(request.GET.getall('multi'))
     start = request.GET.get('start')
     end = request.GET.get('end')
-    results = raw_data(versions, labels, dates, platforms, start, end, limit)
+    if multi:
+        results = []
+        from ast import literal_eval
+        for platform in literal_eval(multi):
+            result = literal_eval(json.dumps(platform))
+            result = { attrib : '/' + result[attrib] + '/' for attrib in result }
+            tmp = raw_data(result['version'], result['label'], 
+            result['run_date'], result['platform'], None, None)
+            for result in tmp:
+                results.append(result)
+        results = merge(results)
+    else:
+        results = raw_data(versions, labels, dates, platforms, start, end)
 
     threads = set()
     flot_results = []
@@ -137,6 +145,24 @@ def results_page():
                    ,request=request
                    ,threads=sorted(threads)
                    )
+
+def merge(results):
+    out = []
+    outer = {}
+    for result in results:
+        if result['name'] not in outer.keys():
+            outer[result['name']] = []
+        row = dict( label=result['results'][0]['label'],
+                    platform=result['results'][0]['platform'], 
+                    version=result['results'][0]['version'], 
+                    commit=result['results'][0]['commit'],
+                    date=result['results'][0]['date'])
+        for (n, res) in result['results'][0].iteritems():
+            row[n] = res
+        outer[result['name']].append(row)
+    for name in outer:
+        out.append({'name' : name, 'results' : outer[name]})
+    return out
 
 @route("/")
 def main_page():
