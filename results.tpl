@@ -79,10 +79,12 @@
         </thead>
 
         <tbody>
+            %try: limit = int(limit)
+            %except: limit = 10
             %for i, result in enumerate(outer_result['results']):
             %host_keys = ['date', 'label', 'version']
             %host = urllib.urlencode({ key:result[key] for key in host_keys })
-            %if limit != '0' and i == int(limit): break
+            %if limit != 0 and i == int(limit): break
             <tr>
                 <td>{{i+1}}</td>
                 <td><a href="host?{{host}}">{{result['label']}}</a></td>
