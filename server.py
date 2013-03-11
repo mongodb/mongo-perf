@@ -12,17 +12,17 @@ def static_file(filename):
     send_file(filename, root='./static')
 
 @route("/host")
-def host_info():
+def host_page():
     result = {}
     result['date'] = request.GET.get('date', '')
     result['label'] = request.GET.get('label', '')
     result['version'] = request.GET.get('version', '')
-    analysis_info = db.info.find_one({  "build_info.version" : result['version'],
+    host = db.info.find_one({  "build_info.version" : result['version'],
                                         "label" : result['label'], 
                                         "run_date" : result['date']
                                     })
     return template('host.tpl'
-        , details=analysis_info)
+        , host=host)
 
 @route("/raw")
 def raw_data(versions, labels, dates, platforms, start, end, limit):
@@ -165,7 +165,7 @@ def main_page():
 if __name__ == '__main__':
     do_reload = '--reload' in sys.argv
     debug(do_reload)
-    # debug(True)
+    debug(True)
     run(reloader=do_reload, host='0.0.0.0', server=AutoServer)
 
 
