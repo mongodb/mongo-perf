@@ -33,8 +33,6 @@
         {{row['label']}} - {{row['platform']}} - {{row['version']}} - {{row['run_date']}}</a></li>
       %end
       <li><a href="results?versions=/{{"|".join(recent_versions)}}/&amp;dates=/{{"|".join(recent_dates)}}/&amp;labels=/{{"|".join(recent_labels)}}/"s>See all</a></li>
-      %else:
-      %pass
       %end
     </ul>
   </div>
