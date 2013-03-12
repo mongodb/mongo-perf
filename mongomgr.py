@@ -55,7 +55,7 @@ class mongod(object):
         print "running " + " ".join(argv)
         self.proc = self._start(argv)
 
-        if not self.did_mongod_start(int(self.port)):
+        if not self.did_mongod_start(self.port):
             raise Exception("Failed to start mongod")
 
 
