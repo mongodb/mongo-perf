@@ -29,7 +29,7 @@ class mongod(object):
         sock.connect(("localhost", port))
         sock.close()
 
-    def did_mongod_start(self, port=27017, timeout=5):
+    def did_mongod_start(self, port=27017, timeout=15):
         while timeout > 0:
             time.sleep(1)
             try:

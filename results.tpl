@@ -104,7 +104,7 @@
     <br />
     <div id="flot_{{k}}" style="width:600px;height:300px;"> </div>
     <div style="height:50px"> </div>
-
+    <!-- bug in graphing -->
     <script>
         $(function(){
             var data = {{flot_data}};
@@ -118,7 +118,6 @@
            );
        });
     </script>
-
     <hr>
     %end
 
