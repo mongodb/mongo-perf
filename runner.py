@@ -45,13 +45,13 @@ try:
         exe = ".exe"
     mongod_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'mongo', 'mongod')) + exe
     mongod_handle = mongomgr.mongod(mongod=mongod_path, port=opts.port)
-    print 'y'
     mongod_handle.__enter__()
     benchmark = subprocess.Popen(['./benchmark', opts.port, opts.iterations, multidb, opts.username, opts.password], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     benchmark_results = benchmark.communicate()[0]
     time.sleep(1) # wait for server to clean up connections
 except:
     print >> sys.stderr, "Unexpected error in starting MongoDB: %s</p>" % str(sys.exc_info()[0])
+    mongod_handle.__exit__(None, None, None)
     sys.exit(1)
 
 connection = None
@@ -94,6 +94,7 @@ except pymongo.errors.ConnectionFailure, e:
     sys.exit(1)
 except:
     print >> sys.stderr, "Unexpected error in getting host/build info", sys.exc_info()[0]
+    mongod_handle.__exit__(None, None, None)
     sys.exit(1)
 
 try:
@@ -116,6 +117,7 @@ try:
                                 }, obj, upsert=True)
 except:
     print >> sys.stderr, "Unexpected dict error", sys.exc_info()[0]
+    mongod_handle.__exit__(None, None, None)
     sys.exit(1)
 
 mongod_handle.__exit__(None, None, None)
