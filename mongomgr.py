@@ -26,14 +26,14 @@ class mongod(object):
         sock = socket.socket()
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         sock.settimeout(1)
-        sock.connect(("localhost", int(port)))
+        sock.connect(("localhost", port))
         sock.close()
 
     def did_mongod_start(self, port=27017, timeout=5):
         while timeout > 0:
             time.sleep(1)
             try:
-                self.check_mongo_port(int(port))
+                self.check_mongo_port(port)
                 return True
             except Exception,e:
                 print >> sys.stderr, e
@@ -55,7 +55,7 @@ class mongod(object):
         print "running " + " ".join(argv)
         self.proc = self._start(argv)
 
-        if not self.did_mongod_start(self.port):
+        if not self.did_mongod_start(int(self.port)):
             raise Exception("Failed to start mongod")
 
 

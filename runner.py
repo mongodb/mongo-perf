@@ -45,12 +45,14 @@ try:
         exe = ".exe"
     mongod_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'mongo', 'mongod')) + exe
     mongod_handle = mongomgr.mongod(mongod=mongod_path, port=opts.port)
+    print 'y'
     mongod_handle.__enter__()
+    print 'x'
     benchmark = subprocess.Popen(['./benchmark', opts.port, opts.iterations, multidb, opts.username, opts.password], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     benchmark_results = benchmark.communicate()[0]
     time.sleep(1) # wait for server to clean up connections
 except:
-    print >> sys.stderr, "Unexpected error in starting DB", sys.exc_info()[0]
+    print >> sys.stderr, "Unexpected error in starting MongoDB", sys.exc_info()[0]
     sys.exit(1)
 
 connection = None
