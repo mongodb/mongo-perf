@@ -50,9 +50,7 @@ try:
     benchmark_results = benchmark.communicate()[0]
     time.sleep(1) # wait for server to clean up connections
 except:
-    print >> sys.stderr, "Unexpected error in starting MongoDB: %s</p>" % str(sys.exc_info()[0])
-    mongod_handle.__exit__(None, None, None)
-    sys.exit(1)
+    pass
 
 connection = None
 build_info = None
