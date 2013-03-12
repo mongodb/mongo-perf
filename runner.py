@@ -9,7 +9,7 @@ import pymongo
 import json
 import pprint
 import datetime
-from mongomgr import mongod
+import mongomgr
 from optparse import OptionParser
 
 try:
@@ -37,20 +37,21 @@ if not versions:
 now = datetime.datetime.now()
 benchmark_results=''
 mongod_handle=None
+exe=''
 
 try:
     multidb = '1' if opts.multidb else '0'
-    # start mongod
-    mongod_handle = mongod(mongod=opts.mongod, port=opts.port)
-    mongod_handle.start()
-    benchmark_cmd = './benchmark'
     if os.sys.platform.startswith( "win" ):
-        benchmark_cmd = "benchmark.exe"
-    benchmark = subprocess.Popen([benchmark_cmd, opts.port, opts.iterations, multidb, opts.username, opts.password], stdout=subprocess.PIPE)
+        exe = ".exe"
+    mongod_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'mongo', 'mongod')) + exe
+    mongod_handle = mongomgr.mongod(mongod=mongod_path, port=opts.port)
+    mongod_handle.__enter__()
+    benchmark = subprocess.Popen(['./benchmark', opts.port, opts.iterations, multidb, opts.username, opts.password], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     benchmark_results = benchmark.communicate()[0]
     time.sleep(1) # wait for server to clean up connections
 except:
-    pass
+    print >> sys.stderr, "Unexpected error in starting DB", sys.exc_info()[0]
+    sys.exit(1)
 
 connection = None
 build_info = None
@@ -87,25 +88,34 @@ try:
                         'run_date' : run_date
                     } , analysis_info, upsert=True)
 
-except pymongo.errors.ConnectionFailure:
-    pass
+except pymongo.errors.ConnectionFailure, e:
+    print >> sys.stderr, "Could not connect to MongoDB database", sys.exc_info()[0]
+    sys.exit(1)
+except:
+    print >> sys.stderr, "Unexpected error in getting host/build info", sys.exc_info()[0]
+    sys.exit(1)
 
-for line in benchmark_results.split('\n'):
-    if line:
-        print line
-        obj = json.loads(line, object_hook=object_hook)
-        obj['run_date'] = run_date
-        obj['label'] = opts.label
-        obj['platform'] = testbed_info['os']['name'].replace(" ", "_")
-        obj['commit'] = build_info['gitVersion']
-        obj['version'] = build_info['version'].replace(" ", "_")
-        obj['run_date'] = run_date
-        if connection:
-            results.update({'label' : obj['label'],
-                            'run_date' : obj['run_date'],
-                            'version' : obj['version'],
-                            'platform' : obj['platform'],
-                            'name' : obj['name']
-                            }, obj, upsert=True)
+try:
+    for line in benchmark_results.split('\n'):
+        if line:
+            print line
+            obj = json.loads(line, object_hook=object_hook)
+            obj['run_date'] = run_date
+            obj['label'] = opts.label
+            obj['platform'] = testbed_info['os']['name']
+            obj['commit'] = build_info['gitVersion']
+            obj['version'] = build_info['version']
+            obj['run_date'] = run_date
+            if connection:
+                results.update({'label' : obj['label'],
+                                'run_date' : obj['run_date'],
+                                'version' : obj['version'],
+                                'platform' : obj['platform'],
+                                'name' : obj['name']
+                                }, obj, upsert=True)
+except:
+    print >> sys.stderr, "Unexpected dict error", sys.exc_info()[0]
+    sys.exit(1)
 
-mongod_handle.stop()
+mongod_handle.__exit__(None, None, None)
+
