@@ -179,10 +179,11 @@ namespace mongo {
             }
             break;
         case BinData: {
-            int len = *(int *)( value() );
-            BinDataType type = BinDataType( *(char *)( (int *)( value() ) + 1 ) );
+            const int len = *( reinterpret_cast<const int*>( value() ) );
+            BinDataType type = BinDataType( *( reinterpret_cast<const unsigned char*>( value() ) +
+                                               sizeof( int ) ) );
             s << "{ \"$binary\" : \"";
-            char *start = ( char * )( value() ) + sizeof( int ) + 1;
+            const char *start = reinterpret_cast<const char*>( value() ) + sizeof( int ) + 1;
             base64::encode( s , start , len );
             s << "\", \"$type\" : \"" << hex;
             s.width( 2 );
@@ -203,7 +204,7 @@ namespace mongo {
                     s << '"' << date().toString() << '"';
             }
             else
-                s << date();
+                s << date().asInt64();
             if ( format == Strict )
                 s << " }";
             else
@@ -319,6 +320,10 @@ namespace mongo {
                 return BSONObj::opWITHIN;
             else if (mongoutils::str::equals(fn + 1, "geoIntersects"))
                 return BSONObj::opGEO_INTERSECTS;
+            else if (mongoutils::str::equals(fn + 1, "geoNear"))
+                return BSONObj::opNEAR;
+            else if (mongoutils::str::equals(fn + 1, "geoWithin"))
+                return BSONObj::opWITHIN;
         }
         return def;
     }
@@ -462,13 +467,7 @@ namespace mongo {
     }
 
     bool BSONObj::valid() const {
-        int mySize = objsize();
-        int otherSize;
-        Status status = validateBSON( objdata(), mySize, &otherSize );
-        if ( ! status.isOK() )
-            return false;
-        verify( mySize == otherSize ); // should be impossible
-        return true;
+        return validateBSON( objdata(), objsize() ).isOK();
     }
 
     int BSONObj::woCompare(const BSONObj& r, const Ordering &o, bool considerFieldName) const {

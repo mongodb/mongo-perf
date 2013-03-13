@@ -488,7 +488,7 @@ namespace mongo {
          * call this and it will leave maintenance mode once all of the callers
          * have called it again, passing in false.
          */
-        void setMaintenanceMode(const bool inc);
+        bool setMaintenanceMode(const bool inc);
     private:
         Member* head() const { return _members.head(); }
     public:
@@ -543,6 +543,7 @@ namespace mongo {
         threadpool::ThreadPool& getPrefetchPool() { return _prefetcherPool; }
         threadpool::ThreadPool& getWriterPool() { return _writerPool; }
 
+        static const int maxSyncSourceLagSecs;
 
         const ReplSetConfig::MemberCfg& myConfig() const { return _config; }
         bool tryToGoLiveAsASecondary(OpTime&); // readlocks
@@ -552,17 +553,25 @@ namespace mongo {
 
         /**
          * When a member reaches its minValid optime it is in a consistent state.  Thus, minValid is
-         * set as the last step in initial sync (if no minValid is set, this indicates that initial
-         * sync is necessary). It is also used during "normal" sync: the last op in each batch is
-         * used to set minValid, to indicate that we are in a consistent state when the batch has
-         * been fully applied.
+         * set as the last step in initial sync.  At the beginning of initial sync, _initialSyncFlag
+         * is appended onto minValid to indicate that initial sync was started but has not yet 
+         * completed.
+         * minValid is also used during "normal" sync: the last op in each batch is used to set 
+         * minValid, to indicate that we are in a consistent state when the batch has been fully 
+         * applied.
          */
         static void setMinValid(BSONObj obj);
         static OpTime getMinValid();
+        static void clearInitialSyncFlag();
+        static bool getInitialSyncFlag();
+        static void setInitialSyncFlag();
 
         int oplogVersion;
     private:
         IndexPrefetchConfig _indexPrefetchConfig;
+
+        static const char* _initialSyncFlagString;
+        static const BSONObj _initialSyncFlag;
     };
 
     class ReplSet : public ReplSetImpl {

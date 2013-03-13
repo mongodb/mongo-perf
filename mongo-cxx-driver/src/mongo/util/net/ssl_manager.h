@@ -31,18 +31,21 @@ namespace mongo {
                   const std::string& pempwd,
                   const std::string& cafile = "",
                   const std::string& crlfile = "",
-                  bool forceCertificateValidation = false) :
+                  bool weakCertificateValidation = false,
+                  bool fipsMode = false) :
             pemfile(pemfile),
             pempwd(pempwd),
             cafile(cafile),
             crlfile(crlfile),
-            forceCertificateValidation(forceCertificateValidation) {};
+            weakCertificateValidation(weakCertificateValidation),
+            fipsMode(fipsMode) {};
 
         std::string pemfile;
         std::string pempwd;
         std::string cafile;
         std::string crlfile;
-        bool forceCertificateValidation;
+        bool weakCertificateValidation;
+        bool fipsMode;
     };
 
     class SSLManager {
@@ -71,6 +74,12 @@ namespace mongo {
         void validatePeerCertificate(const SSL* ssl);
 
         /**
+         * Cleans up SSL thread local memory; use at thread exit
+         * to avoid memory leaks
+         */
+        static void cleanupThreadLocals();
+
+        /**
          * Callbacks for SSL functions
          */
         static int password_cb( char *buf,int num, int rwflag,void *userdata );
@@ -80,7 +89,7 @@ namespace mongo {
         SSL_CTX* _context;
         std::string _password;
         bool _validateCertificates;
-        bool _forceValidation;
+        bool _weakValidation;
         /**
          * creates an SSL context to be used for this file descriptor.
          * caller must SSL_free it.
@@ -111,6 +120,25 @@ namespace mongo {
          * for use with validating certificates
          */
         bool _setupCRL(const std::string& crlFile);
+
+        /*
+         * Activate FIPS 140-2 mode, if the server started with a command line
+         * parameter.
+         */
+        void _setupFIPS();
+
+        /*
+         * Wrapper for SSL_Connect() that handles SSL_ERROR_WANT_READ,
+         * see SERVER-7940
+         */
+        int _ssl_connect(SSL* ssl);
+
+        /*
+         * Initialize the SSL Library.
+         * This function can be called multiple times; it ensures it only
+         * does the SSL initialization once per process.
+         */
+        void _initializeSSL(const SSLParams& params);
     };
 }
 #endif

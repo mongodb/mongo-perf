@@ -1047,9 +1047,8 @@ namespace mongo {
     }
 
     bool ScopedDistributedLock::tryAcquire(string* errMsg) {
-        bool acquired = false;
         try {
-            acquired = _lock.lock_try(_why, false, &_other);
+            _acquired = _lock.lock_try(_why, false, &_other);
         }
         catch (const DBException& e) {
 
@@ -1059,7 +1058,7 @@ namespace mongo {
             return false;
         }
 
-        return acquired;
+        return _acquired;
     }
 
     void ScopedDistributedLock::unlock() {
@@ -1090,7 +1089,7 @@ namespace mongo {
             if (msgTimer.seconds() > 10) {
 
                 log() << "waited " << timer.seconds() << "s for distributed lock " << _lock._name
-                      << " for " << _why;
+                      << " for " << _why << endl;
 
                 msgTimer.reset();
             }

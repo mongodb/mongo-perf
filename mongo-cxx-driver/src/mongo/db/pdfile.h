@@ -33,15 +33,12 @@
 #include "mongo/db/namespace-inl.h"
 #include "mongo/db/namespace_details-inl.h"
 #include "mongo/db/namespacestring.h"
+#include "mongo/db/pdfile_version.h"
 #include "mongo/platform/cstdint.h"
 #include "mongo/util/log.h"
 #include "mongo/util/mmap.h"
 
 namespace mongo {
-
-    // pdfile versions
-    const int PDFILE_VERSION = 4;
-    const int PDFILE_VERSION_MINOR = 5;
 
     class Cursor;
     class DataFileHeader;
@@ -463,7 +460,11 @@ namespace mongo {
 
         enum { HeaderSize = 8192 };
 
-        bool isCurrentVersion() const { return ( version == PDFILE_VERSION ) && ( versionMinor == PDFILE_VERSION_MINOR ); }
+        bool isCurrentVersion() const {
+            return version == PDFILE_VERSION && ( versionMinor == PDFILE_VERSION_MINOR_22_AND_OLDER
+                                               || versionMinor == PDFILE_VERSION_MINOR_24_AND_NEWER
+                                                );
+        }
 
         bool uninitialized() const { return version == 0; }
 
@@ -494,7 +495,7 @@ namespace mongo {
                 DataFileHeader *h = getDur().writing(this);
                 h->fileLength = filelength;
                 h->version = PDFILE_VERSION;
-                h->versionMinor = PDFILE_VERSION_MINOR;
+                h->versionMinor = PDFILE_VERSION_MINOR_22_AND_OLDER; // All dbs start like this
                 h->unused.set( fileno, HeaderSize );
                 verify( (data-(char*)this) == HeaderSize );
                 h->unusedLength = fileLength - HeaderSize - 16;

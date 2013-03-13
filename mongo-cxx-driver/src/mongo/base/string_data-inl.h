@@ -61,8 +61,11 @@ namespace mongo {
             dest[size()] = 0;
     }
 
-    inline size_t StringData::find( char c ) const {
-        const void* x = memchr( _data, c, size() );
+    inline size_t StringData::find( char c, size_t fromPos ) const {
+        if ( fromPos >= size() )
+            return string::npos;
+
+        const void* x = memchr( _data + fromPos, c, _size - fromPos );
         if ( x == 0 )
             return string::npos;
         return static_cast<size_t>( static_cast<const char*>(x) - _data );
@@ -91,10 +94,25 @@ namespace mongo {
         if ( pos > size() )
             throw std::out_of_range( "out of range" );
 
-        if ( pos + n > size() )
+        // truncate to end of string
+        if ( n > size() - pos )
             n = size() - pos;
 
         return StringData( _data + pos, n );
     }
 
-}
+    inline bool StringData::startsWith( const StringData& prefix ) const {
+        // TODO: Investigate an optimized implementation.
+        return substr(0, prefix.size()) == prefix;
+    }
+
+    inline bool StringData::endsWith( const StringData& suffix ) const {
+        // TODO: Investigate an optimized implementation.
+        const size_t thisSize = size();
+        const size_t suffixSize = suffix.size();
+        if (suffixSize > thisSize)
+            return false;
+        return substr(thisSize - suffixSize) == suffix;
+    }
+
+}  // namespace mongo

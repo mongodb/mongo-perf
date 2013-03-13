@@ -34,4 +34,4 @@ for x in libs:
 
 env = conf.Finish()
 
-env.Program( "benchmark" , ["benchmark.cpp"] )
+env.Program(["benchmark.cpp"] )

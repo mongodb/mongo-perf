@@ -19,9 +19,11 @@
 
 #include "mongo/util/net/ssl_manager.h"
 
-#include <vector>
-#include <string>
+#include <boost/thread/recursive_mutex.hpp>
 #include <boost/thread/tss.hpp>
+#include <string>
+#include <vector>
+
 #include "mongo/bson/util/atomic_int.h"
 #include "mongo/util/concurrency/mutex.h"
 #include "mongo/util/mongoutils/str.h"
@@ -70,7 +72,7 @@ namespace mongo {
         
         static void init() {
             while ( (int)_mutex.size() < CRYPTO_num_locks() )
-                _mutex.push_back( new SimpleMutex("SSLThreadInfo") );
+                _mutex.push_back( new boost::recursive_mutex );
         }
 
         static SSLThreadInfo* get() {
@@ -86,7 +88,10 @@ namespace mongo {
         unsigned _id;
         
         static AtomicUInt _next;
-        static std::vector<SimpleMutex*> _mutex;
+        // Note: see SERVER-8734 for why we are using a recursive mutex here.
+        // Once the deadlock fix in OpenSSL is incorporated into most distros of
+        // Linux, this can be changed back to a nonrecursive mutex.
+        static std::vector<boost::recursive_mutex*> _mutex;
         static boost::thread_specific_ptr<SSLThreadInfo> _thread;
     };
 
@@ -98,21 +103,40 @@ namespace mongo {
     }
 
     AtomicUInt SSLThreadInfo::_next;
-    std::vector<SimpleMutex*> SSLThreadInfo::_mutex;
+    std::vector<boost::recursive_mutex*> SSLThreadInfo::_mutex;
     boost::thread_specific_ptr<SSLThreadInfo> SSLThreadInfo::_thread;
     
     ////////////////////////////////////////////////////////////////
 
-    SSLManager::SSLManager(const SSLParams& params) : 
-        _validateCertificates(false),
-        _forceValidation(params.forceCertificateValidation) {
+    static mongo::mutex sslInitMtx("SSL Initialization");
+    static bool sslInitialized(false);
+
+    void SSLManager::_initializeSSL(const SSLParams& params) {
+        scoped_lock lk(sslInitMtx);
+        if (sslInitialized) 
+            return;  // already done
+
         SSL_library_init();
         SSL_load_error_strings();
         ERR_load_crypto_strings();
+
+        if (params.fipsMode) {
+            _setupFIPS();
+        }
+
         // Add all digests and ciphers to OpenSSL's internal table
         // so that encryption/decryption is backwards compatible
         OpenSSL_add_all_algorithms();
+
+        sslInitialized = true;
+    }
+
+    SSLManager::SSLManager(const SSLParams& params) : 
+        _validateCertificates(false),
+        _weakValidation(params.weakCertificateValidation) {
         
+        _initializeSSL(params);
+  
         _context = SSL_CTX_new(SSLv23_method());
         massert(15864, 
                 mongoutils::str::stream() << "can't create SSL Context: " << 
@@ -156,6 +180,17 @@ namespace mongo {
 
     int SSLManager::verify_cb(int ok, X509_STORE_CTX *ctx) {
 	return 1; // always succeed; we will catch the error in our get_verify_result() call
+    }
+
+    void SSLManager::_setupFIPS() {
+        // Turn on FIPS mode if requested.
+        int status = FIPS_mode_set(1);
+        if (!status) {
+            error() << "can't activate FIPS mode: " << 
+                _getSSLErrorMessage(ERR_get_error()) << endl;
+            fassertFailed(16703);
+        }
+        log() << "FIPS 140-2 mode activated" << endl;
     }
 
     bool SSLManager::_setupPEM(const std::string& keyFile , const std::string& password) {
@@ -237,9 +272,24 @@ namespace mongo {
         return ssl;
     }
 
+    int SSLManager::_ssl_connect(SSL* ssl) {
+        int ret = 0;
+        for (int i=0; i<3; ++i) {
+            ret = SSL_connect(ssl);
+            if (ret == 1) 
+                return ret;
+            int code = SSL_get_error(ssl, ret);
+            // Call SSL_connect again if we get SSL_ERROR_WANT_READ;
+            // otherwise return error to caller.
+            if (code != SSL_ERROR_WANT_READ)
+                return ret;
+        }
+        // Give up and return connection-failure error to user
+        return ret;
+    }
     SSL* SSLManager::connect(int fd) {
         SSL* ssl = _secure(fd);
-        int ret = SSL_connect(ssl);
+        int ret = _ssl_connect(ssl);
         if (ret != 1)
             _handleSSLError(SSL_get_error(ssl, ret));
         return ssl;
@@ -259,12 +309,12 @@ namespace mongo {
         X509* cert = SSL_get_peer_certificate(ssl);
 
         if (cert == NULL) { // no certificate presented by peer
-            if (_forceValidation) {
-                error() << "no SSL certificate provided by peer; connection rejected" << endl;
-                throw SocketException(SocketException::CONNECT_ERROR, "");
+            if (_weakValidation) {
+                warning() << "no SSL certificate provided by peer" << endl;
             }
             else {
-                error() << "no SSL certificate provided by peer" << endl;
+                error() << "no SSL certificate provided by peer; connection rejected" << endl;
+                throw SocketException(SocketException::CONNECT_ERROR, "");
             }
             return;
         }
@@ -281,6 +331,10 @@ namespace mongo {
         // TODO: check optional cipher restriction, using cert.
     }
 
+    void SSLManager::cleanupThreadLocals() {
+        ERR_remove_state(0);
+    }
+
     std::string SSLManager::_getSSLErrorMessage(int code) {
         // 120 from the SSL documentation for ERR_error_string
         static const size_t msglen = 120;
@@ -295,7 +349,10 @@ namespace mongo {
         case SSL_ERROR_WANT_READ:
         case SSL_ERROR_WANT_WRITE:
             // should not happen because we turned on AUTO_RETRY
-            error() << "SSL error" << endl;
+            // However, it turns out this CAN happen during a connect, if the other side
+            // accepts the socket connection but fails to do the SSL handshake in a timely
+            // manner.
+            error() << "SSL error: " << code << ", possibly timed out during connect" << endl;
             throw SocketException(SocketException::CONNECT_ERROR, "");
             break;
 

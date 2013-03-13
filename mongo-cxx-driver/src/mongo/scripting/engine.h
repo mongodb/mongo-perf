@@ -22,10 +22,9 @@
 namespace mongo {
     typedef unsigned long long ScriptingFunction;
     typedef BSONObj (*NativeFunction)(const BSONObj& args, void* data);
+    typedef map<string, ScriptingFunction> FunctionCacheMap;
 
     class DBClientWithCommands;
-
-    static const unsigned kMaxJsFileLength = std::numeric_limits<int>::max() - 1;
 
     struct JSFile {
         const char* name;
@@ -46,7 +45,7 @@ namespace mongo {
 
         virtual void localConnect(const char* dbName) = 0;
         virtual void externalSetup() = 0;
-
+        virtual void setLocalDB(const string& localDBName) { _localDBName = localDBName; }
         virtual BSONObj getObject(const char* field) = 0;
         virtual string getString(const char* field) = 0;
         virtual bool getBoolean(const char* field) = 0;
@@ -72,6 +71,8 @@ namespace mongo {
         virtual string getError() = 0;
 
         virtual bool hasOutOfMemoryException() = 0;
+
+        virtual void installBenchRun();
 
         virtual bool isKillPending() const = 0;
 
@@ -123,7 +124,7 @@ namespace mongo {
 
         void execCoreFiles();
 
-        void loadStored(bool ignoreNotConnected = false);
+        virtual void loadStored(bool ignoreNotConnected = false);
 
         /**
          * if any changes are made to .system.js, call this
@@ -139,6 +140,8 @@ namespace mongo {
         /** gets the number of times a scope was used */
         int getTimeUsed() { return _numTimeUsed; }
 
+        /** return true if last invoke() return'd native code */
+        virtual bool isLastRetNativeCode() { return _lastRetIsNativeCode; }
 
         class NoDBAccess {
             Scope* _s;
@@ -155,14 +158,18 @@ namespace mongo {
         }
 
     protected:
-        virtual ScriptingFunction _createFunction(const char* code) = 0;
+        friend class PooledScope;
+        virtual FunctionCacheMap& getFunctionCache() { return _cachedFunctions; }
+        virtual ScriptingFunction _createFunction(const char* code,
+                                                  ScriptingFunction functionNumber = 0) = 0;
 
         string _localDBName;
         long long _loadedVersion;
         set<string> _storedNames;
         static long long _lastVersion;
-        map<string, ScriptingFunction> _cachedFunctions;
+        FunctionCacheMap _cachedFunctions;
         int _numTimeUsed;
+        bool _lastRetIsNativeCode; // v8 only: set to true if eval'd script returns a native func
     };
 
     class ScriptEngine : boost::noncopyable {
@@ -184,7 +191,7 @@ namespace mongo {
          * @param pool An identifier for the pool, usually the db name
          * @return the scope
          */
-        auto_ptr<Scope> getPooledScope(const string& pool);
+        auto_ptr<Scope> getPooledScope(const string& pool, const string& scopeType);
 
         /**
          * call this method to release some JS resources when a thread is done

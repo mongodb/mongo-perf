@@ -62,6 +62,9 @@ namespace mongo {
            on an error at the remote server, you will get back:
              { $err: <string> }
            if you do not want to handle that yourself, call nextSafe().
+
+           Warning: The returned BSONObj will become invalid after the next batch
+               is fetched or when this cursor is destroyed.
         */
         BSONObj next();
 
@@ -138,6 +141,7 @@ namespace mongo {
             fieldsToReturn(_fieldsToReturn),
             opts(queryOptions),
             batchSize(bs==1?2:bs),
+            resultFlags(0),
             cursorId(),
             _ownCursor( true ),
             wasError( false ) {
@@ -149,9 +153,14 @@ namespace mongo {
             ns(_ns),
             nToReturn( _nToReturn ),
             haveLimit( _nToReturn > 0 && !(options & QueryOption_CursorTailable)),
+            nToSkip(0),
+            fieldsToReturn(0),
             opts( options ),
+            batchSize(0),
+            resultFlags(0),
             cursorId(_cursorId),
-            _ownCursor( true ) {
+            _ownCursor(true),
+            wasError(false) {
             _finishConsInit();
         }
 

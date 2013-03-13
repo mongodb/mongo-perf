@@ -123,6 +123,7 @@ namespace mongo {
             ~Holder() {
                 DESTRUCTOR_GUARD ( reset(); );
             }
+            ClientCursor* get() { return _c; }
             operator bool() { return _c; }
             ClientCursor * operator-> () { return _c; }
             const ClientCursor * operator-> () const { return _c; }
@@ -329,7 +330,8 @@ namespace mongo {
          */
         static bool erase(CursorId id);
         // Same as erase but checks to make sure this thread has read permission on the cursor's
-        // namespace.  This should be called when receiving killCursors from a client.
+        // namespace.  This should be called when receiving killCursors from a client.  This should
+        // not be called when ccmutex is held.
         static bool eraseIfAuthorized(CursorId id);
 
         /**
