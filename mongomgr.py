@@ -29,7 +29,7 @@ class mongod(object):
         sock.connect(("localhost", port))
         sock.close()
 
-    def did_mongod_start(self, port=27017, timeout=15):
+    def did_mongod_start(self, port=27017, timeout=150):
         while timeout > 0:
             time.sleep(1)
             try:
@@ -65,7 +65,7 @@ class mongod(object):
         child processes of this process can be killed with a single
         call to TerminateJobObject (see self.stop()).
         """
-        proc = subprocess.Popen(argv)
+        proc = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         if os.sys.platform == "win32":
             # Create a job object with the "kill on job close"
@@ -95,7 +95,7 @@ class mongod(object):
             raise Exception("Failed to stop mongod")
             return
         try:
-            if os.sys.platform == "win32":
+            if os.sys.platform.startswith( "win" ):
                 import win32job
                 win32job.TerminateJobObject(self.job_object, -1)
                 import time
