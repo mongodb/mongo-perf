@@ -43,8 +43,8 @@ try:
     multidb = '1' if opts.multidb else '0'
     if os.sys.platform.startswith( "win" ):
         exe = ".exe"
-    mongod_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'mongo', 'mongod')) + exe
-    print >> sys.stdout, mongod_path
+    mongod_path = opts.mongod + exe
+    print >> sys.stdout, "running tests against", mongod_path
     mongod_handle = mongomgr.mongod(mongod=mongod_path, port=opts.port)
     mongod_handle.__enter__()
     benchmark = subprocess.Popen(['./benchmark', opts.port, opts.iterations, multidb, opts.username, opts.password], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
