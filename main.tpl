@@ -23,10 +23,11 @@
     <ul>
       %if rows:
       %for row in rows:
-      <li><a href="results?versions=/{{row['version']}}/&amp;dates=/{{row['run_date']}}/&amp;labels=/{{row['label']}}$/">
+      <li><a href="results?versions=/{{row['version']}}/&amp;dates=/{{row['run_date']}}/&amp;labels=/{{row['label']}}$/&amp;limit=1">
         {{row['label']}} - {{row['platform']}} - {{row['version']}} - {{row['run_date']}}</a></li>
       %end
-      <li><a href="results?multi={{rows}}">See all</a></li>
+      %limit=len(rows)
+      <li><a href="results?multi={{rows}}&amp;limit={{limit}}">See all</a></li>
       %end
     </ul>
   </div>

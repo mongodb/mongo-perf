@@ -29,6 +29,7 @@
     % versions = ' '.join(request.GET.getall('versions'))
     % labels = ' '.join(request.GET.getall('labels'))
     % dates = ' '.join(request.GET.getall('dates'))
+    % multi = ' '.join(request.GET.getall('multi'))
     % metric = request.GET.get('metric', 'ops_per_sec')
     % limit = request.GET.get('limit', '0')
 
@@ -56,6 +57,9 @@
         <label for="dates">Dates (space-separated or /regex/)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
         <input type="text" name="dates" value="{{dates}}" />
         <br />
+
+        <input type="hidden" name="multi" value="{{multi}}" />
+        <input type="hidden" name="limit" value="{{limit}}" />
         <input type="submit" value="Go" />
     </form>
  
@@ -107,7 +111,9 @@
     <script>
         $(function(){
             var data = {{flot_data}};
-            var data = data.slice(0, parseInt({{limit}}))
+            if ("{{multi}}" == "") {
+                data = data.slice(0, parseInt({{limit}}));
+            };
 
             $.plot(
                 $('#flot_{{k}}'), data,

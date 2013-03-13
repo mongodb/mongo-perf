@@ -51,8 +51,8 @@ class mongod(object):
             path = os.getcwd() + "\db"
         argv = ["mkdir", "-p", path]
         subprocess.Popen(argv).communicate()
-        argv = [self.mongod, "--fork", "--syslog", "--port", self.port, "--dbpath", path]
-        print "running " + " ".join(argv)
+        argv = [self.mongod, "--port", self.port, "--dbpath", path]
+        print >> sys.stdout, "running " + " ".join(argv)
         self.proc = self._start(argv)
 
         if not self.did_mongod_start(int(self.port)):

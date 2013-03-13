@@ -17,7 +17,7 @@ except ImportError:
     from pymongo.json_util import object_hook
 
 optparser = OptionParser()
-optparser.add_option('-p', '--port', dest='port', help='port for mongodb to test', type='string', default='30027')
+optparser.add_option('-p', '--port', dest='port', help='test port for mongo-perf to run against', type='string', default='30000')
 optparser.add_option('-n', '--iterations', dest='iterations', help='number of iterations to test', type='string', default='100000')
 optparser.add_option('-s', '--mongos', dest='mongos', help='send all requests through mongos', action='store_true', default=False)
 optparser.add_option('--nolaunch', dest='nolaunch', help='use mongod already running on port', action='store_true', default=False)
@@ -30,7 +30,7 @@ optparser.add_option('--password', dest='password', help='Password to use for au
 if not versions:
     versions = ['master']
 
-#TODO support multiple versions
+now = datetime.datetime.now()
 branch = versions[0]
 mongodb_version = (branch if opts.label=='<git version>' else opts.label)
 mongodb_date = None
@@ -86,12 +86,38 @@ finally:
         mongod.wait()
 
 connection = None
+build_info = None
+testbed_info = None
+run_date = now.strftime("%Y-%m-%d")
 try:
     connection = pymongo.Connection()
     results = connection.bench_results.raw
-    results.ensure_index('mongodb_git')
+    analysis = connection.bench_results.info
+    build_info = connection.bench_results.command('buildInfo')
+    testbed_info = connection.bench_results.command('hostInfo')
+    analysis_info = dict({'platform' : testbed_info, 'build_info' : build_info})
+    analysis_info['run_date'] = run_date    
+    analysis_info['label'] = opts.label
     results.ensure_index('name')
-    results.remove({'mongodb_git': mongodb_git})
+    results.ensure_index('label')
+    results.ensure_index('run_date')
+    results.ensure_index('version')
+    results.ensure_index([('version', pymongo.ASCENDING)
+                        , ('run_date', pymongo.ASCENDING)
+                        , ('label', pymongo.ASCENDING)
+                        , ('name', pymongo.ASCENDING)]
+                        , unique=True)
+    
+    analysis.ensure_index([('build_info.version', pymongo.ASCENDING)
+                        , ('label', pymongo.ASCENDING)
+                        , ('run_date', pymongo.ASCENDING)]
+                        , unique=True)
+   
+    analysis.update({   'build_info.version' : build_info['version'],
+                        'label' : opts.label,
+                        'run_date' : run_date
+                    } , analysis_info, upsert=True)
+    
 except pymongo.errors.ConnectionFailure:
     pass
 
@@ -100,12 +126,23 @@ for line in benchmark_results.split('\n'):
     if line:
         print line
         obj = json.loads(line, object_hook=object_hook)
-        obj['mongodb_version'] = mongodb_version
-        obj['mongodb_date'] = mongodb_date
-        obj['mongodb_git'] = mongodb_git
-        obj['ran_at'] = datetime.datetime.now()
-        if connection: results.insert(obj)
-        
+        obj['run_date'] = run_date
+        obj['label'] = opts.label
+        obj['platform'] = testbed_info['os']['name']
+        obj['commit'] = build_info['gitVersion']
+        obj['version'] = build_info['version']
+        obj['run_date'] = run_date
+        if not opts.nolaunch:
+            obj['label'] = mongodb_version
+            obj['mongod_version'] = mongodb_version
+            obj['mongodb_date'] = mongodb_date
 
+        if connection:
+            results.update({'label' : obj['label'],
+                            'run_date' : obj['run_date'],
+                            'version' : obj['version'],
+                            'platform' : obj['platform'],
+                            'name' : obj['name']
+                            }, obj, upsert=True)
 
 

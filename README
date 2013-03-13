@@ -12,7 +12,7 @@ To test:
 (cd mongo-cxx-driver; scons) # temporary
 scons benchmark
 start a mongod on 27017 to record the results into
-./runner.py --help # this runs the tests and records the results
+./local.py --help # this runs the tests and records the results
 python server.py # this servers the results
 go to http://localhost:8080 to see the results
 
