@@ -52,12 +52,12 @@ class mongod(object):
         argv = ["mkdir", "-p", path]
         subprocess.Popen(argv).communicate()
         argv = [self.mongod, "--port", self.port, "--dbpath", path]
-        print >> sys.stdout, "running " + " ".join(argv)
         self.proc = self._start(argv)
 
         if not self.did_mongod_start(int(self.port)):
             raise Exception("Failed to start mongod")
 
+        print >> sys.stderr, "running " + " ".join(argv)
 
     def _start(self, argv):
         """In most cases, just call subprocess.Popen(). On windows,

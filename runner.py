@@ -44,14 +44,14 @@ try:
     if os.sys.platform.startswith( "win" ):
         exe = ".exe"
     mongod_path = opts.mongod + exe
-    print >> sys.stdout, "running tests against", mongod_path
     mongod_handle = mongomgr.mongod(mongod=mongod_path, port=opts.port)
     mongod_handle.__enter__()
     benchmark = subprocess.Popen(['./benchmark', opts.port, opts.iterations, multidb, opts.username, opts.password], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    print >> sys.stderr, "running benchmark tests..."
     benchmark_results = benchmark.communicate()[0]
     time.sleep(1) # wait for server to clean up connections
 except:
-    print >> sys.stderr, "Could not setup local mongod", sys.exc_info()[0]
+    print >> sys.stderr, "Could not start mongod / complete benchmark tests", sys.exc_info()[0]
     sys.exit(1)
 
 connection = None
