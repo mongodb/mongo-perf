@@ -51,7 +51,11 @@ class mongod(object):
             path = os.getcwd() + "\db"
         argv = ["mkdir", "-p", path]
         subprocess.Popen(argv).communicate()
+        background = []
+        if os.sys.platform != "win32":
+            background = ["--syslog", "--fork"]
         argv = [self.mongod, "--port", self.port, "--dbpath", path]
+        argv.extend(background)
         self.proc = self._start(argv)
 
         if not self.did_mongod_start(int(self.port)):
