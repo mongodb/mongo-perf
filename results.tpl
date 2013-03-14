@@ -35,10 +35,10 @@
 
     <form action="/results">
         <label for="metric">Metric</label>
-        <select name="metric">
-            %for m in ['ops_per_sec', 'time', 'speedup']:
-            <option {{"selected" if m == metric else ""}}>{{m}}</option>
-            %end
+        <select id="metric" name="metric">
+            <option {{'selected' if metric=="ops_per_sec" else ""}}>ops_per_sec</option>
+            <option {{'selected' if metric=="time" else ""}}>time</option>
+            <option {{'selected' if metric=="speedup" else ""}}>speedup</option>
         </select>
         <br />
 
