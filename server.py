@@ -29,12 +29,12 @@ def raw_data(versions, labels, dates, platforms, start, end):
     out = []
 
     if start:
-        start_query = {'run_date': {'$gt': start } }
+        start_query = {'run_date': {'$gte': start } }
     else:
         start_query = {}
 
     if end:
-        end_query = {'run_date': {'$lt': end } }
+        end_query = {'run_date': {'$lte': end } }
     else:
         end_query = {}
 
