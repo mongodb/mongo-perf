@@ -111,7 +111,7 @@
     <script>
         $(function(){
             var data = {{flot_data}};
-            if ("{{multi}}" == "") {
+            if ("{{multi}}" == "" && "{{limit}}" != 0) {
                 data = data.slice(0, parseInt({{limit}}));
             };
 
