@@ -72,14 +72,13 @@ def raw_data(versions, labels, dates, platforms, start, end):
 
     # print label_query, date_query, platforms_query, version_query, end_query, start_query
 
-    cursor = db.raw.find({"$and":[label_query
-                                , date_query
+    cursor = db.raw.find({"$and":[version_query
+                                , label_query
                                 , platforms_query
-                                , version_query
-                                , end_query
-                                , start_query]}).sort([
+                                , date_query
+                                , start_query
+                                , end_query]}).sort([
                                   ('name',pymongo.ASCENDING)
-                                , ('build_info.version',pymongo.ASCENDING)
                                 , ('run_date',pymongo.DESCENDING)])
     # print cursor.count()
     name = None
@@ -136,7 +135,7 @@ def results_page():
     for outer_result in results:
         out = []
         for i, result in enumerate(outer_result['results']):
-            out.append({'label': " - ".join((result['label'], result['version'], result['date']))  # + " (" + result['commit'][:7] + ")"
+            out.append({'label': " - ".join((result['label'], result['version'], result['date']))
                        ,'data': sorted([int(k), v[metric]] for (k,v) in result.iteritems() if k.isdigit())
                        })
             threads.update(int(k) for k in result if k.isdigit())
@@ -169,17 +168,14 @@ def merge(results):
 
 @route("/")
 def main_page():
-    # db.info.distinct("platform.os.name")
     platforms = db.raw.distinct("platform")
     num_tests = len(db.raw.distinct("name"))
-    num_labels = len(db.raw.distinct("label"))
+    num_labels = len(db.info.distinct("label"))
     rows = None
     versions = sorted(db.info.distinct("build_info.version"), reverse=True)
+    # restricted to benchmark tests for most recent mongoDB version
     if versions:
-        cursor = db.raw.find({"version" : versions[0]}).sort([
-        ('run_date',pymongo.DESCENDING), 
-        ('platform',pymongo.DESCENDING), 
-        ('build_info.version',pymongo.DESCENDING)]).limit(num_labels * num_tests)
+        cursor = db.raw.find({"version" : versions[0]}).limit(num_labels * num_tests)
         needed = ['label', 'platform', 'run_date', 'version']
         rows = []
         for record in cursor:

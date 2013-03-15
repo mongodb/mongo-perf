@@ -67,15 +67,15 @@ try:
     testbed_info = connection.bench_results.command('hostInfo')
     analysis_info = dict({'platform' : testbed_info, 'build_info' : build_info})
     analysis_info['run_date'] = run_date    
-    # 'builder' will be used to hold builder info
     analysis_info['label'] = opts.label
-    results.ensure_index('name')
     results.ensure_index('label')
     results.ensure_index('run_date')
     results.ensure_index('version')
+    results.ensure_index('platform')
     results.ensure_index([('version', pymongo.ASCENDING)
-                        , ('run_date', pymongo.ASCENDING)
                         , ('label', pymongo.ASCENDING)
+                        , ('platform', pymongo.ASCENDING)
+                        , ('run_date', pymongo.ASCENDING)
                         , ('name', pymongo.ASCENDING)]
                         , unique=True)
 
