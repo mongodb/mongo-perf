@@ -180,7 +180,8 @@ def main_page():
         rows = []
         for record in cursor:
             rows.append({ key : record[key] for key in needed })
-        rows = sorted([dict(t) for t in set([tuple(d.items()) for d in rows])], reverse=True)
+        rows = sorted([dict(t) for t in set([tuple(d.items()) for d in rows])]
+                        , key=lambda t: (t['run_date'], t['label']), reverse=True)
 
     return template('main.tpl',
                     rows=rows,
