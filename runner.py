@@ -104,7 +104,7 @@ try:
             obj = json.loads(line, object_hook=object_hook)
             obj['run_date'] = run_date
             obj['label'] = opts.label
-            obj['platform'] = testbed_info['os']['name']
+            obj['platform'] = testbed_info['os']['name'].replace(" ","_")
             obj['commit'] = build_info['gitVersion']
             obj['version'] = build_info['version']
             obj['run_date'] = run_date
