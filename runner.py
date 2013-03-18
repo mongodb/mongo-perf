@@ -12,6 +12,15 @@ import datetime
 import mongomgr
 from optparse import OptionParser
 
+def cleanup():
+    retval = 0
+    for p in processes:
+        terminated = p.poll()
+        if terminated == None:
+            p.kill()
+            retval = 1
+    return retval
+
 try:
     from bson.json_util import object_hook
 except ImportError:
@@ -38,6 +47,7 @@ now = datetime.datetime.now()
 benchmark_results=''
 mongod_handle=None
 exe=''
+processes = []
 
 try:
     multidb = '1' if opts.multidb else '0'
@@ -46,13 +56,15 @@ try:
     mongod_path = opts.mongod + exe
     mongod_handle = mongomgr.mongod(mongod=mongod_path, port=opts.port)
     mongod_handle.__enter__()
+    processes.append(mongod_handle.proc)
     benchmark = subprocess.Popen(['./benchmark', opts.port, opts.iterations, multidb, opts.username, opts.password], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     print >> sys.stderr, "running benchmark tests..."
     benchmark_results = benchmark.communicate()[0]
     time.sleep(1) # wait for server to clean up connections
 except:
     print >> sys.stderr, "Could not start mongod / complete benchmark tests", sys.exc_info()[0]
-    sys.exit(1)
+    retval = cleanup()
+    sys.exit(retval)
 
 connection = None
 build_info = None
@@ -91,11 +103,12 @@ try:
 
 except pymongo.errors.ConnectionFailure, e:
     print >> sys.stderr, "Could not connect to MongoDB database", sys.exc_info()[0]
-    sys.exit(1)
+    retval = cleanup()
+    sys.exit(retval)
 except:
     print >> sys.stderr, "Unexpected error in getting host/build info", sys.exc_info()[0]
-    mongod_handle.__exit__(None, None, None)
-    sys.exit(1)
+    retval = cleanup()
+    sys.exit(retval)
 
 try:
     for line in benchmark_results.split('\n'):
@@ -117,8 +130,8 @@ try:
                                 }, obj, upsert=True)
 except:
     print >> sys.stderr, "Unexpected dict error", sys.exc_info()[0]
-    mongod_handle.__exit__(None, None, None)
-    sys.exit(1)
+    retval = cleanup()
+    sys.exit(retval)
 
 mongod_handle.__exit__(None, None, None)
 
