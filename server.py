@@ -17,10 +17,10 @@ def host_page():
     result['date'] = request.GET.get('date', '')
     result['label'] = request.GET.get('label', '')
     result['version'] = request.GET.get('version', '')
-    host = db.info.find_one({  "build_info.version" : result['version'],
-                                        "label" : result['label'], 
-                                        "run_date" : result['date']
-                                    })
+    host = db.host.find_one({   "build_info.version" : result['version'],
+                                "label" : result['label'], 
+                                "run_date" : result['date']
+                            })
     return template('host.tpl'
         , host=host)
 
@@ -170,10 +170,11 @@ def merge(results):
 def main_page():
     platforms = db.raw.distinct("platform")
     num_tests = len(db.raw.distinct("name"))
-    num_labels = len(db.info.distinct("label"))
+    num_labels = len(db.host.distinct("label"))
     rows = None
-    versions = sorted(db.info.distinct("build_info.version"), reverse=True)
+    versions = sorted(db.host.distinct("build_info.version"), reverse=True)
     # restricted to benchmark tests for most recent mongoDB version
+    # consider using capped collection for this instead
     if versions:
         cursor = db.raw.find({"version" : versions[0]}).limit(num_labels * num_tests)
         needed = ['label', 'platform', 'run_date', 'version']

@@ -19,8 +19,6 @@ except ImportError:
 # Globals
 processes = []
 connection = None
-build_info = None
-testbed_info = None
 mongod_handle = None
 now = datetime.datetime.now()
 run_date = now.strftime("%Y-%m-%d")
@@ -52,6 +50,7 @@ def parse_options():
 
 def run_benchmark(opts):
     global mongod_handle, processes
+
     benchmark_results = ''
     try:
         multidb = '1' if opts.multidb else '0'
@@ -79,37 +78,40 @@ def run_benchmark(opts):
     return benchmark_results
 
 def prep_storage(opts):
-    global build_info, testbed_info
+    global connection
+
+    build_info, host_info = None, None
+
     try:
         connection = pymongo.Connection(host=opts.rhost, port=int(opts.rport))
-        results = connection.bench_results.raw
-        analysis = connection.bench_results.info
+        raw = connection.bench_results.raw
+        host = connection.bench_results.host
         build_info = connection.bench_results.command('buildInfo')
-        testbed_info = connection.bench_results.command('hostInfo')
-        analysis_info = dict({'platform' : testbed_info, \
-                                'build_info' : build_info})
-        analysis_info['run_date'] = run_date    
-        analysis_info['label'] = opts.label
-        results.ensure_index('label')
-        results.ensure_index('run_date')
-        results.ensure_index('version')
-        results.ensure_index('platform')
-        results.ensure_index([('version', pymongo.ASCENDING)
+        host_info = connection.bench_results.command('hostInfo')
+        info = dict({ 'platform' : host_info, \
+                      'build_info' : build_info})
+        info['run_date'] = run_date    
+        info['label'] = opts.label
+        raw.ensure_index('label')
+        raw.ensure_index('run_date')
+        raw.ensure_index('version')
+        raw.ensure_index('platform')
+        raw.ensure_index([('version', pymongo.ASCENDING)
                             , ('label', pymongo.ASCENDING)
                             , ('platform', pymongo.ASCENDING)
                             , ('run_date', pymongo.ASCENDING)
                             , ('name', pymongo.ASCENDING)]
                             , unique=True)
 
-        analysis.ensure_index([('build_info.version', pymongo.ASCENDING)
+        host.ensure_index([('build_info.version', pymongo.ASCENDING)
                             , ('label', pymongo.ASCENDING)
                             , ('run_date', pymongo.ASCENDING)]
                             , unique=True)
        
-        analysis.update({   'build_info.version' : build_info['version'],
-                            'label' : opts.label,
-                            'run_date' : run_date
-                        } , analysis_info, upsert=True)
+        host.update({ 'build_info.version' : build_info['version'],
+                      'label' : opts.label,
+                      'run_date' : run_date
+                    } , info, upsert=True)
 
     except pymongo.errors.ConnectionFailure, e:
         print >> sys.stderr, \
@@ -121,11 +123,15 @@ def prep_storage(opts):
         "Unexpected error in getting host/build info", sys.exc_info()[0]
         retval = cleanup()
         sys.exit(retval)
-    return connection
 
-def store_results(connection, benchmark_results):
-    global mongod_handle, build_info, testbed_info
+    return build_info, host_info
+
+def store_results(opts, benchmark_results):
+    global connection, mongod_handle
+
+    build_info, host_info = prep_storage(opts)
     try:
+        raw = connection.bench_results.raw
         for line in benchmark_results.split('\n'):
             if line:
                 print line
@@ -134,14 +140,9 @@ def store_results(connection, benchmark_results):
                 obj['run_date'] = run_date
                 obj['version'] = build_info['version']
                 obj['commit'] = build_info['gitVersion']
-                obj['platform'] = testbed_info['os']['name'].replace(" ","_")
+                obj['platform'] = host_info['os']['name'].replace(" ","_")
                 if connection:
-                    results.update({'name' : obj['name'],
-                                    'label' : obj['label'],
-                                    'version' : obj['version'],
-                                    'platform' : obj['platform'],
-                                    'run_date' : obj['run_date']
-                                    }, obj, upsert=True)
+                    update_collection(raw, obj)
     except:
         print >> sys.stderr, "Unexpected dict error", sys.exc_info()[0]
         retval = cleanup()
@@ -149,11 +150,23 @@ def store_results(connection, benchmark_results):
     finally:
         mongod_handle.__exit__(None, None, None)
 
+def update_collection(collection, obj):
+    try:
+        collection.update({ 'name' : obj['name'],
+                            'label' : obj['label'],
+                            'version' : obj['version'],
+                            'platform' : obj['platform'],
+                            'run_date' : obj['run_date']
+                            }, obj, upsert=True)
+    except:
+        print >> sys.stderr, "Could not update %s" % collection, sys.exc_info()[0]
+        retval = cleanup()
+        sys.exit(retval)
+
 def main():
     opts, versions = parse_options()
     benchmark_results = run_benchmark(opts)
-    connection = prep_storage(opts)
-    store_results(connection, benchmark_results)
+    store_results(opts, benchmark_results)
 
 if __name__ == '__main__':
     main()
