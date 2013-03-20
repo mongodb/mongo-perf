@@ -46,12 +46,14 @@ class mongod(object):
             print >> sys.stderr, "probable bug: self.proc already set in start()"
             raise Exception("Failed to start mongod")
 
-        path = os.getcwd() + "/db"
+        dbpath = os.getcwd() + "/db"
+        logpath = dbpath + "/db"
         if os.sys.platform == "win32":
-            path = os.getcwd() + "\db"
+            dbpath = os.getcwd() + "\db"
+            logpath = dbpath + "\db"
         argv = ["mkdir", "-p", path]
         subprocess.Popen(argv).communicate()
-        argv = [self.mongod, "--port", self.port, "--dbpath", path]
+        argv = [self.mongod, "--port", self.port, "--dbpath", dbpath, "--logpath", logpath]
         self.proc = self._start(argv)
 
         if not self.did_mongod_start(int(self.port)):
@@ -103,9 +105,9 @@ class mongod(object):
                 time.sleep(5) 
             else:
                 # This actually works
-                mongo_executable = os.path.abspath(os.path.join(self.mongod, '..', 'mongo'))
-                argv = [mongo_executable, "--port", self.port, "--eval", "db.getSiblingDB('admin').shutdownServer()"]
-                proc = subprocess.Popen(argv)
+                # mongo_executable = os.path.abspath(os.path.join(self.mongod, '..', 'mongo'))
+                # argv = [mongo_executable, "--port", self.port, "--eval", "db.getSiblingDB('admin').shutdownServer()"]
+                # proc = subprocess.Popen(argv)
                 # This function not available in Python 2.5
                 self.proc.terminate()
         except AttributeError:
