@@ -47,10 +47,10 @@ class mongod(object):
             raise Exception("Failed to start mongod")
 
         dbpath = os.getcwd() + "/db"
-        logpath = dbpath + "/db"
+        logpath = dbpath + "/log.txt"
         if os.sys.platform == "win32":
             dbpath = os.getcwd() + "\db"
-            logpath = dbpath + "\db"
+            logpath = dbpath + "\log.txt"
         argv = ["mkdir", "-p", path]
         subprocess.Popen(argv).communicate()
         argv = [self.mongod, "--port", self.port, "--dbpath", dbpath, "--logpath", logpath]
