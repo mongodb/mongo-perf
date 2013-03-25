@@ -31,6 +31,8 @@
     % dates = ' '.join(request.GET.getall('dates'))
     % multi = ' '.join(request.GET.getall('multi'))
     % metric = request.GET.get('metric', 'ops_per_sec')
+    % start = request.GET.get('start', '')
+    % end = request.GET.get('end', '')
     % limit = request.GET.get('limit', '0')
 
     <form action="/results">
@@ -57,9 +59,10 @@
         <label for="dates">Dates (space-separated or /regex/)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
         <input type="text" name="dates" value="{{dates}}" />
         <br />
-
         <input type="hidden" name="multi" value="{{multi}}" />
         <input type="hidden" name="limit" value="{{limit}}" />
+        <input type="hidden" name="start" value="{{start}}" />
+        <input type="hidden" name="end" value="{{end}}" />
         <input type="submit" value="Go" />
     </form>
  
