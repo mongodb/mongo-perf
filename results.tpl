@@ -105,7 +105,9 @@
         </thead>
     </table>
 
-    <br />
+    <br /
+    >
+    <div id="legendContainer_{{k}}" style="background-color:#fff;padding:2px;margin-bottom:8px;border-radius: 3px 3px 3px 3px;border:1px solid #E6E6E6;display:inline-block;margin:0 auto;width:600px;float:right"></div>
     <div id="flot_{{k}}" style="width:600px;height:300px;"> </div>
     <div style="height:50px"> </div>
     <script>
@@ -118,9 +120,12 @@
             $.plot(
                 $('#flot_{{k}}'), data,
                 {
-                   series: { lines: { show: true }, points: { show: true } },
-                   xaxis: {ticks : {{threads}} },
-                   yaxis: {min : 0},
+                    grid: { backgroundColor: { colors: ["#eceadf", "#d9d6c4"] } }, 
+                    series: { lines: { show: true }, points: { show: true } },
+                    legend: { show: true, position: "nw", backgroundOpacity: 0,
+                    container: $("#legendContainer_{{k}}"), noColumns: 2 },
+                    xaxis: {ticks : {{threads}} },
+                    yaxis: {min : 0}
                 }
            );
        });
