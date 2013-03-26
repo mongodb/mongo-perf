@@ -37,7 +37,22 @@ body{
 .fakewindowcontain .ui-widget-overlay {
   position: absolute;
 }
-  #container {
-       position: absolute;
-       float:left;
-     }
+.fields label, .fields input {
+  display:inline-block;
+}
+
+.fields label {
+  width:300px; /* or whatever size you want them */
+}
+input[type="text"]{
+  background:url("../images/text-input-bg.png") repeat-x scroll left top;
+  border:1px solid #d9d6c4;
+  font-family:Georgia,Times,"Times New Roman",serif;
+  font-size:28px; /* This probably makes it "fat" as you want */
+  width:200px;
+  font:13px 'monospace',Helvetica,Arial,sans-serif;
+  margin:0;
+  outline:0 none;
+  padding:3px;
+}
+

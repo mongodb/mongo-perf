@@ -36,34 +36,38 @@
     % limit = request.GET.get('limit', '0')
 
     <form action="/results">
-        <label for="metric">Metric</label>
-        <select id="metric" name="metric">
-            <option {{'selected' if metric=="ops_per_sec" else ""}}>ops_per_sec</option>
-            <option {{'selected' if metric=="time" else ""}}>time</option>
-            <option {{'selected' if metric=="speedup" else ""}}>speedup</option>
-        </select>
-        <br />
 
-        <label for="labels">Labels (space-separated or /regex/)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
-        <input type="text" name="labels" value="{{labels}}" />
-        <br />
-
-        <label for="platforms">Platforms (space-separated or /regex/)&nbsp;</label>
-        <input type="text" name="platforms" value="{{platforms}}" />
-        <br />
-
-        <label for="versions">Versions (space-separated or /regex/)&nbsp;&nbsp;</label>
-        <input type="text" name="versions" value="{{versions}}" />
-        <br />
-
-        <label for="dates">Dates (space-separated or /regex/)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
-        <input type="text" name="dates" value="{{dates}}" />
-        <br />
-        <input type="hidden" name="multi" value="{{multi}}" />
-        <input type="hidden" name="limit" value="{{limit}}" />
-        <input type="hidden" name="start" value="{{start}}" />
-        <input type="hidden" name="end" value="{{end}}" />
-        <input type="submit" value="Go" />
+        <fieldset id="selectors" class="fields">
+            <div>
+                <label for="metric">Metric</label>
+                <select id="metric" name="metric">
+                    <option {{'selected' if metric=="ops_per_sec" else ""}}>ops_per_sec</option>
+                    <option {{'selected' if metric=="time" else ""}}>time</option>
+                    <option {{'selected' if metric=="speedup" else ""}}>speedup</option>
+                </select>
+            </div>
+            <div>
+                <label for="labels">Labels (space-separated or /regex/)</label>
+                <input type="text" name="labels" value="{{labels}}" />
+            </div>
+            <div>
+                <label for="platforms">Platforms (space-separated or /regex/)</label>
+                <input type="text" name="platforms" value="{{platforms}}" />
+            </div>
+            <div>
+                <label for="versions">Versions (space-separated or /regex/)</label>
+                <input type="text" name="versions" value="{{versions}}" />
+            </div>
+            <div>
+                <label for="dates">Dates (space-separated or /regex/)</label>
+                <input type="text" name="dates" value="{{dates}}" />
+            </div>
+            <input type="hidden" name="multi" value="{{multi}}" />
+            <input type="hidden" name="limit" value="{{limit}}" />
+            <input type="hidden" name="start" value="{{start}}" />
+            <input type="hidden" name="end" value="{{end}}" />
+            <input type="submit" value="Go" />
+        </fieldset>
     </form>
  
     %import urllib
