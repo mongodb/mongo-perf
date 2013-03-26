@@ -40,11 +40,10 @@ body{
 .fields label, .fields input {
   display:inline-block;
 }
-
 .fields label {
   width:300px; /* or whatever size you want them */
 }
-input[type="text"]{
+.fields input[type="text"]{
   background:url("../images/text-input-bg.png") repeat-x scroll left top;
   border:1px solid #d9d6c4;
   font-family:Georgia,Times,"Times New Roman",serif;

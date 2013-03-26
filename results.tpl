@@ -36,7 +36,6 @@
     % limit = request.GET.get('limit', '0')
 
     <form action="/results">
-
         <fieldset id="selectors" class="fields">
             <div>
                 <label for="metric">Metric</label>
