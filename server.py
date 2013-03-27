@@ -25,7 +25,7 @@ def host_page():
         , host=host)
 
 @route("/raw")
-def raw_data(versions, labels, dates, platforms, start, end):
+def raw_data(versions, labels, dates, platforms, start, end, limit):
     out = []
 
     if start:
@@ -37,6 +37,11 @@ def raw_data(versions, labels, dates, platforms, start, end):
         end_query = {'run_date': {'$lte': end } }
     else:
         end_query = {}
+
+    if limit:
+        limit = int(limit)
+    else:
+        limit = 10
 
     if versions:
         if versions.startswith('/') and versions.endswith('/'):
@@ -79,7 +84,7 @@ def raw_data(versions, labels, dates, platforms, start, end):
                                 , start_query
                                 , end_query]}).sort([
                                   ('name',pymongo.ASCENDING)
-                                , ('run_date',pymongo.DESCENDING)])
+                                , ('run_date',pymongo.DESCENDING)]).limit(limit)
     # print cursor.count()
     name = None
     results = []
@@ -111,6 +116,7 @@ def results_page():
     labels = ' '.join(request.GET.getall('labels'))
     platforms = ' '.join(request.GET.getall('platforms'))
     multi = ' '.join(request.GET.getall('multi'))
+    limit = request.GET.get('limit')
     start = request.GET.get('start')
     end = request.GET.get('end')
     if multi:
@@ -128,7 +134,7 @@ def results_page():
         except:
             pass
     else:
-        results = raw_data(versions, labels, dates, platforms, start, end)
+        results = raw_data(versions, labels, dates, platforms, start, end, limit)
 
     threads = set()
     flot_results = []
@@ -169,6 +175,7 @@ def merge(results):
 @route("/")
 def main_page():
     platforms = db.raw.distinct("platform")
+    labels = db.raw.distinct("label")
     num_tests = len(db.raw.distinct("name"))
     num_labels = len(db.host.distinct("label"))
     rows = None
@@ -186,6 +193,7 @@ def main_page():
 
     return template('main.tpl',
                     rows=rows,
+                    labels=labels,
                     versions=versions,
                     platforms=platforms)
 

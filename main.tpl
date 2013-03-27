@@ -15,6 +15,7 @@
  <div id="tabs">
   <ul>
     <li><a href="#dash">Dashboard</a></li>         
+    <li><a href="#labels">Labels</a></li>   
     <li><a href="#platforms">Platforms</a></li>
     <li><a href="#versions">Versions</a></li>
     <li><a href="#custom">Custom</a></li>
@@ -28,6 +29,14 @@
       %end
       %limit=len(rows)
       <li><a href="results?multi={{rows}}&amp;limit={{limit}}">See all</a></li>
+      %end
+    </ul>
+  </div>
+
+  <div id="labels">
+    <ul>
+      %for label in labels:
+      <li><a href="results?labels={{label}}">{{label}}</a></li>
       %end
     </ul>
   </div>
@@ -52,6 +61,10 @@
     <form name="custom_form" id="custom_form" action="results" method="get">
       <h2>From: <input type="text" size="6" name="start" class="datepicker" readonly="readonly"/>
       <h2>To:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="text" size="6" name="end" class="datepicker" readonly="readonly"/>
+      <h2>Labels</h2>
+      %for label in labels:
+      <input type="checkbox" name="labels" value={{label}}>{{label}}<br>
+      %end
       <h2>Platforms</h2>
       %for platform in platforms:
       <input type="checkbox" name="platforms" value={{platform}}>{{platform}}<br>
