@@ -32,11 +32,13 @@
       %end
     </ul>
   </div>
-
+  
+  %limit=10
+  
   <div id="labels">
     <ul>
       %for label in labels:
-      <li><a href="results?labels={{label}}">{{label}}</a></li>
+      <li><a href="results?labels={{label}}&amp;versions={{versions[0]}}&amp;limit={{limit}}">{{label}}</a></li>
       %end
     </ul>
   </div>
@@ -44,7 +46,7 @@
   <div id="platforms">
     <ul>
       %for platform in platforms:
-      <li><a href="results?platforms={{platform}}">{{platform}}</a></li>
+      <li><a href="results?platforms={{platform}}&amp;versions={{versions[0]}}&amp;limit={{limit}}">{{platform}}</a></li>
       %end
     </ul>
   </div>
@@ -52,7 +54,7 @@
   <div id="versions">
     <ul>
         %for version in versions:
-          <li><a href="results?versions={{version}}">{{version}}</a></li>
+          <li><a href="results?versions={{version}}&amp;limit={{limit}}">{{version}}</a></li>
         %end
     </ul>
   </div>

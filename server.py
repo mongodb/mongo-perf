@@ -84,7 +84,7 @@ def raw_data(versions, labels, dates, platforms, start, end, limit):
                                 , start_query
                                 , end_query]}).sort([
                                   ('name',pymongo.ASCENDING)
-                                , ('run_date',pymongo.DESCENDING)]).limit(limit)
+                                , ('run_date',pymongo.DESCENDING)])
     # print cursor.count()
     name = None
     results = []
@@ -178,8 +178,9 @@ def main_page():
     labels = db.raw.distinct("label")
     num_tests = len(db.raw.distinct("name"))
     num_labels = len(db.host.distinct("label"))
+    versions = sorted(db.raw.distinct("version"), reverse=True)
+    # versions = sorted(db.host.distinct("build_info.version"), reverse=True)
     rows = None
-    versions = sorted(db.host.distinct("build_info.version"), reverse=True)
     # restricted to benchmark tests for most recent mongoDB version
     # consider using capped collection for this instead
     if versions:
