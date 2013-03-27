@@ -127,12 +127,12 @@ def results_page():
                 result = literal_eval(json.dumps(platform))
                 result = { attrib : '/' + result[attrib] + '/' for attrib in result }
                 tmp = raw_data(result['version'], result['label'], 
-                result['run_date'], result['platform'], None, None)
+                result['run_date'], result['platform'], None, None, limit)
                 for result in tmp:
                     results.append(result)
             results = merge(results)
-        except:
-            pass
+        except BaseException, e:
+            print e
     else:
         results = raw_data(versions, labels, dates, platforms, start, end, limit)
 
