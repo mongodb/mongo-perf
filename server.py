@@ -4,8 +4,14 @@ import pymongo
 from datetime import datetime
 import sys
 import json
+from collections import defaultdict
 
-db = pymongo.Connection('localhost', 27017)['bench_results']
+MONGO_PERF_HOST = "localhost"
+MONGO_PERF_PORT = 27017
+MP_DB_NAME = "bench_results"
+db = pymongo.Connection(host=MONGO_PERF_HOST,
+                        port=MONGO_PERF_PORT)\
+                        [MP_DB_NAME]
 
 @route('/static/:filename#.*#')
 def static_file(filename):
@@ -17,17 +23,15 @@ def host_page():
     result['date'] = request.GET.get('date', '')
     result['label'] = request.GET.get('label', '')
     result['version'] = request.GET.get('version', '')
-    host = db.host.find_one({   "build_info.version" : result['version'],
-                                "label" : result['label'], 
-                                "run_date" : result['date']
+    host = db.host.find_one({"build_info.version" : 
+                                result['version'],
+                            "label" : result['label'], 
+                            "run_date" : result['date']
                             })
-    return template('host.tpl'
-        , host=host)
+    return template('host.tpl', host=host)
 
 @route("/raw")
 def raw_data(versions, labels, dates, platforms, start, end, limit):
-    out = []
-
     if start:
         start_query = {'run_date': {'$gte': start } }
     else:
@@ -45,7 +49,8 @@ def raw_data(versions, labels, dates, platforms, start, end, limit):
 
     if versions:
         if versions.startswith('/') and versions.endswith('/'):
-            version_query = {'version': {'$regex': versions[1:-1], '$options' : 'i'}}
+            version_query = {'version': {'$regex' : 
+                        versions[1:-1], '$options' : 'i'}}
         else:
             version_query = {'version': {'$in': versions.split(" ")}}
     else:
@@ -53,7 +58,8 @@ def raw_data(versions, labels, dates, platforms, start, end, limit):
 
     if platforms:
         if platforms.startswith('/') and platforms.endswith('/'):
-            platforms_query = {'platform': {'$regex': platforms[1:-1], '$options' : 'i'}}
+            platforms_query = {'platform': {'$regex' :
+                         platforms[1:-1], '$options' : 'i'}}
         else:
             platforms_query = {'platform': {'$in': platforms.split(" ")}}
     else:
@@ -61,7 +67,8 @@ def raw_data(versions, labels, dates, platforms, start, end, limit):
 
     if dates:
         if dates.startswith('/') and dates.endswith('/'):
-            date_query = {'run_date': {'$regex': dates[1:-1], '$options' : 'i'}}
+            date_query = {'run_date': {'$regex' :
+                         dates[1:-1], '$options' : 'i'}}
         else:
             date_query = {'run_date': {'$in': dates.split(" ")}}
     else:
@@ -69,43 +76,44 @@ def raw_data(versions, labels, dates, platforms, start, end, limit):
 
     if labels:
         if labels.startswith('/') and labels.endswith('/'):
-            label_query = {'label': {'$regex': labels[1:-1], '$options' : 'i'}}
+            label_query = {'label': {'$regex' :
+                         labels[1:-1], '$options' : 'i'}}
         else:
             label_query = {'label': {'$in': labels.split(" ")}}
     else:
         label_query = {}
 
-    # print label_query, date_query, platforms_query, version_query, end_query, start_query
+    # print label_query, date_query, platforms_query,
+    # version_query, end_query, start_query
 
     cursor = db.raw.find({"$and":[version_query
                                 , label_query
                                 , platforms_query
                                 , date_query
                                 , start_query
-                                , end_query]}).sort([
-                                  ('name',pymongo.ASCENDING)
-                                , ('run_date',pymongo.DESCENDING)])
+                                , end_query]}) \
+                        .sort([('run_date',pymongo.DESCENDING)
+                             , ('platform',pymongo.DESCENDING)]) \
+                        .limit(limit)
     # print cursor.count()
-    name = None
-    results = []
-    for result in cursor:
-        if result['name'] != name:
-            if name is not None:
-                out.append({'name':name, 'results':results})
-            name = result['name']
-            results = []
+    out = []
+    aggregate = defaultdict(list)
+    for entry in cursor:
+        results = entry['benchmarks']
+        row = dict( commit=entry['commit'],
+                platform=entry['platform'], 
+                version=entry['version'], 
+                date=entry['run_date'],
+                label=entry['label'])
 
-        row = dict( label=result['label'],
-                    platform=result['platform'], 
-                    version=result['version'], 
-                    commit=result['commit'],
-                    date=result['run_date'])
-        for (n, res) in result['results'].iteritems():
-            row[n] = res
+        for result in results:
+            for (n, res) in result['results'].iteritems():
+                row[n] = res
+            aggregate[result['name']].append(row)
 
-        results.append(row)
+    for name in aggregate:
+        out.append({'name':name, 'results':aggregate[name]})
 
-    out.append({'name':name, 'results':results})
     return out
 
 @route("/results")
@@ -125,7 +133,8 @@ def results_page():
             from ast import literal_eval
             for platform in literal_eval(multi):
                 result = literal_eval(json.dumps(platform))
-                result = { attrib : '/' + result[attrib] + '/' for attrib in result }
+                result = { attrib : '/' + result[attrib]
+                         + '/' for attrib in result }
                 tmp = raw_data(result['version'], result['label'], 
                 result['run_date'], result['platform'], None, None, limit)
                 for result in tmp:
@@ -134,15 +143,18 @@ def results_page():
         except BaseException, e:
             print e
     else:
-        results = raw_data(versions, labels, dates, platforms, start, end, limit)
+        results = raw_data(versions, labels, dates, 
+                    platforms, start, end, limit)
 
     threads = set()
     flot_results = []
     for outer_result in results:
         out = []
         for i, result in enumerate(outer_result['results']):
-            out.append({'label': " - ".join((result['label'], result['version'], result['date']))
-                       ,'data': sorted([int(k), v[metric]] for (k,v) in result.iteritems() if k.isdigit())
+            out.append({'label': " - ".join((result['label'], 
+                            result['version'], result['date']))
+                        ,'data': sorted([int(k), v[metric]] 
+                        for (k,v) in result.iteritems() if k.isdigit())
                        })
             threads.update(int(k) for k in result if k.isdigit())
         flot_results.append(json.dumps(out))
@@ -176,21 +188,22 @@ def merge(results):
 def main_page():
     platforms = db.raw.distinct("platform")
     labels = db.raw.distinct("label")
-    num_tests = len(db.raw.distinct("name"))
-    num_labels = len(db.host.distinct("label"))
-    versions = sorted(db.raw.distinct("version"), reverse=True)
+    versions = db.raw.distinct("version")
+    versions = sorted(versions, reverse=True)
     # versions = sorted(db.host.distinct("build_info.version"), reverse=True)
     rows = None
     # restricted to benchmark tests for most recent mongoDB version
     # consider using capped collection for this instead
     if versions:
-        cursor = db.raw.find({"version" : versions[0]}).limit(num_labels * num_tests)
+        cursor = db.raw.find({"version" : versions[0]}, 
+        {"_id" : 0, "benchmarks" : 0, "commit" : 0}).limit(len(labels))
         needed = ['label', 'platform', 'run_date', 'version']
         rows = []
         for record in cursor:
-            rows.append({ key : record[key] for key in needed })
-        rows = sorted([dict(t) for t in set([tuple(d.items()) for d in rows])]
-                        , key=lambda t: (t['run_date'], t['label']), reverse=True)
+            rows.append(record)
+        rows = sorted([dict(t) for t in set([tuple(d.items()) 
+                       for d in rows])], key=lambda t : 
+                        (t['run_date'], t['label']), reverse=True)
 
     return template('main.tpl',
                     rows=rows,
@@ -200,9 +213,5 @@ def main_page():
 
 if __name__ == '__main__':
     do_reload = '--reload' in sys.argv
-    debug(do_reload)
-    debug(True)
     run(reloader=do_reload, host='0.0.0.0', server=AutoServer)
-
-
 

@@ -1,12 +1,12 @@
 tmp/*
-
+anomaly
+.Rhistory
 .scon*
-config.log
-
+*.log
+*.txt
 tags
-
 *.pyc
-
+db/*
 *.o
 *.a
 benchmark
