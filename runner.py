@@ -54,6 +54,9 @@ def parse_options():
                         type='string', default='100000')
     optparser.add_option('-s', '--mongos', dest='mongos', 
                         help='send all requests through mongos', 
+                        action='store_true', default=False)  
+    optparser.add_option('--nolaunch', dest='nolaunch',
+                        help='use mongod already running on port', 
                         action='store_true', default=False)
     optparser.add_option('-m', '--multidb', dest='multidb', 
                         help='use a separate db for each connection', 
