@@ -21,7 +21,7 @@ except ImportError:
 def populate(time, label, platform, version):
     benchmark_results=''
     try:
-        benchmark = subprocess.Popen(['./benchmark', "27017", '1000', '0', '', ''], stdout=subprocess.PIPE)
+        benchmark = subprocess.Popen(['./benchmark', "27017", '1', '0', '', ''], stdout=subprocess.PIPE)
         benchmark_results = benchmark.communicate()[0]
     except:
         pass
@@ -33,12 +33,8 @@ def populate(time, label, platform, version):
 
     try:
         connection = pymongo.Connection()
-        if "recent" not in connection.bench_results.collection_names():
-            connection.bench_results.create_collection("recent", \
-                            capped=True, size=(1024 * 10), max=6)
         raw = connection.bench_results.raw
         host = connection.bench_results.host
-        recent = connection.bench_results.recent
         build_info = connection.bench_results.command('buildInfo')
         host_info = connection.bench_results.command('hostInfo')
         info = dict({ 'platform' : host_info, \
@@ -50,12 +46,6 @@ def populate(time, label, platform, version):
         raw.ensure_index('version')
         raw.ensure_index('platform')
         raw.ensure_index([('version', pymongo.ASCENDING)
-                            , ('label', pymongo.ASCENDING)
-                            , ('platform', pymongo.ASCENDING)
-                            , ('run_date', pymongo.ASCENDING)]
-                            , unique=True)
-
-        recent.ensure_index([('version', pymongo.ASCENDING)
                             , ('label', pymongo.ASCENDING)
                             , ('platform', pymongo.ASCENDING)
                             , ('run_date', pymongo.ASCENDING)]
@@ -98,7 +88,7 @@ def populate(time, label, platform, version):
 
 
 if __name__ == "__main__":
-    for time in xrange(-4, 100):
+    for time in xrange(-3, 30):
         for label in ["Linux 64-bit", "Linux 64-bit DUR OFF", "OS X 64-bit DUR OFF",\
         "OS X 64-bit", "Windows 64-bit", "Windows 64-bit 2008"]:
             for version in ["2.4.0-rc1", "2.4.0-rc0", "2.2.3"]:
