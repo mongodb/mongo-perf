@@ -1,9 +1,9 @@
 #!/usr/bin/python
-from bottle import *
-import pymongo
-from datetime import datetime
 import sys
 import json
+import pymongo
+from bottle import *
+from datetime import datetime
 from collections import defaultdict
 
 MONGO_PERF_HOST = "localhost"
@@ -83,7 +83,7 @@ def raw_data(versions, labels, dates, platforms, start, end, limit):
     else:
         label_query = {}
 
-    # print label_query, date_query, platforms_query,
+    # print label_query, date_query, platforms_query, \
     # version_query, end_query, start_query
 
     cursor = db.raw.find({"$and":[version_query
@@ -95,10 +95,12 @@ def raw_data(versions, labels, dates, platforms, start, end, limit):
                         .sort([('run_date',pymongo.DESCENDING)
                              , ('platform',pymongo.DESCENDING)]) \
                         .limit(limit)
-    # print cursor.count()
-    out = []
+
     aggregate = defaultdict(list)
-    for entry in cursor:
+    result_size = cursor.count(with_limit_and_skip=True)
+
+    for index in xrange(0, result_size):
+        entry = cursor[index]
         results = entry['benchmarks']
         row = dict( commit=entry['commit'],
                 platform=entry['platform'], 
@@ -111,8 +113,11 @@ def raw_data(versions, labels, dates, platforms, start, end, limit):
                 row[n] = res
             aggregate[result['name']].append(row)
 
-    for name in aggregate:
-        out.append({'name':name, 'results':aggregate[name]})
+    aggregate = sorted(aggregate.iteritems(), key=lambda (k, v) : k)
+    out = []
+
+    for item in aggregate:
+        out.append({'name' : item[0], 'results' : item[1]})
 
     return out
 
@@ -167,11 +172,8 @@ def results_page():
                    )
 
 def merge(results):
-    out = []
-    outer = {}
+    aggregate = defaultdict(list)
     for result in results:
-        if result['name'] not in outer.keys():
-            outer[result['name']] = []
         row = dict( label=result['results'][0]['label'],
                     platform=result['results'][0]['platform'], 
                     version=result['results'][0]['version'], 
@@ -179,9 +181,14 @@ def merge(results):
                     date=result['results'][0]['date'])
         for (n, res) in result['results'][0].iteritems():
             row[n] = res
-        outer[result['name']].append(row)
-    for name in outer:
-        out.append({'name' : name, 'results' : outer[name]})
+        aggregate[result['name']].append(row)
+
+    aggregate = sorted(aggregate.iteritems(), key=lambda (k, v) : k)
+    out = []
+
+    for item in aggregate:
+        out.append({'name' : item[0], 'results' : item[1]})
+
     return out
 
 @route("/")
