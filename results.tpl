@@ -33,7 +33,7 @@
     % metric = request.GET.get('metric', 'ops_per_sec')
     % start = request.GET.get('start', '')
     % end = request.GET.get('end', '')
-    % limit = request.GET.get('limit', '0')
+    % limit = request.GET.get('limit', '10')
 
     <form action="/results">
         <fieldset id="selectors" class="fields">
@@ -116,7 +116,6 @@
     <script>
         $(function(){
             var data = {{flot_data}};
-
             $.plot(
                 $('#flot_{{k}}'), data,
                 {
