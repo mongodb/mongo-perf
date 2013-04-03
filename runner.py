@@ -51,7 +51,7 @@ def parse_options():
                         type='string', default='30000')
     optparser.add_option('-n', '--iterations', dest='iterations', 
                         help='number of iterations to test', 
-                        type='string', default='1')
+                        type='string', default='100000')
     optparser.add_option('-s', '--mongos', dest='mongos', 
                         help='send all requests through mongos', 
                         action='store_true', default=False)
