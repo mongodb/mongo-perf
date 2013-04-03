@@ -324,15 +324,20 @@ class Processor(Thread):
                 anomalies = definition.result[top_level][test]
 
                 for anomaly in anomalies:
-                    target_trend = 'decreasing'
                     thread = anomaly['thread_count']
                     # can't have an anomaly here
                     if thread == '1' and \
                     values['metric'] == 'speedup':
                         break
-                    if anomaly['AV'] < 0 and \
-                    anomaly['y.3'] > anomaly['y.2']:
+
+                    target_trend = 'decreasing'
+                    if anomaly['y.3'] > anomaly['y.2']:
                         target_trend = 'increasing'
+                        if anomaly['AV'] < 0: 
+                            target_trend = 'picking up'
+                    else:
+                        if anomaly['AV'] > 0:
+                            target_trend = 'declining'
 
                     homogeneity = (100 - anomaly['madindex.AV'])
                     series_trend = "homogenous"

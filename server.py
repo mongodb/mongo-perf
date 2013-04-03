@@ -102,13 +102,13 @@ def raw_data(versions, labels, dates, platforms, start, end, limit):
     for index in xrange(0, result_size):
         entry = cursor[index]
         results = entry['benchmarks']
-        row = dict( commit=entry['commit'],
-                platform=entry['platform'], 
-                version=entry['version'], 
-                date=entry['run_date'],
-                label=entry['label'])
 
         for result in results:
+            row = dict( commit=entry['commit'],
+                    platform=entry['platform'], 
+                    version=entry['version'], 
+                    date=entry['run_date'],
+                    label=entry['label'])
             for (n, res) in result['results'].iteritems():
                 row[n] = res
             aggregate[result['name']].append(row)
