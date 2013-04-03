@@ -180,8 +180,7 @@ def store_results(opts, benchmark_results):
         retval = cleanup()
         sys.exit(retval)
     finally:
-        if not opts.nolaunch:
-            mongod_handle.__exit__(None, None, None)
+        mongod_handle.__exit__(None, None, None)
 
 def update_collection(collection, obj):
     try:
