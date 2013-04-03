@@ -49,7 +49,7 @@ class mongod(object):
         dbpath = os.getcwd() + "/db"
         logpath = dbpath + "/log.txt"
         argv = ["mkdir", "-p", dbpath]
-        subprocess.Popen(argv, shell=True).communicate()
+        subprocess.Popen(argv).communicate()
         argv = [self.mongod, "--port", self.port, "--dbpath", dbpath, "--logpath", logpath]
         print argv
         self.proc = self._start(argv)
