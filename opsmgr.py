@@ -359,7 +359,6 @@ class Processor(Thread):
         """Sends report based on generated report
         """
         date = self.date.strftime('%Y-%m-%d')
-
         if definition.report:
             header = REPORT_INFO_HEADER.substitute({ "date" : date })
             message = header + definition.report
@@ -479,12 +478,13 @@ class Processor(Thread):
         """Get all tests that match any of the operations
         """
         ops = set()
-
         for operation in operations:
-            for op in self.database[RAW_COLLECTION].find \
-            ({'name' :{'$regex': operation, '$options' : 'i'}}, \
-            {'name' : 1, '_id' : 0 }):
-                ops.add(op['name'])
+            record = self.database[RAW_COLLECTION].find_one \
+            ({'benchmarks.name' :{'$regex': operation, '$options' : 'i'}}, \
+            {'benchmarks.name' : 1, '_id' : 0 })
+            if record:
+                for op in record['benchmarks']:
+                    ops.add(op['name'])
         return ops
 
     def get_keys(collection, key):

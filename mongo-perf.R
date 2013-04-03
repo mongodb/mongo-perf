@@ -53,7 +53,7 @@ process_data <- function(start_date, end_date, platform, label, version, window)
 			keys <- list(metric=metrics[k], platform=platform, version=version, 
 					label=label, window=as.numeric(window), date=end_date)
 			criteria <- mongo.bson.from.list(lst=keys)
-			obj <- mongo.bson.to.list(mongo.bson.from.buffer(buf))
+			obj <- mongo.bson.from.buffer(buf)
 			e <- try (
 				mongo.update(mongo, analysis, criteria, obj, flags=mongo.update.upsert)
 			)
