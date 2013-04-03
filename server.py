@@ -187,17 +187,18 @@ def merge(results):
 @route("/")
 def main_page():
     platforms = db.raw.distinct("platform")
-    labels = db.raw.distinct("label")
-    labels = filter(None, labels)
     versions = db.raw.distinct("version")
+    labels = db.raw.distinct("label")
+    platforms = filter(None, platforms)
+    versions = filter(None, versions)
+    labels = filter(None, labels)
     versions = sorted(versions, reverse=True)
-    # versions = sorted(db.host.distinct("build_info.version"), reverse=True)
     rows = None
-    # restricted to benchmark tests for most recent mongoDB version
-    # consider using capped collection for this instead
+    # restricted to benchmark tests for most recent MongoDB version
     if versions:
         cursor = db.raw.find({"version" : versions[0]}, 
-        {"_id" : 0, "benchmarks" : 0, "commit" : 0}).limit(len(labels))
+                {"_id" : 0, "benchmarks" : 0, "commit" : 0})\
+                .limit(len(labels)).sort([('run_date',pymongo.DESCENDING)])
         needed = ['label', 'platform', 'run_date', 'version']
         rows = []
         for record in cursor:
