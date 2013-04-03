@@ -48,10 +48,7 @@ class mongod(object):
 
         dbpath = os.getcwd() + "/db"
         logpath = dbpath + "/log.txt"
-        if os.sys.platform == "win32":
-            dbpath = os.getcwd() + "\db"
-            logpath = dbpath + "\log.txt"
-        argv = ["mkdir", dbpath]
+        argv = ["mkdir", "-p", dbpath]
         subprocess.Popen(argv, shell=True).communicate()
         argv = [self.mongod, "--port", self.port, "--dbpath", dbpath, "--logpath", logpath]
         print argv
