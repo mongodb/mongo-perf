@@ -188,6 +188,7 @@ def merge(results):
 def main_page():
     platforms = db.raw.distinct("platform")
     labels = db.raw.distinct("label")
+    labels = filter(None, labels)
     versions = db.raw.distinct("version")
     versions = sorted(versions, reverse=True)
     # versions = sorted(db.host.distinct("build_info.version"), reverse=True)
