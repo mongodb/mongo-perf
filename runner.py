@@ -55,9 +55,6 @@ def parse_options():
     optparser.add_option('-s', '--mongos', dest='mongos', 
                         help='send all requests through mongos', 
                         action='store_true', default=False)
-    optparser.add_option('--nolaunch', dest='nolaunch', 
-                        help='use mongod already running on port', 
-                        action='store_true', default=False)
     optparser.add_option('-m', '--multidb', dest='multidb', 
                         help='use a separate db for each connection', 
                         action='store_true', default=False)
@@ -79,12 +76,11 @@ def run_benchmark(opts):
     try:
         multidb = '1' if opts.multidb else '0'
         exe = '.exe' if os.sys.platform.startswith( "win" ) else ''
-        if not opts.nolaunch:
-            mongod_path = opts.mongod + exe
-            mongod_handle = mongomgr.mongod(mongod=mongod_path, 
-                                            port=opts.port)
-            mongod_handle.__enter__()
-            processes.append(mongod_handle.proc)
+        mongod_path = opts.mongod + exe
+        mongod_handle = mongomgr.mongod(mongod=mongod_path, 
+                                        port=opts.port)
+        mongod_handle.__enter__()
+        processes.append(mongod_handle.proc)
     except:
         print >> sys.stderr, "Could not start mongod", sys.exc_info()[0]
         retval = cleanup()
