@@ -50,7 +50,7 @@ MONGO_PERF_PORT = 27017
 CONNECTION = pymongo.Connection(host=MONGO_PERF_HOST,
                                 port=MONGO_PERF_PORT)
 DATABASE = CONNECTION.bench_results
-DATE = datetime.now().strftime('%Y-%m-%d')
+DATE = datetime.utcnow().strftime('%Y-%m-%d')
 
 def main():
     """Program entry point
@@ -131,7 +131,7 @@ def start_definition_processing(definitions):
     LOGR.info("Finished processing all definitions")
 
 def configureLogger(logFile):
-    """Configures LOGR to send messages to stdout and LOGR file
+    """Configures LOGR to send messages to stdout and logFile
     """
     logFile = path.abspath(logFile)
     logHdlr = logr.handlers.RotatingFileHandler(logFile,

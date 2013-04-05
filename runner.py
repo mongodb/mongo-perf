@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 
-import sys
-import subprocess
 import os
-import shutil
+import sys
 import time
-import pymongo
 import json
 import pprint
+import shutil
+import pymongo
 import datetime
 import mongomgr
+import subprocess
 from optparse import OptionParser
 from collections import defaultdict
 
@@ -22,7 +22,7 @@ except ImportError:
 processes = []
 connection = None
 mongod_handle = None
-now = datetime.datetime.now()
+now = datetime.datetime.utcnow()
 run_date = now.strftime("%Y-%m-%d")
 
 def cleanup():

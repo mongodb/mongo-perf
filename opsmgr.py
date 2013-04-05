@@ -180,7 +180,7 @@ class Processor(Thread):
         self.database = None
         self.error = None
         self.tasks = []
-        self.date = datetime.now()
+        self.date = datetime.utcnow()
 
     def connect(self):
         """Connect to mongo-perf database
