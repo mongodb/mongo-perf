@@ -17,7 +17,7 @@
 import pymongo
 from os import path
 from sys import exit
-from opsmgr import *
+from jobsmgr import *
 from time import sleep
 import logging as logr
 import logging.handlers
