@@ -95,7 +95,7 @@ class Definition(object):
             self.threshold = float(params.get('threshold'))
         except TypeError:
             raise TypeError("threshold must be an numeric "
-                            "in %s definition" % (self.name,))
+                            "in {0} definition".format(self.name))
 
     @property
     def result(self):
@@ -127,10 +127,10 @@ class AlertDefinition(Definition):
         self.alerts = {}
 
         try:
-            self.epochCount = int(params.get('epochCount', '0'))
+            self.epochCount = int(params.get('epochCount'))
         except TypeError:
             raise TypeError("epochCount must be an integer "
-                            "in %s definition" % (self.name,))
+                            "in {0} definition".format(self.name))
     @property
     def threads(self):
         return self._threads
@@ -229,7 +229,7 @@ class Processor(Thread):
         name = '_'.join(stage.split())
         handler = getattr(self, name, None)
         if not handler:
-            raise BaseException('No handler defined for ' + name)
+            raise BaseException('No handler defined for {0}'.format(name))
         return handler
 
 
@@ -246,18 +246,18 @@ class Processor(Thread):
         for label in definition.labels:
             platform = self.get_platform(RAW_COLLECTION, label)
             for version in definition.versions:
-                argv = " ".join(map(str, [start_date, end_date, \
+                argv = ' '.join(map(str, [start_date, end_date, \
                     label, platform, version, definition.window]))
                 try:
                     analysis = subprocess.Popen(['Rscript', \
                         'mongo-perf.R', start_date, end_date, str(label), \
                         str(platform), str(version), str(definition.window)], \
                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                    LOGR.info("Started mongo-perf.R with args: " + argv)
+                    LOGR.info("Started mongo-perf.R with args: {0}".format(argv))
                     output, error = analysis.communicate()
                     LOGR.info(output)
                     if error:
-                        raise BaseException('Nonzero exit from mongo-perf.R', error)
+                        raise BaseException('Nonzero exit from mongo-perf.R {0}'.format(error))
                 except BaseException, e:
                     raise
 
@@ -270,7 +270,7 @@ class Processor(Thread):
             for label in definition.labels:
                 platform = self.get_platform(RAW_COLLECTION, label)
                 if not platform:
-                    raise BaseException("Label", label, "not found")
+                    raise BaseException("Label {0} not found".format(label))
                 for version in definition.versions:
                     cursor = self.database['analysis'].find({
                     "label" : label, "version" : version,
@@ -342,19 +342,19 @@ class Processor(Thread):
                     homogeneity = (100 - anomaly['madindex.AV'])
                     series_trend = "homogenous"
                     if homogeneity < definition.homogeneity:
-                        homogeneity = "%0.2f%%" % abs(homogeneity)
-                        anomaly_str = "'%s' might be %s in " \
-                            "performance - see thread %s (trends %s" \
-                            " at %s)" % (test, target_trend, thread, \
+                        homogeneity = "{0:.2f}%".format(abs(homogeneity))
+                        anomaly_str = "'{0}' might be {1} in " \
+                            "performance - see thread {2} (trends {3}" \
+                            " at {4})".format(test, target_trend, thread, \
                             series_trend, homogeneity)
                         anomaly_list.append(anomaly_str)
             
                 if anomaly_list:
                     values['anomalies'] += '<br>'
                     values['anomalies'] += '<br>'.join(anomaly_list)
-                    values['link'] = '%s/results?metric=%s&labels=' \
-                                '%s&platforms=%s&versions=%s&dates=%s' \
-                                % (MONGO_PERF_HOST, keys[0], keys[1], \
+                    values['link'] = '{0}/results?metric={1}&labels=' \
+                                '{2}&platforms={3}&versions={4}&dates={5}'.\
+                                format(MONGO_PERF_HOST, keys[0], keys[1], \
                                 keys[2], keys[3], window)
 
             if values['anomalies']:
@@ -531,7 +531,6 @@ class Processor(Thread):
         dates = []
         for record in cursor:
             dates.append(record['run_date'])
-            print 'ddd'
             results = record['results']
             for thread in results:
                 if thread in definition.threads:
