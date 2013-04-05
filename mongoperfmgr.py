@@ -26,7 +26,7 @@ from Queue import Queue, Empty
 from ConfigParser import SafeConfigParser
 
 # Set up logging
-LOGR = logr.getLogger('mongo-perf-alerting')
+LOGR = logging.getLogger('mongo-perf-log.txt')
 
 # Global variables
 ALERT_DEFINITIONS = 'alert_definitions.ini'
