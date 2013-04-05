@@ -268,7 +268,7 @@ class Processor(Thread):
     def pull_results(self, definition):
         """Pull benchmarked results from database
         """
-        metrics = self.get_metrics(RAW_COLLECTION)
+        metrics = self.get_benchmark_metrics(RAW_COLLECTION)
         date = self.date.strftime('%Y-%m-%d')
         for metric in metrics:
             for label in definition.labels:
@@ -402,7 +402,7 @@ class Processor(Thread):
             skip = 7
         elif definition.epochType == 'monthly':
             skip = 30
-            
+
         window = self.get_window(self.date, count, skip)
         operations = self.find_operations(definition.operations)
 
@@ -507,12 +507,17 @@ class Processor(Thread):
         return sorted(self.database[collection].distinct(key), \
                         reverse=True)
 
-    def get_metrics(self, collection):
-        """Get all metrics we have in database
+    def get_benchmark_metrics(self, collection):
+        """Get all benchmark metrics we have in database. 
+            This finds any benchmark result in the RAW_COLLECTION 
+            and pulls out the associated metrics stored for the result.
+            We assume the metrics stored will be uniform across records.
+
+            The returned value is a list that looks like:
         """
         return self.database[collection].find_one() \
-                    ['benchmarks'][0]['results']. \
-                    itervalues().next().keys()
+                ['benchmarks'][0]['results']. \
+                itervalues().next().keys()
 
     def get_platform(self, collection, label):
         """Get platform name given label
