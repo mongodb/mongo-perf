@@ -94,6 +94,8 @@ def start_definition_processing(definitions):
     definitions_processing_queue = Queue()
     daemons = []
 
+    # seet up as many processors are we have definitions
+    # make them daemonized so we don't have to keep track
     for i in range(len(definitions)):
         daemon = Processor(definitions_processing_queue)
         daemon.daemon = True
@@ -124,9 +126,10 @@ def start_definition_processing(definitions):
             if len(definitions_list) == 0:
                 LOGR.info('Started all {0} definition '\
                     'processing jobs!'.format(params['type']))
-    
+
+    # this blocks until the definitions_processing_queue is empty
     definitions_processing_queue.join()
-    # avoid weird thread error
+    # avoid weird thread error on some platforms
     sleep(1)
     LOGR.info("Finished processing all definitions")
 

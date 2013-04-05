@@ -191,12 +191,21 @@ class Processor(Thread):
         self.database = self.connection[MP_DB_NAME]
 
     def run(self):
-        """Launch processor from definitions queue
+        """Launch processor from definitions queue.
+           Processor is an infinite consumer which 
+           runs as long as we have definitions to 
+           process in our queue. It is also spawned
+           as a daemon thread
         """
         while True:
             try:
+                # Will eventually get killed once 
+                # parent unblocks - which is when 
+                # the last item in self.queue calls
+                # the task_done() method
                 definition = self.queue.get()
                 self.process_definition(definition)
+                sleep(1)
             except BaseException, e:
                 self.error = format_exc()
                 raise
