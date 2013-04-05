@@ -31,7 +31,7 @@ from traceback import format_exc
 from collections import defaultdict
 from datetime import datetime, timedelta
 
-LOGR = logging.getLogger('mongo-perf-alerting')
+LOGR = logging.getLogger('mongo-perf-log.txt')
 
 # database globals
 MONGO_PERF_HOST = "localhost"
