@@ -396,11 +396,13 @@ class Processor(Thread):
         count = definition.epochCount
         skip = 1
 
-        if definition.epochType == 'weekly':
+        if definition.epochType == 'daily':
+            skip = 1
+        elif definition.epochType == 'weekly':
             skip = 7
         elif definition.epochType == 'monthly':
             skip = 30
-
+            
         window = self.get_window(self.date, count, skip)
         operations = self.find_operations(definition.operations)
 
