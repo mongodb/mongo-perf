@@ -75,24 +75,22 @@ class Definition(object):
     """A Definition encapsulates information pertaining to 
         the alerts and reports
     """
-    def __init__(self, params, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """ Get a definition given parameters.
 
-        :Parameters:
-          - `params`: dict containing definition
         """
         self.state = 'not started'
-        self.name = params.get('name', '')
-        self.labels = params.get('labels', '')
-        self.versions =  params.get('versions', '')
-        self.operations = params.get('operations', '')
-        self.metric = params.get('metric', 'ops_per_sec')
-        self.recipients = params.get('recipients', '')
-        self.pipeline = params.get('pipeline', None)
+        self.name = kwargs.get('name', '')
+        self.labels = kwargs.get('labels', '')
+        self.versions =  kwargs.get('versions', '')
+        self.operations = kwargs.get('operations', '')
+        self.metric = kwargs.get('metric', 'ops_per_sec')
+        self.recipients = kwargs.get('recipients', '')
+        self.pipeline = kwargs.get('pipeline', None)
         self._result = defaultdict(lambda : defaultdict(list))
 
         try:
-            self.threshold = float(params.get('threshold'))
+            self.threshold = float(kwargs.get('threshold'))
         except TypeError:
             raise TypeError("threshold must be an numeric "
                             "in {0} definition".format(self.name))
@@ -112,36 +110,40 @@ class AlertDefinition(Definition):
         performed within the context of a alert definition 
     """
 
-    def __init__(self, params, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """Get an alert definition object
-
-        :Parameters:
-          - `params`: dict containing definition
         """
-        super(AlertDefinition, self).__init__(params)
-        self.comparator = params.get('comparator', '')
-        self.transform = params.get('transform', 'avg')
-        self.epochType = params.get('epochType', 'daily')
-        self._threads =  params.get('threads', [])
+        super(AlertDefinition, self).__init__(*args, **kwargs)
+        self.transform = args[0]
+        self.comparator = args[1]
+        self.epoch_type = args[2]
+        self.set_threads(args[3])
+        self.set_epoch_count(args[4])
         self.data = {}
         self.alerts = {}
 
-        try:
-            self.epochCount = int(params.get('epochCount'))
-        except TypeError:
-            raise TypeError("epochCount must be an integer "
-                            "in {0} definition".format(self.name))
+    @property
+    def epoch_count(self):
+        return self._epoch_count
+
     @property
     def threads(self):
         return self._threads
 
-    @threads.setter
-    def threads(self, values):
+    def set_epoch_count(self, value):
         try:
+            self._epoch_count = int(value)
+        except TypeError:
+            raise TypeError("epoch_count must be an integer "
+                            "in {0} definition".format(self.name))
+
+    def set_threads(self, values):
+        try:
+            self._threads = []
             for value in values:
                 self._threads.append(str(value))
         except ValueError, e:
-            LOGR.critical("threads must be an integer in alert"\
+            LOGR.critical("threads must be an integer in alert" \
             " definition for {0} definition".format(self.name))
             raise
 
@@ -149,18 +151,26 @@ class ReportDefinition(Definition):
     """A Report encapsulates report notification jobs
     """
 
-    def __init__(self, params, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """Get an report definition object
-
-        :Parameters:
-          - `params`: dict containing definition
         """
-        super(ReportDefinition, self).__init__(params)
-        self.homogeneity = float(params.get('homogeneity', '0'))
+        super(ReportDefinition, self).__init__(*args, **kwargs)
+        self.set_homogeneity(args[0])
         self.aggregate = ''
-        # we use a static window of 2 days
+        # we use a static viewing window of 2 days
         self.window = 2
 
+    @property
+    def homogeneity(self):
+        return self._homogeneity
+
+    def set_homogeneity(self, value):
+        try:
+            self._homogeneity = float(value)
+        except ValueError:
+            raise ValueError("homogeneity in {0} must be numeric". \
+                                format(self.name))
+                       
     @property
     def report(self):
         return self.aggregate
@@ -211,7 +221,7 @@ class Processor(Thread):
                 raise
             finally:
                 if self.error:
-                    LOGR.critical('Error in pipeline for {0}'\
+                    LOGR.critical('Error in pipeline for {0}' \
                         .format(definition.name))
                     LOGR.critical('{0}'.format(self.error))
                     
@@ -220,7 +230,7 @@ class Processor(Thread):
     def process_definition(self, definition):
         """Perform each task for given definition
         """
-        LOGR.info('Commencing pipeline processing for {0}'.\
+        LOGR.info('Commencing pipeline processing for {0}'. \
                     format(definition.name))
         self.connect()
 
@@ -262,7 +272,8 @@ class Processor(Thread):
                 output, error = analysis.communicate()
                 LOGR.info(output)
                 if error:
-                    raise BaseException('Nonzero exit from mongo-perf.R {0}'.format(error))
+                    raise BaseException('Nonzero exit from mongo-perf.R {0}'. \
+                                            format(error))
               
 
     def pull_results(self, definition):
@@ -393,15 +404,18 @@ class Processor(Thread):
     def pull_data(self, definition):
         """Load the given alert into processor's data
         """
-        count = definition.epochCount
+        count = definition.epoch_count
         skip = 1
 
-        if definition.epochType == 'daily':
+        if definition.epoch_type == 'daily':
             skip = 1
-        elif definition.epochType == 'weekly':
+        elif definition.epoch_type == 'weekly':
             skip = 7
-        elif definition.epochType == 'monthly':
+        elif definition.epoch_type == 'monthly':
             skip = 30
+        else:
+            LOGR.info('Unrecognized epoch_type: {0} \
+                     defaulting to daily'.format(definition.epoch_type))
 
         window = self.get_window(self.date, count, skip)
         operations = self.find_operations(definition.operations)
@@ -458,7 +472,10 @@ class Processor(Thread):
         elif transform == 'actual':
             result = data[current_index]
         elif transform == 'fourier':
+            # Not yet imploemented
             result = None
+        else:
+            raise BaseException("Transform: {0} not recognized.".format(transform))
         return result
             
     def persist_results(self, definition):

@@ -23,6 +23,7 @@ import logging as logr
 import logging.handlers
 from datetime import datetime
 from Queue import Queue, Empty
+from collections import defaultdict
 from ConfigParser import SafeConfigParser
 
 # Set up logging
@@ -82,7 +83,7 @@ def pull_definitions(definition_type):
         params['type'] = definition_type
         definitions.append(params)
 
-    LOGR.info("Successfully pulled all {0} definitions".\
+    LOGR.info("Successfully pulled all {0} definitions". \
         format(definition_type))
 
     return definitions
@@ -93,7 +94,7 @@ def start_definition_processing(definitions):
     """
     definitions_processing_queue = Queue()
     daemons = []
-    
+
     # set up as many processors are we have definitions
     # make them daemonized so we don't have to keep track
     for i in range(len(definitions)):
@@ -109,13 +110,16 @@ def start_definition_processing(definitions):
         for params in definitions_list:
             if params['type'] == 'alert':
                 params['pipeline'] = ALERT_TASKS
-                definition = AlertDefinition(params)
+                definition = AlertDefinition( params['transform'],
+                            params['comparator'], params['epoch_type'], 
+                            params['threads'],params['epoch_count'], **params)
             elif params['type'] == 'report':
                 params['pipeline'] = REPORT_TASKS
-                definition = ReportDefinition(params)
+                definition = ReportDefinition(params['homogeneity'],
+                                **params)
             if definition.state == 'not started':
                 LOGR.info('Fired up {0} processor. {1} ' \
-                'definitions(s) left;'\
+                'definitions(s) left;' \
                 .format(definition.name, len(definitions_list) - 1))
                 definitions_processing_queue.put(definition)
                 definitions_list.remove(params)
@@ -124,7 +128,7 @@ def start_definition_processing(definitions):
                 .format(definition.name, definition.state, \
                 len(definitions_list)))
             if len(definitions_list) == 0:
-                LOGR.info('Started all {0} definition '\
+                LOGR.info('Started all {0} definition ' \
                     'processing jobs!'.format(params['type']))
 
     # this blocks until the definitions_processing_queue is empty
@@ -182,7 +186,7 @@ def ensure_definition(definition, definition_type):
         collection = REPORTS_COLLECTION
 
     for section in parser.sections():
-        params = {}
+        params = defaultdict(dict)
         params['name'] = section
         for name, value in parser.items(section):
             value = value.split(', ')
@@ -192,7 +196,7 @@ def ensure_definition(definition, definition_type):
                 params[name] = value
         DATABASE[collection].update({'name' : section}, \
                                 params, upsert=True)
-        LOGR.info("Ensured {0} definition for {1}".\
+        LOGR.info("Ensured {0} definition for {1}". \
         format(definition_type, section))
 
 if __name__ == '__main__':
