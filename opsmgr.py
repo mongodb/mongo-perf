@@ -185,13 +185,10 @@ class Processor(Thread):
     def connect(self):
         """Connect to mongo-perf database
         """
-        try:
-            self.connection = pymongo.Connection(
+        self.connection = pymongo.Connection(
                                 host=MONGO_PERF_HOST,
                                 port=MONGO_PERF_PORT)
-            self.database = self.connection[MP_DB_NAME]
-        except BaseException, e:
-            raise
+        self.database = self.connection[MP_DB_NAME]
 
     def run(self):
         """Launch processor from definitions queue
@@ -221,10 +218,7 @@ class Processor(Thread):
         for index, stage in enumerate(definition.pipeline):
             LOGR.info('Running {0} for {1}...'. \
                     format(stage, definition.name))
-            try:
-                self.dispatch_handler(stage)(definition)
-            except:
-                raise
+            self.dispatch_handler(stage)(definition)
 
     def dispatch_handler(self, stage):
         """Call the given handler for this pipeline stage
@@ -251,18 +245,16 @@ class Processor(Thread):
             for version in definition.versions:
                 argv = ' '.join(map(str, [start_date, end_date, \
                     label, platform, version, definition.window]))
-                try:
-                    analysis = subprocess.Popen(['Rscript', \
-                        'mongo-perf.R', start_date, end_date, str(label), \
-                        str(platform), str(version), str(definition.window)], \
-                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                    LOGR.info("Started mongo-perf.R with args: {0}".format(argv))
-                    output, error = analysis.communicate()
-                    LOGR.info(output)
-                    if error:
-                        raise BaseException('Nonzero exit from mongo-perf.R {0}'.format(error))
-                except BaseException, e:
-                    raise
+                analysis = subprocess.Popen(['Rscript', \
+                    'mongo-perf.R', start_date, end_date, str(label), \
+                    str(platform), str(version), str(definition.window)], \
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                LOGR.info("Started mongo-perf.R with args: {0}".format(argv))
+                output, error = analysis.communicate()
+                LOGR.info(output)
+                if error:
+                    raise BaseException('Nonzero exit from mongo-perf.R {0}'.format(error))
+              
 
     def pull_results(self, definition):
         """Pull benchmarked results from database
