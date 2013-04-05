@@ -293,8 +293,7 @@ class Processor(Thread):
             task_key = task.keys()[0]
             cursor = task.values()[0]
             if cursor.count() == 0:
-                alert = ' '.join(task.keys())
-                LOGR.critical("No data for {0}".format(alert))
+                LOGR.critical("No data for {0}".format(task_key))
             for data in cursor:
                 results = data['result']
                 res_map = defaultdict(list)

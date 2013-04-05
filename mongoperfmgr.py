@@ -93,8 +93,8 @@ def start_definition_processing(definitions):
     """
     definitions_processing_queue = Queue()
     daemons = []
-
-    # seet up as many processors are we have definitions
+    
+    # set up as many processors are we have definitions
     # make them daemonized so we don't have to keep track
     for i in range(len(definitions)):
         daemon = Processor(definitions_processing_queue)
