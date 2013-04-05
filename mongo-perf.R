@@ -1,13 +1,14 @@
 library("rmongodb")
 source("washer.R")
 
+MONGO_PERF_HOST = "localhost"
 cat("Processing benchmark results...\n")
 
 # The 'analysis' collection contains anomaly detection data based on report definitions
 # The 'admin' collection will have one record if the indexes have been registered
 # The 'raw' collection contains data we want to analyze
 
-mongo <- mongo.create()
+mongo <- mongo.create(host=MONGO_PERF_HOST)
 if (!mongo.is.connected(mongo))
     error("No connection to MongoDB")
 
