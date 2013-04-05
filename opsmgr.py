@@ -167,7 +167,10 @@ class ReportDefinition(Definition):
 
 class Processor(Thread):
     """A Processor 'processes' a given definition by taking it 
-        through a number of predefined stages in a pipeline
+        through a number of predefined handlers. These handlers
+        are enumerated in mongoperfmgr.py and implemented here.
+        The definition object is initialized with its unique 
+        set of handlers.
     """
 
     def __init__(self, queue, *args, **kwargs):
