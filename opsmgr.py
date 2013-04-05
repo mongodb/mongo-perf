@@ -112,7 +112,7 @@ class AlertDefinition(Definition):
         performed within the context of a alert definition 
     """
 
-    def __init__(self, params):
+    def __init__(self, params, *args, **kwargs):
         """Get an alert definition object
 
         :Parameters:
@@ -149,7 +149,7 @@ class ReportDefinition(Definition):
     """A Report encapsulates report notification jobs
     """
 
-    def __init__(self, params):
+    def __init__(self, params, *args, **kwargs):
         """Get an report definition object
 
         :Parameters:
