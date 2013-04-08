@@ -529,7 +529,8 @@ class Processor(Thread):
             and pulls out the associated metrics stored for the result.
             We assume the metrics stored will be uniform across records.
 
-            The returned value is a list that looks like:
+            The returned value is a list that looks like: ['ops_per_sec',
+            'speedup', 'time']
         """
         return self.database[collection].find_one() \
                 ['benchmarks'][0]['results']. \
