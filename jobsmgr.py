@@ -239,7 +239,10 @@ class Processor(Thread):
             self.dispatch_handler(stage)(definition)
 
     def dispatch_handler(self, stage):
-        """Call the given handler for this pipeline stage
+        """Call the given handler for this pipeline stage. handlers
+            are supplied in each definition's pipeline - we construct
+            and return the appropriate function to handle processing 
+            given the current stage of processing in the pipeline
         """
         name = '_'.join(stage.split())
         handler = getattr(self, name, None)
