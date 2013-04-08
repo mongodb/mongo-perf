@@ -58,8 +58,7 @@ REPORT_BODY = Template('''
 Platform: $platform<br>
 Label: $label<br>
 Version: $version<br>
-Metric: $metric<br>
-<a href="$link">Anomalies</a>: 
+Metric: $metric
 $anomalies<br><br>
 ''')
 
@@ -334,8 +333,7 @@ class Processor(Thread):
             keys = top_level.split(';')
             values['metric'], values['label'], \
             values['platform'], values['version'] = keys
-            values['anomalies'], values['link'] = '', ''
-            values['date'] = key_date
+            values['anomalies'] = ''
 
             for test in definition.result[top_level]:
                 anomaly_list = []
@@ -344,9 +342,8 @@ class Processor(Thread):
                 for anomaly in anomalies:
                     thread = anomaly['thread_count']
                     # can't have an anomaly here
-                    if thread == '1' and \
-                    values['metric'] == 'speedup':
-                        break
+                    if thread == '1' and values['metric'] == 'speedup':
+                        continue
 
                     target_trend = 'decreasing'
                     if anomaly['y.3'] > anomaly['y.2']:
@@ -361,19 +358,18 @@ class Processor(Thread):
                     series_trend = "homogenous"
                     if homogeneity < definition.homogeneity:
                         homogeneity = "{0:.2f}%".format(abs(homogeneity))
-                        anomaly_str = "'{0}' might be {1} in " \
-                            "performance - see thread {2} (trends {3}" \
-                            " at {4})".format(test, target_trend, thread, \
-                            series_trend, homogeneity)
+                        anomaly_url = "<a href=\"http://{0}/results?metric={1}&" \
+                                "labels={2}&platforms={3}&versions={4}&dates={5}" \
+                                "#{6}\">{6}</a>".format(MONGO_PERF_HOST, keys[0], \
+                                keys[1], keys[2], keys[3], window, test)
+                        anomaly_str = anomaly_url + " might be {0} in performance " \
+                                "- see thread {1} (trends {2} at {3})".format \
+                                (target_trend, thread, series_trend, homogeneity)
                         anomaly_list.append(anomaly_str)
             
                 if anomaly_list:
                     values['anomalies'] += '<br>'
                     values['anomalies'] += '<br>'.join(anomaly_list)
-                    values['link'] = '{0}/results?metric={1}&labels=' \
-                                '{2}&platforms={3}&versions={4}&dates={5}'.\
-                                format(MONGO_PERF_HOST, keys[0], keys[1], \
-                                keys[2], keys[3], window)
 
             if values['anomalies']:
                 definition.aggregate += REPORT_BODY.substitute(values)
@@ -388,7 +384,7 @@ class Processor(Thread):
             conn = connect_ses().send_email(
             "mongo-perf admin <wisdom@10gen.com>",
             "MongoDB Performance Report", message, 
-            definition.recipients[0], format="html")
+            definition.recipients, format="html")
         else:
             message = NO_REPORT_INFO_HEADER.substitute({'date' : date})
             conn = connect_ses().send_email(

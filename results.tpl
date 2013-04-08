@@ -71,7 +71,7 @@
  
     %import urllib
     %for k, (outer_result, flot_data) in enumerate(zip(results, flot_results)):
-    <h2>{{outer_result['name']}}</h2>
+    <h2 id="{{outer_result['name']}}">{{outer_result['name']}}</h2>
 
     <table class="display">
         <thead>
