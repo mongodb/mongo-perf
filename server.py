@@ -53,7 +53,7 @@ def raw_data(versions, labels, dates, platforms, start, end, limit):
                         versions[1:-1], '$options' : 'i'}}
         else:
             version_query = {'version': {'$in': versions.split(" ")}}
-    else:{}
+    else:
         version_query = {}
 
     if platforms:
