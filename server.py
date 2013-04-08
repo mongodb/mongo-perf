@@ -53,7 +53,7 @@ def raw_data(versions, labels, dates, platforms, start, end, limit):
                         versions[1:-1], '$options' : 'i'}}
         else:
             version_query = {'version': {'$in': versions.split(" ")}}
-    else:
+    else:{}
         version_query = {}
 
     if platforms:
@@ -138,8 +138,8 @@ def results_page():
             from ast import literal_eval
             for platform in literal_eval(multi):
                 result = literal_eval(json.dumps(platform))
-                result = { attrib : '/' + result[attrib]
-                         + '/' for attrib in result }
+                for attrib in result:
+                    result[attrib] = '/' + result[attrib] + '/'
                 tmp = raw_data(result['version'], result['label'], 
                 result['run_date'], result['platform'], None, None, limit)
                 for result in tmp:
