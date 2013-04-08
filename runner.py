@@ -110,7 +110,7 @@ def prep_storage(opts):
     build_info, host_info = None, None
 
     try:
-        connection = pymongo.Connection(host=opts.rhost, 
+        connection = pymongo.MongoClient(host=opts.rhost, 
                                         port=int(opts.rport))
         raw = connection.bench_results.raw
         host = connection.bench_results.host

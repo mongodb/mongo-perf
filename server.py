@@ -9,7 +9,7 @@ from collections import defaultdict
 MONGO_PERF_HOST = "localhost"
 MONGO_PERF_PORT = 27017
 MP_DB_NAME = "bench_results"
-db = pymongo.Connection(host=MONGO_PERF_HOST,
+db = pymongo.MongoClient(host=MONGO_PERF_HOST,
                         port=MONGO_PERF_PORT)\
                         [MP_DB_NAME]
 

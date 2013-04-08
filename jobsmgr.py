@@ -195,7 +195,7 @@ class Processor(Thread):
     def connect(self):
         """Connect to mongo-perf database
         """
-        self.connection = pymongo.Connection(
+        self.connection = pymongo.MongoClient(
                                 host=MONGO_PERF_HOST,
                                 port=MONGO_PERF_PORT)
         self.database = self.connection[MP_DB_NAME]
