@@ -89,10 +89,11 @@
                 <tbody>
                     %for i, result in enumerate(outer_result['results']):
                         %host_keys = ['date', 'label', 'version']
+                        %host = {}
                         %for key in host_keys:
-                            %result[key] = key
-                            %host = urllib.urlencode(result)
+                            %host[key] = result[key]
                         %end
+                        %host = urllib.urlencode(result)
                         <tr>
                             <td>{{i+1}}</td>
                             <td><a href="host?{{host}}">{{result['label']}}</a></td>
