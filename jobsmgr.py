@@ -14,6 +14,7 @@
 
 """Manages processing and analysis of benchmark data."""
 
+import re
 import logging
 import pymongo
 import requests
@@ -447,22 +448,19 @@ class Processor(Thread):
                      defaulting to daily'.format(definition.epoch_type))
 
         window = self.get_window(self.date, count, skip)
-        operations = self.find_operations(definition.operations)
 
-        for operation in operations:
-            for label in definition.labels:
-                platform = self.get_platform(RAW_COLLECTION, label)
-                for version in definition.versions:
-                    task = ','.join(map(str, (operation, label, platform)))
-                    cursor = self.database[RAW_COLLECTION].find( {
-                        'label': label,
-                        'name' : operation,
-                        'run_date' : { '$in' : window },
-                        'version' : version } )
-                    # hash = md5(str(definition)+(task)).hexdigest()
-                    self.tasks.append(task)
-                    data = self.parse_data(cursor, definition)
-                    definition.data[task] = data
+        for label in definition.labels:
+            platform = self.get_platform(RAW_COLLECTION, label)
+            for version in definition.versions:
+                cursor = self.database[RAW_COLLECTION].find({
+                    'label': label,
+                    'run_date' : {'$in' : window},
+                    'version' : version})
+
+                task = ','.join(map(str, (label, platform)))
+                self.tasks.append(task)
+                data = self.parse_data(cursor, definition)
+                definition.data[task] = data
 
     def process_alerts(self, definition):
         """Handle sifting through alerts and preparing
@@ -474,19 +472,21 @@ class Processor(Thread):
             dates, data = definition.data[task]
             if data:
                 current_index = dates.index(sorted(dates)[len(dates) - 1])
-                for thread in definition.threads:
-                    value = self.transform_helper(definition.transform, \
-                        data[definition.metric][thread], current_index)
-                    alert = {}
-                    alert['transform'] = definition.transform
-                    alert['alert_name'] = definition.name
-                    alert['thread_count'] = thread
-                    alert['test'], alert['label'], \
-                    alert['platform'] = task.split(',')
-                    alert['value'] = value
-                    alert['trigger_date'] = date
-                    definition.alerts[index] = alert
-                    index += 1
+                for test in data:
+                    for thread in definition.threads:
+                        value = self.transform_helper(definition.transform, \
+                            data[test][definition.metric][thread], current_index)
+                        alert = {}
+                        alert['label'], alert['platform'] = task.split(',')
+                        alert['transform'] = definition.transform
+                        alert['alert_name'] = definition.name
+                        alert['thread_count'] = thread
+                        alert['trigger_date'] = date
+                        alert['test'] = test
+                        alert['value'] = value
+                        definition.alerts[index] = alert
+                        index += 1
+
             
     def transform_helper(self, transform, data, current_index):
         """Performs the given transformation on data passed in
@@ -513,8 +513,15 @@ class Processor(Thread):
         for index in definition.alerts:
             alert = definition.alerts[index]
             if self.passes_threshold(definition, alert):
-                self.database[ALERT_HISTORY_COLLECTION].insert(alert)
-
+                self.database[ALERT_HISTORY_COLLECTION].update({
+                    'test' : alert['test'],
+                    'label' : alert['label'],
+                    'platform' : alert['platform'],
+                    'transform' : alert['transform'],
+                    'alert_name' : alert['alert_name'],
+                    'trigger_date' : alert['trigger_date'],
+                    'thread_count' : alert['thread_count']}, alert)
+                
     def passes_threshold(self, definition, alert):
         """Returns True if the given alert passes the 
             comparator, threshold test
@@ -538,13 +545,13 @@ class Processor(Thread):
         """Get all tests that match any of the operations
         """
         ops = set()
-        for operation in operations:
-            record = self.database[RAW_COLLECTION].find_one \
-            ({'benchmarks.name' :{'$regex': operation, '$options' : 'i'}}, \
-            {'benchmarks.name' : 1, '_id' : 0 })
-            if record:
+        record = self.database[RAW_COLLECTION].find_one()
+        if record:
+            for operation in operations:
                 for op in record['benchmarks']:
-                    ops.add(op['name'])
+                    regexed = re.compile(operation, re.IGNORECASE)
+                    if regexed.match(op['name']):
+                        ops.add(op['name'])
         return ops
 
     def get_keys(collection, key):
@@ -588,15 +595,18 @@ class Processor(Thread):
     def parse_data(self, cursor, definition):
         """Transform data into a more amenable form
         """
-        parse = defaultdict(lambda : defaultdict(list))
+        parse = defaultdict(lambda : defaultdict(lambda : defaultdict(list)))
+        operations = self.find_operations(definition.operations)
         dates = []
         for record in cursor:
-            dates.append(record['run_date'])
-            results = record['results']
-            for thread in results:
-                if thread in definition.threads:
-                    parse[definition.metric][thread].\
-                    append(results[thread][definition.metric])
+            for test in record['benchmarks']:
+                if test['name'] in operations:
+                    dates.append(record['run_date'])
+                    results = test['results']
+                    for thread in results:
+                        if thread in definition.threads:
+                            parse[test['name']][definition.metric][thread]. \
+                            append(results[thread][definition.metric])
 
         return dates, parse
         
