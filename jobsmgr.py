@@ -55,8 +55,8 @@ Metrics seem be be performing fine for $date!
 ''')
 
 REPORT_BODY = Template('''
-Platform: $platform<br>
 Label: $label<br>
+Platform: $platform<br>
 Version: $version<br>
 Metric: $metric
 $anomalies<br><br>
