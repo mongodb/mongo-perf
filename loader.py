@@ -88,10 +88,10 @@ def populate(time, label, platform, version):
 
 
 if __name__ == "__main__":
-    for time in xrange(-3, 30):
+    for time in xrange(0, 30):
         for label in ["Linux 64-bit", "Linux 64-bit DUR OFF", "OS X 64-bit DUR OFF",\
         "OS X 64-bit", "Windows 64-bit", "Windows 64-bit 2008"]:
-            for version in ["2.4.0-rc1", "2.4.0-rc0", "2.2.3"]:
+            for version in ["2.4.1", "2.4.0-rc0", "2.2.3"]:
                 now = datetime.datetime.now() + datetime.timedelta(days=time)
                 platform = label[0:label.index("6")-1].replace(" ","_")
                 label = label.replace(" ","_")
