@@ -34,7 +34,8 @@ scons benchmark
 # this runs the tests and records the results
 # optionally supply a label as well using -l
 python local.py --nolaunch -l MY_HOSTNAME
-# this serves the results
+# this serves the results on port 80
+# sudo if you're not root
 python server.py 
 
 Go to http://localhost to see the results
