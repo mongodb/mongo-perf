@@ -21,10 +21,14 @@ import subprocess
 from math import sqrt
 from time import sleep
 from hashlib import md5
+from sys import platform
+from os.path import join
 from time import strptime
+from os.path import abspath
 from string import Template
 from threading import Thread
 from boto import connect_ses
+from os.path import realpath
 from datetime import datetime
 from Queue import Queue, Empty
 from traceback import format_exc
@@ -394,6 +398,31 @@ class Processor(Thread):
             "mongo-perf admin <wisdom@10gen.com>",
             "MongoDB Performance Report", message, 
             definition.recipients, format="html")
+
+    def show_report(self, definition):
+        """Shows report in browser
+        """
+        date = self.date.strftime('%Y-%m-%d')
+        if definition.report:
+            header = REPORT_INFO_HEADER.substitute({ "date" : date })
+            message = header + definition.report
+        else:
+            message = NO_REPORT_INFO_HEADER.substitute({'date' : date})
+
+        fileObj = '.report.html'
+        path = abspath(join(realpath \
+                                ( __file__ ), '..', fileObj))
+        with open(path, 'w') as f:
+            f.write(message)
+        if platform=='win32':
+            subprocess.Popen(['start', path], shell= True)
+        elif platform=='darwin':
+            subprocess.Popen(['open', path])
+        else:
+            try:
+                subprocess.Popen(['xdg-open', path])
+            except OSError:
+                raise
 
 
 
