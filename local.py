@@ -143,6 +143,8 @@ def prep_storage(opts):
     global connection
 
     build_info, host_info = None, None
+    if not opts.label:
+        opts.label = 'test' 
 
     try:
         connection = pymongo.MongoClient(host=opts.rhost, 
