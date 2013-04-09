@@ -37,7 +37,7 @@ python local.py --nolaunch -l MY_HOSTNAME
 # this serves the results
 python server.py 
 
-Go to http://localhost:8080 to see the results
+Go to http://localhost to see the results
 </code></pre>
 
 To run analysis:

@@ -42,7 +42,7 @@ ALERT_TASKS = ['pull data', 'process alerts', 'persist results']
 
 # pipeline to be used for reports
 REPORT_TASKS = ['process benchmarks', 'pull results', 
-                'analyze results', 'prepare report', 'send report']
+                'analyze results', 'prepare report', 'show report']
 
 # db globals
 MONGO_PERF_HOST = "localhost"
@@ -61,7 +61,7 @@ def main():
     ensure_definition(ALERT_DEFINITIONS, "alert")
     alerts = pull_definitions("alert")
     start_definition_processing(alerts)
-
+    
     ensure_definition(REPORT_DEFINITIONS, "report")
     reports = pull_definitions("report")
     start_definition_processing(reports)

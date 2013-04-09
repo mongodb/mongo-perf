@@ -222,5 +222,5 @@ def main_page():
 
 if __name__ == '__main__':
     do_reload = '--reload' in sys.argv
-    run(reloader=do_reload, host='0.0.0.0', server=AutoServer)
+    run(reloader=do_reload, host='0.0.0.0', port=80, server=AutoServer)
 

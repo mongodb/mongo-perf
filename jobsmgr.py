@@ -410,10 +410,11 @@ class Processor(Thread):
             message = NO_REPORT_INFO_HEADER.substitute({'date' : date})
 
         fileObj = '.report.html'
-        path = abspath(join(realpath \
-                                ( __file__ ), '..', fileObj))
+        path = abspath(join(realpath( __file__ ), '..', fileObj))
+        
         with open(path, 'w') as f:
             f.write(message)
+
         if platform=='win32':
             subprocess.Popen(['start', path], shell= True)
         elif platform=='darwin':
