@@ -93,7 +93,7 @@
                         %for key in host_keys:
                             %host[key] = result[key]
                         %end
-                        %host = urllib.urlencode(result)
+                        %host = urllib.urlencode(host)
                         <tr>
                             <td>{{i+1}}</td>
                             <td><a href="host?{{host}}">{{result['label']}}</a></td>
