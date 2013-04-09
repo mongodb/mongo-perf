@@ -49,7 +49,7 @@ process_data <- function(start_date, end_date, platform, label, version, window)
 			mongo.bson.buffer.start.array(buf, "result")
 			outlier_raw[,1:3] <- lapply(outlier_raw[,1:3] , as.character)
 			for(l in 1:nrow(outlier_raw)) 
-				mongo.bson.buffer.append(buf, as.character(l), outlier_raw[l,])
+				mongo.bson.buffer.append(buf, as.character(l-1), outlier_raw[l,])
 			mongo.bson.buffer.finish.object(buf)
 			keys <- list(metric=metrics[k], platform=platform, version=version, 
 					label=label, window=as.numeric(window), date=end_date)

@@ -322,7 +322,7 @@ class Processor(Thread):
                     data_points = sorted(res_map[test], 
                     key=lambda k : (abs(k['AV'])), reverse=True)
                     for dp in data_points:
-                        if dp['test.AV'] > definition.threshold:
+                        if dp['test_AV'] > definition.threshold:
                             definition.result[task_key][test].append(dp)
 
     def prepare_report(self, definition):
@@ -349,7 +349,7 @@ class Processor(Thread):
                         continue
 
                     target_trend = 'decreasing'
-                    if anomaly['y.3'] > anomaly['y.2']:
+                    if anomaly['y3'] > anomaly['y2']:
                         target_trend = 'increasing'
                         if anomaly['AV'] < 0: 
                             target_trend = 'picking up'
@@ -357,7 +357,7 @@ class Processor(Thread):
                         if anomaly['AV'] > 0:
                             target_trend = 'declining'
 
-                    homogeneity = (100 - anomaly['madindex.AV'])
+                    homogeneity = (100 - anomaly['madindex_AV'])
                     series_trend = "homogenous"
                     if homogeneity < definition.homogeneity:
                         homogeneity = "{0:.2f}%".format(abs(homogeneity))

@@ -22,9 +22,9 @@ AV      =  function(y) {   # y matrix 3 columns (y1 y2 y3) and n rows
        		# output array AV
 ###############################################################################################
 test.AV =  function(AV) {  # AV array n rows
-				t(rbind(test.AV=abs(AV-median(AV))/mad(AV),AV=AV,n=length(AV),
-				   		median.AV=median(AV),mad.AV=mad(AV),
-				   		std.av=sd(AV),madindex.AV=mad(AV)*1000/150  ))
+				t(rbind(test_AV=abs(AV-median(AV))/mad(AV),AV=AV,n=length(AV),
+				   		median_AV=median(AV),mad_AV=mad(AV),
+				   		std_AV=sd(AV),madindex_AV=mad(AV)*1000/150  ))
 			}
            # col      1      2   3        5          6         7           8
            # output: test / AV / n /  median(AV) / mad(AV) / std(AV) / madindex
@@ -68,9 +68,12 @@ test.AV =  function(AV) {  # AV array n rows
 					y=cbind(dati[mat[1,],4],
 					dati[mat[2,],4],
 					dati[mat[3,],4])
+					y1=dati[mat[1,],4]
+					y2=dati[mat[2,],4]
+					y3=dati[mat[3,],4]
 
 					out=rbind(out,data.frame(test=fen[fi],run_date=time[i],
-						thread_count=dati[mat[2,],3],y=y,test.AV(AV(y))))
+						thread_count=dati[mat[2,],3],y1=y1,y2,y3,test.AV(AV(y))))
 				}
 			}
 		}
