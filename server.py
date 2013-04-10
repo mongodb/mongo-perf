@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Web app for mongoperf"""
+"""Web app for mongo-perf"""
 
 import sys
 import json

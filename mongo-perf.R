@@ -1,3 +1,19 @@
+# Copyright 2013 10gen, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Runs the analysis of benchmarked data."""
+
 library("rmongodb")
 source("washer.R")
 
@@ -18,7 +34,7 @@ analysis <- paste(db, "analysis", sep=".")
 raw <- paste(db, "raw", sep=".")
 admin <- paste(db, "admin", sep=".")
 
-# performs that data processing phase
+# performs that data processing phase by calling washer.AV in washer.R
 process_data <- function(start_date, end_date, platform, label, version, window) {
 	ensure_index()
 	metrics <- get_metrics()

@@ -35,7 +35,7 @@ test.AV =  function(AV) {  # AV array n rows
 		fen=rownames( table(dati[,1]) )
 		nfen=length(fen)
 		out=NA 
-		#for each metric
+		# for each metric
 		for ( fi in 1:nfen) 
 		{ 
 			cat("processing", metric, "on", fen[fi], "for", date, "\n")
@@ -43,7 +43,7 @@ test.AV =  function(AV) {  # AV array n rows
 			n=length(time)
 			for ( i in 2:(n-1) ) 
 			{  
-				#get rolling window for this metric
+				# get rolling window for this metric
 				c1=which(as.character(dati[,2])==time[i-1] & dati[,1] == fen[fi])
 				c2=which(as.character(dati[,2])==time[i  ] & dati[,1] == fen[fi])
 				c3=which(as.character(dati[,2])==time[i+1] & dati[,1] == fen[fi])

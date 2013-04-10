@@ -268,6 +268,8 @@ class Processor(Thread):
 
     def process_benchmarks(self, definition):
         """Runs mongo-perf.R script to process benchmark results
+            mongo-perf.R pulls the raw benchmarked data, analyses
+            it, and writes the analyses results back in the database
         """
         start_date = self.date - timedelta(days=definition.window)
         start_date, end_date = map(lambda d : \
