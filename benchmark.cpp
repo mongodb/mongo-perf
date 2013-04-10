@@ -871,21 +871,21 @@ namespace Commands {
 namespace{
     struct TheTestSuite : TestSuite{
         TheTestSuite(){
-            //add< Overhead::DoNothing >();
+            add< Overhead::DoNothing >();
 
             add< Insert::Empty >();
             add< Insert::EmptyBatched<2> >();
             add< Insert::EmptyBatched<10> >();
-            //add< Insert::EmptyBatched<100> >();
-            //add< Insert::EmptyBatched<1000> >();
-            //add< Insert::EmptyCapped >();
-            //add< Insert::JustID >();
+            add< Insert::EmptyBatched<100> >();
+            add< Insert::EmptyBatched<1000> >();
+            add< Insert::EmptyCapped >();
+            add< Insert::JustID >();
             add< Insert::IntID >();
             add< Insert::IntIDUpsert >();
-            //add< Insert::JustNum >();
+            add< Insert::JustNum >();
             add< Insert::JustNumIndexedBefore >();
             add< Insert::JustNumIndexedAfter >();
-            //add< Insert::NumAndID >();
+            add< Insert::NumAndID >();
             
             add< Update::IncNoIndexUpsert >();
             add< Update::IncWithIndexUpsert >();
@@ -894,19 +894,19 @@ namespace{
             add< Update::IncNoIndex_QueryOnSecondary >();
             add< Update::IncWithIndex_QueryOnSecondary >();
 
-            //add< Queries::Empty >();
+            add< Queries::Empty >();
             add< Queries::HundredTableScans >();
-            //add< Queries::IntID >();
+            add< Queries::IntID >();
             add< Queries::IntIDRange >();
             add< Queries::IntIDFindOne >();
-            //add< Queries::IntNonID >();
+            add< Queries::IntNonID >();
             add< Queries::IntNonIDRange >();
             add< Queries::IntNonIDFindOne >();
-            //add< Queries::RegexPrefixFindOne >();
-            //add< Queries::TwoIntsBothBad >();
-            //add< Queries::TwoIntsBothGood >();
-            //add< Queries::TwoIntsFirstGood >();
-            //add< Queries::TwoIntsSecondGood >();
+            add< Queries::RegexPrefixFindOne >();
+            add< Queries::TwoIntsBothBad >();
+            add< Queries::TwoIntsBothGood >();
+            add< Queries::TwoIntsFirstGood >();
+            add< Queries::TwoIntsSecondGood >();
 
             add< Commands::CountsFullCollection >();
             add< Commands::CountsIntIDRange >();
