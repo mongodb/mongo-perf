@@ -38,11 +38,12 @@ REPORTS_COLLECTION = "reportDefinition"
 ALERT_HISTORY_COLLECTION = "alertHistory"
 
 # pipeline to be used for alerts
-ALERT_TASKS = ['pull data', 'process alerts', 'persist alerts', 'send alerts']
+ALERT_TASKS = ['pull data', 'process alerts', \
+                'persist alerts', 'prepare alerts', 'show results']
 
 # pipeline to be used for reports
 REPORT_TASKS = ['process benchmarks', 'pull results', 
-                'analyze results', 'prepare report', 'show report']
+                'analyze results', 'prepare report', 'show results']
 
 # db globals
 MONGO_PERF_HOST = "localhost"
@@ -109,7 +110,7 @@ def start_definition_processing(definitions):
         for params in definitions_list:
             if params['type'] == 'alert':
                 params['pipeline'] = ALERT_TASKS
-                definition = AlertDefinition( params['transform'],
+                definition = AlertDefinition(params['transform'],
                             params['comparator'], params['epoch_type'], 
                             params['threads'],params['epoch_count'], **params)
             elif params['type'] == 'report':

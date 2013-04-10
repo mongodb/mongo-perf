@@ -89,8 +89,10 @@ class Definition(object):
         """ Get a definition given parameters.
 
         """
+        self.aggregate = ''
         self.state = 'not started'
         self.name = kwargs.get('name', '')
+        self.type = kwargs.get('type', '')
         self.labels = kwargs.get('labels', '')
         self.versions =  kwargs.get('versions', '')
         self.operations = kwargs.get('operations', '')
@@ -108,6 +110,10 @@ class Definition(object):
     @property
     def result(self):
         return self._result
+
+    @property
+    def report(self):
+        return self.aggregate
 
     def __str__(self):
         return self.name
@@ -166,7 +172,6 @@ class ReportDefinition(Definition):
         """
         super(ReportDefinition, self).__init__(*args, **kwargs)
         self.set_homogeneity(args[0])
-        self.aggregate = ''
         # we use a static viewing window of 2 days
         self.window = 2
 
@@ -180,10 +185,6 @@ class ReportDefinition(Definition):
         except ValueError:
             raise ValueError("homogeneity in {0} must be numeric". \
                                 format(self.name))
-                       
-    @property
-    def report(self):
-        return self.aggregate
 
 class Processor(Thread):
     """A Processor 'processes' a given definition by taking it 
@@ -406,18 +407,28 @@ class Processor(Thread):
             "MongoDB Performance Report", message, 
             definition.recipients, format="html")
 
-    def show_report(self, definition):
-        """Shows report in browser
+    def show_results(self, definition):
+        """Shows alerts/report in browser
         """
         date = self.date.strftime('%Y-%m-%d')
-        if definition.report:
-            header = REPORT_INFO_HEADER.substitute({ "date" : date })
-            message = header + definition.report
+        if definition.type == 'alert':
+            if definition.report == '':
+                message = NO_ALERT_INFO_HEADER.substitute({'date':date})
+            else:
+                epoch_type = self.get_epoch_type(definition)
+                header_str = "{0} of past {1} {2} for:".format(
+                definition.transform, definition.epoch_count, epoch_type)
+                message = ALERT_INFO.substitute({'date':date, 
+                    'header':header_str, 'alerts':definition.report})
         else:
-            message = NO_REPORT_INFO_HEADER.substitute({'date' : date})
+            if definition.report:
+                header = REPORT_INFO_HEADER.substitute({ "date" : date })
+                message = header + definition.report
+            else:
+                message = NO_REPORT_INFO_HEADER.substitute({'date' : date})
 
-        fileObj = '.report.html'
-        path = abspath(join(realpath( __file__ ), '..', fileObj))
+        file_obj = '.{0}.html'.format(definition.type)
+        path = abspath(join(realpath( __file__ ), '..', file_obj))
         
         with open(path, 'w') as f:
             f.write(message)
@@ -510,13 +521,10 @@ class Processor(Thread):
                     'trigger_date' : alert['trigger_date'],
                     'thread_count' : alert['thread_count']}, alert)
                 
-    def send_alerts(self, definition):
+    def prepare_alerts(self, definition):
         epoch_type = self.get_epoch_type(definition)
-        header_str = "{0} of past {1} {2} for:".format(
-        definition.transform, definition.epoch_count, epoch_type)
-        date = self.date.strftime('%Y-%m-%d')
         window = '+'.join(self.get_window(self.date, definition.epoch_count, 1))
-        alert_str = ''
+
         for index in definition.alerts:
             alert = definition.alerts[index]
             if self.passes_threshold(definition, alert):
@@ -526,16 +534,21 @@ class Processor(Thread):
                 alert['label'], alert['platform'], \
                 alert['version'], window, alert['test'])
 
-                alert_str += "- {0} on ({1}, {2}, thread {3}) is {4:.2f} " \
+                definition.aggregate += "- {0} on ({1}, {2}, thread {3}) is {4:.2f} " \
                 "({5} {6})<br>".format(alert_url, alert['label'], 
                 alert['version'], alert['thread_count'], alert['value'], 
                 definition.comparator, definition.threshold)
 
-        if alert_str == '':
+    def send_alerts(self, definition):
+        date = self.date.strftime('%Y-%m-%d')
+        header_str = "{0} of past {1} {2} for:".format(
+        definition.transform, definition.epoch_count, epoch_type)
+
+        if definition.report == '':
             message = NO_ALERT_INFO_HEADER.substitute({'date':date})
         else:
             message = ALERT_INFO.substitute({'date':date, 
-                'header':header_str, 'alerts':alert_str})
+                'header':header_str, 'alerts':definition.result})
 
         conn = connect_ses().send_email(
         "mongo-perf admin <wisdom@10gen.com>",
@@ -663,4 +676,3 @@ class Processor(Thread):
         else:
             raise BaseException("Transform: {0} not recognized.".format(transform))
         return result
-        
