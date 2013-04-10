@@ -135,6 +135,7 @@ class AlertDefinition(Definition):
         self.epoch_type = args[2]
         self.set_threads(args[3])
         self.set_epoch_count(args[4])
+        self.skip = 1
         self.data = {}
         self.alerts = {}
 
@@ -398,6 +399,7 @@ class Processor(Thread):
         """Sends report based on generated report
         """
         date = self.date.strftime('%Y-%m-%d')
+
         if definition.report:
             header = REPORT_INFO_HEADER.substitute({ "date" : date })
             message = header + definition.report
@@ -415,22 +417,26 @@ class Processor(Thread):
     def show_results(self, definition):
         """Shows alerts/report in browser
         """
-        date = self.date.strftime('%Y-%m-%d')
+        current_date = self.date.strftime('%Y-%m-%d')
+
         if definition.type == 'alert':
+            delta = timedelta(days=definition.skip * definition.epoch_count)
+            start_date = (self.date - delta).strftime('%Y-%m-%d')
             if definition.report == '':
-                message = NO_ALERT_INFO_HEADER.substitute({'date':date})
+                message = NO_ALERT_INFO_HEADER.substitute({'date':current_date})
             else:
                 epoch_type = self.get_epoch_type(definition)
-                header_str = "{0} of past {1} {2} for:".format(
-                definition.transform, definition.epoch_count, epoch_type)
-                message = ALERT_INFO.substitute({'date':date, 
+                header_str = "\"{0}\" from {1} to {2} ({3} {4}) for:". \
+                format(definition.transform, start_date, current_date,
+                definition.epoch_count, epoch_type)
+                message = ALERT_INFO.substitute({'date':current_date, 
                     'header':header_str, 'alerts':definition.report})
         else:
             if definition.report:
-                header = REPORT_INFO_HEADER.substitute({ "date" : date })
+                header = REPORT_INFO_HEADER.substitute({ "date" : current_date })
                 message = header + definition.report
             else:
-                message = NO_REPORT_INFO_HEADER.substitute({'date' : date})
+                message = NO_REPORT_INFO_HEADER.substitute({'date' : current_date})
 
         file_obj = '.{0}.html'.format(definition.type)
         path = abspath(join(realpath( __file__ ), '..', file_obj))
@@ -457,19 +463,18 @@ class Processor(Thread):
         """Load the given alert into processor's data
         """
         count = definition.epoch_count
-        skip = 1
 
         if definition.epoch_type == 'daily':
-            skip = 1
+            definition.skip = 1
         elif definition.epoch_type == 'weekly':
-            skip = 7
+            definition.skip = 7
         elif definition.epoch_type == 'monthly':
-            skip = 30
+            definition.skip = 30
         else:
             LOGR.info('Unrecognized epoch_type: {0} \
                      defaulting to daily'.format(definition.epoch_type))
 
-        window = self.get_window(self.date, count, skip)
+        window = self.get_window(self.date, count, definition.skip)
 
         for label in definition.labels:
             platform = self.get_platform(RAW_COLLECTION, label)
@@ -550,16 +555,26 @@ class Processor(Thread):
     def send_alerts(self, definition):
         """Sends alert to the definition's recipients
         """
-        date = self.date.strftime('%Y-%m-%d')
-        epoch_type = self.get_epoch_type(definition)
-        header_str = "{0} of past {1} {2} for:".format(
-        definition.transform, definition.epoch_count, epoch_type)
-
-        if definition.report == '':
-            message = NO_ALERT_INFO_HEADER.substitute({'date':date})
+        current_date = self.date.strftime('%Y-%m-%d')
+        delta = timedelta(days=definition.skip * definition.epoch_count)
+        start_date = (self.date - delta).strftime('%Y-%m-%d')
+        
+        if definition.type == 'alert':
+            if definition.report == '':
+                message = NO_ALERT_INFO_HEADER.substitute({'date':current_date})
+            else:
+                epoch_type = self.get_epoch_type(definition)
+                header_str = "\"{0}\" from {1} to {2} ({3} {4}) for:". \
+                format(definition.transform, start_date, current_date,
+                definition.epoch_count, epoch_type)
+                message = ALERT_INFO.substitute({'date':current_date, 
+                    'header':header_str, 'alerts':definition.report})
         else:
-            message = ALERT_INFO.substitute({'date':date, 
-                'header':header_str, 'alerts':definition.report})
+            if definition.report:
+                header = REPORT_INFO_HEADER.substitute({ "date" : current_date })
+                message = header + definition.report
+            else:
+                message = NO_REPORT_INFO_HEADER.substitute({'date' : current_date})
 
         conn = connect_ses().send_email(
         "mongo-perf admin <mongoperf@10gen.com>",
