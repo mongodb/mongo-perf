@@ -402,13 +402,13 @@ class Processor(Thread):
             header = REPORT_INFO_HEADER.substitute({ "date" : date })
             message = header + definition.report
             conn = connect_ses().send_email(
-            "mongo-perf admin <wisdom@10gen.com>",
+            "mongo-perf admin <mongoperf@10gen.com>",
             "MongoDB Performance Report", message, 
             definition.recipients, format="html")
         else:
             message = NO_REPORT_INFO_HEADER.substitute({'date' : date})
             conn = connect_ses().send_email(
-            "mongo-perf admin <wisdom@10gen.com>",
+            "mongo-perf admin <mongoperf@10gen.com>",
             "MongoDB Performance Report", message, 
             definition.recipients, format="html")
 
@@ -562,7 +562,7 @@ class Processor(Thread):
                 'header':header_str, 'alerts':definition.report})
 
         conn = connect_ses().send_email(
-        "mongo-perf admin <wisdom@10gen.com>",
+        "mongo-perf admin <mongoperf@10gen.com>",
         "MongoDB Performance Report", message, 
         definition.recipients, format="html")
 
