@@ -68,9 +68,15 @@ $anomalies<br><br>
 ''')
 
 # alert globals
-ALERT_INFO_HEADER = Template('''Dear User,
+ALERT_INFO = Template('''Dear User,
 <br><br>
 Here are the alerts generated for $date:
+<br><br>$header<br>$alerts<br><br>
+''')
+
+NO_ALERT_INFO_HEADER = Template('''Dear User,
+<br><br>
+No alerts generated for $date!
 <br><br>
 ''')
 
@@ -457,7 +463,7 @@ class Processor(Thread):
                     'run_date' : {'$in' : window},
                     'version' : version})
 
-                task = ','.join(map(str, (label, platform)))
+                task = ','.join(map(str, (label, platform, version)))
                 self.tasks.append(task)
                 data = self.parse_data(cursor, definition)
                 definition.data[task] = data
@@ -477,7 +483,8 @@ class Processor(Thread):
                         value = self.transform_helper(definition.transform, \
                             data[test][definition.metric][thread], current_index)
                         alert = {}
-                        alert['label'], alert['platform'] = task.split(',')
+                        alert['label'], alert['platform'], \
+                        alert['version'] = task.split(',')
                         alert['transform'] = definition.transform
                         alert['alert_name'] = definition.name
                         alert['thread_count'] = thread
@@ -487,27 +494,7 @@ class Processor(Thread):
                         definition.alerts[index] = alert
                         index += 1
 
-            
-    def transform_helper(self, transform, data, current_index):
-        """Performs the given transformation on data passed in
-        """
-        result = ''
-        if transform == 'std_dev':
-            mean = sum(data) / len(data)
-            result = sqrt( sum ( ( point - mean ) ** 2 \
-                        for point in data) / (len(data) - 1))
-        elif transform == 'mean':
-            result = sum(data) / len(data)
-        elif transform == 'actual':
-            result = data[current_index]
-        elif transform == 'fourier':
-            # Not yet imploemented
-            result = None
-        else:
-            raise BaseException("Transform: {0} not recognized.".format(transform))
-        return result
-            
-    def persist_results(self, definition):
+    def persist_alerts(self, definition):
         """Store triggered alerts
         """
         for index in definition.alerts:
@@ -518,24 +505,42 @@ class Processor(Thread):
                     'label' : alert['label'],
                     'platform' : alert['platform'],
                     'transform' : alert['transform'],
+                    'version' : alert['version'],
                     'alert_name' : alert['alert_name'],
                     'trigger_date' : alert['trigger_date'],
                     'thread_count' : alert['thread_count']}, alert)
                 
-    def passes_threshold(self, definition, alert):
-        """Returns True if the given alert passes the 
-            comparator, threshold test
-        """
-        if definition.comparator == "<":
-            if alert['value'] < definition.threshold:
-                return True
-        elif definition.comparator == ">":
-            if alert['value'] > definition.threshold:
-                return True
-        elif definition.comparator == "=":
-            if alert['value'] == definition.threshold:
-                return True
-        return False
+    def send_alerts(self, definition):
+        epoch_type = self.get_epoch_type(definition)
+        header_str = "{0} of past {1} {2} for:".format(
+        definition.transform, definition.epoch_count, epoch_type)
+        date = self.date.strftime('%Y-%m-%d')
+        window = '+'.join(self.get_window(self.date, definition.epoch_count, 1))
+        alert_str = ''
+        for index in definition.alerts:
+            alert = definition.alerts[index]
+            if self.passes_threshold(definition, alert):
+                alert_url = "<a href=\"http://{0}/results?metric={1}&" \
+                "labels={2}&platforms={3}&versions={4}&dates={5}" \
+                "#{6}\">{6}</a>".format(MONGO_PERF_HOST, definition.metric, 
+                alert['label'], alert['platform'], \
+                alert['version'], window, alert['test'])
+
+                alert_str += "- {0} on ({1}, {2}, thread {3}) is {4:.2f} " \
+                "({5} {6})<br>".format(alert_url, alert['label'], 
+                alert['version'], alert['thread_count'], alert['value'], 
+                definition.comparator, definition.threshold)
+
+        if alert_str == '':
+            message = NO_ALERT_INFO_HEADER.substitute({'date':date})
+        else:
+            message = ALERT_INFO.substitute({'date':date, 
+                'header':header_str, 'alerts':alert_str})
+
+        conn = connect_ses().send_email(
+        "mongo-perf admin <wisdom@10gen.com>",
+        "MongoDB Performance Report", message, 
+        definition.recipients, format="html")
 
 
 
@@ -572,6 +577,21 @@ class Processor(Thread):
         return self.database[collection].find_one() \
                 ['benchmarks'][0]['results']. \
                 itervalues().next().keys()
+        
+    def get_epoch_type(self, definition):
+        if definition.epoch_type == 'daily':
+            if definition.epoch_count > 1:
+                return 'days'
+            return 'day'
+        elif definition.epoch_type == 'weekly':
+            if definition.epoch_count > 1:
+                return 'weeks'
+            return 'week'
+        elif definition.epoch_type == 'monthly':
+            if definition.epoch_count > 1:
+                return 'months'
+            return 'month'
+        return ''
 
     def get_platform(self, collection, label):
         """Get platform name given label
@@ -591,7 +611,7 @@ class Processor(Thread):
             current -= skip
 
         return window
-        
+
     def parse_data(self, cursor, definition):
         """Transform data into a more amenable form
         """
@@ -609,4 +629,38 @@ class Processor(Thread):
                             append(results[thread][definition.metric])
 
         return dates, parse
+        
+    def passes_threshold(self, definition, alert):
+        """Returns True if the given alert passes the 
+            comparator, threshold test
+        """
+        if definition.comparator == "<":
+            if alert['value'] < definition.threshold:
+                return True
+        elif definition.comparator == ">":
+            if alert['value'] > definition.threshold:
+                return True
+        elif definition.comparator == "=":
+            if alert['value'] == definition.threshold:
+                return True
+        return False
+
+    def transform_helper(self, transform, data, current_index):
+        """Performs the given transformation on data passed in
+        """
+        result = ''
+        if transform == 'std_dev':
+            mean = sum(data) / len(data)
+            result = sqrt( sum ( ( point - mean ) ** 2 \
+                        for point in data) / (len(data) - 1))
+        elif transform == 'mean':
+            result = sum(data) / len(data)
+        elif transform == 'actual':
+            result = data[current_index]
+        elif transform == 'fourier':
+            # Not yet implemented
+            result = None
+        else:
+            raise BaseException("Transform: {0} not recognized.".format(transform))
+        return result
         

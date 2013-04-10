@@ -38,7 +38,7 @@ REPORTS_COLLECTION = "reportDefinition"
 ALERT_HISTORY_COLLECTION = "alertHistory"
 
 # pipeline to be used for alerts
-ALERT_TASKS = ['pull data', 'process alerts', 'persist results']
+ALERT_TASKS = ['pull data', 'process alerts', 'persist alerts', 'send alerts']
 
 # pipeline to be used for reports
 REPORT_TASKS = ['process benchmarks', 'pull results', 
@@ -165,6 +165,7 @@ def ensure_indexes():
     DATABASE[ALERT_HISTORY_COLLECTION].ensure_index \
     ([('test', pymongo.ASCENDING)
     , ('label', pymongo.ASCENDING)
+    , ('version', pymongo.ASCENDING)
     , ('platform', pymongo.ASCENDING)
     , ('transform', pymongo.ASCENDING)
     , ('alert_name', pymongo.ASCENDING)
