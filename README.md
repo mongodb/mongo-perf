@@ -1,30 +1,36 @@
 # mongo-perf
 This is a benchmark script for the MongoDB server.
 
-### Dependencies:
+### Overview
+============
+This repo contains scripts to run benchmark tests for mongodb. It also includes some scripts that perform anomaly detection (herein called analysis) and reporting on historical benchmark tests. See `Usage` for more information.
+
+
+### Dependencies
+================
 ##### Benchmarking
-* Scons
-* Python >= 2.5
-* pymongo
-* MongoDB
-* git (optional)
-* C++ build environment
-* Boost C++ Libraries
+* <kbd>Scons</kbd>
+* <kbd>Python >= 2.5</kbd>
+* <kbd>pymongo</kbd>
+* <kbd>MongoDB</kbd>
+* <kbd>git (optional)</kbd>
+* <kbd>C++ build environment</kbd>
+* <kbd>Boost C++ Libraries</kbd>
 
 ##### Analysis
-* Python >= 2.5
-* pymongo
-* MongoDB
-* R >= 2.15.0
-* rmongodb
+* <kbd>Python >= 2.5</kbd>
+* <kbd>pymongo</kbd>
+* <kbd>MongoDB</kbd>
+* <kbd>R >= 2.15.0</kbd>
+* <kbd>rmongodb</kbd>
 
 ##### Reporting
-* boto (optional)
-* Amazon SES account (optional)
+* <kbd>boto (optional)</kbd>
+* <kbd>Amazon SES® (optional)</kbd> 
 
-<hr>
 
-### Usage (on local machine)
+### Local Usage
+---------------
 ##### Benchmarking
 To run benchmark tests locally, use the `local.py` script.
 <pre><code># compile the C++ driver
@@ -57,7 +63,7 @@ Go to http://localhost to see the results
 
 ##### Analysis
 
-Use `alerting.ini` and `reporting.ini` as a starting point to describe the kinds of alerts or reports you want generated. The sample files have only one entry but you can define as many alerts/report as you like.
+Use `alerting.ini` and `reporting.ini` as a starting point to describe the kinds of alerts or reports you want generated. The sample files have only one entry but you can define as many alerts/reports as you like.
 
 `analysismgr.py` defines pipelines &mdash; ALERT_TASKS and REPORT_TASKS &mdash; which control the flow of data processing. Definitions for alerts/reports are described in `alert_definitions.ini` and `report_definitions.ini` &ndash; you can define as many alerts/reports as you wish. **All fields described and enumerated in the sample '.ini' files are required**.
 
@@ -71,12 +77,13 @@ The default pipeline for both alerts and reports (as listed in ALERT_TASKS and R
 
 If you wish to receive email reports, change the last stage in pipeline in `analysismgr.py` to 'show report' for reports, and 'send alerts' for alerts. By default, emails are sent using Amazon SES® so you will need an account on that to send email reports.
 
-*By default, all analysis/reporting run against a `mongod` on port `27017` (so you should have `mongod` running on this port). If you wish to specify a different host, change* MONGO_PERF_HOST *and* MONGO_PERF_PORT *in `analysismgr.py`, `mongo-perf.R` and `jobsmgr.py`.*
+*By default, all analysis/reporting run against a `mongod` on port `27017` (mongod` must be running on this port). To specify a different host, change* MONGO_PERF_HOST *and* MONGO_PERF_PORT *in `analysismgr.py`,`jobsmgr.py` and `mongo-perf.R`.*
 
-### Usage (via buildbdot)
+#### Buildbot Usage
+-------------------
 ##### Benchmarking
 To run benchmark tests locally, use the `runner.py` script.
-A call made to this script by the buildslave might be:
+A call to this script by a buildslave might be:
 <pre><code>python runner.py --rhost localhost --rport 27017 --port 30000  --mongod MONGO_DIR/mongod  --label Linux_64-bit
 </code></pre>
 The snippet above starts `mongod` on port 30000 (which it tests against) and writes the result of the benchmark tests to `localhost` on port `27017`. You can have both `--port` and `--rport` be the same.
