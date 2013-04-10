@@ -49,13 +49,13 @@ ALERT_HISTORY_COLLECTION = "alertHistory"
 # report globals
 REPORT_INFO_HEADER = Template('''Dear User,
 <br><br>
-Here are the reports generated for $date:
+Here are the reports generated on $date for $name:
 <br><br>
 ''')
 
 NO_REPORT_INFO_HEADER = Template('''Dear User,
 <br><br>
-Metrics seem be be performing fine for $date!
+Metrics seem be be performing fine on $date for $name!
 <br><br>
 ''')
 
@@ -70,13 +70,13 @@ $anomalies<br><br>
 # alert globals
 ALERT_INFO = Template('''Dear User,
 <br><br>
-Here are the alerts generated for $date:
+Here are the alerts generated on $date for $name:
 <br><br>$header<br>$alerts<br><br>
 ''')
 
 NO_ALERT_INFO_HEADER = Template('''Dear User,
 <br><br>
-No alerts generated for $date!
+No alerts generated on $date for $name!
 <br><br>
 ''')
 
@@ -395,20 +395,22 @@ class Processor(Thread):
             if values['anomalies']:
                 definition.aggregate += REPORT_BODY.substitute(values)
 
-    def send_report(self, definition):
-        """Sends report based on generated report
+    def send_reports(self, definition):
+        """Sends reports based on generated report
         """
         date = self.date.strftime('%Y-%m-%d')
 
         if definition.report:
-            header = REPORT_INFO_HEADER.substitute({ "date" : date })
+            header = REPORT_INFO_HEADER.substitute(
+                        {"date" : date, "name" : definition.name})
             message = header + definition.report
             conn = connect_ses().send_email(
             "mongo-perf admin <mongoperf@10gen.com>",
             "MongoDB Performance Report", message, 
             definition.recipients, format="html")
         else:
-            message = NO_REPORT_INFO_HEADER.substitute({'date' : date})
+            message = NO_REPORT_INFO_HEADER.substitute(
+                    {"date" : current_date, "name" : definition.name})
             conn = connect_ses().send_email(
             "mongo-perf admin <mongoperf@10gen.com>",
             "MongoDB Performance Report", message, 
@@ -423,20 +425,24 @@ class Processor(Thread):
             delta = timedelta(days=definition.skip * definition.epoch_count)
             start_date = (self.date - delta).strftime('%Y-%m-%d')
             if definition.report == '':
-                message = NO_ALERT_INFO_HEADER.substitute({'date':current_date})
+                message = NO_ALERT_INFO_HEADER.substitute( \
+                    {"date" : current_date, "name" : definition.name})
             else:
                 epoch_type = self.get_epoch_type(definition)
                 header_str = "\"{0}\" from {1} to {2} ({3} {4}) for:". \
                 format(definition.transform, start_date, current_date,
                 definition.epoch_count, epoch_type)
-                message = ALERT_INFO.substitute({'date':current_date, 
-                    'header':header_str, 'alerts':definition.report})
+                message = ALERT_INFO.substitute( \
+                    {"date" : current_date, "name" : definition.name, 
+                    "header" : header_str, "alerts" : definition.report})
         else:
             if definition.report:
-                header = REPORT_INFO_HEADER.substitute({ "date" : current_date })
+                header = REPORT_INFO_HEADER.substitute( \
+                    {"date" : current_date, "name" : definition.name})
                 message = header + definition.report
             else:
-                message = NO_REPORT_INFO_HEADER.substitute({'date' : current_date})
+                message = NO_REPORT_INFO_HEADER.substitute( \
+                    {"date" : current_date, "name" : definition.name})
 
         file_obj = '.{0}.html'.format(definition.type)
         path = abspath(join(realpath( __file__ ), '..', file_obj))
@@ -561,14 +567,16 @@ class Processor(Thread):
         
         if definition.type == 'alert':
             if definition.report == '':
-                message = NO_ALERT_INFO_HEADER.substitute({'date':current_date})
+                message = NO_ALERT_INFO_HEADER.substitute( 
+                    {"date" : current_date, "name" : definition.name})
             else:
                 epoch_type = self.get_epoch_type(definition)
                 header_str = "\"{0}\" from {1} to {2} ({3} {4}) for:". \
                 format(definition.transform, start_date, current_date,
                 definition.epoch_count, epoch_type)
-                message = ALERT_INFO.substitute({'date':current_date, 
-                    'header':header_str, 'alerts':definition.report})
+                message = ALERT_INFO.substitute(
+                    {"date" : current_date, "name" : definition.name,
+                    "header" : header_str, "alerts" : definition.report})
         else:
             if definition.report:
                 header = REPORT_INFO_HEADER.substitute({ "date" : current_date })
