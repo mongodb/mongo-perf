@@ -535,13 +535,14 @@ class Processor(Thread):
                 alert['label'], alert['platform'], \
                 alert['version'], window, alert['test'])
 
-                definition.aggregate += "- {0} on ({1}, {2}, thread {3}) is {4:.2f} " \
+                definition.aggregate += "- {0} on ({1}, {2}, thread {3}) is {4:.1f} " \
                 "({5} {6})<br>".format(alert_url, alert['label'], 
                 alert['version'], alert['thread_count'], alert['value'], 
                 definition.comparator, definition.threshold)
 
     def send_alerts(self, definition):
         date = self.date.strftime('%Y-%m-%d')
+        epoch_type = self.get_epoch_type(definition)
         header_str = "{0} of past {1} {2} for:".format(
         definition.transform, definition.epoch_count, epoch_type)
 
@@ -549,7 +550,7 @@ class Processor(Thread):
             message = NO_ALERT_INFO_HEADER.substitute({'date':date})
         else:
             message = ALERT_INFO.substitute({'date':date, 
-                'header':header_str, 'alerts':definition.result})
+                'header':header_str, 'alerts':definition.report})
 
         conn = connect_ses().send_email(
         "mongo-perf admin <wisdom@10gen.com>",

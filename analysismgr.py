@@ -38,7 +38,7 @@ REPORTS_COLLECTION = "reportDefinition"
 ALERT_HISTORY_COLLECTION = "alertHistory"
 
 # pipeline to be used for alerts
-ALERT_TASKS = ['pull data', 'process alerts', \
+ALERT_TASKS = ['pull data', 'process alerts',
                 'persist alerts', 'prepare alerts', 'show results']
 
 # pipeline to be used for reports
