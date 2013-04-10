@@ -21,6 +21,7 @@ This is a benchmark script for the MongoDB server.
 ##### Reporting
 * boto (optional)
 * Amazon SES account (optional)
+
 <hr>
 
 ### Usage (on local machine)
@@ -56,7 +57,7 @@ Go to http://localhost to see the results
 
 ##### Analysis
 
-Use `alerting.ini` and `reporting.ini` as a starting point to describe the kinds of alerts or reports you would like to generate. 
+Use `alerting.ini` and `reporting.ini` as a starting point to describe the kinds of alerts or reports you want generated. The sample files have only one entry but you can define as many alerts/report as you like.
 
 `analysismgr.py` defines pipelines &mdash; ALERT_TASKS and REPORT_TASKS &mdash; which control the flow of data processing. Definitions for alerts/reports are described in `alert_definitions.ini` and `report_definitions.ini` - you can define as many alerts/reports as you wish. **All fields described and enumerated in the sample '.ini' files are required**.
 
