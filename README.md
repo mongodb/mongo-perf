@@ -59,7 +59,7 @@ Go to http://localhost to see the results
 
 Use `alerting.ini` and `reporting.ini` as a starting point to describe the kinds of alerts or reports you want generated. The sample files have only one entry but you can define as many alerts/report as you like.
 
-`analysismgr.py` defines pipelines &mdash; ALERT_TASKS and REPORT_TASKS &mdash; which control the flow of data processing. Definitions for alerts/reports are described in `alert_definitions.ini` and `report_definitions.ini` - you can define as many alerts/reports as you wish. **All fields described and enumerated in the sample '.ini' files are required**.
+`analysismgr.py` defines pipelines &mdash; ALERT_TASKS and REPORT_TASKS &mdash; which control the flow of data processing. Definitions for alerts/reports are described in `alert_definitions.ini` and `report_definitions.ini` &ndash; you can define as many alerts/reports as you wish. **All fields described and enumerated in the sample '.ini' files are required**.
 
 *Note that you need at least three days' worth of data to run* `analysismgr.py`.
 <pre><code># this runs the whole pipeline of analysis and reporting
@@ -71,12 +71,12 @@ The default pipeline for both alerts and reports (as listed in ALERT_TASKS and R
 
 If you wish to receive email reports, change the last stage in pipeline in `analysismgr.py` to 'show report' for reports, and 'send alerts' for alerts. By default, emails are sent using Amazon SES® so you will need an account on that to send email reports.
 
-*By default, all analysis/reporting on on your local machine against a `mongod` on port `27017` (so you should have `mongod` running on this port). If you wish to specify a different host, change* MONGO_PERF_HOST *and* MONGO_PERF_PORT *in `analysismgr.py`, `mongo-perf.R` and `jobsmgr.py`.*
+*By default, all analysis/reporting run against a `mongod` on port `27017` (so you should have `mongod` running on this port). If you wish to specify a different host, change* MONGO_PERF_HOST *and* MONGO_PERF_PORT *in `analysismgr.py`, `mongo-perf.R` and `jobsmgr.py`.*
 
 ### Usage (via buildbdot)
 ##### Benchmarking
 To run benchmark tests locally, use the `runner.py` script.
-A call made to this script by the buildslave might be:`.
+A call made to this script by the buildslave might be:
 <pre><code>python runner.py --rhost localhost --rport 27017 --port 30000  --mongod MONGO_DIR/mongod  --label Linux_64-bit
 </code></pre>
 The snippet above starts `mongod` on port 30000 (which it tests against) and writes the result of the benchmark tests to `localhost` on port `27017`. You can have both `--port` and `--rport` be the same.
