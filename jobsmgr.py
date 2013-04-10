@@ -645,9 +645,9 @@ class Processor(Thread):
         operations = self.find_operations(definition.operations)
         dates = []
         for record in cursor:
+            dates.append(record['run_date'])
             for test in record['benchmarks']:
                 if test['name'] in operations:
-                    dates.append(record['run_date'])
                     results = test['results']
                     for thread in results:
                         if thread in definition.threads:
