@@ -1,7 +1,7 @@
 ###############################################################################################
 ## Function washer.AV in R-language
 ## Original Author : Andrea Venturini (andrea.venturini@bancaditalia.it)
-## Modified by Wisdom Omuya for 10gen mongo-perf tool
+## Modified by Wisdom Omuya for 10gen mongoperf tool
 ## Venturini, A. (2011). Time Series Outlier Detection: A New Non Parametric Methodology 
 ## (Washer). Statistica 71: 329-344.
 ################################################################################################

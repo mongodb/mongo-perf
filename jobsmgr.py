@@ -361,6 +361,7 @@ class Processor(Thread):
                         continue
 
                     target_trend = 'decreasing'
+                    # y1, y2, y3 are in the window we're considering
                     if anomaly['y3'] > anomaly['y2']:
                         target_trend = 'increasing'
                         if anomaly['AV'] < 0: 
@@ -369,6 +370,8 @@ class Processor(Thread):
                         if anomaly['AV'] > 0:
                             target_trend = 'declining'
 
+                    # madindex_AV is a measure of homogeneity
+                    # really high values are bad for anomaly detection
                     homogeneity = (100 - anomaly['madindex_AV'])
                     series_trend = "homogenous"
                     if homogeneity < definition.homogeneity:
@@ -523,6 +526,8 @@ class Processor(Thread):
                     alert, upsert=True)
                 
     def prepare_alerts(self, definition):
+        """Formats alerts to be sent/shown
+        """
         epoch_type = self.get_epoch_type(definition)
         window = '+'.join(self.get_window(self.date, definition.epoch_count, 1))
 
@@ -541,6 +546,8 @@ class Processor(Thread):
                 definition.comparator, definition.threshold)
 
     def send_alerts(self, definition):
+        """Sends alert to the definition's recipients
+        """
         date = self.date.strftime('%Y-%m-%d')
         epoch_type = self.get_epoch_type(definition)
         header_str = "{0} of past {1} {2} for:".format(
@@ -594,6 +601,8 @@ class Processor(Thread):
                 itervalues().next().keys()
         
     def get_epoch_type(self, definition):
+        """Returns a reformatted epoch_type string
+        """
         if definition.epoch_type == 'daily':
             if definition.epoch_count > 1:
                 return 'days'

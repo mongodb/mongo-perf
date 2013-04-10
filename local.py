@@ -1,4 +1,18 @@
-#!/usr/bin/env python
+# Copyright 2013 10gen, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Local script to run benchmark tests"""
 
 import sys
 import subprocess
@@ -26,6 +40,8 @@ now = datetime.datetime.now()
 run_date = now.strftime("%Y-%m-%d")
 
 def cleanup():
+    """Cleans up spawned children
+    """
     global processes
     retval = 0
     for p in processes:
@@ -36,6 +52,8 @@ def cleanup():
     return retval
 
 def parse_options():
+    """Parses user supplied cl options
+    """
     optparser = OptionParser()
     optparser.add_option('--rhost', dest='rhost', 
                         help='host for mongodb to write results to', 
@@ -73,6 +91,9 @@ def parse_options():
     return optparser.parse_args()
 
 def run_benchmark(opts):
+    """Runs the benchmark tests; pulls mongod 
+        from github if requested
+    """
     global mongod_handle, processes
 
     mongod = None
@@ -140,6 +161,9 @@ def run_benchmark(opts):
     return benchmark_results
 
 def prep_storage(opts):
+    """Gets host/build info and creates indexes 
+        in the varioius collections
+    """
     global connection
 
     build_info, host_info = None, None
@@ -191,6 +215,8 @@ def prep_storage(opts):
     return build_info, host_info
 
 def store_results(opts, benchmark_results):
+    """Inserts the benchmarked object into the database
+    """
     global connection, mongod_handle
 
     build_info, host_info = prep_storage(opts)
@@ -221,6 +247,8 @@ def store_results(opts, benchmark_results):
             mongod_handle.__exit__(None, None, None)
 
 def update_collection(collection, obj):
+    """Helper to insert the benchmarked object into the database
+    """
     try:
         collection.update({ 'label' : obj['label'],
                             'version' : obj['version'],
