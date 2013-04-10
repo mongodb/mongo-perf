@@ -12,19 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Runs the analysis of benchmarked data."""
-
 library("rmongodb")
 source("washer.R")
 
-MONGO_PERF_HOST = "localhost"
+MONGO_PERF_HOST <- "localhost"
+MONGO_PERF_PORT <- 27017
 cat("Processing benchmark results...\n")
 
 # The 'analysis' collection contains anomaly detection data based on report definitions
 # The 'admin' collection will have one record if the indexes have been registered
 # The 'raw' collection contains data we want to analyze
-
-mongo <- mongo.create(host=MONGO_PERF_HOST)
+host <- paste(MONGO_PERF_HOST, MONGO_PERF_PORT, sep=":")
+mongo <- mongo.create(host=host)
 if (!mongo.is.connected(mongo))
     error("No connection to MongoDB")
 
