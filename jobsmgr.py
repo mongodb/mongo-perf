@@ -519,7 +519,8 @@ class Processor(Thread):
                     'version' : alert['version'],
                     'alert_name' : alert['alert_name'],
                     'trigger_date' : alert['trigger_date'],
-                    'thread_count' : alert['thread_count']}, alert)
+                    'thread_count' : alert['thread_count']}, 
+                    alert, upsert=True)
                 
     def prepare_alerts(self, definition):
         epoch_type = self.get_epoch_type(definition)
