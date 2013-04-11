@@ -382,10 +382,12 @@ class Processor(Thread):
                         series_trend = "homogenous"
                         if homogeneity < definition.homogeneity:
                             homogeneity = "{0:.2f}%".format(abs(homogeneity))
-                            anomaly_url = "<a href=\"http://{0}/results?metric={1}&" \
-                                "labels={2}&platforms={3}&versions={4}&dates={5}" \
-                                "#{6}\" target=\"_blank\">{6}</a>".format(MONGO_PERF_HOST, keys[0],
-                                keys[1], keys[2], keys[3], window, test)
+                            anomaly_url = "<a href=\"http://{host}/results?" \
+                                "metric={metric}&labels={labels}&platforms={platforms}&" \
+                                "versions={versions}&dates={dates}#{test}\" target=\"_blank\">" \
+                                "{test}</a>".format(host=MONGO_PERF_HOST, metric=keys[0], 
+                                labels=keys[1], latforms=keys[2], versions=keys[3], dates=window, test=test)
+
                             anomaly_str = anomaly_url + " might be {0} in performance " \
                                 "- see thread {1} (trends {2} at {3})".format \
                                 (target_trend, thread,
@@ -553,16 +555,19 @@ class Processor(Thread):
         for index in definition.alerts:
             alert = definition.alerts[index]
             if self.passes_threshold(definition, alert):
-                alert_url = "<a href=\"http://{0}/results?metric={1}&" \
-                    "labels={2}&platforms={3}&versions={4}&dates={5}" \
-                    "#{6}\" target=\"_blank\">{6}</a>".format(MONGO_PERF_HOST,
-                    definition.metric, alert['label'], alert['platform'],
-                    alert['version'], window, alert['test'])
+                alert_url = "<a href=\"http://{host}/results?" \
+                            "metric={metric}&labels={labels}&platforms={platforms}&" \
+                            "versions={versions}&dates={dates}" \
+                            "#{test}\" target=\"_blank\">{test}</a>". \
+                            format(host=MONGO_PERF_HOST, metric=definition.metric, 
+                            labels=alert['label'], platforms=alert['platform'], 
+                            versions=alert['version'], dates=window, test=alert['test'])
 
-                definition.aggregate += "- {0} on ({1}, {2}, thread {3}) is {4:.1f} " \
-                    "({5} {6})<br>".format(alert_url, alert['label'],
-                    alert['version'], alert['thread_count'], alert['value'],
-                    definition.comparator, definition.threshold)
+                definition.aggregate += "- {alert} on ({label}, {version}, thread " \
+                    "{thread_count}) is {value:.1f} ({comparator} {threshold})<br>". \
+                    format(alert=alert_url, label=alert['label'], version=alert['version'], 
+                            thread_count=alert['thread_count'], value=alert['value'],
+                            comparator=definition.comparator, threshold=definition.threshold)
 
     def send_alerts(self, definition):
         """Sends alert to the definition's recipients
@@ -577,9 +582,10 @@ class Processor(Thread):
                     {"date": current_date, "name": definition.name})
             else:
                 epoch_type = self.get_epoch_type(definition)
-                header_str = "\"{0}\" from {1} to {2} ({3} {4}) for:". \
-                    format(definition.transform, start_date, current_date,
-                           definition.epoch_count, epoch_type)
+                header_str = "\"{transform}\" from {start_date} to {end_date} " \
+                             "({count} {epoch}) for:".format(transform=definition.transform, 
+                                start_date=start_date, end_date=current_date,
+                                count=definition.epoch_count, epoch=epoch_type)
                 message = ALERT_INFO.substitute(
                     {"date": current_date, "name": definition.name,
                      "header": header_str, "alerts": definition.report})
