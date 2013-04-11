@@ -9,25 +9,24 @@ This repo contains scripts to run benchmark tests for mongodb. It also includes 
 ### Dependencies
 ================
 ##### Benchmarks
-* <kbd>Scons</kbd>
-* <kbd>Python >= 2.5</kbd>
-* <kbd>pymongo</kbd>
-* <kbd>MongoDB</kbd>
-* <kbd>git (optional)</kbd>
-* <kbd>C++ build environment</kbd>
-* <kbd>Boost C++ Libraries</kbd>
+* Scons
+* Python >= 2.5
+* pymongo
+* MongoDB
+* git (optional)
+* C++ build environment
+* Boost C++ Libraries
 
 ##### Analysis
-* <kbd>Python >= 2.5</kbd>
-* <kbd>pymongo</kbd>
-* <kbd>MongoDB</kbd>
-* <kbd>R >= 2.15.0</kbd>
-* <kbd>rmongodb</kbd>
+* Python >= 2.5
+* pymongo
+* MongoDB
+* R >= 2.15.0
+* rmongodb
 
 ##### Reporting
-* <kbd>boto (optional)</kbd>
-* <kbd>Amazon SES® (optional)</kbd> 
-
+* boto (optional)
+* Amazon SES® (optional) 
 
 ### Local Usage
 ---------------
