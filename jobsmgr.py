@@ -548,11 +548,8 @@ class Processor(Thread):
         """Formats alerts to be sent/shown
         """
         epoch_type = self.get_epoch_type(definition)
-        window = '+'.join(
-            self.get_window(
-                self.date,
-                definition.epoch_count,
-                1))
+        window = '+'.join(self.get_window(self.date, 
+                                        definition.epoch_count, 1))
 
         for index in definition.alerts:
             alert = definition.alerts[index]
@@ -580,7 +577,7 @@ class Processor(Thread):
         start_date = (self.date - delta).strftime('%Y-%m-%d')
 
         if definition.type == 'alert':
-            if definition.report == '':
+            if not definition.report:
                 message = NO_ALERT_INFO_HEADER.substitute(
                     {"date": current_date, "name": definition.name})
             else:
@@ -593,13 +590,11 @@ class Processor(Thread):
                     {"date": current_date, "name": definition.name,
                      "header": header_str, "alerts": definition.report})
         else:
-            if definition.report:
-                header = REPORT_INFO_HEADER.substitute(
-                    {"date": current_date})
-                message = header + definition.report
+            if not definition.report:
+                message = NO_REPORT_INFO_HEADER.substitute('date': current_date})
             else:
-                message = NO_REPORT_INFO_HEADER.substitute(
-                    {'date': current_date})
+                header = REPORT_INFO_HEADER.substitute({"date": current_date})
+                message = header + definition.report
 
         conn = connect_ses().send_email(
             "mongo-perf admin <mongoperf@10gen.com>",
