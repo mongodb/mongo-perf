@@ -31,7 +31,6 @@ This repo contains scripts to run benchmark tests for mongodb. It also includes 
 ### Local Usage
 ---------------
 ##### Benchmarks
-To run benchmark tests locally, use the `local.py` script.
 <pre><code># compile the C++ driver
 cd mongo-cxx-driver && scons 
 # compile the benchmark script
@@ -44,14 +43,14 @@ To run on an already existing mongod:
 
 	# this runs the tests and records the results
 	# optionally supply a label as well using -l
-	python local.py --nolaunch -l HOSTNAME
+	python runner.py --nolaunch -l HOSTNAME
 
 To run it against the source on github:
 	
 	# this pulls and starts mongod from the github repo,
 	# runs the tests and records the results
 	# optionally supply a label as well using -l
-	python local.py -l HOSTNAME
+	python runner.py --local -l HOSTNAME
 
 # this serves the results on port 8080
 python server.py 
@@ -80,7 +79,6 @@ If you wish to receive email reports, change the last stage in pipeline in `anal
 #### Buildbot Usage
 -------------------
 ##### Benchmarks
-To run benchmark tests locally, use the `runner.py` script.
 A call to this script by a buildslave might be:
 <pre><code>python runner.py --rhost localhost --rport 27017 --port 30000  --mongod MONGO_DIR/mongod  --label Linux_64-bit
 </code></pre>
