@@ -82,7 +82,7 @@ No alerts generated on $date for $name!
 
 
 class Definition(object):
-    """A Definition encapsulates information pertaining to 
+    """A Definition encapsulates information pertaining to
         the alerts and reports
     """
     def __init__(self, *args, **kwargs):
@@ -94,12 +94,12 @@ class Definition(object):
         self.name = kwargs.get('name', '')
         self.type = kwargs.get('type', '')
         self.labels = kwargs.get('labels', '')
-        self.versions =  kwargs.get('versions', '')
+        self.versions = kwargs.get('versions', '')
         self.operations = kwargs.get('operations', '')
         self.metric = kwargs.get('metric', 'ops_per_sec')
         self.recipients = kwargs.get('recipients', '')
         self.pipeline = kwargs.get('pipeline', None)
-        self._result = defaultdict(lambda : defaultdict(list))
+        self._result = defaultdict(lambda: defaultdict(list))
 
         try:
             self.threshold = float(kwargs.get('threshold'))
@@ -121,9 +121,10 @@ class Definition(object):
     def __repr__(self):
         return md5(self.name).hexdigest()
 
+
 class AlertDefinition(Definition):
     """An Alert encapsulates a specific computation to be
-        performed within the context of a alert definition 
+        performed within the context of a alert definition
     """
 
     def __init__(self, *args, **kwargs):
@@ -160,9 +161,10 @@ class AlertDefinition(Definition):
             for value in values:
                 self._threads.append(str(value))
         except ValueError, e:
-            LOGR.critical("threads must be an integer in alert" \
-            " definition for {0} definition".format(self.name))
+            LOGR.critical("threads must be an integer in alert"
+                          " definition for {0} definition".format(self.name))
             raise
+
 
 class ReportDefinition(Definition):
     """A Report encapsulates report notification jobs
@@ -184,14 +186,15 @@ class ReportDefinition(Definition):
         try:
             self._homogeneity = float(value)
         except ValueError:
-            raise ValueError("homogeneity in {0} must be numeric". \
-                                format(self.name))
+            raise ValueError("homogeneity in {0} must be numeric".
+                             format(self.name))
+
 
 class Processor(Thread):
-    """A Processor 'processes' a given definition by taking it 
+    """A Processor 'processes' a given definition by taking it
         through a number of predefined handlers. These handlers
         are enumerated in mongoperfmgr.py and implemented here.
-        The definition object is initialized with its unique 
+        The definition object is initialized with its unique
         set of handlers.
     """
 
@@ -208,21 +211,21 @@ class Processor(Thread):
         """Connect to mongo-perf database
         """
         self.connection = pymongo.MongoClient(
-                                host=MONGO_PERF_HOST,
-                                port=MONGO_PERF_PORT)
+            host=MONGO_PERF_HOST,
+            port=MONGO_PERF_PORT)
         self.database = self.connection[MP_DB_NAME]
 
     def run(self):
         """Launch processor from definitions queue.
-           Processor is an infinite consumer which 
-           runs as long as we have definitions to 
+           Processor is an infinite consumer which
+           runs as long as we have definitions to
            process in our queue. It is also spawned
            as a daemon thread
         """
         while True:
             try:
-                # Will eventually get killed once 
-                # parent unblocks - which is when 
+                # Will eventually get killed once
+                # parent unblocks - which is when
                 # the last item in self.queue calls
                 # the task_done() method
                 definition = self.queue.get()
@@ -233,28 +236,28 @@ class Processor(Thread):
                 raise
             finally:
                 if self.error:
-                    LOGR.critical('Error in pipeline for {0}' \
+                    LOGR.critical('Error in pipeline for {0}'
                         .format(definition.name))
                     LOGR.critical('{0}'.format(self.error))
-                    
+
                 self.queue.task_done()
 
     def process_definition(self, definition):
         """Perform each task for given definition
         """
-        LOGR.info('Commencing pipeline processing for {0}'. \
-                    format(definition.name))
+        LOGR.info('Commencing pipeline processing for {0}'.
+                  format(definition.name))
         self.connect()
 
         for index, stage in enumerate(definition.pipeline):
-            LOGR.info('Running {0} for {1}...'. \
-                    format(stage, definition.name))
+            LOGR.info('Running {0} for {1}...'.
+                      format(stage, definition.name))
             self.dispatch_handler(stage)(definition)
 
     def dispatch_handler(self, stage):
         """Call the given handler for this pipeline stage. handlers
             are supplied in each definition's pipeline - we construct
-            and return the appropriate function to handle processing 
+            and return the appropriate function to handle processing
             given the current stage of processing in the pipeline
         """
         name = '_'.join(stage.split())
@@ -263,9 +266,7 @@ class Processor(Thread):
             raise BaseException('No handler defined for {0}'.format(name))
         return handler
 
-
     """Reporting pipeline stage handlers below."""
-
 
     def process_benchmarks(self, definition):
         """Runs mongo-perf.R script to process benchmark results
@@ -273,25 +274,25 @@ class Processor(Thread):
             it, and writes the analyses results back in the database
         """
         start_date = self.date - timedelta(days=definition.window)
-        start_date, end_date = map(lambda d : \
-        d.strftime('%Y-%m-%d'), [start_date, self.date])
+        start_date, end_date = map(lambda d:
+                                   d.strftime('%Y-%m-%d'), [start_date, self.date])
 
         for label in definition.labels:
             platform = self.get_platform(RAW_COLLECTION, label)
             for version in definition.versions:
-                argv = ' '.join(map(str, [start_date, end_date, \
-                    label, platform, version, definition.window]))
-                analysis = subprocess.Popen(['Rscript', \
-                    'mongo-perf.R', start_date, end_date, str(label), \
-                    str(platform), str(version), str(definition.window)], \
-                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                argv = ' '.join(map(str, [start_date, end_date,
+                                          label, platform, version, definition.window]))
+                analysis = subprocess.Popen(['Rscript',
+                                             'mongo-perf.R', start_date, end_date, 
+                                             str(label), str(platform), str(version), 
+                                             str(definition.window)],
+                                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 LOGR.info("Started mongo-perf.R with args: {0}".format(argv))
                 output, error = analysis.communicate()
                 LOGR.info(output)
                 if error:
-                    raise BaseException('Nonzero exit from mongo-perf.R {0}'. \
-                                            format(error))
-              
+                    raise BaseException('Nonzero exit from mongo-perf.R {0}'.
+                                        format(error))
 
     def pull_results(self, definition):
         """Pull benchmarked results from database
@@ -304,14 +305,14 @@ class Processor(Thread):
                 if not platform:
                     raise BaseException("Label {0} not found".format(label))
                 for version in definition.versions:
-                    cursor = self.database['analysis'].find({
-                    "label" : label, "version" : version,
-                    "date" : date, "metric" : metric,
-                    "platform" : platform})
-                    job_str = ';'.join(map(str, \
-                    [metric, label, platform, version]))
+                    cursor = self.database['analysis'].find({"label": label,
+                                                            "version": version,
+                                                            "date": date,
+                                                            "metric": metric,
+                                                            "platform": platform})
+                    job_str = ';'.join(map(str, [metric, label, platform, version]))
                     job_hash = md5(job_str).hexdigest()
-                    self.tasks.append({ job_str : cursor })
+                    self.tasks.append({job_str: cursor})
 
     def analyze_results(self, definition):
         """Analyzes data produced by mongo-perf.R
@@ -331,15 +332,15 @@ class Processor(Thread):
                         res_map[result['test']].append(result)
                 for test in res_map:
                     # 'AV' measures the linearity of
-                    # a window of three data points  
+                    # a window of three data points
                     # 'test_AV' measures the probability
                     # of there being an outlier in the window
-                    data_points = sorted(res_map[test], 
-                    key=lambda k : (abs(k['AV'])), reverse=True)
+                    data_points = sorted(res_map[test],
+                                         key=lambda k: (abs(k['AV'])), reverse=True)
                     for dp in data_points:
                         if dp['test_AV'] > definition.threshold:
                             definition.result[task_key][test].append(dp)
-    
+
     def prepare_report(self, definition):
         """Prepare report based on analyzed data
         """
@@ -351,7 +352,7 @@ class Processor(Thread):
             values = {}
             keys = top_level.split(';')
             values['metric'], values['label'], \
-            values['platform'], values['version'] = keys
+                values['platform'], values['version'] = keys
             values['anomalies'] = ''
 
             for test in definition.result[top_level]:
@@ -369,7 +370,7 @@ class Processor(Thread):
                         # y1, y2, y3 are in the window we're considering
                         if anomaly['y3'] > anomaly['y2']:
                             target_trend = 'increasing'
-                            if anomaly['AV'] < 0: 
+                            if anomaly['AV'] < 0:
                                 target_trend = 'picking up'
                         else:
                             if anomaly['AV'] > 0:
@@ -382,14 +383,15 @@ class Processor(Thread):
                         if homogeneity < definition.homogeneity:
                             homogeneity = "{0:.2f}%".format(abs(homogeneity))
                             anomaly_url = "<a href=\"http://{0}/results?metric={1}&" \
-                                    "labels={2}&platforms={3}&versions={4}&dates={5}" \
-                                    "#{6}\">{6}</a>".format(MONGO_PERF_HOST, keys[0], \
-                                    keys[1], keys[2], keys[3], window, test)
+                                "labels={2}&platforms={3}&versions={4}&dates={5}" \
+                                "#{6}\">{6}</a>".format(MONGO_PERF_HOST, keys[0],
+                                keys[1], keys[2], keys[3], window, test)
                             anomaly_str = anomaly_url + " might be {0} in performance " \
-                                    "- see thread {1} (trends {2} at {3})".format \
-                                    (target_trend, thread, series_trend, homogeneity)
+                                "- see thread {1} (trends {2} at {3})".format \
+                                (target_trend, thread,
+                                series_trend, homogeneity)
                             anomaly_list.append(anomaly_str)
-            
+
                 if anomaly_list:
                     values['anomalies'] += '<br>'
                     values['anomalies'] += '<br>'.join(anomaly_list)
@@ -404,19 +406,19 @@ class Processor(Thread):
 
         if definition.report:
             header = REPORT_INFO_HEADER.substitute(
-                    {"date" : current_date, "name" : definition.name})
+                {"date": current_date, "name": definition.name})
             message = header + definition.report
             conn = connect_ses().send_email(
-            "mongo-perf admin <mongoperf@10gen.com>",
-            "MongoDB Performance Report", message, 
-            definition.recipients, format="html")
+                "mongo-perf admin <mongoperf@10gen.com>",
+                "MongoDB Performance Report", message,
+                definition.recipients, format="html")
         else:
             message = NO_REPORT_INFO_HEADER.substitute(
-                    {"date" : current_date, "name" : definition.name})
+                {"date": current_date, "name": definition.name})
             conn = connect_ses().send_email(
-            "mongo-perf admin <mongoperf@10gen.com>",
-            "MongoDB Performance Report", message, 
-            definition.recipients, format="html")
+                "mongo-perf admin <mongoperf@10gen.com>",
+                "MongoDB Performance Report", message,
+                definition.recipients, format="html")
 
     def show_results(self, definition):
         """Shows alerts/report in browser
@@ -427,34 +429,34 @@ class Processor(Thread):
             delta = timedelta(days=definition.skip * definition.epoch_count)
             start_date = (self.date - delta).strftime('%Y-%m-%d')
             if definition.report == '':
-                message = NO_ALERT_INFO_HEADER.substitute( \
-                    {"date" : current_date, "name" : definition.name})
+                message = NO_ALERT_INFO_HEADER.substitute(
+                    {"date": current_date, "name": definition.name})
             else:
                 epoch_type = self.get_epoch_type(definition)
                 header_str = "\"{0}\" from {1} to {2} ({3} {4}) for:". \
-                format(definition.transform, start_date, current_date,
-                definition.epoch_count, epoch_type)
-                message = ALERT_INFO.substitute( \
-                    {"date" : current_date, "name" : definition.name, 
-                    "header" : header_str, "alerts" : definition.report})
+                    format(definition.transform, start_date, current_date,
+                           definition.epoch_count, epoch_type)
+                message = ALERT_INFO.substitute(
+                    {"date": current_date, "name": definition.name,
+                     "header": header_str, "alerts": definition.report})
         else:
             if definition.report:
-                header = REPORT_INFO_HEADER.substitute( \
-                    {"date" : current_date, "name" : definition.name})
+                header = REPORT_INFO_HEADER.substitute(
+                    {"date": current_date, "name": definition.name})
                 message = header + definition.report
             else:
-                message = NO_REPORT_INFO_HEADER.substitute( \
-                    {"date" : current_date, "name" : definition.name})
+                message = NO_REPORT_INFO_HEADER.substitute(
+                    {"date": current_date, "name": definition.name})
 
         file_obj = '.{0}.html'.format(definition.type)
-        path = abspath(join(realpath( __file__ ), '..', file_obj))
-        
+        path = abspath(join(realpath(__file__), '..', file_obj))
+
         with open(path, 'w') as f:
             f.write(message)
 
-        if platform=='win32':
-            subprocess.Popen(['start', path], shell= True)
-        elif platform=='darwin':
+        if platform == 'win32':
+            subprocess.Popen(['start', path], shell=True)
+        elif platform == 'darwin':
             subprocess.Popen(['open', path])
         else:
             try:
@@ -462,10 +464,7 @@ class Processor(Thread):
             except OSError:
                 raise
 
-
-
     """Alert pipeline stage handlers below."""
-
 
     def pull_data(self, definition):
         """Load the given alert into processor's data
@@ -489,8 +488,8 @@ class Processor(Thread):
             for version in definition.versions:
                 cursor = self.database[RAW_COLLECTION].find({
                     'label': label,
-                    'run_date' : {'$in' : window},
-                    'version' : version})
+                    'run_date': {'$in': window},
+                    'version': version})
 
                 task = ','.join(map(str, (label, platform, version)))
                 self.tasks.append(task)
@@ -509,11 +508,12 @@ class Processor(Thread):
                 current_index = dates.index(sorted(dates)[len(dates) - 1])
                 for test in data:
                     for thread in definition.threads:
-                        value = self.transform_helper(definition.transform, \
-                            data[test][definition.metric][thread], current_index)
+                        value = self.transform_helper(definition.transform,
+                                                      data[test][definition.metric][thread], 
+                                                      current_index)
                         alert = {}
                         alert['label'], alert['platform'], \
-                        alert['version'] = task.split(',')
+                            alert['version'] = task.split(',')
                         alert['transform'] = definition.transform
                         alert['alert_name'] = definition.name
                         alert['thread_count'] = thread
@@ -530,35 +530,39 @@ class Processor(Thread):
             alert = definition.alerts[index]
             if self.passes_threshold(definition, alert):
                 self.database[ALERT_HISTORY_COLLECTION].update({
-                    'test' : alert['test'],
-                    'label' : alert['label'],
-                    'platform' : alert['platform'],
-                    'transform' : alert['transform'],
-                    'version' : alert['version'],
-                    'alert_name' : alert['alert_name'],
-                    'trigger_date' : alert['trigger_date'],
-                    'thread_count' : alert['thread_count']}, 
+                    'test': alert['test'],
+                    'label': alert['label'],
+                    'platform': alert['platform'],
+                    'transform': alert['transform'],
+                    'version': alert['version'],
+                    'alert_name': alert['alert_name'],
+                    'trigger_date': alert['trigger_date'],
+                    'thread_count': alert['thread_count']},
                     alert, upsert=True)
-                
+
     def prepare_alerts(self, definition):
         """Formats alerts to be sent/shown
         """
         epoch_type = self.get_epoch_type(definition)
-        window = '+'.join(self.get_window(self.date, definition.epoch_count, 1))
+        window = '+'.join(
+            self.get_window(
+                self.date,
+                definition.epoch_count,
+                1))
 
         for index in definition.alerts:
             alert = definition.alerts[index]
             if self.passes_threshold(definition, alert):
                 alert_url = "<a href=\"http://{0}/results?metric={1}&" \
-                "labels={2}&platforms={3}&versions={4}&dates={5}" \
-                "#{6}\">{6}</a>".format(MONGO_PERF_HOST, definition.metric, 
-                alert['label'], alert['platform'], \
-                alert['version'], window, alert['test'])
+                    "labels={2}&platforms={3}&versions={4}&dates={5}" \
+                    "#{6}\">{6}</a>".format(MONGO_PERF_HOST, definition.metric,
+                    alert['label'], alert['platform'],
+                        alert['version'], window, alert['test'])
 
                 definition.aggregate += "- {0} on ({1}, {2}, thread {3}) is {4:.1f} " \
-                "({5} {6})<br>".format(alert_url, alert['label'], 
-                alert['version'], alert['thread_count'], alert['value'], 
-                definition.comparator, definition.threshold)
+                    "({5} {6})<br>".format(alert_url, alert['label'],
+                    alert['version'], alert['thread_count'], alert['value'],
+                        definition.comparator, definition.threshold)
 
     def send_alerts(self, definition):
         """Sends alert to the definition's recipients
@@ -566,32 +570,32 @@ class Processor(Thread):
         current_date = self.date.strftime('%Y-%m-%d')
         delta = timedelta(days=definition.skip * definition.epoch_count)
         start_date = (self.date - delta).strftime('%Y-%m-%d')
-        
+
         if definition.type == 'alert':
             if definition.report == '':
-                message = NO_ALERT_INFO_HEADER.substitute( 
-                    {"date" : current_date, "name" : definition.name})
+                message = NO_ALERT_INFO_HEADER.substitute(
+                    {"date": current_date, "name": definition.name})
             else:
                 epoch_type = self.get_epoch_type(definition)
                 header_str = "\"{0}\" from {1} to {2} ({3} {4}) for:". \
-                format(definition.transform, start_date, current_date,
-                definition.epoch_count, epoch_type)
+                    format(definition.transform, start_date, current_date,
+                           definition.epoch_count, epoch_type)
                 message = ALERT_INFO.substitute(
-                    {"date" : current_date, "name" : definition.name,
-                    "header" : header_str, "alerts" : definition.report})
+                    {"date": current_date, "name": definition.name,
+                     "header": header_str, "alerts": definition.report})
         else:
             if definition.report:
-                header = REPORT_INFO_HEADER.substitute({ "date" : current_date })
+                header = REPORT_INFO_HEADER.substitute(
+                    {"date": current_date})
                 message = header + definition.report
             else:
-                message = NO_REPORT_INFO_HEADER.substitute({'date' : current_date})
+                message = NO_REPORT_INFO_HEADER.substitute(
+                    {'date': current_date})
 
         conn = connect_ses().send_email(
-        "mongo-perf admin <mongoperf@10gen.com>",
-        "MongoDB Performance Report", message, 
-        definition.recipients, format="html")
-
-
+            "mongo-perf admin <mongoperf@10gen.com>",
+            "MongoDB Performance Report", message,
+            definition.recipients, format="html")
 
     """General helper methods below."""
 
@@ -611,12 +615,12 @@ class Processor(Thread):
     def get_keys(collection, key):
         """Get all distinct values of the given key
         """
-        return sorted(self.database[collection].distinct(key), \
-                        reverse=True)
+        return sorted(self.database[collection].distinct(key),
+                      reverse=True)
 
     def get_benchmark_metrics(self, collection):
-        """Get all benchmark metrics we have in database. 
-            This finds any benchmark result in the RAW_COLLECTION 
+        """Get all benchmark metrics we have in database.
+            This finds any benchmark result in the RAW_COLLECTION
             and pulls out the associated metrics stored for the result.
             We assume the metrics stored will be uniform across records.
 
@@ -624,9 +628,9 @@ class Processor(Thread):
             'speedup', 'time']
         """
         return self.database[collection].find_one() \
-                ['benchmarks'][0]['results']. \
-                itervalues().next().keys()
-        
+            ['benchmarks'][0]['results']. \
+            itervalues().next().keys()
+
     def get_epoch_type(self, definition):
         """Returns a reformatted epoch_type string
         """
@@ -647,7 +651,7 @@ class Processor(Thread):
     def get_platform(self, collection, label):
         """Get platform name given label
         """
-        record = self.database[collection].find_one({'label':label})
+        record = self.database[collection].find_one({'label': label})
         if record:
             return record['platform']
 
@@ -666,7 +670,7 @@ class Processor(Thread):
     def parse_data(self, cursor, definition):
         """Transform data into a more amenable form
         """
-        parse = defaultdict(lambda : defaultdict(lambda : defaultdict(list)))
+        parse = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
         operations = self.find_operations(definition.operations)
         dates = []
         for record in cursor:
@@ -677,12 +681,12 @@ class Processor(Thread):
                     for thread in results:
                         if thread in definition.threads:
                             parse[test['name']][definition.metric][thread]. \
-                            append(results[thread][definition.metric])
+                                append(results[thread][definition.metric])
 
         return dates, parse
-        
+
     def passes_threshold(self, definition, alert):
-        """Returns True if the given alert passes the 
+        """Returns True if the given alert passes the
             comparator, threshold test
         """
         if definition.comparator == "<":
@@ -702,8 +706,8 @@ class Processor(Thread):
         result = ''
         if transform == 'std_dev':
             mean = sum(data) / len(data)
-            result = sqrt( sum ( ( point - mean ) ** 2 \
-                        for point in data) / (len(data) - 1))
+            result = sqrt(sum((point - mean) ** 2
+                              for point in data) / (len(data) - 1))
         elif transform == 'mean':
             result = sum(data) / len(data)
         elif transform == 'actual':
@@ -712,5 +716,7 @@ class Processor(Thread):
             # Not yet implemented
             result = None
         else:
-            raise BaseException("Transform: {0} not recognized.".format(transform))
+            raise BaseException(
+                "Transform: {0} not recognized.".format(
+        transform))
         return result

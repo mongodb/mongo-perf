@@ -32,10 +32,18 @@ try:
 except ImportError:
     from pymongo.json_util import object_hook
 
+
 def populate(time, label, platform, version):
-    benchmark_results=''
+    benchmark_results = ''
     try:
-        benchmark = subprocess.Popen(['./benchmark', "27017", '1', '0', '', ''], stdout=subprocess.PIPE)
+        benchmark = subprocess.Popen(
+            ['./benchmark',
+             "27017",
+             '1',
+             '0',
+             '',
+             ''],
+            stdout=subprocess.PIPE)
         benchmark_results = benchmark.communicate()[0]
     except:
         pass
@@ -51,29 +59,30 @@ def populate(time, label, platform, version):
         host = connection.bench_results.host
         build_info = connection.bench_results.command('buildInfo')
         host_info = connection.bench_results.command('hostInfo')
-        info = dict({ 'platform' : host_info, \
-                      'build_info' : build_info})
-        info['run_date'] = run_date    
+        info = dict({'platform': host_info,
+                     'build_info': build_info})
+        info['run_date'] = run_date
         info['label'] = label
         raw.ensure_index('label')
         raw.ensure_index('run_date')
         raw.ensure_index('version')
         raw.ensure_index('platform')
-        raw.ensure_index([('version', pymongo.ASCENDING)
-                            , ('label', pymongo.ASCENDING)
-                            , ('platform', pymongo.ASCENDING)
-                            , ('run_date', pymongo.ASCENDING)]
-                            , unique=True)
+        raw.ensure_index(
+            [('version', pymongo.ASCENDING),
+             ('label', pymongo.ASCENDING),
+             ('platform', pymongo.ASCENDING),
+             ('run_date', pymongo.ASCENDING)],
+            unique=True)
 
-        host.ensure_index([('build_info.version', pymongo.ASCENDING)
-                            , ('label', pymongo.ASCENDING)
-                            , ('run_date', pymongo.ASCENDING)]
-                            , unique=True)
-       
-        host.update({ 'build_info.version' : build_info['version'],
-                      'label' : label,
-                      'run_date' : run_date
-                    }, info, upsert=True)
+        host.ensure_index(
+            [('build_info.version', pymongo.ASCENDING),
+             ('label', pymongo.ASCENDING),
+             ('run_date', pymongo.ASCENDING)],
+            unique=True)
+
+        host.update({'build_info.version': build_info['version'],
+                     'label': label, 'run_date': run_date
+                     }, info, upsert=True)
 
     except pymongo.errors.ConnectionFailure:
         print 'failed to connect to mongo'
@@ -93,21 +102,21 @@ def populate(time, label, platform, version):
         obj['version'] = version
         obj['commit'] = build_info['gitVersion']
         obj['platform'] = platform
-        raw.update({'label' : obj['label'],
-                        'run_date' : obj['run_date'],
-                        'version' : obj['version'],
-                        'platform' : obj['platform']
-                        }, obj, upsert=True)
-
+        raw.update({'label': obj['label'],
+                    'run_date': obj['run_date'],
+                    'version': obj['version'],
+                    'platform': obj['platform']
+                    }, obj, upsert=True)
 
 
 if __name__ == "__main__":
     for time in xrange(0, 30):
-        for label in ["Linux 64-bit", "Linux 64-bit DUR OFF", "OS X 64-bit DUR OFF",\
-        "OS X 64-bit", "Windows 64-bit", "Windows 64-bit 2008"]:
+        for label in [
+            "Linux 64-bit", "Linux 64-bit DUR OFF", "OS X 64-bit DUR OFF",
+                "OS X 64-bit", "Windows 64-bit", "Windows 64-bit 2008"]:
             for version in ["2.4.1", "2.4.0-rc0", "2.2.3"]:
                 now = datetime.datetime.now() + datetime.timedelta(days=time)
-                platform = label[0:label.index("6")-1].replace(" ","_")
-                label = label.replace(" ","_")
-                print 'creating data for %s - %s - %s - %s' %(now, label, platform, version)
+                platform = label[0:label.index("6")-1].replace(" ", "_")
+                label = label.replace(" ", "_")
+                print 'creating data for %s - %s - %s - %s' % (now, label, platform, version)
                 populate(now, label, platform, version)

@@ -20,6 +20,7 @@ import time
 import sys
 import socket
 
+
 class mongod(object):
     def __init__(self, mongod="mongod", port=27017, **kwargs):
         self.kwargs = kwargs
@@ -51,7 +52,7 @@ class mongod(object):
             try:
                 self.check_mongo_port(port)
                 return True
-            except Exception,e:
+            except Exception, e:
                 print >> sys.stderr, e
                 timeout = timeout - 1
         print >> sys.stderr, "timeout starting mongod"
@@ -66,7 +67,14 @@ class mongod(object):
         logpath = dbpath + "/log.txt"
         argv = ["mkdir", "-p", dbpath]
         subprocess.Popen(argv).communicate()
-        argv = [self.mongod, "--port", self.port, "--dbpath", dbpath, "--logpath", logpath]
+        argv = [
+            self.mongod,
+            "--port",
+            self.port,
+            "--dbpath",
+            dbpath,
+            "--logpath",
+            logpath]
         print argv
         self.proc = self._start(argv)
 
@@ -81,7 +89,10 @@ class mongod(object):
         child processes of this process can be killed with a single
         call to TerminateJobObject (see self.stop()).
         """
-        proc = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.Popen(
+            argv,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
 
         if os.sys.platform == "win32":
             # Create a job object with the "kill on job close"
@@ -95,7 +106,8 @@ class mongod(object):
 
             job_info = win32job.QueryInformationJobObject(
                 self.job_object, win32job.JobObjectExtendedLimitInformation)
-            job_info['BasicLimitInformation']['LimitFlags'] |= win32job.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+            job_info['BasicLimitInformation'][
+                'LimitFlags'] |= win32job.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
             win32job.SetInformationJobObject(
                 self.job_object,
                 win32job.JobObjectExtendedLimitInformation,
@@ -111,12 +123,13 @@ class mongod(object):
             raise Exception("Failed to stop mongod")
             return
         try:
-            if os.sys.platform.startswith( "win" ):
+            if os.sys.platform.startswith("win"):
                 import win32job
                 win32job.TerminateJobObject(self.job_object, -1)
                 import time
-                # Windows doesn't seem to kill the process immediately, so give it some time to die
-                time.sleep(5) 
+                # Windows doesn't seem to kill the process immediately, so give
+                # it some time to die
+                time.sleep(5)
             else:
                 # This actually works
                 # mongo_executable = os.path.abspath(os.path.join(self.mongod, '..', 'mongo'))
@@ -134,4 +147,3 @@ class mongod(object):
 
         self.proc.wait()
         sys.stderr.flush()
-        
