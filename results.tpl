@@ -69,7 +69,7 @@
         </form>
         %import urllib
         %for k, (outer_result, flot_data) in enumerate(zip(results, flot_results)):
-        <h2 id="{{outer_result['name']}}"><a href="https://github.com/search?q={{outer_result['name'][outer_result['name'].rfind(":") + 1:]}}+path%3Abenchmark.cpp+repo%3Amongodb%2Fmongo-perf&amp;type=Code&amp;ref=searchresults">{{outer_result['name']}}</a></h2>
+        <h2 id="{{outer_result['name']}}"><a href="https://github.com/search?q={{outer_result['name'][outer_result['name'].rfind(":") + 1:]}}+path%3Abenchmark.cpp+repo%3Amongodb%2Fmongo-perf&amp;type=Code&amp;ref=searchresults" target="_blank">{{outer_result['name']}}</a></h2>
         <table class="display">
             <thead>
                 <tr>
@@ -98,7 +98,7 @@
                     <td>{{result['platform']}}</td>
                     <td>{{result['version']}}</td>
                     <td>{{result['date']}}</td>
-                    <td><a href="https://github.com/mongodb/mongo/commit/{{result['commit']}}">{{result['commit'][:7]}}</a></td>
+                    <td><a href="https://github.com/mongodb/mongo/commit/{{result['commit']}}" target="_blank">{{result['commit'][:7]}}</a></td>
                     %for thread in threads:
                     <td>{{result.get(str(thread), {metric:'--'})[metric]}}</td>
                     %end

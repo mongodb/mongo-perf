@@ -384,7 +384,7 @@ class Processor(Thread):
                             homogeneity = "{0:.2f}%".format(abs(homogeneity))
                             anomaly_url = "<a href=\"http://{0}/results?metric={1}&" \
                                 "labels={2}&platforms={3}&versions={4}&dates={5}" \
-                                "#{6}\">{6}</a>".format(MONGO_PERF_HOST, keys[0],
+                                "#{6}\" target=\"_blank\">{6}</a>".format(MONGO_PERF_HOST, keys[0],
                                 keys[1], keys[2], keys[3], window, test)
                             anomaly_str = anomaly_url + " might be {0} in performance " \
                                 "- see thread {1} (trends {2} at {3})".format \
@@ -555,14 +555,14 @@ class Processor(Thread):
             if self.passes_threshold(definition, alert):
                 alert_url = "<a href=\"http://{0}/results?metric={1}&" \
                     "labels={2}&platforms={3}&versions={4}&dates={5}" \
-                    "#{6}\">{6}</a>".format(MONGO_PERF_HOST, definition.metric,
-                    alert['label'], alert['platform'],
-                        alert['version'], window, alert['test'])
+                    "#{6}\" target=\"_blank\">{6}</a>".format(MONGO_PERF_HOST,
+                    definition.metric, alert['label'], alert['platform'],
+                    alert['version'], window, alert['test'])
 
                 definition.aggregate += "- {0} on ({1}, {2}, thread {3}) is {4:.1f} " \
                     "({5} {6})<br>".format(alert_url, alert['label'],
                     alert['version'], alert['thread_count'], alert['value'],
-                        definition.comparator, definition.threshold)
+                    definition.comparator, definition.threshold)
 
     def send_alerts(self, definition):
         """Sends alert to the definition's recipients

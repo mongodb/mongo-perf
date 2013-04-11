@@ -190,23 +190,16 @@ def prep_storage(opts):
         raw.ensure_index('version')
         raw.ensure_index('platform')
         raw.ensure_index(
-            [('version',
-              pymongo.ASCENDING),
-             ('label',
-              pymongo.ASCENDING),
-             ('platform',
-              pymongo.ASCENDING),
-             ('run_date',
-              pymongo.ASCENDING)],
+            [('version', pymongo.ASCENDING),
+             ('label', pymongo.ASCENDING),
+             ('platform', pymongo.ASCENDING),
+             ('run_date', pymongo.ASCENDING)],
             unique=True)
 
         host.ensure_index(
-            [('build_info.version',
-              pymongo.ASCENDING),
-             ('label',
-              pymongo.ASCENDING),
-             ('run_date',
-              pymongo.ASCENDING)],
+            [('build_info.version', pymongo.ASCENDING),
+             ('label', pymongo.ASCENDING),
+             ('run_date', pymongo.ASCENDING)],
             unique=True)
 
         host.update({'build_info.version': build_info['version'],
