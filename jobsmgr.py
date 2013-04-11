@@ -332,7 +332,7 @@ class Processor(Thread):
                 for test in res_map:
                     # 'AV' measures the linearity of
                     # a window of three data points  
-                    # 'test.AV' measures the probability
+                    # 'test_AV' measures the probability
                     # of there being an outlier in the window
                     data_points = sorted(res_map[test], 
                     key=lambda k : (abs(k['AV'])), reverse=True)
