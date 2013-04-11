@@ -53,11 +53,10 @@ To run it against the source on github:
 	# optionally supply a label as well using -l
 	python local.py -l HOSTNAME
 
-# this serves the results on port 80
-# sudo if you're not root
+# this serves the results on port 8080
 python server.py 
 
-Go to http://localhost to see the results
+Go to http://localhost:8080 to see the results
 </code></pre>
 
 ##### Analysis

@@ -22,6 +22,7 @@ from datetime import datetime
 from collections import defaultdict
 
 MONGO_PERF_HOST = "localhost"
+MONGO_PERF_WEB_PORT = 8080
 MONGO_PERF_PORT = 27017
 MP_DB_NAME = "bench_results"
 db = pymongo.MongoClient(host=MONGO_PERF_HOST, port=MONGO_PERF_PORT)[MP_DB_NAME]
@@ -231,4 +232,5 @@ def main_page():
 
 if __name__ == '__main__':
     do_reload = '--reload' in sys.argv
-    run(reloader=do_reload, host='0.0.0.0', port=80, server=AutoServer)
+    run(reloader=do_reload, host='0.0.0.0', 
+        port=MONGO_PERF_WEB_PORT, server=AutoServer)
