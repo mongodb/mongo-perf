@@ -339,11 +339,12 @@ class Processor(Thread):
                     for dp in data_points:
                         if dp['test_AV'] > definition.threshold:
                             definition.result[task_key][test].append(dp)
-
+    
     def prepare_report(self, definition):
         """Prepare report based on analyzed data
         """
         window = '+'.join(self.get_window(self.date, definition.window, 1))
+        operations = self.find_operations(definition.operations)
         key_date = self.date.strftime('%Y-%m-%d')
 
         for top_level in definition.result:
@@ -358,35 +359,36 @@ class Processor(Thread):
                 anomalies = definition.result[top_level][test]
 
                 for anomaly in anomalies:
-                    thread = anomaly['thread_count']
-                    # can't have an anomaly here
-                    if thread == '1' and values['metric'] == 'speedup':
-                        continue
+                    if anomaly['test'] in operations:
+                        thread = anomaly['thread_count']
+                        # can't have an anomaly here
+                        if thread == '1' and values['metric'] == 'speedup':
+                            continue
 
-                    target_trend = 'decreasing'
-                    # y1, y2, y3 are in the window we're considering
-                    if anomaly['y3'] > anomaly['y2']:
-                        target_trend = 'increasing'
-                        if anomaly['AV'] < 0: 
-                            target_trend = 'picking up'
-                    else:
-                        if anomaly['AV'] > 0:
-                            target_trend = 'declining'
+                        target_trend = 'decreasing'
+                        # y1, y2, y3 are in the window we're considering
+                        if anomaly['y3'] > anomaly['y2']:
+                            target_trend = 'increasing'
+                            if anomaly['AV'] < 0: 
+                                target_trend = 'picking up'
+                        else:
+                            if anomaly['AV'] > 0:
+                                target_trend = 'declining'
 
-                    # madindex_AV is a measure of homogeneity
-                    # really high values are bad for anomaly detection
-                    homogeneity = (100 - anomaly['madindex_AV'])
-                    series_trend = "homogenous"
-                    if homogeneity < definition.homogeneity:
-                        homogeneity = "{0:.2f}%".format(abs(homogeneity))
-                        anomaly_url = "<a href=\"http://{0}/results?metric={1}&" \
-                                "labels={2}&platforms={3}&versions={4}&dates={5}" \
-                                "#{6}\">{6}</a>".format(MONGO_PERF_HOST, keys[0], \
-                                keys[1], keys[2], keys[3], window, test)
-                        anomaly_str = anomaly_url + " might be {0} in performance " \
-                                "- see thread {1} (trends {2} at {3})".format \
-                                (target_trend, thread, series_trend, homogeneity)
-                        anomaly_list.append(anomaly_str)
+                        # madindex_AV is a measure of homogeneity
+                        # really high values are bad for anomaly detection
+                        homogeneity = (100 - anomaly['madindex_AV'])
+                        series_trend = "homogenous"
+                        if homogeneity < definition.homogeneity:
+                            homogeneity = "{0:.2f}%".format(abs(homogeneity))
+                            anomaly_url = "<a href=\"http://{0}/results?metric={1}&" \
+                                    "labels={2}&platforms={3}&versions={4}&dates={5}" \
+                                    "#{6}\">{6}</a>".format(MONGO_PERF_HOST, keys[0], \
+                                    keys[1], keys[2], keys[3], window, test)
+                            anomaly_str = anomaly_url + " might be {0} in performance " \
+                                    "- see thread {1} (trends {2} at {3})".format \
+                                    (target_trend, thread, series_trend, homogeneity)
+                            anomaly_list.append(anomaly_str)
             
                 if anomaly_list:
                     values['anomalies'] += '<br>'
