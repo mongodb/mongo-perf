@@ -400,11 +400,11 @@ class Processor(Thread):
     def send_reports(self, definition):
         """Sends reports based on generated report
         """
-        date = self.date.strftime('%Y-%m-%d')
+        current_date = self.date.strftime('%Y-%m-%d')
 
         if definition.report:
             header = REPORT_INFO_HEADER.substitute(
-                        {"date" : date, "name" : definition.name})
+                    {"date" : current_date, "name" : definition.name})
             message = header + definition.report
             conn = connect_ses().send_email(
             "mongo-perf admin <mongoperf@10gen.com>",
