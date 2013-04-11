@@ -432,7 +432,7 @@ class Processor(Thread):
         if definition.type == 'alert':
             delta = timedelta(days=definition.skip * definition.epoch_count)
             start_date = (self.date - delta).strftime('%Y-%m-%d')
-            if definition.report == '':
+            if not definition.report:
                 message = NO_ALERT_INFO_HEADER.substitute(
                     {"date": current_date, "name": definition.name})
             else:
@@ -444,13 +444,13 @@ class Processor(Thread):
                     {"date": current_date, "name": definition.name,
                      "header": header_str, "alerts": definition.report})
         else:
-            if definition.report:
+            if not definition.report:
+                message = NO_REPORT_INFO_HEADER.substitute(
+                    {"date": current_date, "name": definition.name})
+            else:
                 header = REPORT_INFO_HEADER.substitute(
                     {"date": current_date, "name": definition.name})
                 message = header + definition.report
-            else:
-                message = NO_REPORT_INFO_HEADER.substitute(
-                    {"date": current_date, "name": definition.name})
 
         file_obj = '.{0}.html'.format(definition.type)
         path = abspath(join(realpath(__file__), '..', file_obj))
@@ -591,7 +591,7 @@ class Processor(Thread):
                      "header": header_str, "alerts": definition.report})
         else:
             if not definition.report:
-                message = NO_REPORT_INFO_HEADER.substitute('date': current_date})
+                message = NO_REPORT_INFO_HEADER.substitute({'date': current_date})
             else:
                 header = REPORT_INFO_HEADER.substitute({"date": current_date})
                 message = header + definition.report
