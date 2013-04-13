@@ -154,8 +154,8 @@ class Master(object):
                                'run_date': obj['run_date']
                                }, obj, upsert=True)
         except:
-            print >> sys.stderr, "Could not update %s" % 
-                    collection, sys.exc_info()[0]
+            print >> sys.stderr, "Could not update %s" % collection, \
+                        sys.exc_info()[0]
             retval = self.cleanup()
             sys.exit(retval)
 
@@ -272,7 +272,7 @@ class Runner(Master):
             time.sleep(1)  # wait for server to clean up connections
         except:
             print >> sys.stderr, "Could not start complete " \
-                "benchmark tests", sys.exc_info()[0]
+                    "benchmark tests", sys.exc_info()[0]
             retval = self.cleanup()
             sys.exit(retval)
         return benchmark_results
