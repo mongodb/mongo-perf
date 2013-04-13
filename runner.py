@@ -56,7 +56,7 @@ class Master(object):
         return retval
 
 
-    def prep_storage(self, opts):
+    def prep_storage(self):
         """Gets host/build info and creates indexes
             in the varius collections
         """
@@ -66,8 +66,8 @@ class Master(object):
             self.opts.label = 'test'
 
         try:
-            self.connection = pymongo.MongoClient(host=opts.rhost,
-                                             port=int(opts.rport))
+            self.connection = pymongo.MongoClient(host=self.opts.rhost,
+                                             port=int(self.opts.rport))
             raw = self.connection.bench_results.raw
             host = self.connection.bench_results.host
             build_info = self.connection.bench_results.command('buildInfo')
@@ -115,7 +115,7 @@ class Master(object):
     def store_results(self, benchmark_results):
         """Inserts the benchmarked object into the database
         """
-        build_info, host_info = self.prep_storage(self.opts)
+        build_info, host_info = self.prep_storage()
 
         try:
             raw = self.connection.bench_results.raw
@@ -197,20 +197,20 @@ class Local(Master):
 
             if self.opts.mongos:
                 mongod = subprocess.Popen(['simple-setup.py',
-                                           '--path=./tmp/mongo', '--port='+opts.port])
+                                           '--path=./tmp/mongo', '--port='+self.opts.port])
                 #, stdout=open(os.devnull))
                 mongodb_version += '-mongos'
                 mongodb_git += '-mongos'
             else:
                 mongod = subprocess.Popen(['./tmp/mongo/mongod',
                                            '--quiet', '--dbpath', './tmp/data/',
-                                           '--port', opts.port], stdout=open(os.devnull))
+                                           '--port', self.opts.port], stdout=open(os.devnull))
 
             subprocess.check_call(['scons'], cwd='./tmp/mongo')
 
             mongod = subprocess.Popen(['./tmp/mongo/mongod',
                                        '--quiet', '--dbpath', './tmp/data/',
-                                       '--port', opts.port], stdout=open('/dev/null'))
+                                       '--port', self.opts.port], stdout=open('/dev/null'))
 
             print 'pid:', mongod.pid
 
