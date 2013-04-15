@@ -3,7 +3,7 @@ This is a benchmark script for the MongoDB server.
 
 ### Overview
 ============
-This repo contains scripts to run benchmark tests for mongodb. It also includes some scripts that perform anomaly detection (herein called analysis) and reporting on historical benchmark tests. See `Usage` for more information.
+This repo contains scripts to run benchmark tests for mongodb. It also includes some scripts that perform anomaly detection (herein called analysis) and reporting on historical benchmark tests. See [Local Usage](#local) or [Buildbot Usage](#buildbot) for more information.
 
 
 ### Dependencies
@@ -28,7 +28,7 @@ This repo contains scripts to run benchmark tests for mongodb. It also includes 
 * boto (optional)
 * Amazon SES® (optional) 
 
-### Local Usage
+### <a name="local"></a>Local Usage
 ---------------
 ##### Benchmarks
 <pre><code># compile the C++ driver
@@ -72,11 +72,11 @@ Logs are written to stdout and `mongo-perf-log.txt` when you run `analysismgr.py
 ##### Reporting
 The default pipeline for both alerts and reports (as listed in ALERT_TASKS and REPORT_TASKS in `analysismgr.py`) show the result of the alerts/reports processing using your default web browser.
 
-If you wish to receive email reports, change the last stage in pipeline in `analysismgr.py` to 'send reports' for reports, and 'send alerts' for alerts. Emails are sent using Amazon SES® so you will need an account on that to send reports (be sure to have your `aws_access_key_id` and `aws_secret_access_key` under `[Credentials]` in /etc/boto.cfg).
+If you wish to receive email reports, change the last stage in pipeline in `analysismgr.py` to 'send reports' for reports, and 'send alerts' for alerts. Emails are sent using Amazon SES® so you will need an account on that to send reports (be sure to have your `aws_access_key_id` and `aws_secret_access_key` under `[Credentials]` in /etc/boto.cfg). See [here](https://code.google.com/p/boto/wiki/BotoConfig) for more information.
 
 *By default, all analysis/reporting run against a `mongod` on port `27017` (mongod must be running on this port). To specify a different host, change* MONGO_PERF_HOST *and* MONGO_PERF_PORT *in `analysismgr.py`,`jobsmgr.py` and `mongo-perf.R`.*
 
-#### Buildbot Usage
+#### <a name="buildbot"></a>Buildbot Usage
 -------------------
 ##### Benchmarks
 A call to this script by a buildslave might be:
