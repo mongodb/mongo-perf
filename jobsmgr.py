@@ -17,7 +17,6 @@
 import re
 import logging
 import pymongo
-import requests
 import subprocess
 from math import sqrt
 from time import sleep
@@ -28,7 +27,6 @@ from time import strptime
 from os.path import abspath
 from string import Template
 from threading import Thread
-from boto import connect_ses
 from os.path import realpath
 from datetime import datetime
 from Queue import Queue, Empty
@@ -407,6 +405,7 @@ class Processor(Thread):
         """Sends reports based on generated report
         """
         current_date = self.date.strftime('%Y-%m-%d')
+        from boto import connect_ses
 
         if definition.report:
             header = REPORT_INFO_HEADER.substitute(
@@ -575,6 +574,7 @@ class Processor(Thread):
         current_date = self.date.strftime('%Y-%m-%d')
         delta = timedelta(days=definition.skip * definition.epoch_count)
         start_date = (self.date - delta).strftime('%Y-%m-%d')
+        from boto import connect_ses
 
         if definition.type == 'alert':
             if not definition.report:
