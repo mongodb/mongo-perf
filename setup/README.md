@@ -120,6 +120,9 @@ sudo easy_install pymongo # install pymongo
 </code></pre>
 
 - Clone the mongo-perf repo: `git clone https://github.com/mongodb/mongo-perf`
+- Compile the C++ driver: `cd mongo-cxx-driver && scons`
+- Compile the benchmark script: `scons benchmark`
+
 - Start mongod: `mongod --fork --syslog` (note we use port 27017)
 - Start the web server: `python server.py` (`--reload` for debugging)
 - Navigate to `http://localhost:8080`
@@ -128,7 +131,7 @@ You should see the web server running there.
 ##### <a name="generating"></a>Generating Data
 Now, you are ready to push some test data into mongod. In the mongo-perf repo, there is a file called `loader.py` which can be used to generate simulated data (by default, it produces 30 days worth of data &ndash; current day inclusive).
 
-The tests take a bit of time to run so you can just shorten the period of data generated (see line `113` of `loader.py`) to just a couple of days (use `for time in xrange(-3, 2)`) and run the script to generate test data.
+The tests take a bit of time to run so by default, we only generate enough data to run analysis on (see line `113` of `loader.py`). Run `python loader.py` to generate test data.
 
 Once this has completed, navigate to `http://localhost:8080` to see the generated data.
 

@@ -106,7 +106,7 @@ def populate(time, label, platform, version):
 
 
 if __name__ == "__main__":
-    for time in xrange(-3, 2):
+    for time in xrange(-2, 2):
         for label in [
             "Linux 64-bit", "Linux 64-bit DUR OFF", "OS X 64-bit DUR OFF",
                 "OS X 64-bit", "Windows 64-bit", "Windows 64-bit 2008"]:
