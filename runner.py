@@ -77,8 +77,8 @@ class Master(object):
         self.logger.setLevel(logging.INFO)
 
     def prep_storage(self):
-        """Gets host/build info and creates indexes
-            in the varius collections
+        """Creates indexes for the various collections
+            and gets test bed host/build information
         """
         build_info, host_info = None, None
 
@@ -142,7 +142,7 @@ class Master(object):
 
 
     def store_results(self, benchmark_results):
-        """Inserts the benchmarked object into the database
+        """Inserts the benchmark results into the database
         """
         build_info, host_info = self.prep_storage()
 
@@ -171,7 +171,8 @@ class Master(object):
 
 
     def update_collection(self, collection, obj):
-        """Helper to insert the benchmarked object into the database
+        """Helper to insert the benchmarked object into 
+            the given mongodb collection
         """
         try:
             collection.update({'label': obj['label'],
