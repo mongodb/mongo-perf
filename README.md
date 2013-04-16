@@ -84,14 +84,15 @@ To run on an already existing mongod:
 
 	# this runs the tests and records the results
 	# optionally supply a label as well using -l
-	python runner.py --nolaunch -l HOSTNAME
+	python runner.py --nolaunch -l HOSTNAME -n 1 --local
 
 To run it against the source on github:
 	
 	# this pulls and starts mongod from the github repo,
 	# runs the tests and records the results
 	# optionally supply a label as well using -l
-	python runner.py --local -l HOSTNAME
+	# use -h for help message
+	python runner.py -l HOSTNAME -n 1 --local
 
 # this serves the results on port 8080
 python server.py 

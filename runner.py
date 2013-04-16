@@ -45,6 +45,7 @@ class Master(object):
         """ Get a definition given parameters.
         """
         self.opts = args[0]
+        self.processes = []
         self.connection = None
         self.now = datetime.datetime.utcnow()
         self.logger = logging.getLogger(LOG_FILE)
@@ -260,7 +261,7 @@ class Local(Master):
                                           multidb, self.opts.username,
                                           self.opts.password], 
                                           stdout=subprocess.PIPE)
-            self.logger.info("Started with args: {0}".format(opts))
+            self.logger.info("Started benchmark args: {0}".format(self.opts))
             benchmark_results = benchmark.communicate()[0]
             time.sleep(1)  # wait for server to clean up connections
         except OSError, e:
@@ -287,7 +288,6 @@ class Runner(Master):
 
     def __init__(self, *args, **kwargs):
         super(Runner, self).__init__(*args, **kwargs)
-        self.processes = []
         self.mongod_handle = None
 
     def run_benchmark(self):
@@ -353,13 +353,13 @@ def parse_options():
                          type='string', default='localhost')
     optparser.add_option('--rport', dest='rport',
                          help='port for mongodb to write results to',
-                         type='string', default='30000')
+                         type='string', default='27017')
     optparser.add_option('--mongod', dest='mongod',
                          help='path to mongod executable',
                          type='string', default='mongod')
     optparser.add_option('-p', '--port', dest='port',
                          help='test port for mongo-perf to run against',
-                         type='string', default='30000')
+                         type='string', default='27017')
     optparser.add_option('-n', '--iterations', dest='iterations',
                          help='number of iterations to test',
                          type='string', default='100000')
