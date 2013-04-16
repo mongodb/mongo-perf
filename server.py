@@ -31,8 +31,8 @@ db = pymongo.MongoClient(host=MONGO_PERF_HOST,
 
 
 @route('/static/:filename#.*#')
-def static_file(filename):
-    send_file(filename, root='./static')
+def send_static(filename):
+    return static_file(filename, root='./static')
 
 
 @route("/host")

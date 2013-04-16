@@ -345,6 +345,7 @@ class Runner(Master):
 def main():
     opts, versions = parse_options()
     handle = None
+    
     if opts.local:
         handle = Local(opts, versions)
     else:

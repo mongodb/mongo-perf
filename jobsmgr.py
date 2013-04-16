@@ -385,7 +385,6 @@ class Processor(Thread):
                                 "versions={versions}&dates={dates}#{test}\" target=\"_blank\">" \
                                 "{test}</a>".format(host=MONGO_PERF_HOST, test=test, metric=keys[0], \
                                 labels=keys[1], platforms=keys[2], versions=keys[3], dates=window)
-
                             anomaly_str = anomaly_url + " might be {0} in performance " \
                                 "- see thread {1} (trends {2} at {3})".format \
                                 (target_trend, thread,
