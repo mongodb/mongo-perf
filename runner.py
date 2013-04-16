@@ -45,6 +45,7 @@ class Master(object):
         """ Get a definition given parameters.
         """
         self.opts = args[0]
+        self.versions = args[1]
         self.processes = []
         self.connection = None
         self.now = datetime.datetime.utcnow()
@@ -199,6 +200,16 @@ class Local(Master):
         """Runs the benchmark tests; pulls mongod
             from github if requested
         """
+        if not self.versions:
+            self.versions = ['master']
+
+        # TODO support multiple versions
+        branch = self.versions[0]
+        if self.opts.label=='<git version>':
+            mongodb_version = branch
+        else:
+            mongodb_version = self.opts.label
+        mongodb_date = None
         mongod = None
 
         if not self.opts.nolaunch:
@@ -335,9 +346,9 @@ def main():
     opts, versions = parse_options()
     handle = None
     if opts.local:
-        handle = Local(opts)
+        handle = Local(opts, versions)
     else:
-        handle = Runner(opts)
+        handle = Runner(opts, versions)
     # run benchmark tests
     benchmark_results = handle.run_benchmark()
     # store benchmark tests
