@@ -41,10 +41,9 @@ def host_page():
     result['date'] = request.GET.get('date', '')
     result['label'] = request.GET.get('label', '')
     result['version'] = request.GET.get('version', '')
-    host = db.host.find_one({"build_info.version":
-                             result['version'],
-                            "label": result['label'],
-                            "run_date": result['date']
+    host = db.host.find_one({"build_info.version": result['version'],
+                                "label": result['label'],
+                                "run_date": result['date']
                              })
     return template('host.tpl', host=host)
 
@@ -53,21 +52,13 @@ def host_page():
 def raw_data(versions, labels, dates, platforms, start, end, limit):
     """ Pulls and aggregates raw data from database matching query parameters
         :Parameters:
-        - ``"platforms"``: specific platforms we want to view tests for
-
         - ``"versions"``: specific mongod versions we want to view tests for
-
-        - ``"dates"``: specific dates for tests to be viewed
-
         - ``"labels"``: test host label
-
-        - ``"metric"``: test metric of interest
-
-        - ``"limit"``: # of tests to return
-
+        - ``"dates"``: specific dates for tests to be viewed
+        - ``"platforms"``: specific platforms we want to view tests for
         - ``"start"``: tests run from this date (used in range query)
-
         - ``"end"``: tests run before this date (used in range query)
+        - ``"limit"``: # of tests to return
     """
 
     if start:
@@ -177,7 +168,7 @@ def results_page():
     end = request.GET.get('end')
 
     # handler for home page to display multi recent tests
-    # we need to query for each recent test separatelly and
+    # we need to query for each recent test separately and
     # then merge the results for subsequent display
     if multi:
         results = []
