@@ -109,11 +109,11 @@
         <br/>
         <div id="legendContainer_{{k}}" style="background-color:#fff;padding:2px;margin-bottom:8px;border-radius: 3px 3px 3px 3px;border:1px solid #E6E6E6;display:inline-block;margin:0 auto;width:600px;float:right"></div>
         <div id="flot_{{k}}" style="width:600px;height:300px;"></div>
-        <div id="chart" data-dump="{{flot_data}}"></div>
+        <div id="chart_{{k}}" data-dump="{{flot_data}}"></div>
         <div style="height:50px"></div>
         <script>
             $(function(){
-                var data = $('#chart').data('dump');
+                var data = $('#chart_{{k}}').data('dump');
                 $.plot(
                     $('#flot_{{k}}'), data,
                     {
