@@ -1,5 +1,5 @@
 # mongo-perf
-This is a benchmark script for the MongoDB server.
+This is a benchmark tool for the MongoDB server.
 
 ### Overview
 ============
