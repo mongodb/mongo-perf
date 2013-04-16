@@ -38,7 +38,6 @@ LOGR = logging.getLogger('mongo-perf-log.txt')
 
 # database globals
 MONGO_PERF_HOST = "localhost"
-MONGO_PERF_WEB_PORT = 8080
 MONGO_PERF_PORT = 27017
 MP_DB_NAME = "bench_results"
 RAW_COLLECTION = "raw"
@@ -381,12 +380,11 @@ class Processor(Thread):
                         series_trend = "homogenous"
                         if homogeneity < definition.homogeneity:
                             homogeneity = "{0:.2f}%".format(abs(homogeneity))
-                            anomaly_url = "<a href=\"http://{host}:{port}/results?" \
+                            anomaly_url = "<a href=\"http://{host}/results?" \
                                 "metric={metric}&labels={labels}&platforms={platforms}&" \
                                 "versions={versions}&dates={dates}#{test}\" target=\"_blank\">" \
-                                "{test}</a>".format(host=MONGO_PERF_HOST, port=MONGO_PERF_WEB_PORT, \
-                                metric=keys[0], labels=keys[1], platforms=keys[2], versions=keys[3], 
-                                dates=window, test=test)
+                                "{test}</a>".format(host=MONGO_PERF_HOST, test=test, metric=keys[0], \
+                                labels=keys[1], platforms=keys[2], versions=keys[3], dates=window)
 
                             anomaly_str = anomaly_url + " might be {0} in performance " \
                                 "- see thread {1} (trends {2} at {3})".format \
@@ -553,14 +551,14 @@ class Processor(Thread):
         for index in definition.alerts:
             alert = definition.alerts[index]
             if self.passes_threshold(definition, alert):
-                alert_url = "<a href=\"http://{host}:{port}/results?" \
-                            "metric={metric}&labels={labels}&platforms={platforms}&" \
-                            "versions={versions}&dates={dates}" \
-                            "#{test}\" target=\"_blank\">{test}</a>". \
-                            format(host=MONGO_PERF_HOST, port=MONGO_PERF_WEB_PORT,
-                            metric=definition.metric, labels=alert['label'], 
-                            platforms=alert['platform'], versions=alert['version'],
-                            dates=window, test=alert['test'])
+                alert_url = "<a href=\"http://{host}/results?" \
+                            "metric={metric}&labels={labels}&" \
+                            "platforms={platforms}&versions="  \
+                            "{versions}&dates={dates}#{test} " \
+                            "\"target=\"_blank\">{test}</a>". \
+                            format(host=MONGO_PERF_HOST, metric=definition.metric, \
+                            labels=alert['label'], platforms=alert['platform'], \
+                            versions=alert['version'], dates=window, test=alert['test'])
 
                 definition.aggregate += "- {alert} on ({label}, {version}, thread " \
                     "{thread_count}) is {value:.1f} ({comparator} {threshold})<br>". \
