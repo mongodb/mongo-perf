@@ -55,6 +55,7 @@ To run it against the source on github:
 	python runner.py -l HOSTNAME -n 1 --local
 
 # this serves the results on port 8080
+# use --reload for debugging
 python server.py 
 
 Go to http://localhost:8080 to see the results
@@ -98,6 +99,7 @@ To run it against the source on github:
 	python runner.py -l HOSTNAME -n 1 --local
 
 # this serves the results on port 8080
+# use --reload for debugging
 python server.py 
 
 Go to http://localhost:8080 to see the results

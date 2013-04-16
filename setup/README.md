@@ -97,10 +97,11 @@ Now you're all set to run your first triggered build! Navigate to `AMI_INSTANCE_
 By default, mongo-perf will write its benchmark test results to the host pointed to at line `561` (which should now be your `AWS_INSTANCE_HOST`) on the port pointed to at line `562` (in `master.cfg`) so you should ensure that you have a `mongod` running on that port to accept the results e.g. `mongod --fork --syslog` &ndash; note that we're using a different port to start the mongod that'll accept the test results. Lines `538` to `573` in `master.cfg` cover the sections that deal with setting up and running mongo-perf. Once the build is complete:
 
 - Navigate to `~/slave/Linux_64bit/mongo-perf`
-- Start the mongo-perf web server: `python server.py`
+- Start the mongo-perf web server: `python server.py` (`--reload` for debugging)
 - Navigate to `AWS_INSTANCE_HOST:8080` to view the results of the completed tests <br>
 
-In production, the web interface is listening on port 8080 but with iptables setup to forward to port 80 &ndash; `iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080`
+In production, the web interface is listening on port 8080 but with iptables setup to forward to port 80 &ndash; `iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080`.
+
 
 Congratulations! You have now successfully setup a test/QA environment using buildbot for mongo-perf! We now give a description of how to do this on your local machine.
 
@@ -120,7 +121,7 @@ sudo easy_install pymongo # install pymongo
 
 - Clone the mongo-perf repo: `git clone https://github.com/mongodb/mongo-perf`
 - Start mongod: `mongod --fork --syslog` (note we use port 27017)
-- Start the web server: `python server.py`
+- Start the web server: `python server.py` (`--reload` for debugging)
 - Navigate to `http://localhost:8080`
 You should see the web server running there.
 
