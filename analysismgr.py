@@ -73,9 +73,9 @@ def pull_definitions(definition_type):
     """Pull all alerts that need to be processed
     """
     if definition_type == 'alert':
-        collection = 'alertDefinition'
+        collection = ALERTS_COLLECTION
     elif definition_type == 'report':
-        collection = 'reportDefinition'
+        collection = REPORTS_COLLECTION
 
     cursor = DATABASE[collection].find()
     definitions = []
