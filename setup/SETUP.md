@@ -92,7 +92,7 @@ Now you're all set to run your first triggered build! Navigate to `AMI_INSTANCE_
 - It runs the benchmark tests
 - It writes the results to a database
 
-*`Note that this might take over an hour for this to complete -&ndash; depending on your hardware &ndash; which is why you're using email notifications`*<br>
+*`Note that this might take over an hour for this to complete - depending on your hardware - which is why you're using email notifications`*<br>
 
 By default, mongo-perf will write its benchmark test results to the host pointed to at line `561` (which should now be your `AWS_INSTANCE_HOST`) on the port pointed to at line `562` (in `master.cfg`) so you should ensure that you have a `mongod` running on that port to accept the results e.g. `mongod --fork --syslog` &ndash; note that we're using a different port to start the mongod that'll accept the test results. Lines `538` to `573` in `master.cfg` cover the sections that deal with setting up and running mongo-perf. Once the build is complete:
 
@@ -100,7 +100,7 @@ By default, mongo-perf will write its benchmark test results to the host pointed
 - Start the mongo-perf web server: `python server.py`
 - Navigate to `AWS_INSTANCE_HOST:8080` to view the results of the completed tests <br>
 
-*In production, the web interface is listening on port 8080 but with iptables setup to forward to port 80 &ndash; `iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080`
+In production, the web interface is listening on port 8080 but with iptables setup to forward to port 80 &ndash; `iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080`
 
 Congratulations! You have now successfully setup a test/QA environment using buildbot for mongo-perf! We now give a description of how to do this on your local machine.
 
