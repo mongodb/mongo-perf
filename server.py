@@ -27,7 +27,8 @@ MONGO_PERF_HOST = "localhost"
 MONGO_PERF_WEB_PORT = 8080
 MONGO_PERF_PORT = 27017
 MP_DB_NAME = "bench_results"
-db = pymongo.MongoClient(host=MONGO_PERF_HOST, port=MONGO_PERF_PORT)[MP_DB_NAME]
+db = pymongo.MongoClient(host=MONGO_PERF_HOST, 
+                         port=MONGO_PERF_PORT)[MP_DB_NAME]
 
 
 @route('/static/:filename#.*#')
@@ -51,6 +52,25 @@ def host_page():
 
 @route("/raw")
 def raw_data(versions, labels, dates, platforms, start, end, limit):
+    """ Pulls and aggregates raw data from database matching query parameters
+        :Parameters:
+        - ``"platforms"``: specific platforms we want to view tests for
+
+        - ``"versions"``: specific mongod versions we want to view tests for
+
+        - ``"dates"``: specific dates for tests to be viewed
+
+        - ``"labels"``: test host label
+
+        - ``"metric"``: test metric of interest
+
+        - ``"limit"``: # of tests to return
+
+        - ``"start"``: tests run from this date (used in range query)
+
+        - ``"end"``: tests run before this date (used in range query)
+    """
+
     if start:
         start_query = {'run_date': {'$gte': start}}
     else:
@@ -102,12 +122,10 @@ def raw_data(versions, labels, dates, platforms, start, end, limit):
     else:
         label_query = {}
 
-    # print label_query, date_query, platforms_query, \
-    # version_query, end_query, start_query
-
     cursor = db.raw.find({"$and": [version_query, label_query, 
-            platforms_query, date_query, start_query, end_query]}) \
-        .sort([('run_date', pymongo.DESCENDING), ('platform', pymongo.DESCENDING)]) \
+            platforms_query, date_query, start_query, end_query]})\
+        .sort([ ('run_date', pymongo.DESCENDING), 
+                ('platform', pymongo.DESCENDING)])\
         .limit(limit)
 
     aggregate = defaultdict(list)
@@ -138,15 +156,30 @@ def raw_data(versions, labels, dates, platforms, start, end, limit):
 
 @route("/results")
 def results_page():
-    metric = request.GET.get('metric', 'ops_per_sec')
-    versions = ' '.join(request.GET.getall('versions'))
-    dates = ' '.join(request.GET.getall('dates'))
-    labels = ' '.join(request.GET.getall('labels'))
+    """Handler for results page
+    """
+    # specific platforms we want to view tests for
     platforms = ' '.join(request.GET.getall('platforms'))
+    # specific mongod versions we want to view tests for
+    versions = ' '.join(request.GET.getall('versions'))
+    # specific dates for tests to be viewed
+    dates = ' '.join(request.GET.getall('dates'))
+    # special data structure for recent tests
     multi = ' '.join(request.GET.getall('multi'))
+    # test host label
+    labels = ' '.join(request.GET.getall('labels'))
+    # test metric of interest
+    metric = request.GET.get('metric', 'ops_per_sec')
+    # # of tests to return
     limit = request.GET.get('limit')
+    # tests run from this date (used in range query)
     start = request.GET.get('start')
+    # tests run before this date (used in range query)
     end = request.GET.get('end')
+
+    # handler for home page to display multi recent tests
+    # we need to query for each recent test separatelly and
+    # then merge the results for subsequent display
     if multi:
         results = []
         try:
@@ -183,6 +216,10 @@ def results_page():
 
 
 def merge(results):
+    """This takes separate results that have been pulled
+        and aggregated - using the raw_data function, and
+        reaggregates them in the same way raw_data does
+    """
     aggregate = defaultdict(list)
     for result in results:
         row = dict(label=result['results'][0]['label'],
@@ -205,6 +242,8 @@ def merge(results):
 
 @route("/")
 def main_page():
+    """Handler for main page
+    """
     platforms = db.raw.distinct("platform")
     versions = db.raw.distinct("version")
     labels = db.raw.distinct("label")
@@ -220,17 +259,16 @@ def main_page():
             .limit(len(labels)).sort([('run_date', pymongo.DESCENDING)])
         needed = ['label', 'platform', 'run_date', 'version']
         rows = []
+
         for record in cursor:
             rows.append(record)
+
         rows = sorted([dict(t) for t in set([tuple(d.items())
                        for d in rows])], key=lambda t:
                      (t['run_date'], t['label']), reverse=True)
 
-    return template('main.tpl',
-                    rows=rows,
-                    labels=labels,
-                    versions=versions,
-                    platforms=platforms)
+    return template('main.tpl', rows=rows, labels=labels,
+                    versions=versions, platforms=platforms)
 
 if __name__ == '__main__':
     do_reload = '--reload' in sys.argv
