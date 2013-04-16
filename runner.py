@@ -24,6 +24,8 @@ import pymongo
 import datetime
 import mongomgr
 import subprocess
+import logging
+import logging.handlers
 from optparse import OptionParser
 from collections import defaultdict
 
@@ -32,6 +34,8 @@ try:
 except ImportError:
     from pymongo.json_util import object_hook
 
+# Set up logging
+LOG_FILE = "mongo-perf-log.txt"
 
 class Master(object):
     """
@@ -40,8 +44,11 @@ class Master(object):
         """ Get a definition given parameters.
         """
         self.opts = args[0]
+        self.logger = None
         self.connection = None
         self.now = datetime.datetime.utcnow()
+        self.logger = logging.getLogger(LOG_FILE)
+        self.configureLogger(LOG_FILE)
         self.run_date = self.now.strftime("%Y-%m-%d")
 
     def cleanup(self):
@@ -55,6 +62,20 @@ class Master(object):
                 retval = 1
         return retval
 
+    def configureLogger(self, logFile):
+        """Configures logger to send messages to stdout and logFile
+        """
+        logFile = os.path.abspath(logFile)
+        logHdlr = logging.handlers.RotatingFileHandler(logFile,
+                    maxBytes=(100 * 1024 ** 2), backupCount=1)
+        stdoutHdlr = logging.StreamHandler()
+        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+        logHdlr.setFormatter(formatter)
+        stdoutHdlr.setFormatter(formatter)
+        self.logger.addHandler(logHdlr)
+        self.logger.addHandler(stdoutHdlr)
+        self.logger.setLevel(logging.INFO)
+        self.logger.info("Saving logs to {0}".format(logFile))
 
     def prep_storage(self):
         """Gets host/build info and creates indexes
@@ -66,6 +87,7 @@ class Master(object):
             self.opts.label = 'test'
 
         try:
+            self.logger.info("Prepping for storage...")
             self.connection = pymongo.MongoClient(host=self.opts.rhost,
                                              port=int(self.opts.rport))
             raw = self.connection.bench_results.raw
@@ -76,6 +98,7 @@ class Master(object):
                          'build_info': build_info})
             info['run_date'] = self.run_date
             info['label'] = self.opts.label
+
             raw.ensure_index('label')
             raw.ensure_index('run_date')
             raw.ensure_index('version')
@@ -99,13 +122,20 @@ class Master(object):
                          }, info, upsert=True)
 
         except pymongo.errors.ConnectionFailure, e:
-            print >> sys.stderr, \
-                "Could not connect to MongoDB database", sys.exc_info()[0]
+            self.logger.error("Could not connect to MongoDB database - {0}".
+                                format(e))
             retval = self.cleanup()
             sys.exit(retval)
-        except:
-            print >> sys.stderr, \
-                "Unexpected error in getting host/build info", sys.exc_info()[0]
+
+        except pymongo.errors.OperationFailure, e:
+            self.logger.error("Unexpected error in getting host/build info - {0}"
+                                .format(e))
+            retval = self.cleanup()
+            sys.exit(retval)
+
+        except ValueError, e:
+            self.logger.error("rport must be an instance of int - {0}".
+                                format(e))
             retval = self.cleanup()
             sys.exit(retval)
 
@@ -117,31 +147,28 @@ class Master(object):
         """
         build_info, host_info = self.prep_storage()
 
-        try:
-            raw = self.connection.bench_results.raw
-            benchmarks = []
-            for line in benchmark_results.split('\n'):
-                if line:
-                    obj = json.loads(line, object_hook=object_hook)
-                    benchmarks.append(obj)
-            if self.connection:
-                for benchmark in benchmarks:
-                    print benchmark
-                obj = defaultdict(dict)
-                obj['label'] = self.opts.label
-                obj['run_date'] = self.run_date
-                obj['benchmarks'] = benchmarks
-                obj['version'] = build_info['version']
-                obj['commit'] = build_info['gitVersion']
-                obj['platform'] = host_info['os']['name'].replace(" ", "_")
-                self.update_collection(raw, obj)
-        except:
-            print >> sys.stderr, "Unexpected dict error", sys.exc_info()
-            retval = self.cleanup()
-            sys.exit(retval)
-        finally:
-            if not self.opts.local:
-                self.mongod_handle.__exit__(None, None, None)
+        self.logger.info("Storing test results...")
+        raw = self.connection.bench_results.raw
+        benchmarks = []
+        for line in benchmark_results.split('\n'):
+            if line:
+                obj = json.loads(line, object_hook=object_hook)
+                benchmarks.append(obj)
+
+        for benchmark in benchmarks:
+            self.logger.info(benchmark)
+
+        obj = defaultdict(dict)
+        obj['label'] = self.opts.label
+        obj['run_date'] = self.run_date
+        obj['benchmarks'] = benchmarks
+        obj['version'] = build_info['version']
+        obj['commit'] = build_info['gitVersion']
+        obj['platform'] = host_info['os']['name'].replace(" ", "_")
+        self.update_collection(raw, obj)
+
+        if not self.opts.local:
+            self.mongod_handle.__exit__(None, None, None)
 
 
     def update_collection(self, collection, obj):
@@ -153,12 +180,12 @@ class Master(object):
                                'platform': obj['platform'],
                                'run_date': obj['run_date']
                                }, obj, upsert=True)
-        except:
-            print >> sys.stderr, "Could not update %s" % collection, \
-                        sys.exc_info()[0]
+
+        except pymongo.errors.OperationFailure, e:
+            self.logger.error("Could not update {0}".format(collection))
             retval = self.cleanup()
             sys.exit(retval)
-
+            
 
 class Local(Master):
     """To be run on local machine
@@ -212,7 +239,7 @@ class Local(Master):
                                        '--quiet', '--dbpath', './tmp/data/',
                                        '--port', self.opts.port], stdout=open('/dev/null'))
 
-            print 'pid:', mongod.pid
+            self.logger.info("pid: {0}".format(mongod.pid))
 
             time.sleep(1)  # wait for server to start up
         else:
@@ -258,7 +285,7 @@ class Runner(Master):
             self.mongod_handle.__enter__()
             self.processes.append(self.mongod_handle.proc)
         except:
-            print >> sys.stderr, "Could not start mongod", sys.exc_info()[0]
+            self.logger.error("Could not start mongod")
             retval = self.cleanup()
             sys.exit(retval)
 
@@ -267,12 +294,12 @@ class Runner(Master):
                 ['./benchmark', self.opts.port, self.opts.iterations,
                  multidb, self.opts.username, self.opts.password],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            print >> sys.stderr, "running benchmark tests..."
+            self.logger.info("Running benchmark tests...")
             benchmark_results = benchmark.communicate()[0]
             time.sleep(1)  # wait for server to clean up connections
         except:
-            print >> sys.stderr, "Could not start complete " \
-                    "benchmark tests", sys.exc_info()[0]
+            self.logger.error("Could not start/complete " \
+                    "benchmark tests")
             retval = self.cleanup()
             sys.exit(retval)
         return benchmark_results

@@ -15,11 +15,11 @@
 """Driver for processing and analysis of benchmarked data."""
 
 import pymongo
+import logging
 from os import path
 from sys import exit
 from jobsmgr import *
 from time import sleep
-import logging as logr
 import logging.handlers
 from datetime import datetime
 from Queue import Queue, Empty
@@ -148,15 +148,15 @@ def configureLogger(logFile):
     """Configures LOGR to send messages to stdout and logFile
     """
     logFile = path.abspath(logFile)
-    logHdlr = logr.handlers.RotatingFileHandler(logFile,
+    logHdlr = logging.handlers.RotatingFileHandler(logFile,
                 maxBytes=(100 * 1024 ** 2), backupCount=1)
-    stdoutHdlr = logr.StreamHandler()
-    formatter = logr.Formatter('%(asctime)s %(levelname)s %(message)s')
+    stdoutHdlr = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     logHdlr.setFormatter(formatter)
     stdoutHdlr.setFormatter(formatter)
     LOGR.addHandler(logHdlr)
     LOGR.addHandler(stdoutHdlr)
-    LOGR.setLevel(logr.INFO)
+    LOGR.setLevel(logging.INFO)
     LOGR.info("Saving logs to {0}".format(logFile))
 
 

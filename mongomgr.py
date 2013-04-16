@@ -46,7 +46,24 @@ class mongod(object):
         sock.connect(("localhost", port))
         sock.close()
 
+    def configureLogger(self, logFile):
+        """Configures logger to send messages to stdout and logFile
+        """
+        logFile = os.path.abspath(logFile)
+        logHdlr = logging.handlers.RotatingFileHandler(logFile,
+                    maxBytes=(100 * 1024 ** 2), backupCount=1)
+        stdoutHdlr = logging.StreamHandler()
+        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+        logHdlr.setFormatter(formatter)
+        stdoutHdlr.setFormatter(formatter)
+        self.logger.addHandler(logHdlr)
+        self.logger.addHandler(stdoutHdlr)
+        self.logger.setLevel(logging.INFO)
+        self.logger.info("Saving logs to {0}".format(logFile))
+
     def did_mongod_start(self, port=27017, timeout=300):
+        """Checks if mongod started
+        """
         while timeout > 0:
             time.sleep(1)
             try:
@@ -59,6 +76,8 @@ class mongod(object):
         return False
 
     def start(self):
+        """Starts mongod
+        """
         if self.proc:
             print >> sys.stderr, "probable bug: self.proc already set in start()"
             raise Exception("Failed to start mongod")
@@ -81,7 +100,7 @@ class mongod(object):
         if not self.did_mongod_start(int(self.port)):
             raise Exception("Failed to start mongod")
 
-        print >> sys.stderr, "running " + " ".join(argv)
+        print >> sys.stderr, "Started with args: " + " ".join(argv)
 
     def _start(self, argv):
         """In most cases, just call subprocess.Popen(). On windows,
