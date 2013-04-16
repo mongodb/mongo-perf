@@ -64,8 +64,6 @@ class mongod(object):
                 self.check_mongo_port(port)
                 return True
             except Exception, e:
-                self.logger.error("Error checking if mongod started - {0}".
-                                    format(e))
                 timeout = timeout - 1
         self.logger.error("Timeout starting mongod")
         return False
