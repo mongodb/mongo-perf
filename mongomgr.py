@@ -19,47 +19,41 @@ import subprocess
 import time
 import sys
 import socket
+import logging
+import logging.handlers
 
 
 class mongod(object):
-    def __init__(self, mongod="mongod", port=27017, **kwargs):
-        self.kwargs = kwargs
-        self.proc = None
+    def __init__(self, mongod="mongod", logger=None, port=27017, **kwargs):
         self.mongod = mongod
+        self.logger = logger
+        self.kwargs = kwargs
         self.port = port
+        self.proc = None
 
     def __enter__(self):
+        """Start mongod
+        """
         self.start()
 
     def __exit__(self, type, value, traceback):
+        """Stop mongod
+        """
         try:
             self.stop()
         except Exception, e:
-            print >> sys.stderr, "error shutting down mongod"
-            print >> sys.stderr, e
+            self.logger.error("Error shutting down mongod - {0}".
+                            format(e))
         return not isinstance(value, Exception)
 
     def check_mongo_port(self, port=27017):
+        """Tries to connect to mongod on given port
+        """
         sock = socket.socket()
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         sock.settimeout(1)
         sock.connect(("localhost", port))
         sock.close()
-
-    def configureLogger(self, logFile):
-        """Configures logger to send messages to stdout and logFile
-        """
-        logFile = os.path.abspath(logFile)
-        logHdlr = logging.handlers.RotatingFileHandler(logFile,
-                    maxBytes=(100 * 1024 ** 2), backupCount=1)
-        stdoutHdlr = logging.StreamHandler()
-        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-        logHdlr.setFormatter(formatter)
-        stdoutHdlr.setFormatter(formatter)
-        self.logger.addHandler(logHdlr)
-        self.logger.addHandler(stdoutHdlr)
-        self.logger.setLevel(logging.INFO)
-        self.logger.info("Saving logs to {0}".format(logFile))
 
     def did_mongod_start(self, port=27017, timeout=300):
         """Checks if mongod started
@@ -70,37 +64,33 @@ class mongod(object):
                 self.check_mongo_port(port)
                 return True
             except Exception, e:
-                print >> sys.stderr, e
+                self.logger.error("Error checking if mongod started - {0}".
+                                    format(e))
                 timeout = timeout - 1
-        print >> sys.stderr, "timeout starting mongod"
+        self.logger.error("Timeout starting mongod")
         return False
 
     def start(self):
-        """Starts mongod
+        """Opens a subprocess to start mongod
         """
         if self.proc:
-            print >> sys.stderr, "probable bug: self.proc already set in start()"
+            self.logger.error("Probable bug: self.proc already" \
+                                " set in start()")
             raise Exception("Failed to start mongod")
 
         dbpath = os.getcwd() + "/db"
         logpath = dbpath + "/log.txt"
         argv = ["mkdir", "-p", dbpath]
         subprocess.Popen(argv).communicate()
-        argv = [
-            self.mongod,
-            "--port",
-            self.port,
-            "--dbpath",
-            dbpath,
-            "--logpath",
-            logpath]
-        print argv
+        argv = [self.mongod, "--port",  self.port, "--dbpath",
+                dbpath, "--logpath", logpath]
         self.proc = self._start(argv)
 
         if not self.did_mongod_start(int(self.port)):
             raise Exception("Failed to start mongod")
 
-        print >> sys.stderr, "Started with args: " + " ".join(argv)
+        self.logger.info("Started mongod with args: {0}".
+                            format(" ".join(argv)))
 
     def _start(self, argv):
         """In most cases, just call subprocess.Popen(). On windows,
@@ -108,10 +98,8 @@ class mongod(object):
         child processes of this process can be killed with a single
         call to TerminateJobObject (see self.stop()).
         """
-        proc = subprocess.Popen(
-            argv,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+        proc = subprocess.Popen(argv, stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
 
         if os.sys.platform == "win32":
             # Create a job object with the "kill on job close"
@@ -137,8 +125,11 @@ class mongod(object):
         return proc
 
     def stop(self):
+        """Stops a running mongod
+        """
         if not self.proc:
-            print >> sys.stderr, "probable bug: self.proc unset in stop()"
+            self.logger.error("Probable bug: self.proc already" \
+                                " unset in stop()")
             raise Exception("Failed to stop mongod")
             return
         try:
@@ -160,8 +151,7 @@ class mongod(object):
             from os import kill
             kill(self.proc.pid, 15)
         except Exception, e:
-            print >> sys.stderr, "error shutting down mongod"
-            print >> sys.stderr, e
+            self.logger.error("Error shutting down mongod - {0}".format(e))
             sys.exit(1)
 
         self.proc.wait()

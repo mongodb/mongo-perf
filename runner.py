@@ -38,13 +38,13 @@ except ImportError:
 LOG_FILE = "mongo-perf-log.txt"
 
 class Master(object):
-    """
+    """Class encapsulating methods for performing
+        benchmark tests 
     """
     def __init__(self, *args, **kwargs):
         """ Get a definition given parameters.
         """
         self.opts = args[0]
-        self.logger = None
         self.connection = None
         self.now = datetime.datetime.utcnow()
         self.logger = logging.getLogger(LOG_FILE)
@@ -75,7 +75,6 @@ class Master(object):
         self.logger.addHandler(logHdlr)
         self.logger.addHandler(stdoutHdlr)
         self.logger.setLevel(logging.INFO)
-        self.logger.info("Saving logs to {0}".format(logFile))
 
     def prep_storage(self):
         """Gets host/build info and creates indexes
@@ -185,7 +184,7 @@ class Master(object):
             self.logger.error("Could not update {0}".format(collection))
             retval = self.cleanup()
             sys.exit(retval)
-            
+
 
 class Local(Master):
     """To be run on local machine
@@ -203,7 +202,8 @@ class Local(Master):
         if not self.opts.nolaunch:
             if not os.path.exists('./tmp/mongo'):
                 subprocess.check_call(['git', 'clone',
-                                       'http://github.com/mongodb/mongo.git'], cwd='./tmp')
+                                       'http://github.com/mongodb/mongo.git'], 
+                                       cwd='./tmp')
             subprocess.check_call(['git', 'fetch'], cwd='./tmp/mongo')
             subprocess.check_call(['git', 'checkout', branch], cwd='./tmp/mongo')
 
@@ -216,7 +216,7 @@ class Local(Master):
 
             git_info = subprocess.Popen(['git', 'log', '-1',
                                          '--pretty=format:%H %ai'], cwd='./tmp/mongo',
-                                        stdout=subprocess.PIPE).communicate()[0]
+                                         stdout=subprocess.PIPE).communicate()[0]
 
             mongodb_git, mongodb_date = git_info.split(' ', 1)
 
@@ -224,20 +224,23 @@ class Local(Master):
 
             if self.opts.mongos:
                 mongod = subprocess.Popen(['simple-setup.py',
-                                           '--path=./tmp/mongo', '--port='+self.opts.port])
+                                            '--path=./tmp/mongo',
+                                            '--port='+self.opts.port])
                 #, stdout=open(os.devnull))
                 mongodb_version += '-mongos'
                 mongodb_git += '-mongos'
             else:
                 mongod = subprocess.Popen(['./tmp/mongo/mongod',
                                            '--quiet', '--dbpath', './tmp/data/',
-                                           '--port', self.opts.port], stdout=open(os.devnull))
+                                           '--port', self.opts.port], 
+                                           stdout=open(os.devnull))
 
             subprocess.check_call(['scons'], cwd='./tmp/mongo')
 
             mongod = subprocess.Popen(['./tmp/mongo/mongod',
                                        '--quiet', '--dbpath', './tmp/data/',
-                                       '--port', self.opts.port], stdout=open('/dev/null'))
+                                       '--port', self.opts.port], 
+                                       stdout=open('/dev/null'))
 
             self.logger.info("pid: {0}".format(mongod.pid))
 
@@ -252,10 +255,24 @@ class Local(Master):
         try:
             multidb = '1' if self.opts.multidb else '0'
             benchmark = subprocess.Popen(['./benchmark', self.opts.port,
-                                          self.opts.iterations, multidb, self.opts.username,
-                                          self.opts.password], stdout=subprocess.PIPE)
+                                          self.opts.iterations, 
+                                          multidb, self.opts.username,
+                                          self.opts.password], 
+                                          stdout=subprocess.PIPE)
+            self.logger.info("Started with args: {0}".format(opts))
             benchmark_results = benchmark.communicate()[0]
             time.sleep(1)  # wait for server to clean up connections
+        except OSError, e:
+            self.logger.error("Could not start benchmark tests - {0}".
+                                    format(e))
+            retval = self.cleanup()
+            sys.exit(retval)
+        except ValueError, e:
+            self.logger.error("Invalid arguments supplied! - {0}".
+                                format(e))
+            retval = self.cleanup()
+            sys.exit(retval)
+
         finally:
             if mongod:
                 mongod.terminate()
@@ -281,11 +298,13 @@ class Runner(Master):
             exe = '.exe' if os.sys.platform.startswith("win") else ''
             mongod_path = self.opts.mongod + exe
             self.mongod_handle = mongomgr.mongod(mongod=mongod_path,
-                                                port=self.opts.port)
+                                                port=self.opts.port,
+                                                logger=self.logger)
             self.mongod_handle.__enter__()
             self.processes.append(self.mongod_handle.proc)
-        except:
-            self.logger.error("Could not start mongod")
+        except OSError, e:
+            self.logger.error("Could not start mongod - {0}".
+                                    format(e))
             retval = self.cleanup()
             sys.exit(retval)
 
@@ -297,11 +316,17 @@ class Runner(Master):
             self.logger.info("Running benchmark tests...")
             benchmark_results = benchmark.communicate()[0]
             time.sleep(1)  # wait for server to clean up connections
-        except:
+        except OSError, e:
             self.logger.error("Could not start/complete " \
-                    "benchmark tests")
+                    "benchmark tests - {0}".format(e))
             retval = self.cleanup()
             sys.exit(retval)
+        except ValueError, e:
+            self.logger.error("Invalid arguments supplied! - {0}".
+                                format(e))
+            retval = self.cleanup()
+            sys.exit(retval)
+
         return benchmark_results
 
 
