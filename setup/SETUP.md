@@ -98,7 +98,9 @@ By default, mongo-perf will write its benchmark test results to the host pointed
 
 - Navigate to `~/slave/Linux_64bit/mongo-perf`
 - Start the mongo-perf web server: `python server.py`
-- Navigate to `AWS_INSTANCE_HOST:8080` to view the results of the completed tests
+- Navigate to `AWS_INSTANCE_HOST:8080` to view the results of the completed tests <br>
+
+*In production, the web interface is listening on port 8080 but with iptables setup to forward to port 80 &ndash; `iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080`
 
 Congratulations! You have now successfully setup a test/QA environment using buildbot for mongo-perf! We now give a description of how to do this on your local machine.
 
