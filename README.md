@@ -57,6 +57,47 @@ python server.py
 
 Go to http://localhost:8080 to see the results
 </code></pre>
+You can setup a virtual environment if you wish. Note, however, that you still need to install the non-python dependencies. To use virutalenv:
+<pre><code>virtualenv --no-site-packages mongo-perf
+cd mongoperf
+source bin/activate
+# pull mongo-perf
+git clone https://github.com/mongodb/mongo-perf
+# install python dependencies &ndash; boto, bottle, pymongo
+cd mongo-perf
+pip install -r requirements.txt
+# as at the time of this writing, scons doesn't 
+# install with pip so you have to install using:
+wget http://prdownloads.sourceforge.net/scons/scons-2.3.0.tar.gz
+tar xzfv scons-2.3.0.tar.gz 
+cd scons-2.3.0
+python setup.py install
+# compile the C++ driver
+cd ../mongo-cxx-driver && scons 
+# compile the benchmark script
+scons benchmark 
+
+To run on an already existing mongod:
+
+	(start mongod on 27017 to test against and record 
+	the results into)
+
+	# this runs the tests and records the results
+	# optionally supply a label as well using -l
+	python runner.py --nolaunch -l HOSTNAME
+
+To run it against the source on github:
+	
+	# this pulls and starts mongod from the github repo,
+	# runs the tests and records the results
+	# optionally supply a label as well using -l
+	python runner.py --local -l HOSTNAME
+
+# this serves the results on port 8080
+python server.py 
+
+Go to http://localhost:8080 to see the results
+</code></pre>
 
 ##### Analysis
 
