@@ -124,17 +124,18 @@ def raw_data(versions, labels, multidb, dates, platforms, start, end, limit):
 
     for index in xrange(0, result_size):
         entry = cursor[index]
-        results = entry[multidb]
+        if multidb in entry:
+            results = entry[multidb]
 
-        for result in results:
-            row = dict(commit=entry['commit'],
-                       platform=entry['platform'],
-                       version=entry['version'],
-                       date=entry['run_date'],
-                       label=entry['label'])
-            for (n, res) in result['results'].iteritems():
-                row[n] = res
-            aggregate[result['name']].append(row)
+            for result in results:
+                row = dict(commit=entry['commit'],
+                           platform=entry['platform'],
+                           version=entry['version'],
+                           date=entry['run_date'],
+                           label=entry['label'])
+                for (n, res) in result['results'].iteritems():
+                    row[n] = res
+                aggregate[result['name']].append(row)
 
     aggregate = sorted(aggregate.iteritems(), key=lambda (k, v): k)
     out = []
