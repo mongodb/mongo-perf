@@ -73,7 +73,10 @@ def raw_data(versions, labels, multidb, dates, platforms, start, end, limit):
         end_query = {}
 
     if limit:
-        limit = int(limit)
+        try:
+            limit = int(limit)
+        except ValueError:
+            limit = 10
     else:
         limit = 10
 

@@ -63,11 +63,11 @@
                         <input type="text" name="versions" value="{{versions}}"/>
                     </div>
                     <div class="floatleft">
-                        <label for="start">Start Date</label>
+                        <label for="start">Start Date (YYYY-MM-DD)</label>
                         <input type="text" name="start" value="{{start}}"/>
                     </div>
                     <div class="floatright">
-                        <label for="end">End Date</label>
+                        <label for="end">End Date (YYYY-MM-DD)</label>
                         <input type="text" name="end" value="{{end}}"/>
                     </div>
                     <div class="floatleft">
