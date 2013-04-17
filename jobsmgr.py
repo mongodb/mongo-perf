@@ -510,20 +510,21 @@ class Processor(Thread):
                 current_index = dates.index(sorted(dates)[len(dates) - 1])
                 for test in data:
                     for thread in definition.threads:
-                        value = self.transform_helper(definition.transform,
-                                                      data[test][definition.metric][thread], 
-                                                      current_index)
-                        alert = {}
-                        alert['label'], alert['platform'], \
-                            alert['version'] = task.split(',')
-                        alert['transform'] = definition.transform
-                        alert['alert_name'] = definition.name
-                        alert['thread_count'] = thread
-                        alert['trigger_date'] = date
-                        alert['test'] = test
-                        alert['value'] = value
-                        definition.alerts[index] = alert
-                        index += 1
+                        thread_data = data[test][definition.metric][thread]
+                        if len(thread_data) > 1:
+                            value = self.transform_helper(definition.transform,
+                                                          thread_data, current_index)
+                            alert = {}
+                            alert['label'], alert['platform'], \
+                                alert['version'] = task.split(',')
+                            alert['transform'] = definition.transform
+                            alert['alert_name'] = definition.name
+                            alert['thread_count'] = thread
+                            alert['trigger_date'] = date
+                            alert['test'] = test
+                            alert['value'] = value
+                            definition.alerts[index] = alert
+                            index += 1
 
     def persist_alerts(self, definition):
         """Store triggered alerts
