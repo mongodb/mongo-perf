@@ -279,11 +279,11 @@ class Processor(Thread):
         for label in definition.labels:
             platform = self.get_platform(RAW_COLLECTION, label)
             for version in definition.versions:
-                argv = ' '.join(map(str, [start_date, end_date,
-                                          label, platform, version, definition.window]))
+                argv = ' '.join(map(str, [start_date, end_date, label, platform, 
+                                          version, definition.window, definition.multidb]))
                 analysis = subprocess.Popen(['Rscript', 'mongo-perf.R', start_date, end_date, 
                                                 str(label), str(platform), str(version), 
-                                                str(definition.window), definition.multidb],
+                                                str(definition.window), str(definition.multidb)],
                                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 LOGR.info("Started mongo-perf.R with args: {0}".format(argv))
                 output, error = analysis.communicate()

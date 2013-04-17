@@ -108,7 +108,6 @@ ensure_index <- function() {
 
 # select metrics for analysis
 get_metrics <- function(multidb) {
-	cat("laksjdfkl;asdfjasdf", multidb)
 	res <- NULL
 	record <- mongo.find.one(mongo, raw)
     if (is.null(record)) {
