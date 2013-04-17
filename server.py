@@ -168,7 +168,8 @@ def results_page():
     # tests run before this date (used in range query)
     end = request.GET.get('end')
     # single db or multi db
-    multidb = request.GET.get('multidb', 'singledb')
+    multidb = request.GET.get('multidb', '0')
+    multidb = 'singledb' if multidb == '0' else 'multidb'
 
     # handler for home page to display recent tests
     # we need to query for each recent test separately and

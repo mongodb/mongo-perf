@@ -59,7 +59,7 @@
                         <input type="text" name="versions" value="{{versions}}"/>
                     </div>
                     <div>
-                        <label for="multidb">Muiti database (0 or 1)</label>
+                        <label for="multidb">Single/Muiti database (0 or 1)</label>
                         <input type="text" name="multi" value="{{multidb}}"/>
                     </div>
                     <div class="divider">
