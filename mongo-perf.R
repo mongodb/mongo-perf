@@ -47,6 +47,7 @@ process_data <- function(start_date, end_date, platform, label, version, window,
 	threads <- get_threads(db_id)	
 	nmetrics <- length(metrics)
 	nthreads <- length(threads)
+	cat("Pulling records...\n")
 	df <- pull_records(start_date, end_date, 
 		label, version, nthreads, nmetrics, db_id)
 	if (class(df) == "NULL") {
@@ -58,7 +59,9 @@ process_data <- function(start_date, end_date, platform, label, version, window,
 			da <- df[df[,5]==metrics[k],]
 			# select only the columns for analysis
 			dk <- da[,c('name','run_date','thread_count','value')]
+			cat("Running analysis...\n")
 			outlier_raw = washer.AV(dk, metrics[k], end_date)
+			cat("Writing results...\n")
 			# sort by outlier indicator
 			outlier_raw <- outlier_raw[order(-outlier_raw[,8]),]
 			buf <- mongo.bson.buffer.create()
