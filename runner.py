@@ -165,8 +165,6 @@ class Master(object):
         for benchmark in single_db_benchmarks:
             self.logger.info("singledb: {0}".format(benchmark))
             
-        self.logger.info("\n\n")
-
         for benchmark in multi_db_benchmarks:
             self.logger.info("multidb: {0}".format(benchmark))
 
