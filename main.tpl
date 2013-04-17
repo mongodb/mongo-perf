@@ -75,6 +75,7 @@
           %end
           <h2>Limit</h2>
           <input type="text" name="limit" size="2" value="5"/><br><br>
+          <input type="hidden" name="multidb" value="0"/><br><br>
           <button action='submit'>Submit</button>
         </form>
       </div>
