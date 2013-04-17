@@ -78,6 +78,11 @@ No alerts generated on $date for $name!
 <br><br>
 ''')
 
+# no data globals
+NO_DATA_INFO = '''Dear User,
+<br><br>
+No relevant data found to report on!
+<br><br>'''
 
 class Definition(object):
     """A Definition encapsulates information pertaining to
@@ -87,6 +92,7 @@ class Definition(object):
         """ Get a definition given parameters.
 
         """
+        self.no_data = False
         self.aggregate = ''
         self.state = 'not started'
         self.name = kwargs.get('name', '')
@@ -322,23 +328,25 @@ class Processor(Thread):
             cursor = task.values()[0]
             if cursor.count() == 0:
                 LOGR.critical("No data for {0}".format(task_key))
-            for data in cursor:
-                results = data['result']
-                res_map = defaultdict(list)
-                for result in results:
-                    # only report anomalies on key_date
-                    if result['run_date'] == key_date:
-                        res_map[result['test']].append(result)
-                for test in res_map:
-                    # 'AV' measures the linearity of
-                    # a window of three data points
-                    # 'test_AV' measures the probability
-                    # of there being an outlier in the window
-                    data_points = sorted(res_map[test],
-                                         key=lambda k: (abs(k['AV'])), reverse=True)
-                    for dp in data_points:
-                        if dp['test_AV'] > definition.threshold:
-                            definition.result[task_key][test].append(dp)
+                definition.no_data = True
+            else:
+                for data in cursor:
+                    results = data['result']
+                    res_map = defaultdict(list)
+                    for result in results:
+                        # only report anomalies on key_date
+                        if result['run_date'] == key_date:
+                            res_map[result['test']].append(result)
+                    for test in res_map:
+                        # 'AV' measures the linearity of
+                        # a window of three data points
+                        # 'test_AV' measures the probability
+                        # of there being an outlier in the window
+                        data_points = sorted(res_map[test],
+                                             key=lambda k: (abs(k['AV'])), reverse=True)
+                        for dp in data_points:
+                            if dp['test_AV'] > definition.threshold:
+                                definition.result[task_key][test].append(dp)
 
     def prepare_report(self, definition):
         """Prepare report based on analyzed data
@@ -410,17 +418,23 @@ class Processor(Thread):
             header = REPORT_INFO_HEADER.substitute(
                 {"date": current_date, "name": definition.name})
             message = header + definition.report
-            conn = connect_ses().send_email(
+            connect_ses().send_email(
                 "mongo-perf admin <mongoperf@10gen.com>",
                 "MongoDB Performance Report", message,
                 definition.recipients, format="html")
         else:
-            message = NO_REPORT_INFO_HEADER.substitute(
-                {"date": current_date, "name": definition.name})
-            conn = connect_ses().send_email(
+            if definition.no_data:
+                connect_ses().send_email(
                 "mongo-perf admin <mongoperf@10gen.com>",
-                "MongoDB Performance Report", message,
+                "MongoDB Performance Report", NO_DATA_INFO,
                 definition.recipients, format="html")
+            else:
+                message = NO_REPORT_INFO_HEADER.substitute(
+                    {"date": current_date, "name": definition.name})
+                connect_ses().send_email(
+                    "mongo-perf admin <mongoperf@10gen.com>",
+                    "MongoDB Performance Report", message,
+                    definition.recipients, format="html")
 
     def show_results(self, definition):
         """Shows alerts/report in browser
@@ -596,10 +610,9 @@ class Processor(Thread):
                 header = REPORT_INFO_HEADER.substitute({"date": current_date})
                 message = header + definition.report
 
-        conn = connect_ses().send_email(
-            "mongo-perf admin <mongoperf@10gen.com>",
-            "MongoDB Performance Report", message,
-            definition.recipients, format="html")
+        connect_ses().send_email("mongo-perf admin <mongoperf@10gen.com>",
+                                    "MongoDB Performance Report", message,
+                                    definition.recipients, format="html")
 
     """General helper methods below."""
 
