@@ -1,10 +1,17 @@
-body{
+body {
   font: 90% "Geo Sans Light", sans-serif;
   margin: 50px;
 }
+
+.divider {
+  float: right;
+  margin: 0 4px;
+}
+
 .headers {
   margin-top: 2em;
 }
+
 #dialog-link {
   padding: .4em 1em .4em 20px;
   text-decoration: none;

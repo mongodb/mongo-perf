@@ -29,7 +29,8 @@
         % versions = ' '.join(request.GET.getall('versions'))
         % labels = ' '.join(request.GET.getall('labels'))
         % dates = ' '.join(request.GET.getall('dates'))
-        % multi = ' '.join(request.GET.getall('multi'))
+        % home = ' '.join(request.GET.getall('home'))
+        % multidb = ' '.join(request.GET.getall('multidb'))
         % metric = request.GET.get('metric', 'ops_per_sec')
         % start = request.GET.get('start', '')
         % end = request.GET.get('end', '')
@@ -37,34 +38,49 @@
         <form action="/results">
             <fieldset id="selectors" class="fields">
                 <div>
-                    <label for="metric">Metric</label>
-                    <select id="metric" name="metric">
-                    <option {{'selected' if metric=="ops_per_sec" else ""}}>ops_per_sec</option>
-                    <option {{'selected' if metric=="time" else ""}}>time</option>
-                    <option {{'selected' if metric=="speedup" else ""}}>speedup</option>
-                    </select>
+                    <div>
+                        <label for="metric">Metric</label>
+                        <select id="metric" name="metric">
+                        <option {{'selected' if metric=="ops_per_sec" else ""}}>ops_per_sec</option>
+                        <option {{'selected' if metric=="time" else ""}}>time</option>
+                        <option {{'selected' if metric=="speedup" else ""}}>speedup</option>
+                        </select>
+                    </div>
+                    <div class="divider">
+                        <label for="platforms">Platforms (space-separated or /regex/)</label>
+                        <input type="text" name="platforms" value="{{platforms}}"/>
+                    </div>
+                    <div>
+                        <label for="labels">Labels (space-separated or /regex/)</label>
+                        <input type="text" name="labels" value="{{labels}}"/>
+                    </div>
+                    <div class="divider">
+                        <label for="versions">Versions (space-separated or /regex/)</label>
+                        <input type="text" name="versions" value="{{versions}}"/>
+                    </div>
+                    <div>
+                        <label for="multidb">Muiti database (0 or 1)</label>
+                        <input type="text" name="multi" value="{{multidb}}"/>
+                    </div>
+                    <div class="divider">
+                        <label for="end">End Date</label>
+                        <input type="text" name="end" value="{{end}}"/>
+                    </div>
+                    <div>
+                        <label for="start">Start Date</label>
+                        <input type="text" name="start" value="{{start}}"/>
+                    </div>
+                    <div class="divider">
+                        <label for="limit">Limit</label>
+                        <input type="text" name="limit" value="{{limit}}"/>
+                    </div>
+                    <div>
+                        <label for="dates">Specific dates (space-separated or /regex/)</label>
+                        <input type="text" name="dates" value="{{dates}}"/>
+                    </div>
                 </div>
-                <div>
-                    <label for="labels">Labels (space-separated or /regex/)</label>
-                    <input type="text" name="labels" value="{{labels}}" />
-                </div>
-                <div>
-                    <label for="platforms">Platforms (space-separated or /regex/)</label>
-                    <input type="text" name="platforms" value="{{platforms}}" />
-                </div>
-                <div>
-                    <label for="versions">Versions (space-separated or /regex/)</label>
-                    <input type="text" name="versions" value="{{versions}}" />
-                </div>
-                <div>
-                    <label for="dates">Dates (space-separated or /regex/)</label>
-                    <input type="text" name="dates" value="{{dates}}" />
-                </div>
-                <input type="hidden" name="multi" value="{{multi}}" />
-                <input type="hidden" name="limit" value="{{limit}}" />
-                <input type="hidden" name="start" value="{{start}}" />
-                <input type="hidden" name="end" value="{{end}}" />
-                <input type="submit" value="Go" />
+                <input type="hidden" name="home" value="{{home}}"/>
+                <input type="submit" value="Go"/>
             </fieldset>
         </form>
         %import urllib

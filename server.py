@@ -44,17 +44,17 @@ def host_page():
     host = db.host.find_one({"build_info.version": result['version'],
                                 "label": result['label'],
                                 "run_date": result['date']
-                             })
+                            })
     return template('host.tpl', host=host)
 
 
 @route("/raw")
-def raw_data(versions, labels, num_db, dates, platforms, start, end, limit):
+def raw_data(versions, labels, multidb, dates, platforms, start, end, limit):
     """ Pulls and aggregates raw data from database matching query parameters
         :Parameters:
         - ``"versions"``: specific mongod versions we want to view tests for
         - ``"labels"``: test host label
-        - ``"num_db"``: single db or multi db
+        - ``"multidb"``: single db or multi db
         - ``"dates"``: specific dates for tests to be viewed
         - ``"platforms"``: specific platforms we want to view tests for
         - ``"start"``: tests run from this date (used in range query)
@@ -124,7 +124,7 @@ def raw_data(versions, labels, num_db, dates, platforms, start, end, limit):
 
     for index in xrange(0, result_size):
         entry = cursor[index]
-        results = entry[num_db]
+        results = entry[multidb]
 
         for result in results:
             row = dict(commit=entry['commit'],
@@ -156,7 +156,7 @@ def results_page():
     # specific dates for tests to be viewed
     dates = ' '.join(request.GET.getall('dates'))
     # special data structure for recent tests
-    multi = ' '.join(request.GET.getall('multi'))
+    home = ' '.join(request.GET.getall('home'))
     # test host label
     labels = ' '.join(request.GET.getall('labels'))
     # test metric of interest
@@ -168,20 +168,20 @@ def results_page():
     # tests run before this date (used in range query)
     end = request.GET.get('end')
     # single db or multi db
-    num_db = request.GET.get('num_db', 'singledb')
+    multidb = request.GET.get('multidb', 'singledb')
 
-    # handler for home page to display multi recent tests
+    # handler for home page to display recent tests
     # we need to query for each recent test separately and
     # then merge the results for subsequent display
-    if multi:
+    if home:
         results = []
         try:
             from ast import literal_eval
-            for platform in literal_eval(multi):
+            for platform in literal_eval(home):
                 result = literal_eval(json.dumps(platform))
                 for attrib in result:
                     result[attrib] = '/' + result[attrib] + '/'
-                tmp = raw_data(result['version'], result['label'], num_db,
+                tmp = raw_data(result['version'], result['label'], multidb,
                                result['run_date'], result['platform'], None, None, limit)
                 for result in tmp:
                     results.append(result)
@@ -189,7 +189,7 @@ def results_page():
         except BaseException, e:
             print e
     else:
-        results = raw_data(versions, labels, num_db, dates,
+        results = raw_data(versions, labels, multidb, dates,
                            platforms, start, end, limit)
 
     threads = set()
