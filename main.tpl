@@ -29,7 +29,7 @@
           </li>
           %end
           %limit=len(rows)
-          <li><a href="results?multi={{rows}}&amp;multidb=0&amp;limit={{limit}}">See all</a></li>
+          <li><a href="results?home={{rows}}&amp;multidb=0&amp;limit={{limit}}">See all</a></li>
           %end
         </ul>
       </div>

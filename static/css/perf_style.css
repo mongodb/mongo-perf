@@ -3,9 +3,18 @@ body {
   margin: 50px;
 }
 
-.divider {
+.floatright {
   float: right;
   margin: 0 4px;
+}
+
+.floatleft {
+  float: left;
+}
+
+.gofloat { 
+  clear: both;
+  float: left;
 }
 
 .headers {
