@@ -34,13 +34,20 @@ except ImportError:
 
 
 def populate(time, label, platform, version):
-    benchmark_results = ''
+    singledb_benchmark_results, multidb_benchmark_results = '', ''
     try:
-        benchmark = subprocess.Popen(
+        print 'running single db tests...'
+        single_benchmark = subprocess.Popen(
             ['./benchmark', "27017",
              '1', '0', '', ''],
             stdout=subprocess.PIPE)
-        benchmark_results = benchmark.communicate()[0]
+        single_benchmark_results = single_benchmark.communicate()[0]
+        print 'running multi db tests...'
+        multi_benchmark = subprocess.Popen(
+            ['./benchmark', "27017",
+             '1', '1', '', ''],
+            stdout=subprocess.PIPE)
+        multi_benchmark_results = multi_benchmark.communicate()[0]
     except:
         pass
 
@@ -84,17 +91,24 @@ def populate(time, label, platform, version):
         print 'failed to connect to mongo'
         pass
 
-    benchmarks = []
-    for line in benchmark_results.split('\n'):
+    single_benchmarks, multi_benchmarks = [], []
+
+    for line in single_benchmark_results.split('\n'):
         if line:
             obj = json.loads(line, object_hook=object_hook)
-            benchmarks.append(obj)
+            single_benchmarks.append(obj)
+
+    for line in multi_benchmark_results.split('\n'):
+        if line:
+            obj = json.loads(line, object_hook=object_hook)
+            multi_benchmarks.append(obj)
 
     if connection:
         obj = defaultdict(dict)
         obj['label'] = label
         obj['run_date'] = run_date
-        obj['benchmarks'] = benchmarks
+        obj['singledb'] = single_benchmarks
+        obj['multidb'] = multi_benchmarks
         obj['version'] = version
         obj['commit'] = build_info['gitVersion']
         obj['platform'] = platform
@@ -116,3 +130,5 @@ if __name__ == "__main__":
                 label = label.replace(" ", "_")
                 print 'creating data for %s - %s - %s - %s' % (now, label, platform, version)
                 populate(now, label, platform, version)
+            print 'done creating data!'
+

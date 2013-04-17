@@ -193,7 +193,7 @@ def ensure_definition(definition, definition_type):
         params = defaultdict(dict)
         params["name"] = section
         for name, value in parser.items(section):
-            value = value.split(", ")
+            value = map(lambda y: y.strip(), value.split(", "))
             if name[0] == "~":
                 params[name[1:]] = value[0]
             else:

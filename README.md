@@ -30,6 +30,8 @@ This repo contains scripts to run benchmark tests for mongodb. It also includes 
 
 ### <a name="local"></a>Local Usage
 ---------------
+The runner script has a `--local` flag which is used to differentiate between local machine runs and buildbot runs.
+
 ##### Benchmarks
 <pre><code># compile the C++ driver
 cd mongo-cxx-driver && scons 
@@ -129,7 +131,7 @@ If you wish to receive email reports, change the last stage in pipeline in `anal
 A call to this script by a buildslave might be:
 <pre><code>python runner.py --rhost localhost --rport 27017 --port 30000  --mongod MONGO_DIR/mongod  --label Linux_64-bit
 </code></pre>
-The snippet above starts `mongod` on port 30000 (which it tests against) and writes the result of the benchmark tests to `localhost` on port `27017`. You can have both `--port` and `--rport` be the same.
+The snippet above starts `mongod` on port 30000 (which it tests against) and writes the result of the benchmark tests to `localhost` on port `27017`. You can have both `--port` and `--rport` be the same. Note that we do not use the `--local` flag &ndash; without this flag, by default, running `python runner.py`, does two things: it uses a single database for each connection, and also uses a separate db for each connection and benchmarks for both.
 
 If running benchmarks on a buildslave and analysis as a cron job, ensure that you call analysis only _after_ the benchmark tests have been completed.
 

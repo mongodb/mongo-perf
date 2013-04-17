@@ -143,26 +143,38 @@ class Master(object):
         return build_info, host_info
 
 
-    def store_results(self, benchmark_results):
+    def store_results(self, single_db_benchmark_results, multi_db_benchmark_results):
         """Inserts the benchmark results into the database
         """
         build_info, host_info = self.prep_storage()
 
         self.logger.info("Storing test results...")
         raw = self.connection.bench_results.raw
-        benchmarks = []
-        for line in benchmark_results.split('\n'):
+        single_db_benchmarks, multi_db_benchmarks = [], []
+
+        for line in single_db_benchmark_results.split('\n'):
             if line:
                 obj = json.loads(line, object_hook=object_hook)
-                benchmarks.append(obj)
+                single_db_benchmarks.append(obj)
 
-        for benchmark in benchmarks:
-            self.logger.info(benchmark)
+        for line in multi_db_benchmark_results.split('\n'):
+            if line:
+                obj = json.loads(line, object_hook=object_hook)
+                multi_db_benchmarks.append(obj)
+
+        for benchmark in single_db_benchmarks:
+            self.logger.info("singledb: {0}".format(benchmark))
+            
+        self.logger.info("\n\n")
+
+        for benchmark in multi_db_benchmarks:
+            self.logger.info("multidb: {0}".format(benchmark))
 
         obj = defaultdict(dict)
         obj['label'] = self.opts.label
         obj['run_date'] = self.run_date
-        obj['benchmarks'] = benchmarks
+        obj['singledb'] = single_db_benchmarks
+        obj['multidb'] = multi_db_benchmarks
         obj['version'] = build_info['version']
         obj['commit'] = build_info['gitVersion']
         obj['platform'] = host_info['os']['name'].replace(" ", "_")
@@ -306,7 +318,6 @@ class Runner(Master):
         """
         benchmark_results = ''
         try:
-            multidb = '1' if self.opts.multidb else '0'
             exe = '.exe' if os.sys.platform.startswith("win") else ''
             mongod_path = self.opts.mongod + exe
             self.mongod_handle = mongomgr.mongod(mongod=mongod_path,
@@ -321,12 +332,18 @@ class Runner(Master):
             sys.exit(retval)
 
         try:
-            benchmark = subprocess.Popen(
+            single_db_benchmark = subprocess.Popen(
                 ['./benchmark', self.opts.port, self.opts.iterations,
-                 multidb, self.opts.username, self.opts.password],
+                 '0', self.opts.username, self.opts.password],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            self.logger.info("Running benchmark tests...")
-            benchmark_results = benchmark.communicate()[0]
+            self.logger.info("Running single db benchmark tests...")
+            single_db_benchmark_results = single_db_benchmark.communicate()[0]
+            multi_db_benchmark = subprocess.Popen(
+                ['./benchmark', self.opts.port, self.opts.iterations,
+                 '1', self.opts.username, self.opts.password],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            self.logger.info("Running multi db benchmark tests...")
+            multi_db_benchmark_results = multi_db_benchmark.communicate()[0]
             time.sleep(1)  # wait for server to clean up connections
         except OSError, e:
             self.logger.error("Could not start/complete " \
@@ -339,7 +356,7 @@ class Runner(Master):
             retval = self.cleanup()
             sys.exit(retval)
 
-        return benchmark_results
+        return single_db_benchmark_results, multi_db_benchmark_results
 
 
 def main():
@@ -351,9 +368,9 @@ def main():
     else:
         handle = Runner(opts, versions)
     # run benchmark tests
-    benchmark_results = handle.run_benchmark()
+    single_db_benchmark_results, multi_db_benchmark_results = handle.run_benchmark()
     # store benchmark tests
-    handle.store_results(benchmark_results)
+    handle.store_results(single_db_benchmark_results, multi_db_benchmark_results)
 
 
 def parse_options():
@@ -385,7 +402,8 @@ def parse_options():
                          help='run on local machine',
                          action='store_true', default=False)
     optparser.add_option('-m', '--multidb', dest='multidb',
-                         help='use a separate db for each connection',
+                         help='use a separate db for each connection'\
+                        ' - only useful in conjunction with --local',
                          action='store_true', default=False)
     optparser.add_option('-l', '--label', dest='label',
                          help='performance testing host',

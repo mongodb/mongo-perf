@@ -49,11 +49,12 @@ def host_page():
 
 
 @route("/raw")
-def raw_data(versions, labels, dates, platforms, start, end, limit):
+def raw_data(versions, labels, num_db, dates, platforms, start, end, limit):
     """ Pulls and aggregates raw data from database matching query parameters
         :Parameters:
         - ``"versions"``: specific mongod versions we want to view tests for
         - ``"labels"``: test host label
+        - ``"num_db"``: single db or multi db
         - ``"dates"``: specific dates for tests to be viewed
         - ``"platforms"``: specific platforms we want to view tests for
         - ``"start"``: tests run from this date (used in range query)
@@ -123,7 +124,7 @@ def raw_data(versions, labels, dates, platforms, start, end, limit):
 
     for index in xrange(0, result_size):
         entry = cursor[index]
-        results = entry['benchmarks']
+        results = entry[num_db]
 
         for result in results:
             row = dict(commit=entry['commit'],
@@ -166,6 +167,8 @@ def results_page():
     start = request.GET.get('start')
     # tests run before this date (used in range query)
     end = request.GET.get('end')
+    # single db or multi db
+    num_db = request.GET.get('num_db', 'singledb')
 
     # handler for home page to display multi recent tests
     # we need to query for each recent test separately and
@@ -178,7 +181,7 @@ def results_page():
                 result = literal_eval(json.dumps(platform))
                 for attrib in result:
                     result[attrib] = '/' + result[attrib] + '/'
-                tmp = raw_data(result['version'], result['label'],
+                tmp = raw_data(result['version'], result['label'], num_db,
                                result['run_date'], result['platform'], None, None, limit)
                 for result in tmp:
                     results.append(result)
@@ -186,7 +189,7 @@ def results_page():
         except BaseException, e:
             print e
     else:
-        results = raw_data(versions, labels, dates,
+        results = raw_data(versions, labels, num_db, dates,
                            platforms, start, end, limit)
 
     threads = set()
@@ -242,10 +245,12 @@ def main_page():
     labels = filter(None, labels)
     versions = sorted(versions, reverse=True)
     rows = None
+    
     # restricted to benchmark tests for most recent MongoDB version
     if versions:
         cursor = db.raw.find({"version": versions[0]},
-                             {"_id" : 0, "benchmarks" : 0, "commit" : 0})\
+                             {"_id" : 0, "singledb" : 0, 
+                             "multidb" : 0, "commit" : 0})\
             .limit(len(labels)).sort([('run_date', pymongo.DESCENDING)])
         needed = ['label', 'platform', 'run_date', 'version']
         rows = []

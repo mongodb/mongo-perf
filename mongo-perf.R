@@ -34,14 +34,21 @@ raw <- paste(db, "raw", sep=".")
 admin <- paste(db, "admin", sep=".")
 
 # performs that data processing phase by calling washer.AV in washer.R
-process_data <- function(start_date, end_date, platform, label, version, window) {
+process_data <- function(start_date, end_date, platform, label, version, window, num_db) {
 	ensure_index()
-	metrics <- get_metrics()
-	threads <- get_threads()	
+	if (match(num_db, "0")) {
+		db_id <- "singledb"
+		multidb <- FALSE
+	} else {
+		db_id <- "multidb"
+		multidb <- TRUE
+	}
+	metrics <- get_metrics(db_id)
+	threads <- get_threads(db_id)	
 	nmetrics <- length(metrics)
 	nthreads <- length(threads)
 	df <- pull_records(start_date, end_date, 
-		label, version, nthreads, nmetrics)
+		label, version, nthreads, nmetrics, db_id)
 	if (class(df) == "NULL") {
 		cat("\nNo data to process. Exiting...\n")
 		q(save = "no", status = 1, runLast = FALSE)
@@ -60,6 +67,7 @@ process_data <- function(start_date, end_date, platform, label, version, window)
 			mongo.bson.buffer.append.string(buf, "version", version)
 			mongo.bson.buffer.append.string(buf, "date", end_date)
 			mongo.bson.buffer.append.string(buf, "label", label)
+			mongo.bson.buffer.append.bool(buf, "multidb", multidb)
 			mongo.bson.buffer.append.int(buf, "window", window)
 			mongo.bson.buffer.start.array(buf, "result")
 			outlier_raw[,1:3] <- lapply(outlier_raw[,1:3] , as.character)
@@ -99,31 +107,32 @@ ensure_index <- function() {
 }
 
 # select metrics for analysis
-get_metrics <- function() {
+get_metrics <- function(multidb) {
+	cat("laksjdfkl;asdfjasdf", multidb)
 	res <- NULL
 	record <- mongo.find.one(mongo, raw)
     if (is.null(record)) {
         cat("No records to process!\n")
     } else {
-    	benchmarks <- mongo.bson.value(record, "benchmarks")
+    	benchmarks <- mongo.bson.value(record, multidb)
 		return (names(benchmarks[[1]][['results']][[1]]))
 	}
 }
 
 # select threads for analysis
-get_threads <- function() {
+get_threads <- function(multidb) {
 	res <- NULL
 	record <- mongo.find.one(mongo, raw)
     if (is.null(record)) {
         cat("No records to process!\n")
     } else {
-    	benchmarks <- mongo.bson.value(record, "benchmarks")
+    	benchmarks <- mongo.bson.value(record, multidb)
 		return (names(benchmarks[[1]][['results']]))
 	}
 }
 
 # select records for analysis
-pull_records <- function(start_date, end_date, label, version, nthreads, nmetrics) {
+pull_records <- function(start_date, end_date, label, version, nthreads, nmetrics, db_id) {
 	df <- NULL
 	name_sort <- mongo.bson.from.list(list(name=1L))
 	buf <- mongo.bson.buffer.create()
@@ -149,13 +158,13 @@ pull_records <- function(start_date, end_date, label, version, nthreads, nmetric
 		label <- vector("character")
 		name <- vector("character")
 		value <- vector("numeric")
-		metrics <- get_metrics()
-		threads <- get_threads()	
+		metrics <- get_metrics(db_id)
+		threads <- get_threads(db_id)	
 		nmetrics <- length(metrics)
 		nthreads <- length(threads)
     	while (mongo.cursor.next(cursor)) {
 			record <- mongo.cursor.value(cursor)
-			benchmarks <- mongo.bson.value(record, "benchmarks")
+			benchmarks <- mongo.bson.value(record, db_id)
 			run_date <- mongo.bson.value(record, "run_date")
 			label <- mongo.bson.value(record, "label")
 			for (benchmark in names(benchmarks)) {
@@ -177,12 +186,14 @@ pull_records <- function(start_date, end_date, label, version, nthreads, nmetric
 
 options <- commandArgs(trailingOnly = TRUE)
 
-if (length(options) != 6) {
-	cat("Requires exactly 6 options!\n")
+if (length(options) != 7) {
+	cat("Requires exactly 7 options!\n")
 	cat("Rscript mongo-perf.R start_date end_date",
-		"label platform version window\n")
+		"label platform version window multidb\n")
 } else {
-	do.call(process_data, list(start_date=options[1], end_date=options[2],
-	label=options[3], platform=options[4], version=options[5], window=options[6]))
+	do.call(process_data, 
+		list(start_date=options[1], end_date=options[2],
+			label=options[3], platform=options[4], 
+			version=options[5], window=options[6], num_db=options[7]))
 }
 

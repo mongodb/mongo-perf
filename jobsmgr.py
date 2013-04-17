@@ -92,10 +92,11 @@ class Definition(object):
         self.name = kwargs.get('name', '')
         self.type = kwargs.get('type', '')
         self.labels = kwargs.get('labels', '')
+        self.multidb = kwargs.get('multidb', '')
         self.versions = kwargs.get('versions', '')
         self.operations = kwargs.get('operations', '')
-        self.metric = kwargs.get('metric', 'ops_per_sec')
         self.recipients = kwargs.get('recipients', '')
+        self.metric = kwargs.get('metric', 'ops_per_sec')
         self.pipeline = kwargs.get('pipeline', None)
         self._result = defaultdict(lambda: defaultdict(list))
 
@@ -280,11 +281,10 @@ class Processor(Thread):
             for version in definition.versions:
                 argv = ' '.join(map(str, [start_date, end_date,
                                           label, platform, version, definition.window]))
-                analysis = subprocess.Popen(['Rscript',
-                                             'mongo-perf.R', start_date, end_date, 
-                                             str(label), str(platform), str(version), 
-                                             str(definition.window)],
-                                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                analysis = subprocess.Popen(['Rscript', 'mongo-perf.R', start_date, end_date, 
+                                                str(label), str(platform), str(version), 
+                                                str(definition.window), definition.multidb],
+                                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 LOGR.info("Started mongo-perf.R with args: {0}".format(argv))
                 output, error = analysis.communicate()
                 LOGR.info(output)
@@ -295,7 +295,8 @@ class Processor(Thread):
     def pull_results(self, definition):
         """Pull benchmarked results from database
         """
-        metrics = self.get_benchmark_metrics(RAW_COLLECTION)
+        num_db = 'singledb' if definition.multidb == '0' else 'multidb'
+        metrics = self.get_benchmark_metrics(num_db)
         date = self.date.strftime('%Y-%m-%d')
         for metric in metrics:
             for label in definition.labels:
@@ -343,7 +344,8 @@ class Processor(Thread):
         """Prepare report based on analyzed data
         """
         window = '+'.join(self.get_window(self.date, definition.window, 1))
-        operations = self.find_operations(definition.operations)
+        num_db = 'singledb' if definition.multidb == '0' else 'multidb'
+        operations = self.find_operations(definition.operations, num_db)
         key_date = self.date.strftime('%Y-%m-%d')
 
         for top_level in definition.result:
@@ -600,14 +602,14 @@ class Processor(Thread):
 
     """General helper methods below."""
 
-    def find_operations(self, operations):
+    def find_operations(self, operations, num_db):
         """Get all tests that match any of the operations
         """
         ops = set()
         record = self.database[RAW_COLLECTION].find_one()
         if record:
             for operation in operations:
-                for op in record['benchmarks']:
+                for op in record[num_db]:
                     regexed = re.compile(operation, re.IGNORECASE)
                     if regexed.match(op['name']):
                         ops.add(op['name'])
@@ -616,10 +618,9 @@ class Processor(Thread):
     def get_keys(collection, key):
         """Get all distinct values of the given key
         """
-        return sorted(self.database[collection].distinct(key),
-                      reverse=True)
+        return sorted(self.database[collection].distinct(key), reverse=True)
 
-    def get_benchmark_metrics(self, collection):
+    def get_benchmark_metrics(self, num_db):
         """Get all benchmark metrics we have in database.
             This finds any benchmark result in the RAW_COLLECTION
             and pulls out the associated metrics stored for the result.
@@ -628,9 +629,8 @@ class Processor(Thread):
             The returned value is a list that looks like: ['ops_per_sec',
             'speedup', 'time']
         """
-        return self.database[collection].find_one() \
-            ['benchmarks'][0]['results']. \
-            itervalues().next().keys()
+        return self.database[RAW_COLLECTION].find_one()\
+                [num_db][0]['results'].itervalues().next().keys()
 
     def get_epoch_type(self, definition):
         """Returns a reformatted epoch_type string
@@ -672,16 +672,17 @@ class Processor(Thread):
         """Transform data into a more amenable form
         """
         parse = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
-        operations = self.find_operations(definition.operations)
+        num_db = 'singledb' if definition.multidb == '0' else 'multidb'
+        operations = self.find_operations(definition.operations, num_db)
         dates = []
         for record in cursor:
             dates.append(record['run_date'])
-            for test in record['benchmarks']:
+            for test in record[num_db]:
                 if test['name'] in operations:
                     results = test['results']
                     for thread in results:
                         if thread in definition.threads:
-                            parse[test['name']][definition.metric][thread]. \
+                            parse[test['name']][definition.metric][thread].\
                                 append(results[thread][definition.metric])
 
         return dates, parse
@@ -718,6 +719,5 @@ class Processor(Thread):
             result = None
         else:
             raise BaseException(
-                "Transform: {0} not recognized.".format(
-        transform))
+                "Transform: {0} not recognized.".format(transform))
         return result
