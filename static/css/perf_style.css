@@ -26,6 +26,7 @@ body {
   text-decoration: none;
   position: relative;
 }
+
 #dialog-link span.ui-icon {
   margin: 0 5px 0 0;
   position: absolute;
@@ -33,6 +34,7 @@ body {
   top: 50%;
   margin-top: -8px;
 }
+
 #icons {
   margin: 0;
   padding: 0;
@@ -50,15 +52,19 @@ body {
   float: left;
   margin: 0 4px;
 }
+
 .fakewindowcontain .ui-widget-overlay {
   position: absolute;
 }
+
 .fields label, .fields input {
   display:inline-block;
 }
+
 .fields label {
   width:300px; /* or whatever size you want them */
 }
+
 .fields input[type="text"]{
   background:url("../images/text-input-bg.png") repeat-x scroll left top;
   border:1px solid #d9d6c4;
@@ -70,4 +76,6 @@ body {
   outline:0 none;
   padding:3px;
 }
+
+
 
