@@ -136,7 +136,7 @@ get_threads <- function(multidb) {
 # select records for analysis
 pull_records <- function(start_date, end_date, label, version, nthreads, nmetrics, db_id) {
 	df <- NULL
-	name_sort <- mongo.bson.from.list(list(name=1L))
+	test_name_sort <- mongo.bson.from.list(list(name=1L))
 	buf <- mongo.bson.buffer.create()
     mongo.bson.buffer.start.object(buf, "label")
     mongo.bson.buffer.append(buf, "$regex", paste(label, "$", sep=""))
@@ -149,7 +149,7 @@ pull_records <- function(start_date, end_date, label, version, nthreads, nmetric
     mongo.bson.buffer.append.string(buf, "version", version)
     query <- mongo.bson.from.buffer(buf)
     count <- mongo.count(mongo, raw, query)
-    cursor <- mongo.find(mongo, raw, query, name_sort)
+    cursor <- mongo.find(mongo, raw, query, test_name_sort)
     if (is.null(cursor)) {
         cat("Pulled no records to process!\n")
         break
