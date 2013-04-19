@@ -390,11 +390,12 @@ class Processor(Thread):
                         series_trend = "homogenous"
                         if homogeneity < definition.homogeneity:
                             homogeneity = "{0:.2f}%".format(abs(homogeneity))
-                            anomaly_url = "<a href=\"http://{host}/results?" \
+                            anomaly_url = "<a href=\"http://{host}/results?multidb={multidb}&" \
                                 "metric={metric}&labels={labels}&platforms={platforms}&" \
                                 "versions={versions}&dates={dates}#{test}\" target=\"_blank\">" \
-                                "{test}</a>".format(host=MONGO_PERF_HOST, test=test, metric=keys[0], \
-                                labels=keys[1], platforms=keys[2], versions=keys[3], dates=window)
+                                "{test}</a>".format(host=MONGO_PERF_HOST, metric=keys[0], \
+                                labels=keys[1], platforms=keys[2], versions=keys[3], \
+                                test=test, dates=window, multidb=definition.multidb)
                             anomaly_str = anomaly_url + " might be {0} in performance " \
                                 "- see thread {1} (trends {2} at {3})".format \
                                 (target_trend, thread,
@@ -567,12 +568,11 @@ class Processor(Thread):
         for index in definition.alerts:
             alert = definition.alerts[index]
             if self.passes_threshold(definition, alert):
-                alert_url = "<a href=\"http://{host}/results?" \
-                            "metric={metric}&labels={labels}&" \
-                            "platforms={platforms}&versions="  \
-                            "{versions}&dates={dates}#{test} " \
-                            "\"target=\"_blank\">{test}</a>". \
-                            format(host=MONGO_PERF_HOST, metric=definition.metric, \
+                alert_url = "<a href=\"http://{host}/results?multidb={multidb}"\
+                            "&metric={metric}&labels={labels}&platforms={platforms}" \
+                            "&versions={versions}&dates={dates}#{test} " \
+                            "\"target=\"_blank\">{test}</a>".format(host=MONGO_PERF_HOST, \
+                            metric=definition.metric, multidb=definition.multidb, \
                             labels=alert['label'], platforms=alert['platform'], \
                             versions=alert['version'], dates=window, test=alert['test'])
 
