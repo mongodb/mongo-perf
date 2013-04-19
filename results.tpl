@@ -30,11 +30,11 @@
         % labels = ' '.join(request.GET.getall('labels'))
         % dates = ' '.join(request.GET.getall('dates'))
         % home = ' '.join(request.GET.getall('home'))
-        % multidb = ' '.join(request.GET.getall('multidb'))
         % metric = request.GET.get('metric', 'ops_per_sec')
+        % multidb = request.GET.get('multidb', '0')
+        % limit = request.GET.get('limit', '10')
         % start = request.GET.get('start', '')
         % end = request.GET.get('end', '')
-        % limit = request.GET.get('limit', '10')
         <form action="/results">
             <fieldset id="selectors" class="fields">
                 <div>
