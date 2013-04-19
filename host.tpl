@@ -8,10 +8,10 @@
 		%import json, datetime
 		%host = json.dumps(host, default=lambda obj:obj.isoformat() if isinstance(obj, datetime.datetime) else None)
 		<script>
-			$(window).load(function() {
+			$(window).on('load', function() {
 				var data = $('#host_info').data('dump')
 				var stringified = JSON.stringify(data, undefined, 4)
-				document.body.appendChild(document.createElement('pre')).innerHTML = stringified
+				$('body').append($('<pre>').append(stringified))
 			});
 		</script>
 	</head>
