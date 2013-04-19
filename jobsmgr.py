@@ -398,8 +398,7 @@ class Processor(Thread):
                                 test=test, dates=window, multidb=definition.multidb)
                             anomaly_str = anomaly_url + " might be {0} in performance " \
                                 "- see thread {1} (trends {2} at {3})".format \
-                                (target_trend, thread,
-                                series_trend, homogeneity)
+                                (target_trend, thread, series_trend, homogeneity)
                             anomaly_list.append(anomaly_str)
 
                 if anomaly_list:
@@ -577,7 +576,7 @@ class Processor(Thread):
                             versions=alert['version'], dates=window, test=alert['test'])
 
                 definition.aggregate += "- {alert} on ({label}, {version}, thread " \
-                    "{thread_count}) is {value:.1f} ({comparator} {threshold})<br>". \
+                    "{thread_count}) is {value:.2f} ({comparator} {threshold})<br>". \
                     format(alert=alert_url, label=alert['label'], version=alert['version'], 
                             thread_count=alert['thread_count'], value=alert['value'],
                             comparator=definition.comparator, threshold=definition.threshold)

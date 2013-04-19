@@ -116,7 +116,7 @@
                     <td>{{result['date']}}</td>
                     <td><a href="https://github.com/mongodb/mongo/commit/{{result['commit']}}" target="_blank">{{result['commit'][:7]}}</a></td>
                     %for thread in threads:
-                    <td>{{result.get(str(thread), {metric:'--'})[metric]}}</td>
+                    <td>{{"{0:.2f}".format(result.get(str(thread), {metric:'--'})[metric])}}</td>
                     %end
                 </tr>
                 %end
