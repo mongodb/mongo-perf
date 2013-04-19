@@ -130,17 +130,54 @@
         <script>
             $(function(){
                 var data = $('#chart_{{k}}').data('dump');
-                $.plot(
-                    $('#flot_{{k}}'), data,
-                    {
-                        grid: { backgroundColor: { colors: ["#eceadf", "#d9d6c4"] } }, 
+                var div = $('#flot_{{k}}')
+                var options =  {
+                        grid: { hoverable: true, backgroundColor: { colors: ["#eceadf", "#d9d6c4"] } }, 
                         series: { lines: { show: true }, points: { show: true } },
                         legend: { show: true, position: "nw", backgroundOpacity: 0,
                         container: $("#legendContainer_{{k}}"), noColumns: 2 },
                         xaxis: {ticks : {{threads}} },
-                        yaxis: {min : 0}
+                        yaxis: {min : 0},
+                        tooltip: true
                     }
-               );
+                $.plot(div, data, options);
+
+            function showTooltip(x, y, contents) {
+                $('<div id="tooltip_{{k}}">' + contents + '</div>').css( {
+                    position: 'absolute',
+                    display: 'none',
+                    top: y + 5,
+                    left: x + 5,
+                    border: '1px solid #fdd',
+                    padding: '2px',
+                    'background-color': '#fee',
+                    opacity: 0.80
+                }).appendTo("body").fadeIn(200);
+            };
+
+            var previousPoint = null;
+            div.bind("plothover", function (event, pos, item) {
+                $("#x").text(pos.x.toFixed(2));
+                $("#y").text(pos.y.toFixed(2));
+
+                if (item) {
+                    if (previousPoint != item.dataIndex) {
+                        previousPoint = item.dataIndex;
+                        
+                        $("#tooltip_{{k}}").remove();
+                        var x = item.datapoint[0].toFixed(2),
+                            y = item.datapoint[1].toFixed(2);
+                        
+                        showTooltip(item.pageX, item.pageY, item.series.label + " ( " + y + " ) ");
+                    }
+                }
+                else {
+                    $("#tooltip_{{k}}").remove();
+                    previousPoint = null;            
+                }
+            });
+
+
             });
         </script>
         <hr>
