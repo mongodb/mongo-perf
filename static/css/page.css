@@ -166,17 +166,6 @@ table.display tr.even.gradeA {
 	background-color: #eeffee;
 }
 
-
-
-
-table.display tr.odd.gradeA {
-	background-color: #ddffdd;
-}
-
-table.display tr.even.gradeA {
-	background-color: #eeffee;
-}
-
 table.display tr.odd.gradeC {
 	background-color: #ddddff;
 }
