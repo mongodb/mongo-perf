@@ -47,11 +47,14 @@ class Master(object):
         self.opts = args[0]
         self.versions = args[1]
         self.processes = []
+        self.host_info = None
+        self.build_info = None
         self.connection = None
         self.now = datetime.datetime.utcnow()
         self.logger = logging.getLogger(LOG_FILE)
         self.configureLogger(LOG_FILE)
         self.run_date = self.now.strftime("%Y-%m-%d")
+
 
     def cleanup(self):
         """Cleans up spawned children
@@ -63,6 +66,7 @@ class Master(object):
                 p.kill()
                 retval = 1
         return retval
+
 
     def configureLogger(self, logFile):
         """Configures logger to send messages to stdout and logFile
@@ -78,11 +82,21 @@ class Master(object):
         self.logger.addHandler(stdoutHdlr)
         self.logger.setLevel(logging.INFO)
 
+
+    def set_env_info(self, port):
+        """Connection to port we are testing against
+           - to gather host/build info
+        """
+        connection = pymongo.MongoClient(port=port)
+        self.build_info = connection.bench_results.command('buildInfo')
+        self.host_info = connection.bench_results.command('hostInfo')
+        connection.close()
+
+
     def prep_storage(self):
         """Creates indexes for the various collections
             and gets test bed host/build information
         """
-        build_info, host_info = None, None
 
         if not self.opts.label:
             self.opts.label = 'test'
@@ -93,10 +107,8 @@ class Master(object):
                                              port=int(self.opts.rport))
             raw = self.connection.bench_results.raw
             host = self.connection.bench_results.host
-            build_info = self.connection.bench_results.command('buildInfo')
-            host_info = self.connection.bench_results.command('hostInfo')
-            info = dict({'platform': host_info,
-                         'build_info': build_info})
+            info = dict({'platform': self.host_info,
+                         'build_info': self.build_info})
             info['run_date'] = self.run_date
             info['label'] = self.opts.label
 
@@ -117,7 +129,7 @@ class Master(object):
                  ('run_date', pymongo.ASCENDING)],
                 unique=True)
 
-            host.update({'build_info.version': build_info['version'],
+            host.update({'build_info.version': self.build_info['version'],
                          'label': self.opts.label,
                          'run_date': self.run_date
                          }, info, upsert=True)
@@ -140,13 +152,11 @@ class Master(object):
             retval = self.cleanup()
             sys.exit(retval)
 
-        return build_info, host_info
-
 
     def store_results(self, single_db_benchmark_results, multi_db_benchmark_results):
         """Inserts the benchmark results into the database
         """
-        build_info, host_info = self.prep_storage()
+        self.prep_storage()
 
         self.logger.info("Storing test results...")
         raw = self.connection.bench_results.raw
@@ -173,9 +183,9 @@ class Master(object):
         obj['run_date'] = self.run_date
         obj['singledb'] = single_db_benchmarks
         obj['multidb'] = multi_db_benchmarks
-        obj['version'] = build_info['version']
-        obj['commit'] = build_info['gitVersion']
-        obj['platform'] = host_info['os']['name'].replace(" ", "_")
+        obj['version'] = self.build_info['version']
+        obj['commit'] = self.build_info['gitVersion']
+        obj['platform'] = self.host_info['os']['name'].replace(" ", "_")
         self.update_collection(raw, obj)
 
         if not self.opts.local:
@@ -205,6 +215,7 @@ class Local(Master):
 
     def __init__(self, *args, **kwargs):
         super(Local, self).__init__(*args, **kwargs)
+
 
     def run_benchmark(self):
         """Runs the benchmark tests; pulls mongod
@@ -283,6 +294,7 @@ class Local(Master):
                                           self.opts.password], 
                                           stdout=subprocess.PIPE)
             self.logger.info("Started benchmark args: {0}".format(self.opts))
+            self.set_env_info(int(self.opts.port))
             benchmark_results = benchmark.communicate()[0]
             time.sleep(1)  # wait for server to clean up connections
         except OSError, e:
@@ -310,6 +322,7 @@ class Runner(Master):
     def __init__(self, *args, **kwargs):
         super(Runner, self).__init__(*args, **kwargs)
         self.mongod_handle = None
+
 
     def run_benchmark(self):
         """Runs the benchmark tests
@@ -342,6 +355,7 @@ class Runner(Master):
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             self.logger.info("Running multi db benchmark tests...")
             multi_db_benchmark_results = multi_db_benchmark.communicate()[0]
+            self.set_env_info(int(self.opts.port))
             time.sleep(1)  # wait for server to clean up connections
         except OSError, e:
             self.logger.error("Could not start/complete " \
