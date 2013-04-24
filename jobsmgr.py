@@ -308,7 +308,7 @@ class Processor(Thread):
             for label in definition.labels:
                 platform = self.get_platform(RAW_COLLECTION, label)
                 if not platform:
-                    raise BaseException("Label {0} not found".format(label))
+                    LOGR.critical("Label {0} not found".format(self.name))
                 for version in definition.versions:
                     cursor = self.database['analysis'].find({"label": label,
                                                             "version": version,
