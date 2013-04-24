@@ -49,7 +49,7 @@ REPORT_TASKS = ["process benchmarks", "pull results",
 # db globals
 MONGO_PERF_HOST = "localhost"
 MONGO_PERF_PORT = 27017
-CONNECTION = pymongo.MongoClient(host=MONGO_PERF_HOST,
+CONNECTION = pymongo.Connection(host=MONGO_PERF_HOST,
                                  port=MONGO_PERF_PORT)
 DATABASE = CONNECTION.bench_results
 DATE = datetime.utcnow().strftime("%Y-%m-%d")

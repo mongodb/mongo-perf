@@ -87,7 +87,7 @@ class Master(object):
         """Connection to port we are testing against
            - to gather host/build info
         """
-        connection = pymongo.MongoClient(port=port)
+        connection = pymongo.Connection(port=port)
         self.build_info = connection.bench_results.command('buildInfo')
         self.host_info = connection.bench_results.command('hostInfo')
         connection.close()
@@ -103,7 +103,7 @@ class Master(object):
 
         try:
             self.logger.info("Prepping for storage...")
-            self.connection = pymongo.MongoClient(host=self.opts.rhost,
+            self.connection = pymongo.Connection(host=self.opts.rhost,
                                              port=int(self.opts.rport))
             raw = self.connection.bench_results.raw
             host = self.connection.bench_results.host
