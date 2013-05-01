@@ -162,7 +162,10 @@ Once you have the packages installed, start mongod &ndash; `mongod --fork --sysl
 
 Before you run analysis, you need data to analyze! For mongo-perf, we need at least three days' worth of data to run. If you took the buildbot route in setting up the operations side of mongo-perf, you will have to use `loader.py` to generate the historical data you require to run analysis. See [Generating Data](#generating) for more information.
 
-With data, you are now ready to run some analysis: <pre><code>python analysismgr.py</code></pre>
+With data, you are now ready to run some analysis: <pre><code>python analysismgr.py
+// you can have this on a cron job like
+0 8 * * * cd $mongo-perf-home && python analysismgr.py
+</code></pre>
 This should begin the processing pipeline for both alerts and reports and open up web pages for any alerts and reports generated using the configuation in [alerts](/alert_definitions.ini) and [reports](/report_definitions.ini) configuration files respectively.
 
 The default pipeline for both alerts and reports (as listed in ALERT_TASKS and REPORT_TASKS globals in `analysismgr.py`) show the result of the alerts/reports processing using your default web browser.
