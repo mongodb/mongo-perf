@@ -181,8 +181,10 @@ class Master(object):
         obj = defaultdict(dict)
         obj['label'] = self.opts.label
         obj['run_date'] = self.run_date
-        obj['singledb'] = single_db_benchmarks
-        obj['multidb'] = multi_db_benchmarks
+        if single_db_benchmarks:
+            obj['singledb'] = single_db_benchmarks
+        if multi_db_benchmarks:
+            obj['multidb'] = multi_db_benchmarks
         obj['version'] = self.build_info['version']
         obj['commit'] = self.build_info['gitVersion']
         obj['platform'] = self.host_info['os']['name'].replace(" ", "_")
@@ -201,7 +203,7 @@ class Master(object):
                                'version': obj['version'],
                                'platform': obj['platform'],
                                'run_date': obj['run_date']
-                               }, obj, upsert=True)
+                               }, {"$set" : obj}, upsert=True)
 
         except pymongo.errors.OperationFailure, e:
             self.logger.error("Could not update {0}".format(collection))
@@ -312,7 +314,11 @@ class Local(Master):
             if mongod:
                 mongod.terminate()
                 mongod.wait()
-        return benchmark_results
+        single_db_benchmark_results, multi_db_benchmark_results = "", ""
+        # return results based on multidb falg
+        if self.opts.multidb:
+            return single_db_benchmark_results, benchmark_results
+        return benchmark_results, multi_db_benchmark_results
 
 
 class Runner(Master):
