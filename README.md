@@ -30,7 +30,7 @@ This repo contains scripts to run benchmark tests for mongodb. It also includes 
 
 ### <a name="local"></a>Local Usage
 ---------------
-The runner script has a `--local` flag which is used to differentiate between local machine runs and buildbot runs.
+The runner script has a `--local` flag which is used to differentiate between local machine runs and buildbot runs. Use the `--multidb` flag to indicate if you want a single database or multiple databases for each connection (by default, mongo-erf writes to a `bench_results` database).
 
 ##### Benchmarks
 <pre><code># compile the C++ driver
