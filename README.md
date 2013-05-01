@@ -101,6 +101,8 @@ To run it against the source on github:
 	python runner.py -l HOSTNAME -n 1 --local
 
 # this serves the results on port 8080
+# ensure that MONGO_PERF_HOST & MONGO_PERF_PORT in server.py
+# are set accordingly - (same as --rhost --rport)
 # use --reload for debugging
 python server.py 
 
