@@ -5,10 +5,10 @@ body {
 
 .floatright {
   float: right;
-  margin: 0 4px;
 }
 
 .floatleft {
+  clear: both;
   float: left;
 }
 
