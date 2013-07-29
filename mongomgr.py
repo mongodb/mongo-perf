@@ -24,12 +24,13 @@ import logging.handlers
 
 
 class mongod(object):
-    def __init__(self, mongod="mongod", logger=None, port=27017, **kwargs):
+    def __init__(self, mongod="mongod", logger=None, port=27017, config_path=None, **kwargs):
         self.mongod = mongod
         self.logger = logger
         self.kwargs = kwargs
         self.port = port
         self.proc = None
+        self.config_path = config_path
 
     def __enter__(self):
         """Start mongod
@@ -81,6 +82,9 @@ class mongod(object):
         os.makedirs(dbpath)
         argv = [self.mongod, "--port",  self.port, "--dbpath",
                 dbpath, "--logpath", logpath]
+        if self.config_path is not None:
+            argv.append("--config")
+            argv.append(self.config_path)
         self.proc = self._start(argv)
 
         if not self.did_mongod_start(int(self.port)):
