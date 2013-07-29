@@ -339,7 +339,8 @@ class Runner(Master):
             mongod_path = self.opts.mongod + exe
             self.mongod_handle = mongomgr.mongod(mongod=mongod_path,
                                                 port=self.opts.port,
-                                                logger=self.logger)
+                                                logger=self.logger,
+                                                config_path=self.opts.config_path)
             self.mongod_handle.__enter__()
             self.processes.append(self.mongod_handle.proc)
         except OSError, e:
@@ -432,6 +433,9 @@ def parse_options():
     optparser.add_option('--password', dest='password',
                          help='Password to use for authentication.',
                          type='string', default='')
+    optparser.add_option('-f', '--config', dest='config_path',
+                         help='Path to config file for mongod instance',
+                         type='string', default=None)
     return optparser.parse_args()
 
 if __name__ == '__main__':
