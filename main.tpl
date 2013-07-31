@@ -58,9 +58,9 @@
       <div id="custom">
         <form name="custom_form" id="custom_form" action="results" method="get">
           <h2>
-          From: <input type="text" size="6" name="start" class="datepicker" readonly="readonly"/>
+          From: <input type="text" size="6" name="start" class="datepicker" />
           <h2>
-          To:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="text" size="6" name="end" class="datepicker" readonly="readonly"/>
+          To:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="text" size="6" name="end" class="datepicker" />
           <h2>Labels</h2>
           %for label in labels:
           <input type="checkbox" name="labels" value={{label}}>{{label}}<br>
