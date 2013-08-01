@@ -72,7 +72,8 @@
 
     $('.datepicker').datepicker( {
         inline: true,
-        dateFormat: 'yy-mm-dd'
+        dateFormat: 'yy-mm-dd',
+        changeMonth: true
     });
 
 
