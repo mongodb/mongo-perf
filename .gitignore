@@ -6,6 +6,7 @@ anomaly
 *.txt
 tags
 *.pyc
+*.swp
 db/*
 *.o
 *.a
