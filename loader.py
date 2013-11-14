@@ -38,14 +38,14 @@ def populate(time, label, platform, version):
     try:
         print 'running single db tests...'
         single_benchmark = subprocess.Popen(
-            ['./benchmark', "27017",
-             '1', '0', '', ''],
+            ['./benchmark', 
+             '--port', "27017", '--iterations', '1'],
             stdout=subprocess.PIPE)
         single_benchmark_results = single_benchmark.communicate()[0]
         print 'running multi db tests...'
         multi_benchmark = subprocess.Popen(
-            ['./benchmark', "27017",
-             '1', '1', '', ''],
+            ['./benchmark', '--port', "27017",
+             '--iterations', '1', '--multi_db'],
             stdout=subprocess.PIPE)
         multi_benchmark_results = multi_benchmark.communicate()[0]
     except:

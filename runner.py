@@ -289,11 +289,20 @@ class Local(Master):
 
         benchmark_results = ''
         try:
-            multidb = '1' if self.opts.multidb else '0'
-            benchmark = subprocess.Popen(['./benchmark', self.opts.port,
-                                          self.opts.iterations, 
-                                          multidb, self.opts.username,
-                                          self.opts.password], 
+            if self.opts.multidb:
+                benchmark = subprocess.Popen(['./benchmark', 
+                                          '--port', self.opts.port,
+                                          '--iterations', self.opts.iterations, 
+                                          '--multi_db', 
+                                          '--username', self.opts.username,
+                                          '--password', self.opts.password], 
+                                          stdout=subprocess.PIPE)
+            else:
+                benchmark = subprocess.Popen(['./benchmark',
+                                          '--port', self.opts.port,
+                                          '--iterations', self.opts.iterations,
+                                          '--username', self.opts.username,
+                                          '--password', self.opts.password],
                                           stdout=subprocess.PIPE)
             self.logger.info("Started benchmark args: {0}".format(self.opts))
             self.set_env_info(int(self.opts.port))
@@ -351,14 +360,19 @@ class Runner(Master):
 
         try:
             single_db_benchmark = subprocess.Popen(
-                ['./benchmark', self.opts.port, self.opts.iterations,
-                 '0', self.opts.username, self.opts.password],
+                ['./benchmark', '--port', self.opts.port, 
+                 '--iterations', self.opts.iterations,
+                 '--username', self.opts.username, 
+                 '--password', self.opts.password],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             self.logger.info("Running single db benchmark tests...")
             single_db_benchmark_results = single_db_benchmark.communicate()[0]
             multi_db_benchmark = subprocess.Popen(
-                ['./benchmark', self.opts.port, self.opts.iterations,
-                 '1', self.opts.username, self.opts.password],
+                ['./benchmark', '--port', self.opts.port, 
+                 '--iterations', self.opts.iterations,
+                 '--multi-db',
+                 '--username', self.opts.username, 
+                 '--password', self.opts.password],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             self.logger.info("Running multi db benchmark tests...")
             multi_db_benchmark_results = multi_db_benchmark.communicate()[0]

@@ -5,6 +5,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
+#include <boost/program_options.hpp>
 #include <boost/thread.hpp>
 
 #ifndef _WIN32
@@ -15,6 +16,7 @@
 #define PRINT(x) MONGO_PRINT(x)
 #define PRINTFL  MONGO_PRINTFL
 
+namespace po = boost::program_options;
 using namespace std;
 using namespace mongo;
 
@@ -917,50 +919,97 @@ namespace{
 }
 
 int main(int argc, const char **argv){
-    if (argc < 3 || argc > 6){
-        cerr << argv[0] << " <port> <iterations> [<multidb (1 or 0)>] [<username>] [<password>]" << endl;
-        return 1;
-    }
+    try {
+        po::variables_map options_vars;
+        string host;
+        string password;
+        string username;
+        uint16_t port;
+ 
+        po::options_description display_options("Program options");
+        display_options.add_options()
+            ("help", "Display help information");
+        po::options_description all_options("All options");
+        all_options.add_options()
+            ("port",        po::value<uint16_t>()->required(),  "Port number")
+            ("iterations",  po::value<int>()->required(),       "Number of iterations")
+            ("multi_db",    po::bool_switch(),                  "MultiDB mode")
+            ("username",    po::value<string>(),                "Username (auth)")
+            ("password",    po::value<string>(),                "Password (auth)");
+            ("host",        po::value<string>(),                "Hostname");
 
-    string username;
-    string password;
+       all_options.add(display_options);
+        
+        po::store(po::command_line_parser(argc, argv)
+                .options(all_options)
+                .run(), options_vars);
+        po::notify(options_vars);
 
-    iterations = atoi(argv[2]);
-
-    if (argc > 3)
-        multi_db = (argv[3][0] == '1');
-
-    if (argc > 4) {
-        username = argv[4];
-    }
-    if (argc > 5) {
-        password = argv[5];
-    }
-
-    if (!username.empty() && password.empty()) {
-        cerr << "Cannot provide username without also providing password" << endl;
-    }
-
-    for (int i=0; i < max_threads; i++){
-        string dbname = _db + BSONObjBuilder::numStr(i);
-        ns[i] = dbname + '.' + _coll;
-        string errmsg;
-        if ( ! _conn[i].connect( string( "127.0.0.1:" ) + argv[1], errmsg ) ) {
-            cerr << "couldn't connect : " << errmsg << endl;
-            return 1;
+        if (options_vars.count("help")) {
+            cout << all_options << endl;
+            return EXIT_SUCCESS;
         }
 
-        // Handle authentication if necessary
-        if (!username.empty()) {
-            cerr << "authenticating as user: " << username << " with password: " << password << endl;
-            if (!_conn[i].auth((multi_db ? dbname : "admin"), username, password, errmsg)) {
-                cerr << "Auth failed : " << errmsg << endl;
-                return 1;
+        if (options_vars.count("username") != options_vars.count("password")) {
+            cout << "Authentication required both --username and --password" << endl;
+            cout << endl;
+            cout << display_options << endl;
+            return EXIT_FAILURE;
+        }
+        
+        port = options_vars["port"].as<uint16_t>();
+        iterations = options_vars["iterations"].as<int>();
+        
+        if (options_vars.count("multi_db")) {
+            multi_db = options_vars["multi_db"].as<bool>();
+        }
+        
+        if (options_vars.count("username")) {
+            username = options_vars["username"].as<string>();
+        }
+
+        if (options_vars.count("password")) {
+            password = options_vars["password"].as<string>();
+        }
+
+        if (options_vars.count("host")) {
+            host = options_vars["host"].as<string>();
+        } else {
+            host = "127.0.0.1";
+        }
+
+        // XXX: should be moved somewhere else.
+        string host_and_port = str::stream() << host << ":" << port;
+     
+        for (int i=0; i < max_threads; i++){
+            string dbname = _db + BSONObjBuilder::numStr(i);
+            ns[i] = dbname + '.' + _coll;
+            string errmsg;
+            if (!_conn[i].connect( host_and_port, errmsg)) {
+                cerr << "couldn't connect : " << errmsg << endl;
+                return EXIT_FAILURE;
+            }
+
+            // Handle authentication if necessary
+            if (!username.empty()) {
+                cerr << "authenticating as user: " << username << " with password: " << password << endl;
+                if (!_conn[i].auth((multi_db ? dbname : "admin"), username, password, errmsg)) {
+                    cerr << "Auth failed : " << errmsg << endl;
+                    return EXIT_FAILURE;
+                }
             }
         }
+        theTestSuite.run();
+        return EXIT_SUCCESS;
     }
-
-    theTestSuite.run();
-
-    return 0;
+    catch (po::error const & e) {
+        cerr << "Unexpected " << e.what() << endl;
+        cerr << "try " << argv[0] << "--help" << endl;
+        return EXIT_FAILURE;
+    }
+    catch (std::exception const & e) {
+        cerr << "Error: " << e.what() << endl;
+        return EXIT_FAILURE;
+    }
 }
+
