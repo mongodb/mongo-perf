@@ -236,6 +236,8 @@ class Local(Master):
         mongod = None
 
         if not self.opts.nolaunch:
+            if not os.path.exists('./tmp'):
+                os.mkdir('./tmp')
             if not os.path.exists('./tmp/mongo'):
                 subprocess.check_call(['git', 'clone',
                                        'http://github.com/mongodb/mongo.git'], 
