@@ -15,6 +15,7 @@
 """Buildbot script to run benchmark tests"""
 
 import os
+import re
 import sys
 import time
 import json
@@ -210,6 +211,13 @@ class Master(object):
             retval = self.cleanup()
             sys.exit(retval)
 
+    def getPortNumber(self): 
+        ## Parse port number from connection string
+        if self.opts.connstr == '/':
+            return re.split(re.split('-([0-9]+).sock',
+                self.opts.connstr))[1]
+        else:
+            return re.split(':', self.opts.connstr)[1]
 
 class Local(Master):
     """To be run on local machine
@@ -218,6 +226,8 @@ class Local(Master):
     def __init__(self, *args, **kwargs):
         super(Local, self).__init__(*args, **kwargs)
 
+    def getPortNumber(self):
+        return super(Local, self).getPortNumber()
 
     def run_benchmark(self):
         """Runs the benchmark tests; pulls mongod
@@ -234,6 +244,7 @@ class Local(Master):
             mongodb_version = self.opts.label
         mongodb_date = None
         mongod = None
+        mongod_port = self.getPortNumber()
 
         if not self.opts.nolaunch:
             if not os.path.exists('./tmp'):
@@ -259,25 +270,24 @@ class Local(Master):
             mongodb_git, mongodb_date = git_info.split(' ', 1)
 
             subprocess.check_call(['scons', 'mongod'], cwd='./tmp/mongo')
-
             if self.opts.mongos:
                 mongod = subprocess.Popen(['simple-setup.py',
                                             '--path=./tmp/mongo',
-                                            '--port='+self.opts.port])
+                                            '--port=' + mongod_port])
                 #, stdout=open(os.devnull))
                 mongodb_version += '-mongos'
                 mongodb_git += '-mongos'
             else:
                 mongod = subprocess.Popen(['./tmp/mongo/mongod',
                                            '--quiet', '--dbpath', './tmp/data/',
-                                           '--port', self.opts.port], 
+                                           '--port', mongod_port], 
                                            stdout=open(os.devnull))
 
             subprocess.check_call(['scons'], cwd='./tmp/mongo')
 
             mongod = subprocess.Popen(['./tmp/mongo/mongod',
                                        '--quiet', '--dbpath', './tmp/data/',
-                                       '--port', self.opts.port], 
+                                       '--port', mongod_port], 
                                        stdout=open('/dev/null'))
 
             self.logger.info("pid: {0}".format(mongod.pid))
@@ -291,23 +301,16 @@ class Local(Master):
 
         benchmark_results = ''
         try:
+            bench_cmd = ['./benchmark', '--connection-string', self.opts.connstr,
+                        '--iterations', self.opts.iterations,
+                        '--username', self.opts.username, '--password',
+                        self.opts.password]
             if self.opts.multidb:
-                benchmark = subprocess.Popen(['./benchmark', 
-                                          '--port', self.opts.port,
-                                          '--iterations', self.opts.iterations, 
-                                          '--multi_db', 
-                                          '--username', self.opts.username,
-                                          '--password', self.opts.password], 
-                                          stdout=subprocess.PIPE)
-            else:
-                benchmark = subprocess.Popen(['./benchmark',
-                                          '--port', self.opts.port,
-                                          '--iterations', self.opts.iterations,
-                                          '--username', self.opts.username,
-                                          '--password', self.opts.password],
-                                          stdout=subprocess.PIPE)
+                bench_cmd.append('--multi_db')
+ 
+            benchmark = subprocess.Popen(bench_cmd, stdout=subprocess.PIPE)
             self.logger.info("Started benchmark args: {0}".format(self.opts))
-            self.set_env_info(int(self.opts.port))
+            self.set_env_info(int(mongod_port))
             benchmark_results = benchmark.communicate()[0]
             time.sleep(1)  # wait for server to clean up connections
         except OSError, e:
@@ -340,20 +343,26 @@ class Runner(Master):
         super(Runner, self).__init__(*args, **kwargs)
         self.mongod_handle = None
 
+    def getPortNumber(self):
+        return super(Runner, self).getPortNumber()
 
     def run_benchmark(self):
         """Runs the benchmark tests
         """
         benchmark_results = ''
         try:
+            mongod_port = self.getPortNumber()
             exe = '.exe' if os.sys.platform.startswith("win") else ''
             mongod_path = self.opts.mongod + exe
             self.mongod_handle = mongomgr.mongod(mongod=mongod_path,
-                                                port=self.opts.port,
+                                                port=mongod_port,
                                                 logger=self.logger,
                                                 config_path=self.opts.config_path)
             self.mongod_handle.__enter__()
             self.processes.append(self.mongod_handle.proc)
+
+            self.set_env_info(int(mongod_port))
+
         except OSError, e:
             self.logger.error("Could not start mongod - {0}".
                                     format(e))
@@ -361,25 +370,24 @@ class Runner(Master):
             sys.exit(retval)
 
         try:
-            single_db_benchmark = subprocess.Popen(
-                ['./benchmark', '--port', self.opts.port, 
-                 '--iterations', self.opts.iterations,
-                 '--username', self.opts.username, 
-                 '--password', self.opts.password],
+            bench_cmd = ['./benchmark',
+                        '--connection-string', self.opts.connstr,
+                        '--iterations', self.opts.iterations,
+                        '--username', self.opts.username,
+                        '--password', self.opts.password]
+            single_db_benchmark = subprocess.Popen(bench_cmd,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             self.logger.info("Running single db benchmark tests...")
             single_db_benchmark_results = single_db_benchmark.communicate()[0]
-            multi_db_benchmark = subprocess.Popen(
-                ['./benchmark', '--port', self.opts.port, 
-                 '--iterations', self.opts.iterations,
-                 '--multi-db',
-                 '--username', self.opts.username, 
-                 '--password', self.opts.password],
+
+            bench_cmd.append('--multi_db')
+            multi_db_benchmark = subprocess.Popen(bench_cmd,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             self.logger.info("Running multi db benchmark tests...")
             multi_db_benchmark_results = multi_db_benchmark.communicate()[0]
-            self.set_env_info(int(self.opts.port))
+            
             time.sleep(1)  # wait for server to clean up connections
+        
         except OSError, e:
             self.logger.error("Could not start/complete " \
                     "benchmark tests - {0}".format(e))
@@ -418,12 +426,12 @@ def parse_options():
     optparser.add_option('--rport', dest='rport',
                          help='port for mongodb to write results to',
                          type='string', default='27017')
+    optparser.add_option('--connection-string', dest='connstr',
+                         help='Connection String',
+                         type='string', default='127.0.0.1:27017')
     optparser.add_option('--mongod', dest='mongod',
                          help='path to mongod executable',
                          type='string', default='mongod')
-    optparser.add_option('-p', '--port', dest='port',
-                         help='test port for mongo-perf to run against',
-                         type='string', default='27017')
     optparser.add_option('-n', '--iterations', dest='iterations',
                          help='number of iterations to test',
                          type='string', default='100000')

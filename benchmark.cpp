@@ -921,24 +921,22 @@ namespace{
 int main(int argc, const char **argv){
     try {
         po::variables_map options_vars;
-        string host;
+        string conn_string;
         string password;
         string username;
-        uint16_t port;
  
         po::options_description display_options("Program options");
         display_options.add_options()
             ("help", "Display help information");
         po::options_description all_options("All options");
         all_options.add_options()
-            ("port",        po::value<uint16_t>()->required(),  "Port number")
-            ("iterations",  po::value<int>()->required(),       "Number of iterations")
-            ("multi_db",    po::bool_switch(),                  "MultiDB mode")
-            ("username",    po::value<string>(),                "Username (auth)")
-            ("password",    po::value<string>(),                "Password (auth)");
-            ("host",        po::value<string>(),                "Hostname");
+            ("connection-string",   po::value<string>()->required(),    "Connection string")
+            ("iterations",          po::value<int>()->required(),       "Number of iterations")
+            ("multi_db",            po::bool_switch(),                  "MultiDB mode")
+            ("username",            po::value<string>(),                "Username (auth)")
+            ("password",            po::value<string>(),                "Password (auth)");
 
-       all_options.add(display_options);
+        all_options.add(display_options);
         
         po::store(po::command_line_parser(argc, argv)
                 .options(all_options)
@@ -956,14 +954,16 @@ int main(int argc, const char **argv){
             cout << display_options << endl;
             return EXIT_FAILURE;
         }
-        
-        port = options_vars["port"].as<uint16_t>();
+
+        // Mandatory options.
+        conn_string = options_vars["connection-string"].as<string>();
         iterations = options_vars["iterations"].as<int>();
-        
+
+        // Optional options.
         if (options_vars.count("multi_db")) {
             multi_db = options_vars["multi_db"].as<bool>();
         }
-        
+ 
         if (options_vars.count("username")) {
             username = options_vars["username"].as<string>();
         }
@@ -972,20 +972,13 @@ int main(int argc, const char **argv){
             password = options_vars["password"].as<string>();
         }
 
-        if (options_vars.count("host")) {
-            host = options_vars["host"].as<string>();
-        } else {
-            host = "127.0.0.1";
-        }
-
         // XXX: should be moved somewhere else.
-        string host_and_port = str::stream() << host << ":" << port;
      
         for (int i=0; i < max_threads; i++){
             string dbname = _db + BSONObjBuilder::numStr(i);
             ns[i] = dbname + '.' + _coll;
             string errmsg;
-            if (!_conn[i].connect( host_and_port, errmsg)) {
+            if (!_conn[i].connect(conn_string, errmsg)) {
                 cerr << "couldn't connect : " << errmsg << endl;
                 return EXIT_FAILURE;
             }
