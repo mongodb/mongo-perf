@@ -233,13 +233,8 @@ class Local(Master):
         """Runs the benchmark tests; pulls mongod
             from github if requested
         """
-        if not self.versions:
-            self.versions = ['master']
-
-        # TODO support multiple versions
-        branch = self.versions[0]
-        if self.opts.label=='<git version>':
-            mongodb_version = branch
+        if not self.opts.label:
+            mongodb_version = 'unlabeled'
         else:
             mongodb_version = self.opts.label
         mongodb_date = None
@@ -247,48 +242,23 @@ class Local(Master):
         mongod_port = self.getPortNumber()
 
         if not self.opts.nolaunch:
-            if not os.path.exists('./tmp'):
-                os.mkdir('./tmp')
-            if not os.path.exists('./tmp/mongo'):
-                subprocess.check_call(['git', 'clone',
-                                       'http://github.com/mongodb/mongo.git'], 
-                                       cwd='./tmp')
-            subprocess.check_call(['git', 'fetch'], cwd='./tmp/mongo')
-            subprocess.check_call(['git', 'checkout', branch], cwd='./tmp/mongo')
-
-            if os.path.exists('./tmp/data/'):
-                shutil.rmtree('./tmp/data/')
-            os.mkdir('./tmp/data/')
-
-            if branch == 'master':
-                subprocess.check_call(['git', 'pull'], cwd='./tmp/mongo')
-
-            git_info = subprocess.Popen(['git', 'log', '-1',
-                                         '--pretty=format:%H %ai'], cwd='./tmp/mongo',
-                                         stdout=subprocess.PIPE).communicate()[0]
-
-            mongodb_git, mongodb_date = git_info.split(' ', 1)
-
-            subprocess.check_call(['scons', 'mongod'], cwd='./tmp/mongo')
+            mongodb_git = 'launch'
             if self.opts.mongos:
                 mongod = subprocess.Popen(['simple-setup.py',
                                             '--path=./tmp/mongo',
                                             '--port=' + mongod_port])
-                #, stdout=open(os.devnull))
                 mongodb_version += '-mongos'
                 mongodb_git += '-mongos'
             else:
-                mongod = subprocess.Popen(['./tmp/mongo/mongod',
-                                           '--quiet', '--dbpath', './tmp/data/',
+                mongod = subprocess.Popen([self.opts.mongod, '--quiet',
+                                           '--dbpath', self.opts.dbpath,
                                            '--port', mongod_port], 
                                            stdout=open(os.devnull))
 
-            subprocess.check_call(['scons'], cwd='./tmp/mongo')
-
-            mongod = subprocess.Popen(['./tmp/mongo/mongod',
-                                       '--quiet', '--dbpath', './tmp/data/',
-                                       '--port', mongod_port], 
-                                       stdout=open('/dev/null'))
+            mongod = subprocess.Popen([self.opts.mongod, '--quiet',
+                                           '--dbpath', self.opts.dbpath,
+                                           '--port', mongod_port],
+                                           stdout=open(os.devnull))
 
             self.logger.info("pid: {0}".format(mongod.pid))
 
@@ -431,7 +401,10 @@ def parse_options():
                          type='string', default='127.0.0.1:27017')
     optparser.add_option('--mongod', dest='mongod',
                          help='path to mongod executable',
-                         type='string', default='mongod')
+                         type='string', default='./tmp/mongo/mongod')
+    optparser.add_option('--dbpath', dest='dbpath',
+                        help='path to mongo database',
+                        type='string', default='./tmp/data')
     optparser.add_option('-n', '--iterations', dest='iterations',
                          help='number of iterations to test',
                          type='string', default='100000')
