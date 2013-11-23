@@ -5,6 +5,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
 #include <boost/thread.hpp>
 
@@ -514,6 +515,167 @@ namespace Update{
             }
         }
     };
+
+    // Some tests based on the MMS workload. These started as Eliot's 'mms.js' tests, which acm
+    // then extended and used for the first round of update performance improvements. We are
+    // capturing them here so they are run automatically. These tests explore the overhead of
+    // reaching into deep right children in complex documents.
+    struct MMSBase : Base {
+
+        void reset() {
+            clearDB();
+
+
+            // It is easier to see what is going on here by reading it as javascript, below
+            // is a translation of:
+            //
+            // var base = { a : 0, h : {}, z : 0 };
+            // for ( h=0; h<24; h++ ) {
+            //     base.h[h] = {};
+            //     for ( min=0; min<60; min++ ) {
+            //         base.h[h][min] = { n : 0 , t : 0, v : 0 };
+            //     }
+            // }
+            //
+            // This gives us documents with a very high branching factor and fairly deep
+            // object structure.
+
+            int zero = 0;
+            BSONObjBuilder docBuilder;
+            docBuilder.append("_id", 0);
+            docBuilder.append("a", zero);
+            BSONObjBuilder hBuilder(docBuilder.subobjStart("h"));
+            for (int h = 0; h != 24; ++h) {
+                std::string hStr = boost::lexical_cast<std::string>(h);
+                BSONObjBuilder mBuilder(hBuilder.subobjStart(hStr));
+                for (int m = 0; m != 60; ++m) {
+                    std::string mStr = boost::lexical_cast<std::string>(m);
+                    BSONObjBuilder leafBuilder(mBuilder.subobjStart(mStr));
+                    leafBuilder.append("n", zero);
+                    leafBuilder.append("t", zero);
+                    leafBuilder.append("v", zero);
+                    leafBuilder.doneFast();
+                }
+                mBuilder.doneFast();
+            }
+            hBuilder.doneFast();
+            docBuilder.append("z", zero);
+            insert(-1, docBuilder.done());
+            getLastError();
+        }
+
+    };
+
+    /*
+     * Increment one shallow (top level) fields
+     */
+    struct MmsIncShallow1 : public MMSBase {
+        void run(int t, int n) {
+            const int ops = iterations/n;
+            for (int op = 0; op != ops; ++op) {
+                update(t, BSON("_id" << 0),
+                       BSON("$inc" <<
+                            BSON("a" << 1)));
+            }
+        }
+    };
+
+    /*
+     * Increment two shallow (top level) fields.
+     */
+    struct MmsIncShallow2 : public MMSBase {
+        void run(int t, int n) {
+            const int ops = iterations/n;
+            for (int op = 0; op != ops; ++op) {
+                update(t, BSON("_id" << 0),
+                       BSON("$inc" <<
+                            BSON("a" << 1 <<
+                                 "z" << 1)));
+            }
+        }
+    };
+
+    /*
+     * Increment one deep field. The selected field is far to the right in each subtree.
+     */
+    struct MmsIncDeep1 : public MMSBase {
+        void run(int t, int n) {
+            const int ops = iterations/n;
+            for (int op = 0; op != ops; ++op) {
+                update(t, BSON("_id" << 0),
+                       BSON("$inc" <<
+                            BSON("h.23.59.n" << 1)));
+            }
+        }
+    };
+
+    /*
+     * Increment two deep fields. The selected fields are far to the right in each subtree, and
+     * share a common prefix.
+     */
+    struct MmsIncDeepSharedPath2 : public MMSBase {
+        void run(int t, int n) {
+            const int ops = iterations/n;
+            for (int op = 0; op != ops; ++op) {
+                update(t, BSON("_id" << 0),
+                       BSON("$inc" <<
+                            BSON("h.23.59.n" << 1 <<
+                                 "h.23.59.t" << 1)));
+            }
+        }
+    };
+
+    /*
+     * Increment three deep fields. The selected fields are far to the right in each subtree,
+     * and share a common prefix.
+     */
+    struct MmsIncDeepSharedPath3 : public MMSBase {
+        void run(int t, int n) {
+            const int ops = iterations/n;
+            for (int op = 0; op != ops; ++op) {
+                update(t, BSON("_id" << 0),
+                       BSON("$inc" <<
+                            BSON("h.23.59.n" << 1 <<
+                                 "h.23.59.t" << 1 <<
+                                 "h.23.59.v" << 1)));
+            }
+        }
+    };
+
+    /*
+     * Increment two deep fields. The selected fields are far to the right in each subtree, but
+     * do not share a common prefix.
+     */
+    struct MmsIncDeepDistinctPath2 : public MMSBase {
+        void run(int t, int n) {
+            const int ops = iterations/n;
+            for (int op = 0; op != ops; ++op) {
+                update(t, BSON("_id" << 0),
+                       BSON("$inc" <<
+                            BSON("h.22.59.n" << 1 <<
+                                 "h.23.59.t" << 1)));
+            }
+        }
+    };
+
+    /*
+     * Increment three deep fields. The selected fields are far to the right in each subtree,
+     * but do not share a common prefix.
+     */
+    struct MmsIncDeepDistinctPath3 : public MMSBase {
+        void run(int t, int n) {
+            const int ops = iterations/n;
+            for (int op = 0; op != ops; ++op) {
+                update(t, BSON("_id" << 0),
+                       BSON("$inc" <<
+                            BSON("h.21.59.n" << 1 <<
+                                 "h.22.59.t" << 1 <<
+                                 "h.23.59.v" << 1)));
+            }
+        }
+    };
+
+
 }
 
 namespace Queries{
@@ -895,6 +1057,13 @@ namespace{
             add< Update::IncWithIndex >();
             add< Update::IncNoIndex_QueryOnSecondary >();
             add< Update::IncWithIndex_QueryOnSecondary >();
+            add< Update::MmsIncShallow1 >();
+            add< Update::MmsIncShallow2 >();
+            add< Update::MmsIncDeep1 >();
+            add< Update::MmsIncDeepSharedPath2 >();
+            add< Update::MmsIncDeepSharedPath3 >();
+            add< Update::MmsIncDeepDistinctPath2 >();
+            add< Update::MmsIncDeepDistinctPath3 >();
 
             add< Queries::Empty >();
             add< Queries::HundredTableScans >();
