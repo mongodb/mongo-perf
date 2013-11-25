@@ -230,8 +230,7 @@ class Local(Master):
         return super(Local, self).getPortNumber()
 
     def run_benchmark(self):
-        """Runs the benchmark tests; pulls mongod
-            from github if requested
+        """Runs the benchmark tests"
         """
         if not self.opts.label:
             mongodb_version = 'unlabeled'
