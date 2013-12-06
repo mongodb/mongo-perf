@@ -242,6 +242,12 @@ class Local(Master):
 
         if not self.opts.nolaunch:
             mongodb_git = 'launch'
+
+            mongocmd = ['./tmp/mongo/mongod', '--quiet', '--dbpath',
+                        './tmp/data', '--port', self.opts.port]
+            if self.opts.nojournal:
+                mongocmd.append('--nojournal')
+
             if self.opts.mongos:
                 mongod = subprocess.Popen(['simple-setup.py',
                                             '--path=./tmp/mongo',
@@ -249,15 +255,9 @@ class Local(Master):
                 mongodb_version += '-mongos'
                 mongodb_git += '-mongos'
             else:
-                mongod = subprocess.Popen([self.opts.mongod, '--quiet',
-                                           '--dbpath', self.opts.dbpath,
-                                           '--port', mongod_port], 
-                                           stdout=open(os.devnull))
+                mongod = subprocess.Popen(mongocmd, stdout=open(os.devnull))
 
-            mongod = subprocess.Popen([self.opts.mongod, '--quiet',
-                                           '--dbpath', self.opts.dbpath,
-                                           '--port', mongod_port],
-                                           stdout=open(os.devnull))
+            mongod = subprocess.Popen(mongocmd, stdout=open(os.devnull))
 
             self.logger.info("pid: {0}".format(mongod.pid))
 
@@ -326,6 +326,7 @@ class Runner(Master):
             self.mongod_handle = mongomgr.mongod(mongod=mongod_path,
                                                 port=mongod_port,
                                                 logger=self.logger,
+                                                nojournal=self.nojournal,
                                                 config_path=self.opts.config_path)
             self.mongod_handle.__enter__()
             self.processes.append(self.mongod_handle.proc)
@@ -431,6 +432,9 @@ def parse_options():
                          type='string', default='')
     optparser.add_option('-f', '--config', dest='config_path',
                          help='Path to config file for mongod instance',
+                         type='string', default=None)
+    optparser.add_option('-j', '--journal', dest='nojournal',
+                         help='Disable jorunaling',
                          type='string', default=None)
     return optparser.parse_args()
 

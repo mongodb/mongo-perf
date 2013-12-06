@@ -24,12 +24,13 @@ import logging.handlers
 
 
 class mongod(object):
-    def __init__(self, mongod="mongod", logger=None, port=27017, config_path=None, **kwargs):
+    def __init__(self, mongod="mongod", logger=None, nojournal=None, port=27017, config_path=None, **kwargs):
         self.mongod = mongod
         self.logger = logger
         self.kwargs = kwargs
         self.port = port
         self.proc = None
+        self.nojournal = nojournal
         self.config_path = config_path
 
     def __enter__(self):
@@ -82,6 +83,10 @@ class mongod(object):
         os.makedirs(dbpath)
         argv = [self.mongod, "--port",  self.port, "--dbpath",
                 dbpath, "--logpath", logpath]
+
+        if self.nojournal is not None:
+            argv.append("--nojournal")
+
         if self.config_path is not None:
             argv.append("--config")
             argv.append(self.config_path)
