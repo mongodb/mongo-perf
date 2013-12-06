@@ -1101,7 +1101,7 @@ int main(int argc, const char **argv){
         all_options.add_options()
             ("connection-string",   po::value<string>()->required(),    "Connection string")
             ("iterations",          po::value<int>()->required(),       "Number of iterations")
-            ("multi_db",            po::bool_switch(),                  "MultiDB mode")
+            ("multi-db",            po::bool_switch(),                  "MultiDB mode")
             ("username",            po::value<string>(),                "Username (auth)")
             ("password",            po::value<string>(),                "Password (auth)");
 
@@ -1129,8 +1129,8 @@ int main(int argc, const char **argv){
         iterations = options_vars["iterations"].as<int>();
 
         // Optional options.
-        if (options_vars.count("multi_db")) {
-            multi_db = options_vars["multi_db"].as<bool>();
+        if (options_vars.count("multi-db")) {
+            multi_db = options_vars["multi-db"].as<bool>();
         }
  
         if (options_vars.count("username")) {

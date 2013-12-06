@@ -275,7 +275,7 @@ class Local(Master):
                         '--username', self.opts.username, '--password',
                         self.opts.password]
             if self.opts.multidb:
-                bench_cmd.append('--multi_db')
+                bench_cmd.append('--multi-db')
  
             benchmark = subprocess.Popen(bench_cmd, stdout=subprocess.PIPE)
             self.logger.info("Started benchmark args: {0}".format(self.opts))
@@ -350,7 +350,7 @@ class Runner(Master):
             self.logger.info("Running single db benchmark tests...")
             single_db_benchmark_results = single_db_benchmark.communicate()[0]
 
-            bench_cmd.append('--multi_db')
+            bench_cmd.append('--multi-db')
             multi_db_benchmark = subprocess.Popen(bench_cmd,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             self.logger.info("Running multi db benchmark tests...")
