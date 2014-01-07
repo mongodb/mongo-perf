@@ -1186,7 +1186,120 @@ namespace Queries{
         }
     };
 
+namespace {
 
+    // Static array of field names to help with wide projection tests.  There should be 26 * 26 =
+    // 676 distinct field names here.
+    const std::string fieldNames[] = {
+        "aa", "ba", "ca", "da", "ea", "fa", "ga", "ha", "ia", "ja", "ka", "la", "ma", "na", "oa",
+        "pa", "qa", "ra", "sa", "ta", "ua", "va", "wa", "xa", "ya", "za", "ab", "bb", "cb", "db",
+        "eb", "fb", "gb", "hb", "ib", "jb", "kb", "lb", "mb", "nb", "ob", "pb", "qb", "rb", "sb",
+        "tb", "ub", "vb", "wb", "xb", "yb", "zb", "ac", "bc", "cc", "dc", "ec", "fc", "gc", "hc",
+        "ic", "jc", "kc", "lc", "mc", "nc", "oc", "pc", "qc", "rc", "sc", "tc", "uc", "vc", "wc",
+        "xc", "yc", "zc", "ad", "bd", "cd", "dd", "ed", "fd", "gd", "hd", "id", "jd", "kd", "ld",
+        "md", "nd", "od", "pd", "qd", "rd", "sd", "td", "ud", "vd", "wd", "xd", "yd", "zd", "ae",
+        "be", "ce", "de", "ee", "fe", "ge", "he", "ie", "je", "ke", "le", "me", "ne", "oe", "pe",
+        "qe", "re", "se", "te", "ue", "ve", "we", "xe", "ye", "ze", "af", "bf", "cf", "df", "ef",
+        "ff", "gf", "hf", "if", "jf", "kf", "lf", "mf", "nf", "of", "pf", "qf", "rf", "sf", "tf",
+        "uf", "vf", "wf", "xf", "yf", "zf", "ag", "bg", "cg", "dg", "eg", "fg", "gg", "hg", "ig",
+        "jg", "kg", "lg", "mg", "ng", "og", "pg", "qg", "rg", "sg", "tg", "ug", "vg", "wg", "xg",
+        "yg", "zg", "ah", "bh", "ch", "dh", "eh", "fh", "gh", "hh", "ih", "jh", "kh", "lh", "mh",
+        "nh", "oh", "ph", "qh", "rh", "sh", "th", "uh", "vh", "wh", "xh", "yh", "zh", "ai", "bi",
+        "ci", "di", "ei", "fi", "gi", "hi", "ii", "ji", "ki", "li", "mi", "ni", "oi", "pi", "qi",
+        "ri", "si", "ti", "ui", "vi", "wi", "xi", "yi", "zi", "aj", "bj", "cj", "dj", "ej", "fj",
+        "gj", "hj", "ij", "jj", "kj", "lj", "mj", "nj", "oj", "pj", "qj", "rj", "sj", "tj", "uj",
+        "vj", "wj", "xj", "yj", "zj", "ak", "bk", "ck", "dk", "ek", "fk", "gk", "hk", "ik", "jk",
+        "kk", "lk", "mk", "nk", "ok", "pk", "qk", "rk", "sk", "tk", "uk", "vk", "wk", "xk", "yk",
+        "zk", "al", "bl", "cl", "dl", "el", "fl", "gl", "hl", "il", "jl", "kl", "ll", "ml", "nl",
+        "ol", "pl", "ql", "rl", "sl", "tl", "ul", "vl", "wl", "xl", "yl", "zl", "am", "bm", "cm",
+        "dm", "em", "fm", "gm", "hm", "im", "jm", "km", "lm", "mm", "nm", "om", "pm", "qm", "rm",
+        "sm", "tm", "um", "vm", "wm", "xm", "ym", "zm", "an", "bn", "cn", "dn", "en", "fn", "gn",
+        "hn", "in", "jn", "kn", "ln", "mn", "nn", "on", "pn", "qn", "rn", "sn", "tn", "un", "vn",
+        "wn", "xn", "yn", "zn", "ao", "bo", "co", "do", "eo", "fo", "go", "ho", "io", "jo", "ko",
+        "lo", "mo", "no", "oo", "po", "qo", "ro", "so", "to", "uo", "vo", "wo", "xo", "yo", "zo",
+        "ap", "bp", "cp", "dp", "ep", "fp", "gp", "hp", "ip", "jp", "kp", "lp", "mp", "np", "op",
+        "pp", "qp", "rp", "sp", "tp", "up", "vp", "wp", "xp", "yp", "zp", "aq", "bq", "cq", "dq",
+        "eq", "fq", "gq", "hq", "iq", "jq", "kq", "lq", "mq", "nq", "oq", "pq", "qq", "rq", "sq",
+        "tq", "uq", "vq", "wq", "xq", "yq", "zq", "ar", "br", "cr", "dr", "er", "fr", "gr", "hr",
+        "ir", "jr", "kr", "lr", "mr", "nr", "or", "pr", "qr", "rr", "sr", "tr", "ur", "vr", "wr",
+        "xr", "yr", "zr", "as", "bs", "cs", "ds", "es", "fs", "gs", "hs", "is", "js", "ks", "ls",
+        "ms", "ns", "os", "ps", "qs", "rs", "ss", "ts", "us", "vs", "ws", "xs", "ys", "zs", "at",
+        "bt", "ct", "dt", "et", "ft", "gt", "ht", "it", "jt", "kt", "lt", "mt", "nt", "ot", "pt",
+        "qt", "rt", "st", "tt", "ut", "vt", "wt", "xt", "yt", "zt", "au", "bu", "cu", "du", "eu",
+        "fu", "gu", "hu", "iu", "ju", "ku", "lu", "mu", "nu", "ou", "pu", "qu", "ru", "su", "tu",
+        "uu", "vu", "wu", "xu", "yu", "zu", "av", "bv", "cv", "dv", "ev", "fv", "gv", "hv", "iv",
+        "jv", "kv", "lv", "mv", "nv", "ov", "pv", "qv", "rv", "sv", "tv", "uv", "vv", "wv", "xv",
+        "yv", "zv", "aw", "bw", "cw", "dw", "ew", "fw", "gw", "hw", "iw", "jw", "kw", "lw", "mw",
+        "nw", "ow", "pw", "qw", "rw", "sw", "tw", "uw", "vw", "ww", "xw", "yw", "zw", "ax", "bx",
+        "cx", "dx", "ex", "fx", "gx", "hx", "ix", "jx", "kx", "lx", "mx", "nx", "ox", "px", "qx",
+        "rx", "sx", "tx", "ux", "vx", "wx", "xx", "yx", "zx", "ay", "by", "cy", "dy", "ey", "fy",
+        "gy", "hy", "iy", "jy", "ky", "ly", "my", "ny", "oy", "py", "qy", "ry", "sy", "ty", "uy",
+        "vy", "wy", "xy", "yy", "zy", "az", "bz", "cz", "dz", "ez", "fz", "gz", "hz", "iz", "jz",
+        "kz", "lz", "mz", "nz", "oz", "pz", "qz", "rz", "sz", "tz", "uz", "vz", "wz", "xz", "yz",
+        "zz"
+    };
+
+}
+
+    /*
+     * Issues queries with a projection on the 'key' field and iterates the results
+     * The documents are inserted with many fields, so this should project out all of them but "key"
+     * and "_id"
+     */
+    struct ProjectionWideDocNarrowProjection : Base{
+        void reset() {
+            clearDB();
+            for (int i=0; i < iterations; i++){
+                // NOTE: This will be slow, but this part of the test is not timed, so that's ok
+                BSONObjBuilder b;
+                b.append("key", i);
+                for (int j=0; j < sizeof(fieldNames) / sizeof(char*); j++){
+                    b.append(fieldNames[j], 1);
+                }
+                insert(-1, b.obj());
+            }
+            getLastError();
+        }
+
+        void run(int threadId, int totalThreads){
+            int batchSize = iterations / totalThreads;
+            auto_ptr<DBClientCursor> cursor = query(threadId,
+                                                    BSON("key" << GTE << batchSize * threadId
+                                                               << LT << batchSize * (threadId + 1)),
+                                                    0, /* limit */
+                                                    0, /* skip */
+                                                    BSON("key" << 1) /* projection */);
+            cursor->itcount();
+        }
+    };
+
+    /*
+     * Issues findOne queries with a projection on the 'key' field
+     * The documents are inserted with many fields, so this should project out all of them but "key"
+     * and "_id"
+     */
+    struct ProjectionWideDocNarrowProjectionFindOne : Base{
+        void reset() {
+            clearDB();
+            for (int i=0; i < iterations; i++){
+                // NOTE: This will be slow, but this part of the test is not timed, so that's ok
+                BSONObjBuilder b;
+                b.append("key", i);
+                for (int j=0; j < sizeof(fieldNames) / sizeof(char*); j++){
+                    b.append(fieldNames[j], 1);
+                }
+                insert(-1, b.obj());
+            }
+            getLastError();
+        }
+
+        void run(int threadId, int totalThreads){
+            int batchSize = iterations / totalThreads;
+            for (int i = threadId * batchSize; i < (threadId + 1) * batchSize; i++){
+                findOne(threadId, BSON("key" << i), BSON("key" << 1));
+            }
+        }
+    };
 }
 
 namespace Commands {
@@ -1306,6 +1419,8 @@ namespace{
             add< Queries::ProjectionSingleFindOne >();
             add< Queries::ProjectionUnderscoreId >();
             add< Queries::ProjectionUnderscoreIdFindOne >();
+            add< Queries::ProjectionWideDocNarrowProjection >();
+            add< Queries::ProjectionWideDocNarrowProjectionFindOne >();
 
             add< Commands::CountsFullCollection >();
             add< Commands::CountsIntIDRange >();
