@@ -88,15 +88,16 @@ namespace {
         return;
     }
 
-    void findOne(int thread, const BSONObj& obj) {
+    void findOne(int thread, const BSONObj& obj, const BSONObj& projection = BSONObj()) {
         assert(thread != -1); // cant run on all conns
-        _conn[thread].findOne(ns[multi_db?thread:0], obj);
+        _conn[thread].findOne(ns[multi_db?thread:0], obj, &projection);
         return;
     }
 
-    auto_ptr<DBClientCursor> query(int thread, const Query& q, int limit=0, int skip=0) {
+    auto_ptr<DBClientCursor> query(int thread, const Query& q, int limit=0, int skip=0,
+                                   const BSONObj& projection = BSONObj()) {
         assert(thread != -1); // cant run on all conns
-        return _conn[thread].query(ns[multi_db?thread:0], q, limit, skip);
+        return _conn[thread].query(ns[multi_db?thread:0], q, limit, skip, &projection);
     }
 
     bool command(int thread, const BSONObj& obj) {
