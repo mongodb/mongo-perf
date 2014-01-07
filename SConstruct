@@ -7,8 +7,10 @@ env.Append(CPPFLAGS=['-pthread', '-O3', '-g'])
 env.Append(LINKFLAGS=['-pthread', '-g'])
 
 if 'darwin' == os.sys.platform:
-    env.Append(CPPPATH=['/opt/local/include'])
-    env.Append(LIBPATH=['/opt/local/lib'])
+    if os.path.exists('/opt/local/include'):
+        env.Append(CPPPATH=['/opt/local/include'])
+    if os.path.exists('/opt/local/lib'):
+        env.Append(LIBPATH=['/opt/local/lib'])
 
 env.Append(CPPPATH=['mongo-cxx-driver/src'])
 env.Append(CPPPATH=['mongo-cxx-driver/src/mongo'])
