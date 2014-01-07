@@ -1140,6 +1140,53 @@ namespace Queries{
         }
     };
 
+    /*
+     * Issues queries with a projection to remove the '_id' field and iterates the results
+     * The documents are inserted with the field 'x, so this should project out '_id' and leave 'x'
+     */
+    struct ProjectionUnderscoreId : Base{
+        void reset() {
+            clearDB();
+            for (int i=0; i < iterations; i++){
+                insert(-1, BSON("x" << i));
+            }
+            getLastError();
+        }
+
+        void run(int threadId, int totalThreads){
+            int batchSize = iterations / totalThreads;
+            auto_ptr<DBClientCursor> cursor = query(threadId,
+                                                    BSON("x" << GTE << batchSize * threadId
+                                                             << LT << batchSize * (threadId + 1)),
+                                                    0, /* limit */
+                                                    0, /* skip */
+                                                    BSON("_id" << 0) /* projection */);
+            cursor->itcount();
+        }
+    };
+
+    /*
+     * Issues findOne queries with a projection to remove the '_id' field
+     * The documents are inserted with the field 'x, so this should project out '_id' and leave 'x'
+     */
+    struct ProjectionUnderscoreIdFindOne : Base{
+        void reset() {
+            clearDB();
+            for (int i=0; i < iterations; i++){
+                insert(-1, BSON("x" << i));
+            }
+            getLastError();
+        }
+
+        void run(int threadId, int totalThreads){
+            int batchSize = iterations / totalThreads;
+            for (int i = threadId * batchSize; i < (threadId + 1) * batchSize; i++){
+                findOne(threadId, BSON("x" << i), BSON("_id" << 0));
+            }
+        }
+    };
+
+
 }
 
 namespace Commands {
@@ -1257,6 +1304,8 @@ namespace{
             add< Queries::ProjectionNoopFindOne >();
             add< Queries::ProjectionSingle >();
             add< Queries::ProjectionSingleFindOne >();
+            add< Queries::ProjectionUnderscoreId >();
+            add< Queries::ProjectionUnderscoreIdFindOne >();
 
             add< Commands::CountsFullCollection >();
             add< Commands::CountsIntIDRange >();
