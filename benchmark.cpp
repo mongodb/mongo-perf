@@ -1048,6 +1048,52 @@ namespace Queries{
         }
     };
 
+    /*
+     * Issues queries with a projection on the 'x' field and iterates the results
+     * The documents are inserted with only the field 'x', so this should not project out anything
+     */
+    struct ProjectionNoop : Base{
+        void reset() {
+            clearDB();
+            for (int i=0; i < iterations; i++){
+                insert(-1, BSON("x" << i));
+            }
+            getLastError();
+        }
+
+        void run(int threadId, int totalThreads){
+            int batchSize = iterations / totalThreads;
+            auto_ptr<DBClientCursor> cursor = query(threadId,
+                                                    BSON("x" << GTE << batchSize * threadId
+                                                             << LT << batchSize * (threadId + 1)),
+                                                    0, /* limit */
+                                                    0, /* skip */
+                                                    BSON("x" << 1) /* projection */);
+            cursor->itcount();
+        }
+    };
+
+    /*
+     * Issues findOne queries with a projection on the 'x' field
+     * The documents are inserted with only the field 'x', so this should not project out anything
+     */
+    struct ProjectionNoopFindOne : Base{
+        void reset() {
+            clearDB();
+            for (int i=0; i < iterations; i++){
+                insert(-1, BSON("x" << i));
+            }
+            getLastError();
+        }
+
+        void run(int threadId, int totalThreads){
+            int batchSize = iterations / totalThreads;
+            for (int i = threadId * batchSize; i < (threadId + 1) * batchSize; i++){
+                findOne(threadId, BSON("x" << i), BSON("x" << 1));
+            }
+        }
+    };
+
 }
 
 namespace Commands {
@@ -1161,6 +1207,8 @@ namespace{
             add< Queries::TwoIntsBothGood >();
             add< Queries::TwoIntsFirstGood >();
             add< Queries::TwoIntsSecondGood >();
+            add< Queries::ProjectionNoop >();
+            add< Queries::ProjectionNoopFindOne >();
 
             add< Commands::CountsFullCollection >();
             add< Commands::CountsIntIDRange >();
