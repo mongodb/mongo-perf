@@ -1300,6 +1300,64 @@ namespace {
             }
         }
     };
+
+    /*
+     * Issues queries with a projection excluding the 'key' field and iterates the results
+     * The documents are inserted with many fields, so this should include all of them but "key"
+     */
+    struct ProjectionWideDocWideProjection : Base{
+        void reset() {
+            clearDB();
+            for (int i=0; i < iterations; i++){
+                // NOTE: This will be slow, but this part of the test is not timed, so that's ok
+                BSONObjBuilder b;
+                b.append("key", i);
+                for (int j=0; j < sizeof(fieldNames) / sizeof(char*); j++){
+                    b.append(fieldNames[j], 1);
+                }
+                insert(-1, b.obj());
+            }
+            getLastError();
+        }
+
+        void run(int threadId, int totalThreads){
+            int batchSize = iterations / totalThreads;
+            auto_ptr<DBClientCursor> cursor = query(threadId,
+                                                    BSON("key" << GTE << batchSize * threadId
+                                                               << LT << batchSize * (threadId + 1)),
+                                                    0, /* limit */
+                                                    0, /* skip */
+                                                    BSON("key" << 0) /* projection */);
+            cursor->itcount();
+        }
+    };
+
+    /*
+     * Issues findOne queries with a projection excluding the 'key' field
+     * The documents are inserted with many fields, so this should include all of them but "key"
+     */
+    struct ProjectionWideDocWideProjectionFindOne : Base{
+        void reset() {
+            clearDB();
+            for (int i=0; i < iterations; i++){
+                // NOTE: This will be slow, but this part of the test is not timed, so that's ok
+                BSONObjBuilder b;
+                b.append("key", i);
+                for (int j=0; j < sizeof(fieldNames) / sizeof(char*); j++){
+                    b.append(fieldNames[j], 1);
+                }
+                insert(-1, b.obj());
+            }
+            getLastError();
+        }
+
+        void run(int threadId, int totalThreads){
+            int batchSize = iterations / totalThreads;
+            for (int i = threadId * batchSize; i < (threadId + 1) * batchSize; i++){
+                findOne(threadId, BSON("key" << i), BSON("key" << 0));
+            }
+        }
+    };
 }
 
 namespace Commands {
@@ -1421,6 +1479,8 @@ namespace{
             add< Queries::ProjectionUnderscoreIdFindOne >();
             add< Queries::ProjectionWideDocNarrowProjection >();
             add< Queries::ProjectionWideDocNarrowProjectionFindOne >();
+            add< Queries::ProjectionWideDocWideProjection >();
+            add< Queries::ProjectionWideDocWideProjectionFindOne >();
 
             add< Commands::CountsFullCollection >();
             add< Commands::CountsIntIDRange >();
