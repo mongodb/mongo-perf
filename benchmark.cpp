@@ -77,6 +77,11 @@ namespace {
         }
     }
 
+    void remove(int thread, const BSONObj& qObj, bool onlyOne=false) {
+        assert(thread != -1);
+        _conn[thread].remove(ns[multi_db?thread:0], qObj, onlyOne);
+    }
+
     void update(int thread, const BSONObj& qObj, const BSONObj uObj, bool upsert=false, bool multi=false) {
         assert(thread != -1); // cant run on all conns
         _conn[thread].update(ns[multi_db?thread:0], qObj, uObj, upsert, multi);
@@ -678,6 +683,78 @@ namespace Update{
 
 }
 
+namespace Remove {
+    struct Base {
+        bool readOnly() { return false; };
+    };
+
+    struct IntID: public Base {
+        void reset() {
+            clearDB();
+            for (int i = 0; i < iterations; ++i) {
+                insert(-1, BSON("_id" << i));
+            }
+            getLastError();
+        }
+ 
+        void run(int t, int n) {
+            int base = t * (iterations / n);
+            for (int i = 0; i < iterations / n; ++i) {
+                remove(t, BSON("_id" << base + i));
+            }
+        }
+    };
+
+    struct IntIDRange : public Base {
+        void reset() {
+            clearDB();
+            for (int i = 0; i < iterations; ++i) {
+                insert(-1, BSON("_id" << i));
+            }
+            getLastError();
+        }
+
+        void run(int t, int n) {
+            int chunk = iterations / n;
+            remove(t, BSON("_id" << GTE << chunk * t << LT << chunk * (t + 1)));
+        }
+    };
+
+    struct IntNonID: public Base {
+        void reset() {
+            clearDB();
+            ensureIndex(-1, BSON("x" << 1));
+            for (int i = 0; i < iterations; ++i) {
+                insert(-1, BSON("x" << i));
+            }
+            getLastError();
+        }
+
+        void run(int t, int n) {
+            int base = t * (iterations / n);
+            for (int i = 0; i < iterations / n; ++i) {
+                remove(t, BSON("x" << base + i));
+            }
+        }
+    };
+
+    struct IntNonIDRange: public Base {
+        void reset() {
+            clearDB();
+            ensureIndex(-1, BSON("x" << 1));
+            for (int i = 0; i < iterations; ++i) {
+                insert(-1, BSON("x" << i));
+            }
+            getLastError();
+        }
+
+        void run(int t, int n) {
+            int chunk = iterations / n;
+            remove(t, BSON("x" << GTE << chunk * t << LT << chunk * (t + 1)));
+        }
+    };
+}
+
 namespace Queries{
     struct Base{
         bool readOnly() { return true; }
@@ -1065,6 +1142,11 @@ namespace{
             add< Update::MmsIncDeepDistinctPath2 >();
             add< Update::MmsIncDeepDistinctPath3 >();
 
+            add< Remove::IntID >();
+            add< Remove::IntIDRange >();
+            add< Remove::IntNonID >();
+            add< Remove::IntNonIDRange >();
+
             add< Queries::Empty >();
             add< Queries::HundredTableScans >();
             add< Queries::IntID >();
@@ -1082,7 +1164,6 @@ namespace{
             add< Commands::CountsFullCollection >();
             add< Commands::CountsIntIDRange >();
             add< Commands::FindAndModifyInserts >();
-
         }
     } theTestSuite;
 }
