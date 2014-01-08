@@ -1358,6 +1358,133 @@ namespace {
             }
         }
     };
+
+namespace {
+    // Helper class for building and projecting deeply nested document
+    struct NestedProjectionTests : Base{
+
+        std::string projectionKey;
+
+        // Depth of nested document to insert
+        virtual int nestedDepth() = 0;
+
+        // Depth of document to exclude
+        virtual int projectionDepth() = 0;
+
+        void reset() {
+            clearDB();
+            projectionKey = buildNestedProjectionKey(projectionDepth());
+            for (int i=0; i < iterations; i++){
+                // NOTE: This will be slow, but this part of the test is not timed, so that's ok
+                BSONObjBuilder b;
+                b.append("key", i);
+                addNestedDocument(nestedDepth(), &b);
+                insert(-1, b.obj());
+            }
+            getLastError();
+        }
+
+        virtual void run(int threadId, int totalThreads) = 0;
+
+        // Adds a nested document of depth "depth" to the given builder.
+        void addNestedDocument(int depth, BSONObjBuilder *builder) {
+            if (depth == 0) {
+                return;
+            }
+            BSONObjBuilder nextBuilder(builder->subobjStart("a"));
+            addNestedDocument(depth - 1, &nextBuilder);
+            nextBuilder.done();
+            builder->append("b", 1);
+            return;
+        }
+
+        // Returns a string referencing an element at "depth".  Should use the same or lesser "depth" as
+        // what was passed into the function above.
+        std::string buildNestedProjectionKey(int depth) {
+            if (depth == 1) {
+                return "a";
+            }
+            else {
+                return std::string("a.").append(buildNestedProjectionKey(depth - 1));
+            }
+        }
+    };
+
+    struct NestedProjectionFindOne : NestedProjectionTests{
+        void run(int threadId, int totalThreads){
+            int batchSize = iterations / totalThreads;
+            for (int i = threadId * batchSize; i < (threadId + 1) * batchSize; i++){
+                findOne(threadId, BSON("key" << i), BSON(projectionKey << 0));
+            }
+        }
+    };
+
+    struct NestedProjectionCursor : NestedProjectionTests{
+        void run(int threadId, int totalThreads){
+            int batchSize = iterations / totalThreads;
+            auto_ptr<DBClientCursor> cursor = query(threadId,
+                                                    BSON("key" << GTE << batchSize * threadId
+                                                               << LT << batchSize * (threadId + 1)),
+                                                    0, /* limit */
+                                                    0, /* skip */
+                                                    BSON(projectionKey << 0) /* projection */);
+            cursor->itcount();
+        }
+    };
+
+}
+
+    /*
+     * Tests for different levels of projection on different levels of nested documents
+     */
+    struct Projection100Nested100Projection : NestedProjectionCursor{
+        int nestedDepth() { return 100; }
+        int projectionDepth() { return 100; }
+    };
+    struct Projection100Nested100ProjectionFindOne : NestedProjectionFindOne{
+        int nestedDepth() { return 100; }
+        int projectionDepth() { return 100; }
+    };
+    struct Projection50Nested50Projection : NestedProjectionCursor{
+        int nestedDepth() { return 50; }
+        int projectionDepth() { return 50; }
+    };
+    struct Projection50Nested50ProjectionFindOne : NestedProjectionFindOne{
+        int nestedDepth() { return 50; }
+        int projectionDepth() { return 50; }
+    };
+    struct Projection10Nested10Projection : NestedProjectionCursor{
+        int nestedDepth() { return 10; }
+        int projectionDepth() { return 10; }
+    };
+    struct Projection10Nested10ProjectionFindOne : NestedProjectionFindOne{
+        int nestedDepth() { return 10; }
+        int projectionDepth() { return 10; }
+    };
+    struct Projection100Nested50Projection : NestedProjectionCursor{
+        int nestedDepth() { return 100; }
+        int projectionDepth() { return 50; }
+    };
+    struct Projection100Nested50ProjectionFindOne : NestedProjectionFindOne{
+        int nestedDepth() { return 100; }
+        int projectionDepth() { return 50; }
+    };
+    struct Projection100Nested10Projection : NestedProjectionCursor{
+        int nestedDepth() { return 100; }
+        int projectionDepth() { return 10; }
+    };
+    struct Projection100Nested10ProjectionFindOne : NestedProjectionFindOne{
+        int nestedDepth() { return 100; }
+        int projectionDepth() { return 10; }
+    };
+    struct Projection50Nested10Projection : NestedProjectionCursor{
+        int nestedDepth() { return 50; }
+        int projectionDepth() { return 10; }
+    };
+    struct Projection50Nested10ProjectionFindOne : NestedProjectionFindOne{
+        int nestedDepth() { return 50; }
+        int projectionDepth() { return 10; }
+    };
 }
 
 namespace Commands {
@@ -1481,6 +1608,18 @@ namespace{
             add< Queries::ProjectionWideDocNarrowProjectionFindOne >();
             add< Queries::ProjectionWideDocWideProjection >();
             add< Queries::ProjectionWideDocWideProjectionFindOne >();
+            add< Queries::Projection100Nested100Projection >();
+            add< Queries::Projection100Nested100ProjectionFindOne >();
+            add< Queries::Projection50Nested50Projection >();
+            add< Queries::Projection50Nested50ProjectionFindOne >();
+            add< Queries::Projection10Nested10Projection >();
+            add< Queries::Projection10Nested10ProjectionFindOne >();
+            add< Queries::Projection100Nested50Projection >();
+            add< Queries::Projection100Nested50ProjectionFindOne >();
+            add< Queries::Projection100Nested10Projection >();
+            add< Queries::Projection100Nested10ProjectionFindOne >();
+            add< Queries::Projection50Nested10Projection >();
+            add< Queries::Projection50Nested10ProjectionFindOne >();
 
             add< Commands::CountsFullCollection >();
             add< Commands::CountsIntIDRange >();
