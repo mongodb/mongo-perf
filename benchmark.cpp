@@ -1598,6 +1598,52 @@ namespace Commands {
             }
         }
     };
+
+    /*
+     * Performs a distinct command to get the total number of distinct values for the field "x"
+     */
+    struct DistinctWithIndex {
+        bool readOnly() { return true; }
+        void reset() {
+            clearDB();
+            ensureIndex(-1, BSON("x" << 1));
+            for (int i = 0; i < iterations; i++) {
+                insert(-1, BSON("x" << 1));
+                insert(-1, BSON("x" << 2));
+                insert(-1, BSON("x" << 3));
+            }
+            getLastError();
+        }
+        void run(int threadId, int totalThreads){
+            for (int i = 0; i < iterations / totalThreads; i++) {
+                command(threadId, BSON("distinct" << _coll << "key" << "x" <<
+                                       "query" << BSON("x" << 2)));
+            }
+        }
+    };
+
+    /*
+     * Performs a distinct command to get the total number of distinct values for the field "x"
+     */
+    struct DistinctWithoutIndex {
+        bool readOnly() { return true; }
+        void reset() {
+            clearDB();
+            for (int i = 0; i < iterations; i++) {
+                insert(-1, BSON("x" << 1));
+                insert(-1, BSON("x" << 2));
+                insert(-1, BSON("x" << 3));
+            }
+            getLastError();
+        }
+        void run(int threadId, int totalThreads){
+            for (int i = 0; i < iterations / totalThreads; i++) {
+                command(threadId, BSON("distinct" << _coll << "key" << "x" <<
+                                       "query" << BSON("x" << 2)));
+            }
+        }
+    };
+
 } // namespace Commands
 
 namespace{
@@ -1679,6 +1725,9 @@ namespace{
             add< Commands::CountsFullCollection >();
             add< Commands::CountsIntIDRange >();
             add< Commands::FindAndModifyInserts >();
+            add< Commands::DistinctWithIndex >();
+            add< Commands::DistinctWithoutIndex >();
+
         }
     } theTestSuite;
 }
