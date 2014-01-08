@@ -1485,6 +1485,59 @@ namespace {
         int nestedDepth() { return 50; }
         int projectionDepth() { return 10; }
     };
+
+    /*
+     * Issues queries with an $elemMatch projection on the { 'x' : 2 } document and iterates the
+     * results
+     */
+    struct ProjectionElemMatch : Base{
+        void reset() {
+            clearDB();
+            for (int i=0; i < iterations; i++){
+                insert(-1, BSON("x" << BSON_ARRAY(BSON("x" << 1) <<
+                                                  BSON("x" << 2) <<
+                                                  BSON("x" << 3))));
+            }
+            getLastError();
+        }
+
+        void run(int threadId, int totalThreads){
+            int batchSize = iterations / totalThreads;
+            auto_ptr<DBClientCursor> cursor = query(threadId,
+                                                    BSON("x" << GTE << batchSize * threadId
+                                                             << LT << batchSize * (threadId + 1)),
+                                                    0, /* limit */
+                                                    0, /* skip */
+                                                    BSON("x" <<
+                                                         BSON("$elemMatch" <<
+                                                              BSON("x" << 2))) /* projection */);
+            cursor->itcount();
+        }
+    };
+
+    /*
+     * Issues findOne queries with an $elemMatch projection on the { 'x' : 2 } document
+     */
+    struct ProjectionElemMatchFindOne : Base{
+        void reset() {
+            clearDB();
+            for (int i=0; i < iterations; i++){
+                insert(-1, BSON("x" << BSON_ARRAY(BSON("x" << 1) <<
+                                                  BSON("x" << 2) <<
+                                                  BSON("x" << 3))));
+            }
+            getLastError();
+        }
+
+        void run(int threadId, int totalThreads){
+            int batchSize = iterations / totalThreads;
+            for (int i = threadId * batchSize; i < (threadId + 1) * batchSize; i++){
+                findOne(threadId, BSON("x" << i),
+                        BSON("x" << BSON("$elemMatch" << BSON("x" << 2))));
+            }
+        }
+    };
+
 }
 
 namespace Commands {
@@ -1620,6 +1673,8 @@ namespace{
             add< Queries::Projection100Nested10ProjectionFindOne >();
             add< Queries::Projection50Nested10Projection >();
             add< Queries::Projection50Nested10ProjectionFindOne >();
+            add< Queries::ProjectionElemMatch >();
+            add< Queries::ProjectionElemMatchFindOne >();
 
             add< Commands::CountsFullCollection >();
             add< Commands::CountsIntIDRange >();
