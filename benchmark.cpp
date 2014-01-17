@@ -1239,6 +1239,12 @@ namespace {
         "zz"
     };
 
+    // Helper template to get the number of elements in the fieldNames array in a cross platform way
+    template <typename T, size_t N>
+    size_t countof( T (&array)[N] )
+    {
+        return N;
+    };
 }
 
     /*
@@ -1253,7 +1259,7 @@ namespace {
                 // NOTE: This will be slow, but this part of the test is not timed, so that's ok
                 BSONObjBuilder b;
                 b.append("key", i);
-                for (int j=0; j < sizeof(fieldNames) / sizeof(char*); j++){
+                for (int j=0; j < countof(fieldNames); j++){
                     b.append(fieldNames[j], 1);
                 }
                 insert(-1, b.obj());
@@ -1285,7 +1291,7 @@ namespace {
                 // NOTE: This will be slow, but this part of the test is not timed, so that's ok
                 BSONObjBuilder b;
                 b.append("key", i);
-                for (int j=0; j < sizeof(fieldNames) / sizeof(char*); j++){
+                for (int j=0; j < countof(fieldNames); j++){
                     b.append(fieldNames[j], 1);
                 }
                 insert(-1, b.obj());
@@ -1312,7 +1318,7 @@ namespace {
                 // NOTE: This will be slow, but this part of the test is not timed, so that's ok
                 BSONObjBuilder b;
                 b.append("key", i);
-                for (int j=0; j < sizeof(fieldNames) / sizeof(char*); j++){
+                for (int j=0; j < countof(fieldNames); j++){
                     b.append(fieldNames[j], 1);
                 }
                 insert(-1, b.obj());
@@ -1343,7 +1349,7 @@ namespace {
                 // NOTE: This will be slow, but this part of the test is not timed, so that's ok
                 BSONObjBuilder b;
                 b.append("key", i);
-                for (int j=0; j < sizeof(fieldNames) / sizeof(char*); j++){
+                for (int j=0; j < countof(fieldNames); j++){
                     b.append(fieldNames[j], 1);
                 }
                 insert(-1, b.obj());
