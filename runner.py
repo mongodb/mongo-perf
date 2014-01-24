@@ -248,15 +248,6 @@ class Local(Master):
             if self.opts.nojournal:
                 mongocmd.append('--nojournal')
 
-            if self.opts.mongos:
-                mongod = subprocess.Popen(['simple-setup.py',
-                                            '--path=./tmp/mongo',
-                                            '--port=' + mongod_port])
-                mongodb_version += '-mongos'
-                mongodb_git += '-mongos'
-            else:
-                mongod = subprocess.Popen(mongocmd, stdout=open(os.devnull))
-
             mongod = subprocess.Popen(mongocmd, stdout=open(os.devnull))
 
             self.logger.info("pid: {0}".format(mongod.pid))
@@ -408,9 +399,6 @@ def parse_options():
     optparser.add_option('-n', '--iterations', dest='iterations',
                          help='number of iterations to test',
                          type='string', default='100000')
-    optparser.add_option('-s', '--mongos', dest='mongos',
-                         help='send all requests through mongos',
-                         action='store_true', default=False)
     optparser.add_option('--nolaunch', dest='nolaunch',
                          help='use mongod already running on port',
                          action='store_true', default=False)
