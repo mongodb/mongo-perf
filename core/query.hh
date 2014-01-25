@@ -327,6 +327,7 @@ namespace Queries{
 		public:
 			void reset(Connection *cc) {
 				cc->clearDB();
+				cc->ensureIndex(-1, BSON("x" << 1));
 				for (int i=0; i < cc->getIterations(); i++){
 					cc->insert(-1, BSON("x" << i));
 				}
@@ -353,6 +354,7 @@ namespace Queries{
 		public:
 			void reset(Connection *cc) {
 				cc->clearDB();
+				cc->ensureIndex(-1, BSON("x" << 1));
 				for (int i=0; i < cc->getIterations(); i++) {
 					cc->insert(-1, BSON("x" << i));
 				}
@@ -377,6 +379,7 @@ namespace Queries{
 		public:
 			void reset(Connection *cc) {
 				cc->clearDB();
+				cc->ensureIndex(-1, BSON("x" << 1));
 				for (int i=0; i < cc->getIterations(); i++) {
 					cc->insert(-1, BSON("x" << i << "y" << 1));
 				}
@@ -403,6 +406,7 @@ namespace Queries{
 		public:
 			void reset(Connection *cc) {
 				cc->clearDB();
+				cc->ensureIndex(-1, BSON("x" << 1));
 				for (int i=0; i < cc->getIterations(); i++) {
 					cc->insert(-1, BSON("x" << i << "y" << 1));
 				}
@@ -427,6 +431,7 @@ namespace Queries{
 		public:
 			void reset(Connection *cc) {
 				cc->clearDB();
+				cc->ensureIndex(-1, BSON("x" << 1));
 				for (int i=0; i < cc->getIterations(); i++) {
 					cc->insert(-1, BSON("x" << i));
 				}
@@ -453,6 +458,7 @@ namespace Queries{
 		public:
 			void reset(Connection *cc) {
 				cc->clearDB();
+				cc->ensureIndex(-1, BSON("x" << 1));
 				for (int i=0; i < cc->getIterations(); i++) {
 					cc->insert(-1, BSON("x" << i));
 				}
@@ -539,6 +545,7 @@ namespace {
 		public:
 			void reset(Connection *cc) {
 				cc->clearDB();
+				cc->ensureIndex(-1, BSON("key" << 1));
 				for (int i=0; i < cc->getIterations(); i++) {
 					// NOTE: This will be slow, but this part of the 
 					// test is not timed, so that's ok
@@ -573,6 +580,7 @@ namespace {
 		public:
 			void reset(Connection *cc) {
 				cc->clearDB();
+				cc->ensureIndex(-1, BSON("key" << 1));
 				for (int i=0; i < cc->getIterations(); i++) {
 					// NOTE: This will be slow, but this part of the test 
 					// is not timed, so that's ok
@@ -604,6 +612,7 @@ namespace {
 		public:
 			void reset(Connection *cc) {
 				cc->clearDB();
+				cc->ensureIndex(-1, BSON("key" << 1));
 				for (int i=0; i < cc->getIterations(); i++) {
 					// NOTE: This will be slow, but this part of the test 
 					// is not timed, so that's ok
@@ -637,6 +646,7 @@ namespace {
 		public:
 			void reset(Connection *cc) {
 				cc->clearDB();
+				cc->ensureIndex(-1, BSON("key" << 1));
 				for (int i=0; i < cc->getIterations(); i++) {
 					// NOTE: This will be slow, but this part of the test 
 					// is not timed, so that's ok
@@ -675,6 +685,7 @@ namespace {
 
 			void reset(Connection *cc) {
 				cc->clearDB();
+				cc->ensureIndex(-1, BSON("key" << 1));
 				projectionKey = buildNestedProjectionKey(projectionDepth());
 				for (int i=0; i < cc->getIterations(); i++) {
 					// NOTE: This will be slow, but this part of the test is
@@ -805,6 +816,7 @@ namespace {
 		public:
 			void reset(Connection *cc) {
 				cc->clearDB();
+				cc->ensureIndex(-1, BSON("x" << 1));
 				for (int i=0; i < cc->getIterations(); i++) {
 					cc->insert(-1, BSON("x" << i <<
                                         "arr" << BSON_ARRAY(
@@ -836,6 +848,7 @@ namespace {
 		public:
 			void reset(Connection *cc) {
 				cc->clearDB();
+				cc->ensureIndex(-1, BSON("x" << 1));
 				for (int i=0; i < cc->getIterations(); i++){
 					cc->insert(-1, BSON("x" << i <<
                                         "arr" << BSON_ARRAY(
