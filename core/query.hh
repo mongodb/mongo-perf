@@ -806,7 +806,8 @@ namespace {
 			void reset(Connection *cc) {
 				cc->clearDB();
 				for (int i=0; i < cc->getIterations(); i++) {
-					cc->insert(-1, BSON("x" << BSON_ARRAY(
+					cc->insert(-1, BSON("x" << i <<
+                                        "arr" << BSON_ARRAY(
 						BSON("x" << 1) <<
 						BSON("x" << 2) <<
 						BSON("x" << 3))));
@@ -821,7 +822,7 @@ namespace {
 						<< LT << batchSize * (threadId + 1)),
 						0, /* limit */
 						0, /* skip */
-						BSON("x" <<
+						BSON("arr" <<
 						BSON("$elemMatch" <<
 						BSON("x" << 2))) /* projection */);
 				cursor->itcount();
@@ -836,7 +837,8 @@ namespace {
 			void reset(Connection *cc) {
 				cc->clearDB();
 				for (int i=0; i < cc->getIterations(); i++){
-					cc->insert(-1, BSON("x" << BSON_ARRAY(
+					cc->insert(-1, BSON("x" << i <<
+                                        "arr" << BSON_ARRAY(
 						BSON("x" << 1) <<
 						BSON("x" << 2) <<
 						BSON("x" << 3))));
@@ -849,7 +851,7 @@ namespace {
 				for (int i = threadId * batchSize;
 					i < (threadId + 1) * batchSize; i++){
 					cc->findOne(threadId, BSON("x" << i),
-						BSON("x" << BSON("$elemMatch" << 
+						BSON("arr" << BSON("$elemMatch" <<
 						BSON("x" << 2))));
 				}
 			}
