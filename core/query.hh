@@ -727,7 +727,18 @@ namespace {
 			}
     };
 
+    template<int ProjectionDepth, int DocumentDepth>
     class NestedProjectionFindOne : public NestedProjectionTests {
+        
+        private:
+            int nestedDepth() {
+                return DocumentDepth;
+            }
+
+            int projectionDepth() {
+                return ProjectionDepth;
+            }
+
 		public:
 			void run(int threadId, int totalThreads, Connection *cc) {
 				int batchSize = cc->getIterations() / totalThreads;
@@ -739,7 +750,18 @@ namespace {
 			}
     };
 
+    template<int ProjectionDepth, int DocumentDepth>
     class NestedProjectionCursor : public NestedProjectionTests {
+
+        private:
+            int nestedDepth() {
+                return DocumentDepth;
+            }
+
+            int projectionDepth() {
+                return ProjectionDepth;
+            }
+
 		public:
 			void run(int threadId, int totalThreads, Connection *cc) {
 				int batchSize = cc->getIterations() / totalThreads;
@@ -754,59 +776,6 @@ namespace {
     };
 
 }
-
-	// XXX: This should use template -- will go away soon.
-    /*
-     * Tests for different levels of projection on different levels of nested documents
-     */
-    class Projection100Nested100Projection : public NestedProjectionCursor {
-        int nestedDepth() { return 100; }
-        int projectionDepth() { return 100; }
-    };
-    class Projection100Nested100ProjectionFindOne : public NestedProjectionFindOne{
-        int nestedDepth() { return 100; }
-        int projectionDepth() { return 100; }
-    };
-    class Projection50Nested50Projection : public NestedProjectionCursor{
-        int nestedDepth() { return 50; }
-        int projectionDepth() { return 50; }
-    };
-    class Projection50Nested50ProjectionFindOne : public NestedProjectionFindOne{
-        int nestedDepth() { return 50; }
-        int projectionDepth() { return 50; }
-    };
-    class Projection10Nested10Projection : public NestedProjectionCursor{
-        int nestedDepth() { return 10; }
-        int projectionDepth() { return 10; }
-    };
-    class Projection10Nested10ProjectionFindOne : public NestedProjectionFindOne{
-        int nestedDepth() { return 10; }
-        int projectionDepth() { return 10; }
-    };
-    class Projection100Nested50Projection : public NestedProjectionCursor{
-        int nestedDepth() { return 100; }
-        int projectionDepth() { return 50; }
-    };
-    class Projection100Nested50ProjectionFindOne : public NestedProjectionFindOne{
-        int nestedDepth() { return 100; }
-        int projectionDepth() { return 50; }
-    };
-    class Projection100Nested10Projection : public NestedProjectionCursor{
-        int nestedDepth() { return 100; }
-        int projectionDepth() { return 10; }
-    };
-    class Projection100Nested10ProjectionFindOne : public NestedProjectionFindOne{
-        int nestedDepth() { return 100; }
-        int projectionDepth() { return 10; }
-    };
-    class Projection50Nested10Projection : public NestedProjectionCursor{
-        int nestedDepth() { return 50; }
-        int projectionDepth() { return 10; }
-    };
-    class Projection50Nested10ProjectionFindOne : public NestedProjectionFindOne{
-        int nestedDepth() { return 50; }
-        int projectionDepth() { return 10; }
-    };
 
     /*
      * Issues queries with an $elemMatch projection on the { 'x' : 2 } document and iterates the

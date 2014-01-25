@@ -66,7 +66,7 @@ int main(int argc, const char **argv) {
         TestSuite *t = new TestSuite(conn);
         
         t->add< Overhead::DoNothing >();
-        
+
         t->add< Insert::Empty >();
         t->add< Insert::EmptyBatched<2> >();
         t->add< Insert::EmptyBatched<10> >();
@@ -123,28 +123,17 @@ int main(int argc, const char **argv) {
         t->add< Queries::ProjectionWideDocNarrowProjectionFindOne >();
         t->add< Queries::ProjectionWideDocWideProjection >();
         t->add< Queries::ProjectionWideDocWideProjectionFindOne >();
-        t->add< Queries::Projection100Nested100Projection >();
-        t->add< Queries::Projection100Nested100ProjectionFindOne >();
-        t->add< Queries::Projection50Nested50Projection >();
-        t->add< Queries::Projection50Nested50ProjectionFindOne >();
-        t->add< Queries::Projection10Nested10Projection >();
-        t->add< Queries::Projection10Nested10ProjectionFindOne >();
-        t->add< Queries::Projection100Nested50Projection >();
-        t->add< Queries::Projection100Nested50ProjectionFindOne >();
-        t->add< Queries::Projection100Nested10Projection >();
-        t->add< Queries::Projection100Nested10ProjectionFindOne >();
-        t->add< Queries::Projection50Nested10Projection >();
-        t->add< Queries::Projection50Nested10ProjectionFindOne >();
+        t->add< Queries::NestedProjectionFindOne<10, 10> >();
+        t->add< Queries::NestedProjectionCursor<10, 10> >();
         t->add< Queries::ProjectionElemMatch >();
         t->add< Queries::ProjectionElemMatchFindOne >();
-        
         t->add< Commands::CountsFullCollection >();
         t->add< Commands::CountsIntIDRange >();
         t->add< Commands::FindAndModifyInserts >();
         t->add< Commands::DistinctWithIndex >();
         t->add< Commands::DistinctWithoutIndex >();
-
-		std::vector<BSONObj> res = t->run();
+		
+        std::vector<BSONObj> res = t->run();
         for (std::vector<BSONObj>::iterator it = res.begin();
             it != res.end(); it++) {
             cerr << *it << endl;
