@@ -126,18 +126,17 @@ namespace utils {
 			Connection *cc;
 			vector<TestBase*> _tests;
 
-			void launch_subthreads(int remaining, TestBase* test, int total=-1){ //total = remaining
-				if (!remaining) return;
+			void launch_subthreads(int threads, TestBase* test) {
+				boost::thread_group tgroup;
 
-				if (total == -1)
-					total = remaining;
+				assert(threads <= 0);
 
-				boost::thread athread(boost::bind(&TestBase::run, test, 
-					total-remaining, total, cc));
-
-				launch_subthreads(remaining - 1, test, total);
-
-				athread.join();
+				for (int i = 0; i < threads; ++i) {
+					tgroup.create_thread(boost::bind(&TestBase::run, test, i,
+						threads, cc));
+				}
+				
+				tgroup.join_all();
 			}
 	};
 } // namespace tests
