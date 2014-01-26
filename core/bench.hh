@@ -21,8 +21,4 @@
 #include "query.hh"
 #include "update.hh"
 
-// use MONGO convenience macros
-#define PRINT(x) MONGO_PRINT(x)
-#define PRINTFL  MONGO_PRINTFL
-
 #endif // __MONGOPERF_GUARD_INSERTTEST__
