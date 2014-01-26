@@ -3,8 +3,15 @@ import os
 
 env = Environment()
 
-env.Append(CPPFLAGS=['-pthread', '-O3', '-g'])
-env.Append(LINKFLAGS=['-pthread', '-g'])
+cpp_flags = ['-g']
+link_flags = ['-g']
+
+if not 'darwin' == os.sys.platform:
+    cpp_flags.extend(['-02', '-pthread'])
+    link_flags.append('-pthread')
+
+env.Append(CPPFLAGS=cpp_flags)
+env.Append(LINKFLAGS=link_flags)
 
 if 'darwin' == os.sys.platform:
     if os.path.exists('/opt/local/include'):
