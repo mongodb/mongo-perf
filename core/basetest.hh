@@ -129,7 +129,7 @@ namespace utils {
 			void launch_subthreads(int threads, TestBase* test) {
 				boost::thread_group tgroup;
 
-				assert(threads <= 0);
+				assert(threads > 0);
 
 				for (int i = 0; i < threads; ++i) {
 					tgroup.create_thread(boost::bind(&TestBase::run, test, i,
