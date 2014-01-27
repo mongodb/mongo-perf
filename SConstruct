@@ -7,7 +7,7 @@ cpp_flags = ['-g']
 link_flags = ['-g']
 
 if not 'darwin' == os.sys.platform:
-    cpp_flags.extend(['-02', '-pthread'])
+    cpp_flags.extend(['-O2', '-pthread'])
     link_flags.append('-pthread')
 
 env.Append(CPPFLAGS=cpp_flags)
