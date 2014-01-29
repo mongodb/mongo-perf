@@ -85,8 +85,7 @@ namespace Commands {
 				cc->getLastError();
 			}
 			void run(int threadId, int totalThreads, Connection *cc) {
-				for (int i = 0;
-					i < cc->getIterations() / totalThreads; i++) {
+				for (int i = 0; i < 100; ++i) {
 					cc->command(threadId, BSON("distinct" << _coll << 
 											"key" << "x" <<
 											"query" << BSON("x" << 2)));
@@ -110,8 +109,7 @@ namespace Commands {
 				cc->getLastError();
 			}
 			void run(int threadId, int totalThreads, Connection *cc) {
-				for (int i = 0;
-					i < cc->getIterations() / totalThreads; i++) {
+				for (int i = 0; i < 100; ++i) {
 					cc->command(threadId, BSON("distinct" << _coll 
 											<< "key" << "x" <<
 										   "query" << BSON("x" << 2)));
