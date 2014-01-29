@@ -45,7 +45,7 @@ int main(int argc, const char **argv) {
         }
 
         conn_string = options_vars["connection-string"].as<string>();
-		iterations = options_vars["iterations"].as<int>();
+        iterations = options_vars["iterations"].as<int>();
 
         if (options_vars.count("multi-db")) {
             multi_db = options_vars["multi-db"].as<bool>();
@@ -59,9 +59,9 @@ int main(int argc, const char **argv) {
             password = options_vars["password"].as<string>();
         }
 
-		Connection *conn = new Connection(conn_string, iterations,
-			multi_db, username, password);
-		conn->init();
+        Connection *conn = new Connection(conn_string, iterations,
+            multi_db, username, password);
+        conn->init();
         
         TestSuite *t = new TestSuite(conn);
         
@@ -132,7 +132,7 @@ int main(int argc, const char **argv) {
         t->add< Commands::FindAndModifyInserts >();
         t->add< Commands::DistinctWithIndex >();
         t->add< Commands::DistinctWithoutIndex >();
-		
+        
         std::vector<BSONObj> res = t->run();
         return EXIT_SUCCESS;
     }
