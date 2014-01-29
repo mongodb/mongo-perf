@@ -134,10 +134,6 @@ int main(int argc, const char **argv) {
         t->add< Commands::DistinctWithoutIndex >();
 		
         std::vector<BSONObj> res = t->run();
-        for (std::vector<BSONObj>::iterator it = res.begin();
-            it != res.end(); it++) {
-            cerr << *it << endl;
-        } 
         return EXIT_SUCCESS;
     }
     catch (po::error const & e) {

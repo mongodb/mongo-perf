@@ -117,8 +117,7 @@ namespace utils {
 						   << "results" << results.obj()
 						   );
                     rvec.push_back(out);
-					// XXX: remove me
-                    // cout << out.jsonString(Strict) << endl;
+                    cout << out.jsonString(Strict) << endl;
 				}
                 return rvec;
 			}
