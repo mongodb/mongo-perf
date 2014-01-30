@@ -23,6 +23,7 @@ namespace Insert {
     /*
      * inserts batches of empty documents.
      */
+
     template <int BatchSize>
     class EmptyBatched : public Base {
         public:

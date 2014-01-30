@@ -12,7 +12,8 @@ int main(int argc, const char **argv) {
         string password;
         string username;
         int iterations;
-        int multi_db;
+        bool multi_db = false;
+        bool batch = false;
  
         po::options_description display_options("Program options");
         display_options.add_options()
@@ -23,7 +24,8 @@ int main(int argc, const char **argv) {
             ("iterations",          po::value<int>()->required(),       "Number of iterations")
             ("multi-db",            po::bool_switch(),                  "MultiDB mode")
             ("username",            po::value<string>(),                "Username (auth)")
-            ("password",            po::value<string>(),                "Password (auth)");
+            ("password",            po::value<string>(),                "Password (auth)")  
+            ("batch",               po::bool_switch(),                  "Batched command");
 
         all_options.add(display_options);
         
@@ -59,8 +61,12 @@ int main(int argc, const char **argv) {
             password = options_vars["password"].as<string>();
         }
 
+        if (options_vars.count("batch")) {
+            batch = options_vars["batch"].as<bool>();
+        }
+
         Connection *conn = new Connection(conn_string, iterations,
-            multi_db, username, password);
+            multi_db, username, password, batch);
         conn->init();
         
         TestSuite *t = new TestSuite(conn);

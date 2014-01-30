@@ -267,6 +267,8 @@ class Local(Master):
                         self.opts.password]
             if self.opts.multidb:
                 bench_cmd.append('--multi-db')
+            if self.opts.batch:
+                bench_cmd.append('--batch')
  
             benchmark = subprocess.Popen(bench_cmd, stdout=subprocess.PIPE)
             self.logger.info("Started benchmark args: {0}".format(self.opts))
@@ -336,6 +338,8 @@ class Runner(Master):
                         '--iterations', self.opts.iterations,
                         '--username', self.opts.username,
                         '--password', self.opts.password]
+            if self.opts.batch:
+                bench_cmd.append('--batch')
             single_db_benchmark = subprocess.Popen(bench_cmd,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             self.logger.info("Running single db benchmark tests...")
@@ -408,6 +412,9 @@ def parse_options():
     optparser.add_option('-m', '--multidb', dest='multidb',
                          help='use a separate db for each connection'\
                         ' - only useful in conjunction with --local',
+                         action='store_true', default=False)
+    optparser.add_option('--batch', dest='batch',
+                         help='use write commands',
                          action='store_true', default=False)
     optparser.add_option('-l', '--label', dest='label',
                          help='performance testing host',

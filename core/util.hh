@@ -3,6 +3,7 @@
 
 #include <mongo/client/dbclient.h>
 #include <iostream>
+#include <cassert>
 #include <cstdlib>
 #include <vector>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -27,6 +28,7 @@ namespace utils {
             DBClientConnection _conn[max_threads];
 
             bool multi_db;
+            bool batch;
             
             int _iterations;
 
@@ -44,16 +46,23 @@ namespace utils {
                 return ns.substr(0, i);
             }
 
+            string nsToCollection(string ns) {
+                size_t i = ns.find('.');
+                assert(i != string::npos);
+                return ns.substr(i + 1);
+            }
+
         public:
             // XXX: add constructor/destructor
             Connection(string& conn_string, int& iterations,
-                int& multi_db, string& username, string& password) {
+                bool& multi_db, string& username, string& password, bool& batch) {
                     // XXX: move to list initialization
                     this->conn_string = conn_string;
                     this->_iterations = iterations;
                     this->multi_db = multi_db;
                     this->_username = username;
                     this->_password = password;
+                    this->batch = batch;
             };
             
             ~Connection() { }
@@ -116,13 +125,62 @@ namespace utils {
                 }
             }
 
+            BSONObj buildBatchedInsertRequest(int thread, BSONObj obj) {
+                BSONObjBuilder builder;
+                
+                if (!multi_db) {
+                    builder.append("insert", nsToCollection(ns[0]));
+                }
+                else {
+                    builder.append("insert", nsToCollection(ns[thread]));
+                }
+                BSONArrayBuilder docBuilder(
+                    builder.subarrayStart("documents"));
+                docBuilder.append(obj);
+                docBuilder.done();
+                return builder.obj();
+            }
+
+            BSONObj buildBatchedInsertRequest(int thread,
+                const vector<BSONObj>& obj) {
+                BSONObjBuilder builder;
+                if (!multi_db) {
+                    builder.append("insert", nsToCollection(ns[0]));
+                }
+                else {
+                    builder.append("insert", nsToCollection(ns[thread]));
+                }
+                BSONArrayBuilder docBuilder(
+                    builder.subarrayStart("documents"));
+                for (vector<BSONObj>::const_iterator it = obj.begin();
+                    it != obj.end(); ++it) {
+                    docBuilder.append(*it);
+                }
+                docBuilder.done();
+                return builder.obj();
+            }
+
             template <typename VectorOrBSONObj>
             void insert(int thread, const VectorOrBSONObj& obj) {
-                if (!multi_db){
-                    _conn[max(0,thread)].insert(ns[0], obj);
+                BSONObj x;
+
+                if (!multi_db) {
+                    if (batch) {
+                        x = buildBatchedInsertRequest(thread, obj);
+                        _conn[max(0, thread)].insert(ns[0], x);
+                    }
+                    else {
+                        _conn[max(0,thread)].insert(ns[0], obj);
+                    }
                 }
-                else if (thread != -1){
-                    _conn[thread].insert(ns[thread], obj);
+                else if (thread != -1) {
+                    if (batch) {
+                        x = buildBatchedInsertRequest(thread, obj);
+                        _conn[thread].insert(ns[thread], x);
+                    }
+                    else {
+                        _conn[thread].insert(ns[thread], obj);
+                    }
                     return;
                 }
                 else {
