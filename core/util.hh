@@ -227,11 +227,43 @@ namespace utils {
                 }
             }
 
+            BSONObj buildBatchedUpdateRequest(int thread, const BSONObj& qObj,
+                const BSONObj uObj, bool upsert, bool multi) {
+                BSONObjBuilder builder;
+                
+                if (!multi_db) {
+                    builder.append("update", nsToCollection(ns[0]));
+                }
+                else {
+                    builder.append("update", nsToCollection(ns[thread]));
+                }
+                BSONArrayBuilder docBuilder(
+                    builder.subarrayStart("updates"));
+                docBuilder.append(BSON("q" << qObj <<
+                                       "u" << uObj <<
+                                       "multi" << multi << 
+                                       "upsert" << upsert));
+                docBuilder.done();
+                return builder.obj();
+            }
+
             void update(int thread, const BSONObj& qObj,
                         const BSONObj uObj, bool upsert=false,
                         bool multi=false) {
+                BSONObj result;
+                BSONObj x;
+
                 assert(thread != -1); // cant run on all conns
-                _conn[thread].update(ns[multi_db?thread:0], qObj, uObj, upsert, multi);
+                if (batch) {
+                    x = buildBatchedUpdateRequest(thread, qObj, uObj, upsert,
+                        multi);
+                    _conn[thread].runCommand(nsToDatabase(ns[multi_db ? thread : 0]),
+                        x, result);
+                }
+                else {
+                    _conn[thread].update(ns[multi_db?thread:0], qObj, uObj,
+                        upsert, multi);
+                }
                 return;
             }
 
