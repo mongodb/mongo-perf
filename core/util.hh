@@ -193,10 +193,38 @@ namespace utils {
                 }
             }
 
+            BSONObj buildBatchedRemoveRequest(int thread, const BSONObj& qObj,
+                bool onlyOne) {
+                BSONObjBuilder builder;
+                
+                if (!multi_db) {
+                    builder.append("delete", nsToCollection(ns[0]));
+                }
+                else {
+                    builder.append("delete", nsToCollection(ns[thread]));
+                }
+                BSONArrayBuilder docBuilder(
+                    builder.subarrayStart("deletes"));
+                int limit = (onlyOne == true) ? 1 : 0;
+                docBuilder.append(BSON("q" << qObj << "limit" << limit));
+                docBuilder.done();
+                return builder.obj();
+            }
+
             void remove(int thread, const BSONObj& qObj, 
                         bool onlyOne=false) {
+                BSONObj result;
+                BSONObj x;
+
                 assert(thread != -1);
-                _conn[thread].remove(ns[multi_db?thread:0], qObj, onlyOne);
+                if (batch) {
+                    x = buildBatchedRemoveRequest(thread, qObj, onlyOne);
+                    _conn[thread].runCommand(nsToDatabase(ns[multi_db ? thread : 0]),
+                        x, result);
+                }
+                else {
+                    _conn[thread].remove(ns[multi_db?thread:0], qObj, onlyOne);
+                }
             }
 
             void update(int thread, const BSONObj& qObj,
