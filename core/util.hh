@@ -162,12 +162,14 @@ namespace utils {
 
             template <typename VectorOrBSONObj>
             void insert(int thread, const VectorOrBSONObj& obj) {
+                BSONObj result;
                 BSONObj x;
 
                 if (!multi_db) {
                     if (batch) {
                         x = buildBatchedInsertRequest(thread, obj);
-                        _conn[max(0, thread)].insert(ns[0], x);
+                        _conn[max(0, thread)].runCommand(nsToDatabase(ns[0]),
+                            x, result);
                     }
                     else {
                         _conn[max(0,thread)].insert(ns[0], obj);
@@ -176,7 +178,8 @@ namespace utils {
                 else if (thread != -1) {
                     if (batch) {
                         x = buildBatchedInsertRequest(thread, obj);
-                        _conn[thread].insert(ns[thread], x);
+                        _conn[thread].runCommand(nsToDatabase(ns[thread]), x,
+                            result);
                     }
                     else {
                         _conn[thread].insert(ns[thread], obj);
