@@ -144,6 +144,159 @@ namespace Update {
             }
     };
 
+namespace {
+    const std::string shortFieldNames[] = {
+        "aa", "ba", "ca", "da", "ea", "fa", "ga", "ha", "ia", "ja", "ka", "la", "ma", "na", "oa",
+        "pa", "qa", "ra", "sa", "ta", "ua", "va", "wa", "xa", "ya", "za", "ab", "bb", "cb", "db",
+        "ri", "si", "ti", "ui", "vi", "wi", "xi", "yi", "zi", "aj", "xm", "ym", "zm", "an", "bn",
+        "cn", "dn", "en", "fn", "gn"
+    };
+
+    const std::string longFieldsNames[] = {
+        "kbgcslcybg", "kfexqflvce", "yitljbmriy", "vjhgznppgw", "ksnqrkckgm", "bxzrekmanf",
+        "wgjptieoho", "miohmkbzvv", "iyymqfqfte", "nbbxrjspyu", "ftdmqxfvfo", "sqoccqelhp",
+        "phbgzfvlvm", "ygvlusahma", "elcgijivrt", "qdwzjpugsr", "dhwgzxijck", "ezbztosivn",
+        "gqnevrxtke", "jyzymmhtxc", "iqzleodwcl", "uvcbevobia", "fmsaehzaax", "hvekxgvche",
+        "mudggeguxy", "jkpwpdfjjq", "ziujorptwj", "zygklvogup", "rtxpmvlegv", "nfzarcgpmf",
+        "nlvbsgscbz", "yanwvoxeov", "ylqapkyfxn", "evlwtlejoe", "xvkejgtiuc", "sjkwfnrwpf",
+        "gobpjhjrck", "ltpkggsgpb", "jzaathnsra", "uqiutzbcoa", "zwivxvtmgi", "glaibvnhix",
+        "dosiyispnf", "nvtaemdwtp", "vzojziqbkj", "kbtfmcjlgl", "ialgxzuhnq", "djqfxvmycc",
+        "ocrpwmeqyb", "tcrrliflby"
+    };
+
+    // Helper template to get the number of elements in the fieldNames array in a cross platform way
+    template <typename T, size_t N>
+    size_t countof( T (&array)[N] )
+    {
+        return N;
+    };
+
+} // anonymous namespace
+
+    class IncFewSmallDoc: public Base {
+        public:
+            void reset(Connection *cc) {
+                cc->clearDB();
+                for (int i = 0; i < 100; ++i) {
+                    BSONObjBuilder b;
+                    b.append("_id", i);
+                    for (int j = 0; j < 20; ++j) {
+                        b.append(shortFieldNames[j], 1);
+                    }
+                    cc->insert(-1, b.obj());
+                }
+                cc->getLastError();
+            }
+
+            void run(int t, int n, Connection *cc) {
+                const int incs = cc->getIterations() / n / 100;
+                for (int i = 0; i < 100; ++i) {
+                    for (int j = 0; j < incs; ++j) {
+                        // XXX: This might use a BSONObj builder, but that would be slow.
+                        // Let's hardcode the fields instead.
+                        cc->update(t, BSON("_id" << i),
+                                      BSON("$inc" << BSON("aa" << 1 <<
+                                                          "da" << 1 <<
+                                                          "ha" << 1 <<
+                                                          "ma" << 1 <<
+                                                          "ta" << 1)));
+                    }
+                }
+            }
+    };
+
+    class IncFewLargeDoc: public Base {
+        public:
+            void reset(Connection *cc) {
+                cc->clearDB();
+                for (int i = 0; i < 100; ++i) {
+                    BSONObjBuilder b;
+                    b.append("_id", i);
+                    for (int j = 0; j < countof(shortFieldNames); ++j) {
+                        b.append(shortFieldNames[j], 1);
+                    }
+                    cc->insert(-1, b.obj());
+                }
+                cc->getLastError();
+            }
+
+            void run(int t, int n, Connection *cc) {
+                const int incs = cc->getIterations() / n / 100;
+                for (int i = 0; i < 100; ++i) {
+                    // XXX: This might use a BSONObj builder, but that would be slow.
+                    // Let's hardcode the fields instead.
+                    cc->update(t, BSON("_id" << i),
+                                      BSON("$inc" << BSON("aa" << 1 <<
+                                                          "wa" << 1 <<
+                                                          "xi" << 1 <<
+                                                          "zm" << 1 <<
+                                                          "gn" << 1)));
+                }
+            }
+    };
+
+    class IncFewSmallDocLongFields: public Base {
+        public:
+            void reset(Connection *cc) {
+                cc->clearDB();
+                for (int i = 0; i < 100; ++i) {
+                    BSONObjBuilder b;
+                    b.append("_id", i);
+                    for (int j = 0; j < 20; ++j) {
+                        b.append(longFieldsNames[j], 1);
+                    }
+                    cc->insert(-1, b.obj());
+                }
+                cc->getLastError();
+            }
+
+            void run(int t, int n, Connection *cc) {
+                const int incs = cc->getIterations() / n / 100;
+                for (int i = 0; i < 100; ++i) {
+                    // XXX: This might use a BSONObj builder, but that would be slow.
+                    // Let's hardcode the fields instead.
+                    cc->update(t, BSON("_id" << i),
+                                      BSON("$inc" << BSON("kbgcslcybg" << 1 <<
+                                                          "vjhgznppgw" << 1 <<
+                                                          "jzaathnsra" << 1 <<
+                                                          "miohmkbzvv" << 1 <<
+                                                          "elcgijivrt" << 1)));
+                }
+            }
+
+    };
+
+    class IncFewLargeDocLongFields: public Base {
+        public:
+            void reset(Connection *cc) {
+                cc->clearDB();
+                for (int i = 0; i < 100; ++i) {
+                    BSONObjBuilder b;
+                    b.append("_id", i);
+                    for (int j = 0; j < countof(longFieldsNames); ++j) {
+                        b.append(longFieldsNames[j], 1);
+                    }
+                    cc->insert(-1, b.obj());
+                }
+                cc->getLastError();
+            }
+
+            void run(int t, int n, Connection *cc) {
+                const int incs = cc->getIterations() / n / 100;
+                for (int i = 0; i < 100; ++i) {
+                    // XXX: This might use a BSONObj builder, but that would be slow.
+                    // Let's hardcode the fields instead.
+                    cc->update(t, BSON("_id" << i),
+                                      BSON("$inc" << BSON("kbgcslcybg" << 1 <<
+                                                          "qdwzjpugsr" << 1 <<
+                                                          "yanwvoxeov" << 1 <<
+                                                          "jzaathnsra" << 1 <<
+                                                          "tcrrliflby" << 1)));
+                }
+            }
+
+    };
+
     // Some tests based on the MMS workload. These started as Eliot's 'mms.js' tests, which acm
     // then extended and used for the first round of update performance improvements. We are
     // capturing them here so they are run automatically. These tests explore the overhead of

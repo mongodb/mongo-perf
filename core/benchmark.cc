@@ -70,7 +70,6 @@ int main(int argc, const char **argv) {
         conn->init();
         
         TestSuite *t = new TestSuite(conn);
-        
         t->add< Overhead::DoNothing >();
 
         t->add< Insert::Empty >();
@@ -98,6 +97,10 @@ int main(int argc, const char **argv) {
         t->add< Update::IncWithIndex >();
         t->add< Update::IncNoIndex_QueryOnSecondary >();
         t->add< Update::IncWithIndex_QueryOnSecondary >();
+        t->add< Update::IncFewSmallDocLongFields >();
+        t->add< Update::IncFewLargeDocLongFields >();
+        t->add< Update::IncFewSmallDoc >();
+        t->add< Update::IncFewLargeDoc >();
         t->add< Update::MmsIncShallow1 >();
         t->add< Update::MmsIncShallow2 >();
         t->add< Update::MmsIncDeep1 >();
@@ -138,7 +141,7 @@ int main(int argc, const char **argv) {
         t->add< Commands::FindAndModifyInserts >();
         t->add< Commands::DistinctWithIndex >();
         t->add< Commands::DistinctWithoutIndex >();
-        
+
         std::vector<BSONObj> res = t->run();
         return EXIT_SUCCESS;
     }
