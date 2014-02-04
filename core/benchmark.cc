@@ -5,7 +5,7 @@ using namespace std;
 using namespace mongo;
 using namespace utils;
 
-int main(int argc, const char **argv) {
+int main(int argc, char **argv) {
     try {
         po::variables_map options_vars;
         string conn_string;
