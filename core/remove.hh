@@ -61,7 +61,7 @@ namespace Remove {
             }
     };
 
-    struct IntNonIDRange: public Base {
+    class IntNonIDRange: public Base {
         public:
             void reset(Connection *cc) {
                 cc->clearDB();
