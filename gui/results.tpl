@@ -10,7 +10,7 @@
         <script type="text/javascript" src="static/js/jquery-ui-1.10.1.custom.min.js"></script>
         <script type="text/javascript" src="static/js/perf_lib.js"></script>
         <script type="text/javascript" src="static/js/jquery.dataTables.min.js"></script>
-        <script type="text/javascript" src="static/js/jquery.flot.min.js"></script>
+        <script type="text/javascript" src="static/js/dygraph-combined.js"></script>
         <script>
             $(document).ready(function(){
                 $('table').dataTable({
@@ -21,6 +21,15 @@
                         "bAutoWidth": true
                     });
                 });
+
+            var dygraphs = [];
+            var dycolors = ["#7BBADE", "#93DE7F", "#F29E4A", "#FF7050",
+                            "#FFEC1E", "#0A79BD", "#00B215", "#BAA900",
+                            "#A34A00", "#C21F00", "#222222", "#FF44EE",
+                            "#FF5A00", "#AA66FF", "#3BCC75", "#29190F"];
+            function dyToggle(graphIdx, seriesIdx, el) {
+              dygraphs[graphIdx].setVisibility(seriesIdx, el.checked);
+            }
         </script>
     </head>
     <body>
@@ -84,7 +93,8 @@
             </fieldset>
         </form>
         %import urllib
-        %for k, (outer_result, flot_data) in enumerate(zip(results, flot_results)):
+        %for k, (outer_result, dygraph_data) in enumerate(zip(results, dygraph_results)):
+        <div class="test-entry">
         <h2 id="{{outer_result['name']}}"><a href="https://github.com/search?q={{outer_result['name'][outer_result['name'].rfind(":") + 1:]}}+path%3Abenchmark.cpp+repo%3Amongodb%2Fmongo-perf&amp;type=Code&amp;ref=searchresults" target="_blank">{{outer_result['name']}}</a></h2>
         <table class="display">
             <thead>
@@ -123,64 +133,45 @@
             </tbody>
         </table>
         <br/>
-        <div id="legendContainer_{{k}}" style="background-color:#fff;padding:2px;margin-bottom:8px;border-radius: 3px 3px 3px 3px;border:1px solid #E6E6E6;display:inline-block;margin:0 auto;width:600px;float:right"></div>
-        <div id="flot_{{k}}" style="width:600px;height:300px;"></div>
-        <div id="chart_{{k}}" data-dump="{{flot_data}}"></div>
-        <div style="height:50px"></div>
+        <div class="dygraph-wrapper">
+          <div id="graph_{{k}}" class="graph" style="width:600px;height:300px;"></div>
+        </div>
         <script>
-            $(function(){
-                var data = $('#chart_{{k}}').data('dump');
-                var div = $('#flot_{{k}}')
-                var options =  {
-                        grid: { hoverable: true, backgroundColor: { colors: ["#eceadf", "#d9d6c4"] } }, 
-                        series: { lines: { show: true }, points: { show: true } },
-                        legend: { show: true, position: "nw", backgroundOpacity: 0,
-                        container: $("#legendContainer_{{k}}"), noColumns: 2 },
-                        xaxis: {ticks : {{threads}} },
-                        yaxis: {min : 0},
-                        tooltip: true
-                    }
-                $.plot(div, data, options);
-
-            function showTooltip(x, y, contents) {
-                $('<div id="tooltip_{{k}}">' + contents + '</div>').css( {
-                    position: 'absolute',
-                    display: 'none',
-                    top: y + 5,
-                    left: x + 5,
-                    border: '1px solid #fdd',
-                    padding: '2px',
-                    'background-color': '#fee',
-                    opacity: 0.80
-                }).appendTo("body").fadeIn(200);
-            };
-
-            var previousPoint = null;
-            div.bind("plothover", function (event, pos, item) {
-                $("#x").text(pos.x.toFixed(2));
-                $("#y").text(pos.y.toFixed(2));
-
-                if (item) {
-                    if (previousPoint != item.dataIndex) {
-                        previousPoint = item.dataIndex;
-                        
-                        $("#tooltip_{{k}}").remove();
-                        var x = item.datapoint[0].toFixed(2),
-                            y = item.datapoint[1].toFixed(2);
-                        
-                        showTooltip(item.pageX, item.pageY, item.series.label + " ( " + y + " ) ");
-                    }
-                }
-                else {
-                    $("#tooltip_{{k}}").remove();
-                    previousPoint = null;            
-                }
+        $("#graph-labels-{{k}}").ready(function(){
+          var dygraph_{{k}} = new Dygraph(
+            $('#graph_{{k}}')[0],
+            {{!dygraph_data['data']}},
+            {
+              labels: {{!dygraph_data['labels_json']}},
+              strokeWidth: 3,
+              xRangePad: 2,
+              colors: dycolors,
+              labelsSeparateLines: true,
+              labelsDiv: "graph-labels-{{k}}"
             });
+          dygraphs.push(dygraph_{{k}});
 
+          //color label boxes properly
+          $("#entry_{{k}} .chart-box").each(function(idx){
+            $(this).css("background-color", dycolors[idx % dycolors.length]);
+          });
 
-            });
+        });
+
         </script>
-        <hr>
+        <div id="legendContainer_{{k}}" class="legend-box">
+          %for s, entry in enumerate(dygraph_data['labels_list'][1:]):
+          <div class="chart-entry" id="entry_{{k}}">
+            <div class="chart-info chart-box"></div>
+            <input class="chart-info" type=checkbox checked onClick="dyToggle({{k}}, {{s}}, this)">
+            <label>{{entry}}</label>
+          </div>
+          %end
+
+        </div>
+        <div class="dygraph-labels" id="graph-labels-{{k}}"></div>
+        <div class="section-break"></div>
+      </div>
         %end
     </body>
 </html>

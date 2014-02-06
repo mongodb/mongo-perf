@@ -22,6 +22,7 @@ import logging as logr
 import logging.handlers
 from datetime import datetime
 from collections import defaultdict
+from copy import copy
 
 MONGO_PERF_HOST = "localhost"
 MONGO_PERF_PORT = 27017
@@ -198,19 +199,22 @@ def results_page():
                            platforms, start, end, limit)
 
     threads = set()
-    flot_results = []
+    dygraph_results = []
     for outer_result in results:
         out = []
         for i, result in enumerate(outer_result['results']):
-            out.append({'label': " - ".join((result['label'], result['version'], 
+            out.append({'label': " / ".join((result['label'], result['version'], 
                     result['date'])), 'data': sorted([int(k), v[metric]]
                         for (k, v) in result.iteritems() if k.isdigit())
                         })
             threads.update(int(k) for k in result if k.isdigit())
-        flot_results.append(json.dumps(out))
+        dygraph_data, dygraph_labels = to_dygraphs_data_format(out)
+        dygraph_results.append({'data': json.dumps(dygraph_data),
+                                'labels_json': json.dumps(dygraph_labels),
+                                'labels_list': dygraph_labels})
 
-    return template('results.tpl', results=results, flot_results=flot_results,
-                     request=request, threads=sorted(threads))
+    return template('results.tpl', results=results, request=request,
+                    dygraph_results=dygraph_results, threads=sorted(threads))
 
 
 def merge(results):
@@ -236,6 +240,25 @@ def merge(results):
         out.append({'name': item[0], 'results': item[1]})
 
     return out
+
+def to_dygraphs_data_format(in_data):
+    """returns js string containing the dygraphs data
+    representation of the input and a js string containing
+    dygraphs representation of labels
+    """
+    #start by initializing our two new arrays
+    d = in_data[0]
+    graph_data = copy(d['data'])
+    labels =["# of Threads", d['label']]
+
+    #append data for each point
+    for series in in_data[1:]:
+        data = series['data']
+        for point in range(len(graph_data)):
+            graph_data[point].append(data[point][1])
+        labels.append(series['label'])
+
+    return graph_data, labels
 
 
 @route("/")
