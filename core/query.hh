@@ -1,5 +1,4 @@
-#ifndef __MONGOPERF_GUARD_QUERYTEST__
-#define __MONGOPERF_GUARD_QUERYTEST__
+#pragma once
 
 namespace Queries{
     class Base {
@@ -840,6 +839,4 @@ namespace {
     };
 
 }
-
-#endif // __MONGOPERF_GUARD_QUERYTEST__
 

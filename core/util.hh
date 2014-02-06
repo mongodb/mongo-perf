@@ -1,5 +1,4 @@
-#ifndef __MONGOPERF_GUARD_UTILS__
-#define __MONGOPERF_GUARD_UTILS__
+#pragma once
 
 #include <mongo/client/dbclient.h>
 #include <iostream>
@@ -320,4 +319,3 @@ namespace utils {
         };
 } // namespace utils
 
-#endif // __MONGOPERF_GUARD_UTILS__

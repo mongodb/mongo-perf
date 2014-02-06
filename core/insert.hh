@@ -1,5 +1,4 @@
-#ifndef __MONGOPERF_GUARD_INSERTTEST__
-#define __MONGOPERF_GUARD_INSERTTEST__
+#pragma once
 
 namespace Insert {
     class Base {
@@ -158,4 +157,3 @@ namespace Insert {
     };
 }
 
-#endif // __MONGOPERF_GUARD_INSERTTEST__

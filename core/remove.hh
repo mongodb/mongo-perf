@@ -1,5 +1,4 @@
-#ifndef __MONGOPERF_GUARD_REMOVETEST__
-#define __MONGOPERF_GUARD_REMOVETEST__
+#pragma once
 
 namespace Remove {
     class Base {
@@ -80,4 +79,3 @@ namespace Remove {
     };
 }
 
-#endif // __MONGOPERF_GUARD_REMOVETEST__

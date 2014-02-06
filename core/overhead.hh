@@ -1,5 +1,4 @@
-#ifndef __MONGOPERF_GUARD_OVERHEADTEST__
-#define __MONGOPERF_GUARD_OVERHEADTEST__
+#pragma once
 
 #include "basetest.hh"
 
@@ -17,4 +16,3 @@ namespace Overhead {
     };
 }
 
-#endif // __MONGOPERF_GUARD_OVERHEADTEST__

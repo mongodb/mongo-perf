@@ -1,5 +1,4 @@
-#ifndef __MONGOPERF_GUARD_COMMANDS__
-#define __MONGOPERF_GUARD_COMMANDS__
+#pragma once
 
 #include "util.hh"
 
@@ -119,4 +118,3 @@ namespace Commands {
 
 } // namespace Commands
 
-#endif // __MONGOPERF_GUARD_UTILS__

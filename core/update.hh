@@ -1,5 +1,4 @@
-#ifndef __MONGOPERF_GUARD_UPDATETEST__
-#define __MONGOPERF_GUARD_UPDATETEST__
+#pragma once
 
 namespace Update {
     class Base {
@@ -464,4 +463,3 @@ namespace {
 
 }
 
-#endif // __MONGOPERF_GUARD_UPDATETEST__

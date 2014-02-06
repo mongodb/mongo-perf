@@ -1,5 +1,4 @@
-#ifndef __MONGOPERF_GUARD_BENCH__
-#define __MONGOPERF_GUARD_BENCH__
+#pragma once
 
 #include <mongo/client/dbclient.h>
 #include <iostream>
@@ -21,4 +20,3 @@
 #include "query.hh"
 #include "update.hh"
 
-#endif // __MONGOPERF_GUARD_INSERTTEST__

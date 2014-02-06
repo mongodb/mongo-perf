@@ -1,5 +1,4 @@
-#ifndef __MONGOPERF_GUARD_TESTBASE__
-#define __MONGOPERF_GUARD_TESTBASE__
+#pragma once
 
 #ifndef _WIN32
 #include <cxxabi.h>
@@ -140,4 +139,3 @@ namespace utils {
     };
 } // namespace tests
 
-#endif //__MONGOPERF_GUARD_TESTBASE__
