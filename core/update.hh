@@ -191,7 +191,8 @@ namespace {
                 const int incs = cc->getIterations() / n / 100;
                 for (int i = 0; i < 100; ++i) {
                     for (int j = 0; j < incs; ++j) {
-                        // XXX: This might use a BSONObj builder, but that would be slow.
+                        // XXX: This might use a BSONObj builder,
+                        // but that would be slow.
                         // Let's hardcode the fields instead.
                         cc->update(t, BSON("_id" << i),
                                       BSON("$inc" << BSON("aa" << 1 <<
@@ -222,14 +223,17 @@ namespace {
             void run(int t, int n, Connection *cc) {
                 const int incs = cc->getIterations() / n / 100;
                 for (int i = 0; i < 100; ++i) {
-                    // XXX: This might use a BSONObj builder, but that would be slow.
-                    // Let's hardcode the fields instead.
-                    cc->update(t, BSON("_id" << i),
+                    for (int j = 0; j < incs; ++j) {
+                        // XXX: This might use a BSONObj builder,
+                        // but that would be slow.
+                        // Let's hardcode the fields instead.
+                        cc->update(t, BSON("_id" << i),
                                       BSON("$inc" << BSON("aa" << 1 <<
                                                           "wa" << 1 <<
                                                           "xi" << 1 <<
                                                           "zm" << 1 <<
                                                           "gn" << 1)));
+                    }
                 }
             }
     };
@@ -252,14 +256,17 @@ namespace {
             void run(int t, int n, Connection *cc) {
                 const int incs = cc->getIterations() / n / 100;
                 for (int i = 0; i < 100; ++i) {
-                    // XXX: This might use a BSONObj builder, but that would be slow.
-                    // Let's hardcode the fields instead.
-                    cc->update(t, BSON("_id" << i),
+                    for (int j = 0; j < incs; ++j) {
+                        // XXX: This might use a BSONObj builder,
+                        // but that would be slow.
+                        // Let's hardcode the fields instead.
+                        cc->update(t, BSON("_id" << i),
                                       BSON("$inc" << BSON("kbgcslcybg" << 1 <<
                                                           "vjhgznppgw" << 1 <<
                                                           "jzaathnsra" << 1 <<
                                                           "miohmkbzvv" << 1 <<
                                                           "elcgijivrt" << 1)));
+                    }
                 }
             }
 
@@ -283,14 +290,17 @@ namespace {
             void run(int t, int n, Connection *cc) {
                 const int incs = cc->getIterations() / n / 100;
                 for (int i = 0; i < 100; ++i) {
-                    // XXX: This might use a BSONObj builder, but that would be slow.
-                    // Let's hardcode the fields instead.
-                    cc->update(t, BSON("_id" << i),
+                    for (int j = 0; j < incs; ++j) {
+                        // XXX: This might use a BSONObj builder,
+                        // but that would be slow.
+                        // Let's hardcode the fields instead.
+                        cc->update(t, BSON("_id" << i),
                                       BSON("$inc" << BSON("kbgcslcybg" << 1 <<
                                                           "qdwzjpugsr" << 1 <<
                                                           "yanwvoxeov" << 1 <<
                                                           "jzaathnsra" << 1 <<
                                                           "tcrrliflby" << 1)));
+                    }
                 }
             }
 
