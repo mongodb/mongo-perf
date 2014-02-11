@@ -14,6 +14,7 @@ int main(int argc, char **argv) {
         int iterations;
         bool multi_db = false;
         bool batch = false;
+        bool writeConcern = false;
  
         po::options_description display_options("Program options");
         display_options.add_options()
@@ -25,7 +26,8 @@ int main(int argc, char **argv) {
             ("multi-db",            po::bool_switch(),                  "MultiDB mode")
             ("username",            po::value<string>(),                "Username (auth)")
             ("password",            po::value<string>(),                "Password (auth)")  
-            ("batch",               po::bool_switch(),                  "Batched command");
+            ("batch",               po::bool_switch(),                  "Batched command")
+            ("writeConcern",        po::bool_switch(),                  "WriteConcern ON/OFF");
 
         all_options.add(display_options);
         
@@ -65,8 +67,12 @@ int main(int argc, char **argv) {
             batch = options_vars["batch"].as<bool>();
         }
 
+        if (options_vars.count("batch")) {
+            writeConcern = options_vars["writeConcern"].as<bool>();
+        }
+
         Connection *conn = new Connection(conn_string, iterations,
-            multi_db, username, password, batch);
+            multi_db, username, password, batch, writeConcern);
         conn->init();
         
         TestSuite *t = new TestSuite(conn);

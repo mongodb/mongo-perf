@@ -269,6 +269,8 @@ class Local(Master):
                 bench_cmd.append('--multi-db')
             if self.opts.batch:
                 bench_cmd.append('--batch')
+            if self.opts.writeconcern:
+                bench_cmd.append('--writeConcern')
  
             benchmark = subprocess.Popen(bench_cmd, stdout=subprocess.PIPE)
             self.logger.info("Started benchmark args: {0}".format(self.opts))
@@ -340,6 +342,8 @@ class Runner(Master):
                         '--password', self.opts.password]
             if self.opts.batch:
                 bench_cmd.append('--batch')
+            if self.opts.writeconcern:
+                bench_cmd.append('--writeConcern')
             single_db_benchmark = subprocess.Popen(bench_cmd,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             self.logger.info("Running single db benchmark tests...")
@@ -415,6 +419,9 @@ def parse_options():
                          action='store_true', default=False)
     optparser.add_option('--batch', dest='batch',
                          help='use write commands',
+                         action='store_true', default=False)
+    optparser.add_option('--writeConcern', dest='writeconcern',
+                         help='use write concern',
                          action='store_true', default=False)
     optparser.add_option('-l', '--label', dest='label',
                          help='performance testing host',

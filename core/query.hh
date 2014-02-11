@@ -671,7 +671,7 @@ namespace {
 
 // XXX: move away.
 namespace {
-    // Helper class for building and projecting deeply nested document
+      // Helper class for building and projecting deeply nested document
     class NestedProjectionTests : public Base {
         public:
             std::string projectionKey;

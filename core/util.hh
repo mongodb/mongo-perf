@@ -28,6 +28,7 @@ namespace utils {
 
             bool multi_db;
             bool batch;
+            bool writeConcern;
             
             int _iterations;
 
@@ -54,7 +55,8 @@ namespace utils {
         public:
             // XXX: add constructor/destructor
             Connection(string& conn_string, int& iterations,
-                bool& multi_db, string& username, string& password, bool& batch) {
+                bool& multi_db, string& username, string& password, bool& batch,
+                bool& writeConcern) {
                     // XXX: move to list initialization
                     this->conn_string = conn_string;
                     this->_iterations = iterations;
@@ -62,6 +64,7 @@ namespace utils {
                     this->_username = username;
                     this->_password = password;
                     this->batch = batch;
+                    this->writeConcern = writeConcern;
             };
             
             ~Connection() { }
@@ -172,6 +175,9 @@ namespace utils {
                     }
                     else {
                         _conn[max(0,thread)].insert(ns[0], obj);
+                        if (writeConcern) {
+                            getLastError(max(0, thread));
+                        }
                     }
                 }
                 else if (thread != -1) {
@@ -182,6 +188,9 @@ namespace utils {
                     }
                     else {
                         _conn[thread].insert(ns[thread], obj);
+                        if (writeConcern) {
+                            getLastError(thread);
+                        }
                     }
                     return;
                 }
@@ -223,6 +232,9 @@ namespace utils {
                 }
                 else {
                     _conn[thread].remove(ns[multi_db?thread:0], qObj, onlyOne);
+                    if (writeConcern) {
+                        getLastError(thread);
+                    }
                 }
             }
 
@@ -262,6 +274,9 @@ namespace utils {
                 else {
                     _conn[thread].update(ns[multi_db?thread:0], qObj, uObj,
                         upsert, multi);
+                    if (writeConcern) {
+                        getLastError(thread);
+                    }
                 }
                 return;
             }
