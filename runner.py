@@ -191,10 +191,6 @@ class Master(object):
         obj['platform'] = self.host_info['os']['name'].replace(" ", "_")
         self.update_collection(raw, obj)
 
-        if not self.opts.local:
-            self.mongod_handle.__exit__(None, None, None)
-
-
     def update_collection(self, collection, obj):
         """Helper to insert the benchmarked object into 
             the given mongodb collection
@@ -240,22 +236,6 @@ class Local(Master):
         mongod = None
         mongod_port = self.getPortNumber()
 
-        if not self.opts.nolaunch:
-            mongodb_git = 'launch'
-
-            mongocmd = ['./tmp/mongo/mongod', '--quiet', '--dbpath',
-                        './tmp/data', '--port', self.opts.port]
-            if self.opts.nojournal:
-                mongocmd.append('--nojournal')
-
-            mongod = subprocess.Popen(mongocmd, stdout=open(os.devnull))
-
-            self.logger.info("pid: {0}".format(mongod.pid))
-
-            time.sleep(1)  # wait for server to start up
-        else:
-            mongodb_git = "nolaunch"
-
         if self.opts.label != '<git version>':
             mongodb_git = self.opts.label
 
@@ -298,87 +278,11 @@ class Local(Master):
             return single_db_benchmark_results, benchmark_results
         return benchmark_results, multi_db_benchmark_results
 
-
-class Runner(Master):
-    """To be run on buildslave
-    """
-
-    def __init__(self, *args, **kwargs):
-        super(Runner, self).__init__(*args, **kwargs)
-        self.mongod_handle = None
-
-    def getPortNumber(self):
-        return super(Runner, self).getPortNumber()
-
-    def run_benchmark(self):
-        """Runs the benchmark tests
-        """
-        benchmark_results = ''
-        try:
-            mongod_port = self.getPortNumber()
-            exe = '.exe' if os.sys.platform.startswith("win") else ''
-            mongod_path = self.opts.mongod + exe
-            self.mongod_handle = mongomgr.mongod(mongod=mongod_path,
-                                                port=mongod_port,
-                                                logger=self.logger,
-                                                nojournal=self.nojournal,
-                                                config_path=self.opts.config_path)
-            self.mongod_handle.__enter__()
-            self.processes.append(self.mongod_handle.proc)
-
-            self.set_env_info(int(mongod_port))
-
-        except OSError, e:
-            self.logger.error("Could not start mongod - {0}".
-                                    format(e))
-            retval = self.cleanup()
-            sys.exit(retval)
-
-        try:
-            bench_cmd = ['./benchmark',
-                        '--connection-string', self.opts.connstr,
-                        '--iterations', self.opts.iterations,
-                        '--username', self.opts.username,
-                        '--password', self.opts.password]
-            if self.opts.batch:
-                bench_cmd.append('--batch')
-            if self.opts.writeconcern:
-                bench_cmd.append('--writeConcern')
-            single_db_benchmark = subprocess.Popen(bench_cmd,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            self.logger.info("Running single db benchmark tests...")
-            single_db_benchmark_results = single_db_benchmark.communicate()[0]
-
-            bench_cmd.append('--multi-db')
-            multi_db_benchmark = subprocess.Popen(bench_cmd,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            self.logger.info("Running multi db benchmark tests...")
-            multi_db_benchmark_results = multi_db_benchmark.communicate()[0]
-            
-            time.sleep(1)  # wait for server to clean up connections
-        
-        except OSError, e:
-            self.logger.error("Could not start/complete " \
-                    "benchmark tests - {0}".format(e))
-            retval = self.cleanup()
-            sys.exit(retval)
-        except ValueError, e:
-            self.logger.error("Invalid arguments supplied! - {0}".
-                                format(e))
-            retval = self.cleanup()
-            sys.exit(retval)
-
-        return single_db_benchmark_results, multi_db_benchmark_results
-
-
 def main():
     opts, versions = parse_options()
     handle = None
     
-    if opts.local:
-        handle = Local(opts, versions)
-    else:
-        handle = Runner(opts, versions)
+    handle = Local(opts, versions)
     # run benchmark tests
     single_db_benchmark_results, multi_db_benchmark_results = handle.run_benchmark()
     # store benchmark tests
@@ -407,15 +311,8 @@ def parse_options():
     optparser.add_option('-n', '--iterations', dest='iterations',
                          help='number of iterations to test',
                          type='string', default='100000')
-    optparser.add_option('--nolaunch', dest='nolaunch',
-                         help='use mongod already running on port',
-                         action='store_true', default=False)
-    optparser.add_option('--local', dest='local',
-                         help='run on local machine',
-                         action='store_true', default=False)
     optparser.add_option('-m', '--multidb', dest='multidb',
-                         help='use a separate db for each connection'\
-                        ' - only useful in conjunction with --local',
+                         help='use a separate db for each connection',
                          action='store_true', default=False)
     optparser.add_option('--batch', dest='batch',
                          help='use write commands',
