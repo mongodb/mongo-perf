@@ -1,4 +1,5 @@
 import commands
+import ctypes
 import os
 import signal
 import socket
@@ -49,7 +50,10 @@ def spawnMongod():
 def killMongod(mongod_pid):
 	## For some superobscure reason Windows do not provide SIGKILL.
 	## Go for SIGTERM and try to be happy with that.
-	os.kill(int(mongod_pid), signal.SIGTERM)
+	#os.kill(int(mongod_pid), signal.SIGTERM)
+	kernel32 = ctypes.windll.kernel32
+	handle = kernel32.OpenProcess(1, 0, mongod_pid)
+	kernel32.TerminateProcess(handle, 0)
 	isShutdown = False
 	round = 300
 	while (round > 0):
