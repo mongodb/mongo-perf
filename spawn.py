@@ -8,13 +8,19 @@ import sys
 import time
 
 def buildMongod():
-	print(os.getcwd())
-	### XXX: find scons path reliably, don't hardcode
-	scons_path = 'c:\Python27\Scripts\scons.py'
-	options = '-j8'
-	flags = '--64'
-	target = 'mongod.exe'
-	scons_cmd = ['python', scons_path, flags, options, target]
+	options = "-j12"
+
+	if os.name == "nt":
+		### XXX: find scons path reliably, don't hardcode
+		scons_path = "c:\Python27\Scripts\scons.py"
+		flags = '--64'
+		target = "mongod.exe"
+		scons_cmd = ["python", scons_path, flags, options, target]
+	else:
+		scons_path = "scons"
+		target = "mongod"
+		scons_cmd = [scons_path, options, target]
+
 	scons_proc = subprocess.Popen(scons_cmd)
 	scons_proc.wait()
 	if process.returncode != 0:
@@ -22,11 +28,26 @@ def buildMongod():
 
 def spawnMongod():
 	### XXX: Allow to specify where the db should sit, etc..
-	if not os.path.exists(os.getcwd() + "\db"):
-		os.mkdir(os.getcwd() + "\db")
-	mongod_proc = subprocess.Popen('mongod.exe --dbpath db/',
-				#stdout =open(os.devnull, "w"))
-				stdout = sys.stdout) 
+	if os.name == "nt":
+		dbpath = os.getcwd() + "\db"
+		dbex = os.getcwd() + "mongod.exe"
+	else:
+		dbpath = os.getcwd() + "/db"
+		dbex = os.getcwd() + "/mongod"
+
+	if not os.path.exists(dbpath):
+		os.mkdir(dbpath)
+
+	if os.name == "nt":
+		mongod_proc = subprocess.Popen(dbex + " --dbpath " + dbpath,
+						#stdout =open(os.devnull, "w"))
+						stdout = sys.stdout)
+	else:
+		mongod_proc = subprocess.Popen(dbex + " --dbpath " + dbpath,
+						shell=True,
+						#stdout =open(os.devnull, "w"))
+						stdout = sys.stdout)
+
 	# XXX: mongod_proc.wait() CHECKCALL?
 	# Check if actually mongod came up
 	round = 300;
@@ -50,10 +71,12 @@ def spawnMongod():
 def killMongod(mongod_pid):
 	## For some superobscure reason Windows do not provide SIGKILL.
 	## Go for SIGTERM and try to be happy with that.
-	#os.kill(int(mongod_pid), signal.SIGTERM)
-	kernel32 = ctypes.windll.kernel32
-	handle = kernel32.OpenProcess(1, 0, mongod_pid)
-	kernel32.TerminateProcess(handle, 0)
+	if os.name == "nt":
+		kernel32 = ctypes.windll.kernel32
+		handle = kernel32.OpenProcess(1, 0, mongod_pid)
+		kernel32.TerminateProcess(handle, 0)
+	else:
+		os.kill(int(mongod_pid), signal.SIGTERM)
 	isShutdown = False
 	round = 300
 	while (round > 0):
@@ -77,7 +100,13 @@ def killMongod(mongod_pid):
 		return -1
 
 # Get cwd
-if os.path.exists(os.getcwd() + "\mongo"):
+isNew = True
+if os.name == "nt":
+	mongodirpath = "\mongo"
+else:
+	mongodirpath = "/mongo"
+
+if os.path.exists(os.getcwd() + mongodirpath):
 	print("mongo checkout already there, updating..")
 	isNew = False
 if isNew:
@@ -93,10 +122,10 @@ if isNew:
 		else:
 			break
 
-	os.chdir(os.getcwd() + "\mongo")
+	os.chdir(os.getcwd() + mongodirpath)
 else:
 	lastrev = ""
-	os.chdir(os.getcwd() + "\mongo")
+	os.chdir(os.getcwd() + mongodirpath)
 	while True:
 		process = subprocess.Popen("git pull",
 				shell=True, stdout=sys.stdout)
