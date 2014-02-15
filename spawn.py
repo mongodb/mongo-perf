@@ -1,5 +1,6 @@
 import commands
 import ctypes
+import multiprocessing
 import os
 import signal
 import socket
@@ -7,8 +8,12 @@ import subprocess
 import sys
 import time
 
+def getNumCPU():
+	return multiprocessing.cpu_count()
+
 def buildMongod():
-	options = "-j12"
+	options = "-j" + str(getNumCPU())
+	print(options)
 
 	if os.name == "nt":
 		### XXX: find scons path reliably, don't hardcode
