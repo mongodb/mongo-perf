@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
             batch = options_vars["batch"].as<bool>();
         }
 
-        if (options_vars.count("batch")) {
+        if (options_vars.count("writeConcern")) {
             writeConcern = options_vars["writeConcern"].as<bool>();
         }
 
