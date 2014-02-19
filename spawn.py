@@ -28,7 +28,7 @@ def buildMongod():
 
 	scons_proc = subprocess.Popen(scons_cmd)
 	scons_proc.wait()
-	if process.returncode != 0:
+	if scons_proc.returncode != 0:
 		print("something bad happened in scons")
 
 def spawnMongod():
@@ -43,12 +43,14 @@ def spawnMongod():
 	if not os.path.exists(dbpath):
 		os.mkdir(dbpath)
 
+	mongo_cmd = dbex + " --dbpath " + dbpath
+
 	if os.name == "nt":
-		mongod_proc = subprocess.Popen(dbex + " --dbpath " + dbpath,
+		mongod_proc = subprocess.Popen(mongo_cmd,
 						#stdout =open(os.devnull, "w"))
 						stdout = sys.stdout)
 	else:
-		mongod_proc = subprocess.Popen(dbex + " --dbpath " + dbpath,
+		mongod_proc = subprocess.Popen(mongo_cmd,
 						shell=True,
 						#stdout =open(os.devnull, "w"))
 						stdout = sys.stdout)
@@ -70,8 +72,8 @@ def spawnMongod():
 			time.sleep(1)
 			round -= 1
 	if round != 0:
-		return mongod_proc.pid
-	return None
+		return (mongod_proc.pid)
+	return (None)
 
 def killMongod(mongod_pid):
 	## For some superobscure reason Windows do not provide SIGKILL.
@@ -81,7 +83,7 @@ def killMongod(mongod_pid):
 		handle = kernel32.OpenProcess(1, 0, mongod_pid)
 		kernel32.TerminateProcess(handle, 0)
 	else:
-		os.kill(int(mongod_pid), signal.SIGTERM)
+		os.kill(int(mongod_pid), signal.SIGKILL)
 	isShutdown = False
 	round = 300
 	while (round > 0):
@@ -99,37 +101,47 @@ def killMongod(mongod_pid):
 			break
 	if isShutdown:
 		print("Killed mongod\n")
-		return 0
+		return (0)
 	else:
 		print("Unable to kill mongod\n")
-		return -1
+		return (-1)
 
-# Get cwd
-isNew = True
-if os.name == "nt":
-	mongodirpath = "\mongo"
-else:
-	mongodirpath = "/mongo"
+def checkNew():
+	isNew = True
 
-if os.path.exists(os.getcwd() + mongodirpath):
-	print("mongo checkout already there, updating..")
-	isNew = False
-if isNew:
+	if os.name == "nt":
+		mongodirpath = "\mongo"
+	else:
+		mongodirpath = "/mongo"
+
+	if os.path.exists(os.getcwd() + mongodirpath):
+		print("mongo checkout already there, updating..")
+		isNew = False
+	return (isNew)
+
+
+
+def fetchMongod():
+	mongo_fetch = "git clone https://github.com/mongodb/mongo"
+	
 	while True:
-		process = subprocess.Popen(
-				"git clone https://github.com/mongodb/mongo",
+		mongo_proc = subprocess.Popen(mongo_fetch,
 				shell=True, stdout=sys.stdout)
-		process.wait()
-		if process.returncode != 0:
+		mongo_proc.wait()
+		if mongo_proc.returncode != 0:
 			### XXX: be more precise about the error
 			print("clone not working")
-			continue
-		else:
-			break
+			return (process.returncode)
+		return (0)
 
-	os.chdir(os.getcwd() + mongodirpath)
-else:
+def updateAndBuild():
 	lastrev = ""
+
+	if os.name == "nt":
+		mongodirpath = "\mongo"
+	else:
+		mongodirpath = "/mongo"
+
 	os.chdir(os.getcwd() + mongodirpath)
 	while True:
 		process = subprocess.Popen("git pull",
@@ -139,7 +151,8 @@ else:
 			print ("pull not working")
 			continue
 		
-		process = subprocess.Popen("git rev-parse HEAD", shell=True,
+		process = subprocess.Popen("git rev-parse HEAD",
+				shell=True,
 				stdout=subprocess.PIPE)
 		process.wait()
 		rev, err = process.communicate()
@@ -155,3 +168,23 @@ else:
 				sys.exit()
 		else:
 			time.sleep(10)
+
+def main():
+	# Get cwd
+	isNew = checkNew()
+
+	if os.name == "nt":
+		mongodirpath = "\mongo"
+	else:
+		mongodirpath = "/mongo"
+
+	if isNew:
+		ret = fetchMongod()
+		if ret != 0:
+			return
+		os.chdir(os.getcwd() + mongodirpath)
+	else:
+		updateAndBuild()
+
+if __name__ == "__main__":
+	main()
