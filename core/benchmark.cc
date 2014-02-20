@@ -10,6 +10,7 @@ int main(int argc, char **argv) {
         po::variables_map options_vars;
         string conn_string;
         string password;
+        string testname;
         string username;
         int iterations;
         bool multi_db = false;
@@ -27,7 +28,8 @@ int main(int argc, char **argv) {
             ("username",            po::value<string>(),                "Username (auth)")
             ("password",            po::value<string>(),                "Password (auth)")  
             ("batch",               po::bool_switch(),                  "Batched command")
-            ("writeConcern",        po::bool_switch(),                  "WriteConcern ON/OFF");
+            ("writeConcern",        po::bool_switch(),                  "WriteConcern ON/OFF")
+            ("testname",            po::value<string>(),                "Tests to run");
 
         all_options.add(display_options);
         
@@ -71,82 +73,103 @@ int main(int argc, char **argv) {
             writeConcern = options_vars["writeConcern"].as<bool>();
         }
 
+        if (options_vars.count("testname")) {
+            testname = options_vars["testname"].as<string>();
+        }
+        else {
+            testname = "";
+        }
+
         Connection *conn = new Connection(conn_string, iterations,
             multi_db, username, password, batch, writeConcern);
         conn->init();
         
         TestSuite *t = new TestSuite(conn);
-        t->add< Overhead::DoNothing >();
 
-        t->add< Insert::Empty >();
-        t->add< Insert::EmptyBatched<2> >();
-        t->add< Insert::EmptyBatched<10> >();
-        t->add< Insert::EmptyBatched<100> >();
-        t->add< Insert::EmptyBatched<1000> >();
-        t->add< Insert::EmptyCapped >();
-        t->add< Insert::JustID >();
-        t->add< Insert::IntID >();
-        t->add< Insert::IntIDUpsert >();
-        t->add< Insert::JustNum >();
-        t->add< Insert::JustNumIndexedBefore >();
-        t->add< Insert::JustNumIndexedAfter >();
-        t->add< Insert::NumAndID >();
+        if (testname == "" || testname == "overhead") {
+            t->add< Overhead::DoNothing >();
+        }
 
-        t->add< Remove::IntID >();
-        t->add< Remove::IntIDRange >();
-        t->add< Remove::IntNonID >();
-        t->add< Remove::IntNonIDRange >();
+        if (testname == "" || testname == "insert") {
+            t->add< Insert::Empty >();
+            t->add< Insert::EmptyBatched<2> >();
+            t->add< Insert::EmptyBatched<10> >();
+            t->add< Insert::EmptyBatched<100> >();
+            t->add< Insert::EmptyBatched<1000> >();
+            t->add< Insert::EmptyCapped >();
+            t->add< Insert::JustID >();
+            t->add< Insert::IntID >();
+            t->add< Insert::IntIDUpsert >();
+            t->add< Insert::JustNum >();
+            t->add< Insert::JustNumIndexedBefore >();
+            t->add< Insert::JustNumIndexedAfter >();
+            t->add< Insert::NumAndID >();
+        }
 
-        t->add< Update::IncNoIndexUpsert >();
-        t->add< Update::IncWithIndexUpsert >();
-        t->add< Update::IncNoIndex >();
-        t->add< Update::IncWithIndex >();
-        t->add< Update::IncNoIndex_QueryOnSecondary >();
-        t->add< Update::IncWithIndex_QueryOnSecondary >();
-        t->add< Update::IncFewSmallDocLongFields >();
-        t->add< Update::IncFewLargeDocLongFields >();
-        t->add< Update::IncFewSmallDoc >();
-        t->add< Update::IncFewLargeDoc >();
-        t->add< Update::MmsIncShallow1 >();
-        t->add< Update::MmsIncShallow2 >();
-        t->add< Update::MmsIncDeep1 >();
-        t->add< Update::MmsIncDeepSharedPath2 >();
-        t->add< Update::MmsIncDeepSharedPath3 >();
-        t->add< Update::MmsIncDeepDistinctPath2 >();
-        t->add< Update::MmsIncDeepDistinctPath3 >();
+        if (testname == "" || testname == "remove") {
+            t->add< Remove::IntID >();
+            t->add< Remove::IntIDRange >();
+            t->add< Remove::IntNonID >();
+            t->add< Remove::IntNonIDRange >();
+        }
 
-        t->add< Queries::Empty >();
-        t->add< Queries::HundredTableScans >();
-        t->add< Queries::IntID >();
-        t->add< Queries::IntIDRange >();
-        t->add< Queries::IntIDFindOne >();
-        t->add< Queries::IntNonID >();
-        t->add< Queries::IntNonIDRange >();
-        t->add< Queries::IntNonIDFindOne >();
-        t->add< Queries::RegexPrefixFindOne >();
-        t->add< Queries::TwoIntsBothBad >();
-        t->add< Queries::TwoIntsBothGood >();
-        t->add< Queries::TwoIntsFirstGood >();
-        t->add< Queries::TwoIntsSecondGood >();
-        t->add< Queries::ProjectionNoop >();
-        t->add< Queries::ProjectionNoopFindOne >();
-        t->add< Queries::ProjectionSingle >();
-        t->add< Queries::ProjectionSingleFindOne >();
-        t->add< Queries::ProjectionUnderscoreId >();
-        t->add< Queries::ProjectionUnderscoreIdFindOne >();
-        t->add< Queries::ProjectionWideDocNarrowProjection >();
-        t->add< Queries::ProjectionWideDocNarrowProjectionFindOne >();
-        t->add< Queries::ProjectionWideDocWideProjection >();
-        t->add< Queries::ProjectionWideDocWideProjectionFindOne >();
-        t->add< Queries::NestedProjectionFindOne<10, 10> >();
-        t->add< Queries::NestedProjectionCursor<10, 10> >();
-        t->add< Queries::ProjectionElemMatch >();
-        t->add< Queries::ProjectionElemMatchFindOne >();
-        t->add< Commands::CountsFullCollection >();
-        t->add< Commands::CountsIntIDRange >();
-        t->add< Commands::FindAndModifyInserts >();
-        t->add< Commands::DistinctWithIndex >();
-        t->add< Commands::DistinctWithoutIndex >();
+        if (testname == "" || testname == "update") {
+            t->add< Update::IncNoIndexUpsert >();
+            t->add< Update::IncWithIndexUpsert >();
+            t->add< Update::IncNoIndex >();
+            t->add< Update::IncWithIndex >();
+            t->add< Update::IncNoIndex_QueryOnSecondary >();
+            t->add< Update::IncWithIndex_QueryOnSecondary >();
+            t->add< Update::IncFewSmallDocLongFields >();
+            t->add< Update::IncFewLargeDocLongFields >();
+            t->add< Update::IncFewSmallDoc >();
+            t->add< Update::IncFewLargeDoc >();
+            t->add< Update::MmsIncShallow1 >();
+            t->add< Update::MmsIncShallow2 >();
+            t->add< Update::MmsIncDeep1 >();
+            t->add< Update::MmsIncDeepSharedPath2 >();
+            t->add< Update::MmsIncDeepSharedPath3 >();
+            t->add< Update::MmsIncDeepDistinctPath2 >();
+            t->add< Update::MmsIncDeepDistinctPath3 >();
+        }
+
+        if (testname == "" || testname == "query") {
+            t->add< Queries::Empty >();
+            t->add< Queries::HundredTableScans >();
+            t->add< Queries::IntID >();
+            t->add< Queries::IntIDRange >();
+            t->add< Queries::IntIDFindOne >();
+            t->add< Queries::IntNonID >();
+            t->add< Queries::IntNonIDRange >();
+            t->add< Queries::IntNonIDFindOne >();
+            t->add< Queries::RegexPrefixFindOne >();
+            t->add< Queries::TwoIntsBothBad >();
+            t->add< Queries::TwoIntsBothGood >();
+            t->add< Queries::TwoIntsFirstGood >();
+            t->add< Queries::TwoIntsSecondGood >();
+            t->add< Queries::ProjectionNoop >();
+            t->add< Queries::ProjectionNoopFindOne >();
+            t->add< Queries::ProjectionSingle >();
+            t->add< Queries::ProjectionSingleFindOne >();
+            t->add< Queries::ProjectionUnderscoreId >();
+            t->add< Queries::ProjectionUnderscoreIdFindOne >();
+            t->add< Queries::ProjectionWideDocNarrowProjection >();
+            t->add< Queries::ProjectionWideDocNarrowProjectionFindOne >();
+            t->add< Queries::ProjectionWideDocWideProjection >();
+            t->add< Queries::ProjectionWideDocWideProjectionFindOne >();
+            t->add< Queries::NestedProjectionFindOne<10, 10> >();
+            t->add< Queries::NestedProjectionCursor<10, 10> >();
+            t->add< Queries::ProjectionElemMatch >();
+            t->add< Queries::ProjectionElemMatchFindOne >();
+            t->add< Commands::CountsFullCollection >();
+        }
+
+        if (testname == "" || testname == "commands") {
+            t->add< Commands::CountsIntIDRange >();
+            t->add< Commands::FindAndModifyInserts >();
+            t->add< Commands::DistinctWithIndex >();
+            t->add< Commands::DistinctWithoutIndex >();
+        }
 
         std::vector<BSONObj> res = t->run();
         return EXIT_SUCCESS;
