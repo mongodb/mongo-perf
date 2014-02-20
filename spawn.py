@@ -13,7 +13,6 @@ def getNumCPU():
 
 def buildMongod():
 	options = "-j" + str(getNumCPU())
-	print(options)
 
 	if os.name == "nt":
 		### XXX: find scons path reliably, don't hardcode
