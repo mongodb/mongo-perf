@@ -75,6 +75,12 @@ int main(int argc, char **argv) {
 
         if (options_vars.count("testname")) {
             testname = options_vars["testname"].as<string>();
+            if (!(testname == "overhead" || testname == "insert" ||
+                testname == "remove" || testname == "update" ||
+                testname == "query" || testname == "command")) {
+                cout << "Testname is not valid" << endl;
+                return EXIT_FAILURE;
+            }
         }
         else {
             testname = "";
@@ -164,7 +170,7 @@ int main(int argc, char **argv) {
             t->add< Commands::CountsFullCollection >();
         }
 
-        if (testname == "" || testname == "commands") {
+        if (testname == "" || testname == "command") {
             t->add< Commands::CountsIntIDRange >();
             t->add< Commands::FindAndModifyInserts >();
             t->add< Commands::DistinctWithIndex >();
