@@ -22,8 +22,8 @@ int main(int argc, char **argv) {
             ("help", "Display help information");
         po::options_description all_options("All options");
         all_options.add_options()
-            ("connection-string",   po::value<string>()->required(),    "Connection string")
-            ("iterations",          po::value<int>()->required(),       "Number of iterations")
+            ("connection-string",   po::value<string>(),                "Connection string")
+            ("iterations",          po::value<int>(),                   "Number of iterations")
             ("multi-db",            po::bool_switch(),                  "MultiDB mode")
             ("username",            po::value<string>(),                "Username (auth)")
             ("password",            po::value<string>(),                "Password (auth)")  
@@ -45,6 +45,14 @@ int main(int argc, char **argv) {
 
         if (options_vars.count("username") != options_vars.count("password")) {
             cout << "Authentication required both --username and --password" << endl;
+            cout << endl;
+            cout << display_options << endl;
+            return EXIT_FAILURE;
+        }
+
+        if (options_vars.count("connection-string") < 1 ||
+            options_vars.count("iterations") < 1) {
+            cout << "--connection-string and --iterations are mandatory" << endl;
             cout << endl;
             cout << display_options << endl;
             return EXIT_FAILURE;
