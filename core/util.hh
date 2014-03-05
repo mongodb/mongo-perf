@@ -29,6 +29,7 @@ namespace utils {
             bool multi_db;
             bool batch;
             bool writeConcern;
+            bool raw;
             
             int _iterations;
 
@@ -56,7 +57,7 @@ namespace utils {
             // XXX: add constructor/destructor
             Connection(string& conn_string, int& iterations,
                 bool& multi_db, string& username, string& password, bool& batch,
-                bool& writeConcern) {
+                bool& writeConcern, bool& raw) {
                     // XXX: move to list initialization
                     this->conn_string = conn_string;
                     this->_iterations = iterations;
@@ -65,6 +66,7 @@ namespace utils {
                     this->_password = password;
                     this->batch = batch;
                     this->writeConcern = writeConcern;
+                    this->raw = raw;
             };
             
             ~Connection() { }
@@ -102,6 +104,10 @@ namespace utils {
 
             bool getMultiDB(void) {
                 return multi_db;
+            }
+
+            bool getRaw(void) {
+                return raw;
             }
 
             void createCollection(int thread, int size, bool capped) {

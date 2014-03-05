@@ -109,6 +109,11 @@ namespace utils {
                                           << "ops_per_sec" << cc->getIterations() / micros
                                           << "speedup" << one_micros / micros
                                           ));
+
+                        if (cc->getRaw()) {
+                            cout << "Threads: " << nthreads << " ops/sec: "
+                                << cc->getIterations() / micros;
+                        }
                     }
 
                     BSONObj out =
@@ -116,7 +121,10 @@ namespace utils {
                            << "results" << results.obj()
                            );
                     rvec.push_back(out);
-                    cout << out.jsonString(Strict) << endl;
+
+                    if (!cc->getRaw()) {
+                        cout << out.jsonString(Strict) << endl;
+                    }
                 }
                 return rvec;
             }

@@ -16,6 +16,7 @@ int main(int argc, char **argv) {
         bool multi_db = false;
         bool batch = false;
         bool writeConcern = false;
+        bool raw = false;
  
         po::options_description display_options("Program options");
         display_options.add_options()
@@ -29,7 +30,8 @@ int main(int argc, char **argv) {
             ("password",            po::value<string>(),                "Password (auth)")  
             ("batch",               po::bool_switch(),                  "Batched command")
             ("writeConcern",        po::bool_switch(),                  "WriteConcern ON/OFF")
-            ("testname",            po::value<string>(),                "Tests to run");
+            ("testname",            po::value<string>(),                "Tests to run")
+            ("raw",                 po::bool_switch(),                  "Raw output");
 
         all_options.add(display_options);
         
@@ -94,8 +96,12 @@ int main(int argc, char **argv) {
             testname = "";
         }
 
+        if (options_vars.count("raw")) {
+            raw = options_vars["raw"].as<bool>();
+        }
+
         Connection *conn = new Connection(conn_string, iterations,
-            multi_db, username, password, batch, writeConcern);
+            multi_db, username, password, batch, writeConcern, raw);
         conn->init();
         
         TestSuite *t = new TestSuite(conn);
