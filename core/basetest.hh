@@ -112,7 +112,7 @@ namespace utils {
 
                         if (cc->getRaw()) {
                             cout << "Threads: " << nthreads << " ops/sec: "
-                                << cc->getIterations() / micros;
+                                << cc->getIterations() / micros << endl;
                         }
                     }
 
