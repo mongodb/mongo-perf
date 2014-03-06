@@ -54,14 +54,13 @@ int main(int argc, char **argv) {
 
         if (options_vars.count("connection-string") < 1 ||
             options_vars.count("iterations") < 1) {
-            cout << "--connection-string and --iterations are mandatory" << endl;
-            cout << endl;
-            cout << display_options << endl;
-            return EXIT_FAILURE;
+            conn_string = "localhost:27017";
+            iterations = 100000;
         }
-
-        conn_string = options_vars["connection-string"].as<string>();
-        iterations = options_vars["iterations"].as<int>();
+        else {
+            conn_string = options_vars["connection-string"].as<string>();
+            iterations = options_vars["iterations"].as<int>();
+        }
 
         if (options_vars.count("multi-db")) {
             multi_db = options_vars["multi-db"].as<bool>();
