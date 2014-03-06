@@ -24,7 +24,12 @@ env.Append(CPPPATH=['mongo-cxx-driver/src/mongo'])
 env.Append(LIBPATH=['mongo-cxx-driver'])
 
 conf = Configure( env )
-libs = [ "mongoclient",  "boost_thread" , "boost_filesystem" , 'boost_program_options', 'boost_system']
+libs = ["mongoclient",
+        "boost_graph",
+        "boost_thread",
+        "boost_filesystem",
+        'boost_program_options',
+        'boost_system']
 
 def checkLib( lib ):
     if lib.startswith('boost_'):
@@ -44,3 +49,6 @@ for x in libs:
 env = conf.Finish()
 
 env.Program(target = './benchmark', source = 'core/benchmark.cc')
+env.Program('bench-report', ["report/report.cc",
+                             "report/CSVFormatter.cc",
+                             "report/Formatter.cc"])
