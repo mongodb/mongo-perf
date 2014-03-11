@@ -143,6 +143,11 @@ int main(int argc, char **argv) {
             t->add< Update::IncFewLargeDocLongFields >();
             t->add< Update::IncFewSmallDoc >();
             t->add< Update::IncFewLargeDoc >();
+            t->add< Update::FieldAtOffset<0> >();
+            t->add< Update::FieldAtOffset<10> >();
+            t->add< Update::FieldAtOffset<100> >();
+            t->add< Update::FieldAtOffset<256> >();
+            t->add< Update::FieldAtOffset<511> >();
             t->add< Update::MmsIncShallow1 >();
             t->add< Update::MmsIncShallow2 >();
             t->add< Update::MmsIncDeep1 >();

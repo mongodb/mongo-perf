@@ -306,6 +306,50 @@ namespace {
 
     };
 
+    // CAP-105: Update a single field large flat documents.
+    // @param fieldIdToUpdate   0-based field id to update in range [0, kFieldCount)
+    template <int fieldIdToUpdate>
+    class FieldAtOffset : public Base {
+    public:
+        void reset(Connection *cc) {
+            const int kFieldCount = 512;
+            BOOST_STATIC_ASSERT(fieldIdToUpdate < kFieldCount);
+            cc->clearDB();
+            BSONObjBuilder b;
+
+            // generate the document
+            for (int i = 0; i < kFieldCount; ++i) {
+                stringstream s;
+                s << "a_" << i;
+                b.append(s.str(), "a");
+            }
+            BSONObj doc = b.obj().getOwned();
+
+            // insert 100 documents.  ideally this would only update a single document,
+            // however mongo-perf doesn't have the require time resolution.
+            for (int i = 0; i < 100; i++)
+                cc->insert(-1, doc);
+            cc->getLastError();
+
+            // precompute the query and update specifier
+            stringstream fieldName;
+            fieldName << "a_" << fieldIdToUpdate;
+            updateSpec1 = BSON("$set" << BSON(fieldName.str() << "a"));
+            updateSpec2 = BSON("$set" << BSON(fieldName.str() << "aa"));
+        }
+
+        void run(int t, int n, Connection *cc) {
+            // update a single field in every document
+            cc->update(t, querySpec, updateSpec2, false, true);
+            cc->update(t, querySpec, updateSpec1, false, true);
+        }
+
+    private:
+        BSONObj querySpec;
+        BSONObj updateSpec1;
+        BSONObj updateSpec2;
+    };
+
     // Some tests based on the MMS workload. These started as Eliot's 'mms.js' tests, which acm
     // then extended and used for the first round of update performance improvements. We are
     // capturing them here so they are run automatically. These tests explore the overhead of
