@@ -35,6 +35,7 @@ The runner script has a `--local` flag which is used to differentiate between lo
 ##### Benchmarks
 <pre><code># compile the C++ driver
 cd mongo-cxx-driver && scons 
+cd ../
 # compile the benchmark script
 scons benchmark 
 
@@ -46,18 +47,11 @@ To run on an already existing mongod:
 	# this runs the tests and records the results
 	# optionally supply a label as well using -l
 	# use -h for help message
-	python runner.py --nolaunch -l HOSTNAME -n 1 --local
-
-To run it against the source on github:
-	
-	# this pulls and starts mongod from the github repo,
-	# runs the tests and records the results
-	# optionally supply a label as well using -l
-	# use -h for help message
-	python runner.py -l HOSTNAME -n 1 --local
+	python runner.py -l HOSTNAME -n 1
 
 # this serves the results on port 8080
 # use --reload for debugging
+cd gui/
 python server.py 
 
 Go to http://localhost:8080 to see the results
