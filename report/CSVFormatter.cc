@@ -62,7 +62,7 @@ void CSVFormatter::write() {
     }
 
     ofstream output_file;
-    output_file.open(_filename);
+    output_file.open(_filename.c_str());
     
     // just print stdout the CSV for now
     for (vector<vector<string> >::const_iterator row = csv_data.begin();
