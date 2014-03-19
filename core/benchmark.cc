@@ -172,9 +172,11 @@ int main(int argc, char **argv) {
             t->add< Queries::TwoIntsFirstGood >();
             t->add< Queries::TwoIntsSecondGood >();
             t->add< Queries::ProjectionNoop >();
+            t->add< Queries::ProjectionCoverd >();
             t->add< Queries::ProjectionNoopFindOne >();
             t->add< Queries::ProjectionSingle >();
             t->add< Queries::ProjectionSingleFindOne >();
+            t->add< Queries::ProjectionSingleFindOneCovered >();
             t->add< Queries::ProjectionUnderscoreId >();
             t->add< Queries::ProjectionUnderscoreIdFindOne >();
             t->add< Queries::ProjectionWideDocNarrowProjection >();

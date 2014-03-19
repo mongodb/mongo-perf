@@ -1,6 +1,9 @@
 #pragma once
 
 namespace Insert {
+
+    const int DATA_SIZE = 10000; // sames as query, should be a command line option
+
     class Base {
         public:
             bool readOnly() { return false; }

@@ -1,6 +1,10 @@
 #pragma once
 
 namespace Queries{
+
+    const int DATA_SIZE_RANDOM = 10000;
+    const int DATA_SIZE_TS = 100;
+
     class Base {
         public:
             bool readOnly() { return true; }
@@ -14,17 +18,19 @@ namespace Queries{
         public:
             void reset(Connection *cc) {
                 cc->clearDB();
-                for (int i=0; i < cc->getIterations(); i++) {
+                for (int i=0; i < DATA_SIZE_TS; i++) {
                     cc->insert(-1, BSONObj());
                 }
                 cc->getLastError();
             }
 
             void run(int t, int n, Connection *cc) {
-                int chunk = cc->getIterations() / n;
-                auto_ptr<DBClientCursor> cursor = cc->query(t, BSONObj(), 
-                    chunk, chunk*t);
-                cursor->itcount();
+                int chunk = DATA_SIZE_TS / n;
+                for ( int i = 0; i < cc->getIterations() / n; i++ ) {
+                    auto_ptr<DBClientCursor> cursor = cc->query(t, BSONObj(),
+                                                                chunk, chunk*t);
+                    cursor->itcount();
+                }
             }
     };
 
@@ -36,14 +42,14 @@ namespace Queries{
         public:
             void reset(Connection *cc) {
                 cc->clearDB();
-                for (int i=0; i < cc->getIterations(); i++) {
+                for (int i = 0; i < DATA_SIZE_TS; i++) {
                     cc->insert(-1, BSONObj());
                 }
                 cc->getLastError();
             }
 
             void run(int t, int n, Connection *cc){
-                for (int i=0; i < 100 / n; i++) {
+                for (int i=0; i < cc->getIterations() / n; i++) {
                     cc->findOne(t, BSON("does_not_exist" << i));
                 }
             }
@@ -57,17 +63,19 @@ namespace Queries{
         public:
             void reset(Connection *cc) {
                 cc->clearDB();
-                for (int i=0; i < cc->getIterations(); i++) {
+                for (int i = 0; i < DATA_SIZE_TS; i++) {
                     cc->insert(-1, BSON("_id" << i));
                 }
                 cc->getLastError();
             }
 
             void run(int t, int n, Connection *cc) {
-                int chunk = cc->getIterations() / n;
-                auto_ptr<DBClientCursor> cursor =
-                    cc->query(t, BSONObj(), chunk, chunk*t);
-                cursor->itcount();
+                int chunk = DATA_SIZE_TS / n;
+                for ( int i = 0; i < cc->getIterations() / n; i++ ) {
+                    auto_ptr<DBClientCursor> cursor =
+                        cc->query(t, BSONObj(), chunk, chunk*t);
+                    cursor->itcount();
+                }
             }
     };
 
@@ -79,18 +87,20 @@ namespace Queries{
         public:
             void reset(Connection *cc) {
                 cc->clearDB();
-                for (int i=0; i < cc->getIterations(); i++) {
+                for (int i=0; i < DATA_SIZE_TS; i++) {
                     cc->insert(-1, BSON("_id" << i));
                 }
                 cc->getLastError();
             }
 
             void run(int t, int n, Connection *cc){
-                int chunk = cc->getIterations() / n;
-                auto_ptr<DBClientCursor> cursor = 
-                    cc->query(t, BSON("_id" << GTE << chunk*t << LT
-                    << chunk*(t+1)));
-                cursor->itcount();
+                int start = t * ( DATA_SIZE_TS / n );
+                for ( int i = 0; i < cc->getIterations() / n; i++ ) {
+                    auto_ptr<DBClientCursor> cursor =
+                        cc->query(t, BSON("_id" << GTE << start << LT << start + 1 ) );
+                    cursor->itcount();
+                    start = ( start + 1 ) % DATA_SIZE_TS;
+                }
             }
     };
 
@@ -102,16 +112,17 @@ namespace Queries{
         public:
             void reset(Connection *cc) {
                 cc->clearDB();
-                for (int i=0; i < cc->getIterations(); i++) {
+                for (int i = 0; i < DATA_SIZE_RANDOM; i++) {
                     cc->insert(-1, BSON("_id" << i));
                 }
                 cc->getLastError();
             }
 
             void run(int t, int n, Connection *cc) {
-                int base = t * (cc->getIterations() / n);
-                for (int i=0; i < cc->getIterations() / n; i++) {
-                    cc->findOne(t, BSON("_id" << base + i));
+                int start = t * (DATA_SIZE_RANDOM / n);
+                for (int i = 0; i < cc->getIterations() / n; i++) {
+                    cc->findOne(t, BSON("_id" << start ) );
+                    start = ( start + 1 ) % DATA_SIZE_RANDOM;
                 }
             }
     };
@@ -124,18 +135,20 @@ namespace Queries{
         public:
             void reset(Connection *cc) {
                 cc->clearDB();
-                cc->ensureIndex(-1, BSON("x" << 1));
-                for (int i=0; i < cc->getIterations(); i++) {
+                for (int i = 0; i < DATA_SIZE_TS; i++) {
                     cc->insert(-1, BSON("x" << i));
                 }
                 cc->getLastError();
+                cc->ensureIndex(-1, BSON("x" << 1));
             }
 
             void run(int t, int n, Connection *cc) {
-                int chunk = cc->getIterations() / n;
-                auto_ptr<DBClientCursor> cursor = 
-                    cc->query(t, BSONObj(), chunk, chunk*t);
-                cursor->itcount();
+                int chunk = DATA_SIZE_TS / n;
+                for ( int i = 0; i < cc->getIterations() / n; i++ ) {
+                    auto_ptr<DBClientCursor> cursor =
+                        cc->query(t, BSONObj(), chunk, chunk*t);
+                    cursor->itcount();
+                }
             }
     };
 
@@ -147,18 +160,21 @@ namespace Queries{
         public:
             void reset(Connection *cc) {
                 cc->clearDB();
-                cc->ensureIndex(-1, BSON("x" << 1));
-                for (int i=0; i < cc->getIterations(); i++){
+                for (int i = 0; i < DATA_SIZE_RANDOM; i++){
                     cc->insert(-1, BSON("x" << i));
                 }
                 cc->getLastError();
+                cc->ensureIndex(-1, BSON("x" << 1));
             }
 
             void run(int t, int n, Connection *cc) {
-                int chunk = cc->getIterations() / n;
-                auto_ptr<DBClientCursor> cursor = cc->query(t, 
-                    BSON("x" << GTE << chunk*t << LT << chunk*(t+1)));
-                cursor->itcount();
+                int chunk = DATA_SIZE_RANDOM / n;
+                for ( int i = 0; i < cc->getIterations() / n; i++ ) {
+                    auto_ptr<DBClientCursor> cursor =
+                        cc->query(t,
+                                  BSON("x" << GTE << chunk*t << LT << chunk*(t+1)));
+                    cursor->itcount();
+                }
             }
     };
 
@@ -170,17 +186,17 @@ namespace Queries{
         public:
             void reset(Connection *cc) {
                 cc->clearDB();
-                cc->ensureIndex(-1, BSON("x" << 1));
-                for (int i=0; i < cc->getIterations(); i++){
+                for (int i = 0; i < DATA_SIZE_RANDOM; i++){
                     cc->insert(-1, BSON("x" << i));
                 }
                 cc->getLastError();
+                cc->ensureIndex(-1, BSON("x" << 1));
             }
 
             void run(int t, int n, Connection *cc) {
-                int base = t * (cc->getIterations() / n);
+                int base = t * (DATA_SIZE_RANDOM / n);
                 for (int i=0; i < cc->getIterations() / n; i++) {
-                    cc->findOne(t, BSON("x" << base + i));
+                    cc->findOne(t, BSON("x" << ( base + i ) % DATA_SIZE_RANDOM ) );
                 }
             }
     };
@@ -192,21 +208,21 @@ namespace Queries{
     class RegexPrefixFindOne : public Base {
         public:
             RegexPrefixFindOne(){
-                for (int i=0; i<100; i++)
+                for (int i=0; i<DATA_SIZE_RANDOM; i++)
                     nums[i] = "^" + BSONObjBuilder::numStr(i+1);
             }
             void reset(Connection *cc) {
                 cc->clearDB();
                 cc->ensureIndex(-1, BSON("x" << 1));
-                for (int i=0; i < cc->getIterations(); i++) {
+                for (int i = 0; i < DATA_SIZE_RANDOM; i++) {
                     cc->insert(-1, BSON("x" << BSONObjBuilder::numStr(i)));
                 }
                 cc->getLastError();
             }
 
             void run(int t, int n, Connection *cc) {
-                for (int i=0; i < cc->getIterations() / n / 100; i++) {
-                    for (int j=0; j<100; j++) {
+                for (int i=0; i < cc->getIterations() / n / DATA_SIZE_RANDOM; i++) {
+                    for (int j=0; j<DATA_SIZE_RANDOM; j++) {
                         BSONObjBuilder b;
                         b.appendRegex("x", nums[j]);
                         cc->findOne(t, b.obj());
@@ -214,7 +230,7 @@ namespace Queries{
                 }
             }
         private:
-            string nums[100];
+            string nums[DATA_SIZE_RANDOM];
     };
 
     /*
@@ -227,18 +243,18 @@ namespace Queries{
                 cc->clearDB();
                 cc->ensureIndex(-1, BSON("x" << 1));
                 cc->ensureIndex(-1, BSON("y" << 1));
-                for (int i=0; i < cc->getIterations(); i++) {
-                    cc->insert(-1, BSON("x" << i << "y"
-                        << (cc->getIterations() - i)));
+                for (int i=0; i < DATA_SIZE_RANDOM; i++) {
+                    cc->insert(-1, BSON( "x" << i <<
+                                         "y" << (DATA_SIZE_RANDOM - i) ) );
                 }
                 cc->getLastError();
             }
 
             void run(int t, int n, Connection *cc) {
-                int base = t * (cc->getIterations() / n);
+                int base = t * (DATA_SIZE_RANDOM / n);
                 for (int i=0; i < cc->getIterations() / n; i++) {
-                    cc->findOne(t, BSON("x" << base + i << "y" 
-                        << (cc->getIterations() - (base + i))));
+                    cc->findOne(t, BSON("x" << base << "y" << ( DATA_SIZE_RANDOM - base ) ) );
+                    base = ( base + 1 ) % DATA_SIZE_RANDOM;
                 }
             }
     };
@@ -251,19 +267,19 @@ namespace Queries{
         public:
             void reset(Connection *cc) {
                 cc->clearDB();
-                cc->ensureIndex(-1, BSON("x" << 1));
-                cc->ensureIndex(-1, BSON("y" << 1));
-                for (int i=0; i < cc->getIterations(); i++) {
+                for (int i=0; i < DATA_SIZE_RANDOM; i++) {
                     cc->insert(-1, BSON("x" << i << "y" << (i%13)));
                 }
                 cc->getLastError();
+                cc->ensureIndex(-1, BSON("x" << 1));
+                cc->ensureIndex(-1, BSON("y" << 1));
             }
 
             void run(int t, int n, Connection *cc) {
-                int base = t * (cc->getIterations() / n);
+                int base = t * (DATA_SIZE_RANDOM / n);
                 for (int i=0; i < cc->getIterations() / n; i++) {
-                    cc->findOne(t, BSON("x" << base + i << "y"
-                        << ((base+i)%13)));
+                    cc->findOne(t, BSON("x" << base << "y" << i % 13 ) );
+                    base = ( base + 1 ) % DATA_SIZE_RANDOM;
                 }
             }
     };
@@ -276,19 +292,19 @@ namespace Queries{
         public:
             void reset(Connection *cc) {
                 cc->clearDB();
-                cc->ensureIndex(-1, BSON("x" << 1));
-                cc->ensureIndex(-1, BSON("y" << 1));
-                for (int i=0; i < cc->getIterations(); i++){
+                for (int i=0; i < DATA_SIZE_RANDOM; i++){
                     cc->insert(-1, BSON("x" << (i%13) << "y" << i));
                 }
                 cc->getLastError();
+                cc->ensureIndex(-1, BSON("x" << 1));
+                cc->ensureIndex(-1, BSON("y" << 1));
             }
 
             void run(int t, int n, Connection *cc){
-                int base = t * (cc->getIterations() / n);
+                int base = t * (DATA_SIZE_RANDOM / n);
                 for (int i=0; i < cc->getIterations() / n; i++){
-                    cc->findOne(t, BSON("x" << ((base+i)%13) << 
-                        "y" << base+i));
+                    cc->findOne(t, BSON("x" << i % 13 << "y" << base ) );
+                    base = ( base + 1 ) % DATA_SIZE_RANDOM;
                 }
             }
     };
@@ -301,19 +317,19 @@ namespace Queries{
         public:
             void reset(Connection *cc) {
                 cc->clearDB();
-                cc->ensureIndex(-1, BSON("x" << 1));
-                cc->ensureIndex(-1, BSON("y" << 1));
-                for (int i=0; i < cc->getIterations(); i++){
+                for (int i=0; i < DATA_SIZE_RANDOM; i++){
                     cc->insert(-1, BSON("x" << (i%503) << "y" << (i%509))); // both are prime
                 }
                 cc->getLastError();
+                cc->ensureIndex(-1, BSON("x" << 1));
+                cc->ensureIndex(-1, BSON("y" << 1));
             }
 
             void run(int t, int n, Connection *cc){
-                int base = t * (cc->getIterations() / n);
+                int base = t * (DATA_SIZE_RANDOM / n);
                 for (int i=0; i < cc->getIterations() / n; i++){
-                    cc->findOne(t, BSON("x" << ((base+i)%503) << "y"
-                        << ((base+i)%509)));
+                    cc->findOne(t, BSON("x" << base % 503 << "y" << ((base+i)%509) ) ); // WTF
+                    base = ( base + 1 ) % DATA_SIZE_RANDOM;
                 }
             }
     };
@@ -326,22 +342,45 @@ namespace Queries{
         public:
             void reset(Connection *cc) {
                 cc->clearDB();
-                cc->ensureIndex(-1, BSON("x" << 1));
-                for (int i=0; i < cc->getIterations(); i++){
+                for (int i=0; i < DATA_SIZE_TS; i++){
                     cc->insert(-1, BSON("x" << i));
                 }
                 cc->getLastError();
             }
 
             void run(int threadId, int totalThreads, Connection *cc) {
-                int batchSize = cc->getIterations() / totalThreads;
-                auto_ptr<DBClientCursor> cursor = cc->query(threadId,
-                    BSON("x" << GTE << batchSize * threadId
-                             << LT << batchSize * (threadId + 1)),
-                    0, /* limit */
-                    0, /* skip */
-                    BSON("x" << 1) /* projection */);
-                cursor->itcount();
+                for (int i=0; i < cc->getIterations() / totalThreads; i++){
+                    auto_ptr<DBClientCursor> cursor = cc->query(threadId,
+                                                                BSONObj(),
+                                                                0, /* limit */
+                                                                0, /* skip */
+                                                                BSON("x" << 1) /* projection */);
+                    cursor->itcount();
+                }
+            }
+    };
+
+
+    class ProjectionCoverd : public Base {
+        public:
+            void reset(Connection *cc) {
+                cc->clearDB();
+                for (int i=0; i < DATA_SIZE_TS; i++){
+                    cc->insert(-1, BSON("x" << i));
+                }
+                cc->getLastError();
+                cc->ensureIndex(-1, BSON("x" << 1));
+            }
+
+            void run(int threadId, int totalThreads, Connection *cc) {
+                for (int i=0; i < cc->getIterations() / totalThreads; i++){
+                    auto_ptr<DBClientCursor> cursor = cc->query(threadId,
+                                                                BSON( "x" << GT << 0 ),
+                                                                0, /* limit */
+                                                                0, /* skip */
+                                                                BSON("x" << 1 << "_id" << 0 ) /* projection */);
+                    cursor->itcount();
+                }
             }
     };
 
@@ -353,19 +392,19 @@ namespace Queries{
         public:
             void reset(Connection *cc) {
                 cc->clearDB();
-                cc->ensureIndex(-1, BSON("x" << 1));
-                for (int i=0; i < cc->getIterations(); i++) {
+                for (int i=0; i < DATA_SIZE_RANDOM; i++) {
                     cc->insert(-1, BSON("x" << i));
                 }
                 cc->getLastError();
+                cc->ensureIndex(-1, BSON("x" << 1));
             }
 
             void run(int threadId, int totalThreads, Connection *cc) {
-                int batchSize = cc->getIterations() / totalThreads;
-                for (int i = threadId * batchSize;
-                    i < (threadId + 1) * batchSize; i++){
-                    cc->findOne(threadId, BSON("x" << i),
-                        BSON("x" << 1));
+                int batchSize = DATA_SIZE_RANDOM / totalThreads;
+                for (int i = 0; i < cc->getIterations() / totalThreads; i++){
+                    cc->findOne(threadId,
+                                BSON("x" << i % DATA_SIZE_RANDOM),
+                                BSON("x" << 1));
                 }
             }
     };
@@ -378,22 +417,23 @@ namespace Queries{
         public:
             void reset(Connection *cc) {
                 cc->clearDB();
-                cc->ensureIndex(-1, BSON("x" << 1));
-                for (int i=0; i < cc->getIterations(); i++) {
+                for (int i = 0; i < DATA_SIZE_TS; i++) {
                     cc->insert(-1, BSON("x" << i << "y" << 1));
                 }
                 cc->getLastError();
+                cc->ensureIndex(-1, BSON("x" << 1));
+
             }
 
             void run(int threadId, int totalThreads, Connection *cc) {
-                int batchSize = cc->getIterations() / totalThreads;
-                auto_ptr<DBClientCursor> cursor = cc->query(threadId,
-                    BSON("x" << GTE << batchSize * threadId
-                             << LT << batchSize * (threadId + 1)),
-                    0, /* limit */
-                    0, /* skip */
-                    BSON("x" << 1) /* projection */);
-                cursor->itcount();
+                for (int i = 0; i < cc->getIterations() / totalThreads; i++){
+                    auto_ptr<DBClientCursor> cursor = cc->query(threadId,
+                                                                BSONObj(),
+                                                                0, /* limit */
+                                                                0, /* skip */
+                                                                BSON("x" << 1) /* projection */);
+                    cursor->itcount();
+                }
             }
     };
 
@@ -405,19 +445,38 @@ namespace Queries{
         public:
             void reset(Connection *cc) {
                 cc->clearDB();
-                cc->ensureIndex(-1, BSON("x" << 1));
-                for (int i=0; i < cc->getIterations(); i++) {
+                for (int i=0; i < DATA_SIZE_RANDOM; i++) {
                     cc->insert(-1, BSON("x" << i << "y" << 1));
                 }
                 cc->getLastError();
+                cc->ensureIndex(-1, BSON("x" << 1));
             }
 
             void run(int threadId, int totalThreads, Connection *cc) {
-                int batchSize = cc->getIterations() / totalThreads;
-                for (int i = threadId * batchSize;
-                    i < (threadId + 1) * batchSize; i++) {
-                    cc->findOne(threadId, BSON("x" << i),
-                        BSON("x" << 1));
+                for (int i = 0; i < cc->getIterations() / totalThreads; i++){
+                    cc->findOne(threadId,
+                                BSON("x" << i % DATA_SIZE_RANDOM ),
+                                BSON("x" << 1));
+                }
+            }
+    };
+
+    class ProjectionSingleFindOneCovered : public Base {
+        public:
+            void reset(Connection *cc) {
+                cc->clearDB();
+                for (int i=0; i < DATA_SIZE_RANDOM; i++) {
+                    cc->insert(-1, BSON("x" << i << "y" << 1));
+                }
+                cc->getLastError();
+                cc->ensureIndex(-1, BSON("x" << 1));
+            }
+
+            void run(int threadId, int totalThreads, Connection *cc) {
+                for (int i = 0; i < cc->getIterations() / totalThreads; i++){
+                    cc->findOne(threadId,
+                                BSON("x" << i % DATA_SIZE_RANDOM ),
+                                BSON("x" << 1 << "_id" << 0 ));
                 }
             }
     };
@@ -430,22 +489,22 @@ namespace Queries{
         public:
             void reset(Connection *cc) {
                 cc->clearDB();
-                cc->ensureIndex(-1, BSON("x" << 1));
-                for (int i=0; i < cc->getIterations(); i++) {
+                for (int i=0; i < DATA_SIZE_RANDOM; i++) {
                     cc->insert(-1, BSON("x" << i));
                 }
                 cc->getLastError();
+                cc->ensureIndex(-1, BSON("x" << 1));
             }
 
             void run(int threadId, int totalThreads, Connection *cc) {
-                int batchSize = cc->getIterations() / totalThreads;
-                auto_ptr<DBClientCursor> cursor = cc->query(threadId,
-                    BSON("x" << GTE << batchSize * threadId
-                        << LT << batchSize * (threadId + 1)),
-                        0, /* limit */
-                        0, /* skip */
-                        BSON("_id" << 0) /* projection */);
-                cursor->itcount();
+                for (int i = 0; i < cc->getIterations() / totalThreads; i++){
+                    auto_ptr<DBClientCursor> cursor = cc->query(threadId,
+                                                                BSON("x" << LT << 10 ),
+                                                                0, /* limit */
+                                                                0, /* skip */
+                                                                BSON("_id" << 0) /* projection */);
+                    cursor->itcount();
+                }
             }
     };
 
@@ -457,19 +516,18 @@ namespace Queries{
         public:
             void reset(Connection *cc) {
                 cc->clearDB();
-                cc->ensureIndex(-1, BSON("x" << 1));
-                for (int i=0; i < cc->getIterations(); i++) {
+                for (int i=0; i < DATA_SIZE_RANDOM; i++) {
                     cc->insert(-1, BSON("x" << i));
                 }
                 cc->getLastError();
+                cc->ensureIndex(-1, BSON("x" << 1));
             }
 
             void run(int threadId, int totalThreads, Connection *cc) {
-                int batchSize = cc->getIterations() / totalThreads;
-                for (int i = threadId * batchSize;
-                    i < (threadId + 1) * batchSize; i++){
-                    cc->findOne(threadId, BSON("x" << i),
-                        BSON("_id" << 0));
+                for (int i = 0; i < cc->getIterations() / totalThreads; i++){
+                    cc->findOne(threadId,
+                                BSON("x" << i % DATA_SIZE_RANDOM),
+                                BSON("_id" << 0));
                 }
             }
     };
@@ -544,8 +602,7 @@ namespace {
         public:
             void reset(Connection *cc) {
                 cc->clearDB();
-                cc->ensureIndex(-1, BSON("key" << 1));
-                for (int i=0; i < cc->getIterations(); i++) {
+                for (int i=0; i < DATA_SIZE_TS; i++) {
                     // NOTE: This will be slow, but this part of the 
                     // test is not timed, so that's ok
                     BSONObjBuilder b;
@@ -556,17 +613,18 @@ namespace {
                     cc->insert(-1, b.obj());
                 }
                 cc->getLastError();
+                cc->ensureIndex(-1, BSON("key" << 1));
             }
 
             void run(int threadId, int totalThreads, Connection *cc) {
-                int batchSize = cc->getIterations() / totalThreads;
-                auto_ptr<DBClientCursor> cursor = cc->query(threadId,
-                    BSON("key" << GTE << batchSize * threadId
-                        << LT << batchSize * (threadId + 1)),
-                        0, /* limit */
-                        0, /* skip */
-                        BSON("key" << 1) /* projection */);
-                cursor->itcount();
+                for (int i=0; i < cc->getIterations() / totalThreads; i++) {
+                    auto_ptr<DBClientCursor> cursor = cc->query(threadId,
+                                                                BSON("key" << LT << 10 ),
+                                                                0, /* limit */
+                                                                0, /* skip */
+                                                                BSON("key" << 1) /* projection */);
+                    cursor->itcount();
+                }
             }
     };
 
@@ -579,8 +637,7 @@ namespace {
         public:
             void reset(Connection *cc) {
                 cc->clearDB();
-                cc->ensureIndex(-1, BSON("key" << 1));
-                for (int i=0; i < cc->getIterations(); i++) {
+                for (int i=0; i < DATA_SIZE_TS; i++) {
                     // NOTE: This will be slow, but this part of the test 
                     // is not timed, so that's ok
                     BSONObjBuilder b;
@@ -591,14 +648,14 @@ namespace {
                     cc->insert(-1, b.obj());
                 }
                 cc->getLastError();
+                cc->ensureIndex(-1, BSON("key" << 1));
             }
 
             void run(int threadId, int totalThreads, Connection *cc) {
-                int batchSize = cc->getIterations() / totalThreads;
-                for (int i = threadId * batchSize;
-                    i < (threadId + 1) * batchSize; i++) {
-                    cc->findOne(threadId, BSON("key" << i),
-                        BSON("key" << 1));
+                for (int i=0; i < cc->getIterations() / totalThreads; i++) {
+                    cc->findOne(threadId,
+                                BSON("key" << i % DATA_SIZE_TS),
+                                BSON("key" << 1));
                 }
             }
     };
@@ -612,7 +669,7 @@ namespace {
             void reset(Connection *cc) {
                 cc->clearDB();
                 cc->ensureIndex(-1, BSON("key" << 1));
-                for (int i=0; i < cc->getIterations(); i++) {
+                for (int i=0; i < DATA_SIZE_TS; i++) {
                     // NOTE: This will be slow, but this part of the test 
                     // is not timed, so that's ok
                     BSONObjBuilder b;
@@ -626,14 +683,14 @@ namespace {
             }
 
             void run(int threadId, int totalThreads, Connection *cc) {
-                int batchSize = cc->getIterations() / totalThreads;
-                auto_ptr<DBClientCursor> cursor = cc->query(threadId,
-                    BSON("key" << GTE << batchSize * threadId
-                        << LT << batchSize * (threadId + 1)),
-                        0, /* limit */
-                        0, /* skip */
-                        BSON("key" << 0) /* projection */);
-                cursor->itcount();
+                for (int i=0; i < cc->getIterations() / totalThreads; i++) {
+                    auto_ptr<DBClientCursor> cursor = cc->query(threadId,
+                                                                BSON("key" << LT << 10 ),
+                                                                0, /* limit */
+                                                                0, /* skip */
+                                                                BSON("key" << 0) /* projection */);
+                    cursor->itcount();
+                }
             }
     };
 
@@ -645,9 +702,8 @@ namespace {
         public:
             void reset(Connection *cc) {
                 cc->clearDB();
-                cc->ensureIndex(-1, BSON("key" << 1));
-                for (int i=0; i < cc->getIterations(); i++) {
-                    // NOTE: This will be slow, but this part of the test 
+                for (int i=0; i < DATA_SIZE_TS; i++) {
+                    // NOTE: This will be slow, but this part of the test
                     // is not timed, so that's ok
                     BSONObjBuilder b;
                     b.append("key", i);
@@ -657,14 +713,14 @@ namespace {
                     cc->insert(-1, b.obj());
                 }
                 cc->getLastError();
+                cc->ensureIndex(-1, BSON("key" << 1));
             }
 
             void run(int threadId, int totalThreads, Connection *cc) {
-                int batchSize = cc->getIterations() / totalThreads;
-                for (int i = threadId * batchSize; 
-                    i < (threadId + 1) * batchSize; i++){
-                    cc->findOne(threadId, BSON("key" << i),
-                        BSON("key" << 0));
+                for (int i=0; i < cc->getIterations() / totalThreads; i++) {
+                    cc->findOne(threadId,
+                                BSON("key" << i % DATA_SIZE_TS),
+                                BSON("key" << 0));
                 }
             }
     };
@@ -684,9 +740,8 @@ namespace {
 
             void reset(Connection *cc) {
                 cc->clearDB();
-                cc->ensureIndex(-1, BSON("key" << 1));
                 projectionKey = buildNestedProjectionKey(projectionDepth());
-                for (int i=0; i < cc->getIterations(); i++) {
+                for (int i=0; i < DATA_SIZE_TS; i++) {
                     // NOTE: This will be slow, but this part of the test is
                     // not timed, so that's ok
                     BSONObjBuilder b;
@@ -695,6 +750,7 @@ namespace {
                     cc->insert(-1, b.obj());
                 }
                 cc->getLastError();
+                cc->ensureIndex(-1, BSON("key" << 1));
             }
 
             virtual void run(int threadId, int totalThreads,
@@ -740,11 +796,10 @@ namespace {
 
         public:
             void run(int threadId, int totalThreads, Connection *cc) {
-                int batchSize = cc->getIterations() / totalThreads;
-                for (int i = threadId * batchSize;
-                    i < (threadId + 1) * batchSize; i++) {
-                    cc->findOne(threadId, BSON("key" << i),
-                        BSON(projectionKey << 0));
+                for (int i=0; i < cc->getIterations() / totalThreads; i++) {
+                    cc->findOne(threadId,
+                                BSON("key" << i % DATA_SIZE_TS),
+                                BSON(projectionKey << 0));
                 }
             }
     };
@@ -763,14 +818,14 @@ namespace {
 
         public:
             void run(int threadId, int totalThreads, Connection *cc) {
-                int batchSize = cc->getIterations() / totalThreads;
-                auto_ptr<DBClientCursor> cursor = cc->query(threadId,
-                    BSON("key" << GTE << batchSize * threadId
-                        << LT << batchSize * (threadId + 1)),
-                        0, /* limit */
-                        0, /* skip */
-                        BSON(projectionKey << 0) /* projection */);
-                cursor->itcount();
+                for (int i=0; i < cc->getIterations() / totalThreads; i++) {
+                    auto_ptr<DBClientCursor> cursor = cc->query(threadId,
+                                                                BSON("key" << LT << 10 ),
+                                                                0, /* limit */
+                                                                0, /* skip */
+                                                                BSON(projectionKey << 0) /* projection */);
+                    cursor->itcount();
+                }
             }
     };
 
@@ -785,7 +840,7 @@ namespace {
             void reset(Connection *cc) {
                 cc->clearDB();
                 cc->ensureIndex(-1, BSON("x" << 1));
-                for (int i=0; i < cc->getIterations(); i++) {
+                for (int i=0; i < DATA_SIZE_TS; i++) {
                     cc->insert(-1, BSON("x" << i <<
                                         "arr" << BSON_ARRAY(
                         BSON("x" << 1) <<
@@ -796,16 +851,16 @@ namespace {
             }
 
             void run(int threadId, int totalThreads, Connection *cc) {
-                int batchSize = cc->getIterations() / totalThreads;
-                auto_ptr<DBClientCursor> cursor = cc->query(threadId,
-                    BSON("x" << GTE << batchSize * threadId
-                        << LT << batchSize * (threadId + 1)),
-                        0, /* limit */
-                        0, /* skip */
-                        BSON("arr" <<
-                        BSON("$elemMatch" <<
-                        BSON("x" << 2))) /* projection */);
-                cursor->itcount();
+                for (int i=0; i < cc->getIterations() / totalThreads; i++) {
+                    auto_ptr<DBClientCursor> cursor = cc->query(threadId,
+                                                                BSON("x" << LT << 10 ),
+                                                                0, /* limit */
+                                                                0, /* skip */
+                                                                BSON("arr" <<
+                                                                     BSON("$elemMatch" <<
+                                                                          BSON("x" << 2))) /* projection */);
+                    cursor->itcount();
+                }
             }
     };
 
@@ -817,7 +872,7 @@ namespace {
             void reset(Connection *cc) {
                 cc->clearDB();
                 cc->ensureIndex(-1, BSON("x" << 1));
-                for (int i=0; i < cc->getIterations(); i++){
+                for (int i=0; i < DATA_SIZE_TS; i++){
                     cc->insert(-1, BSON("x" << i <<
                                         "arr" << BSON_ARRAY(
                         BSON("x" << 1) <<
@@ -828,12 +883,11 @@ namespace {
             }
 
             void run(int threadId, int totalThreads, Connection *cc) {
-                int batchSize = cc->getIterations() / totalThreads;
-                for (int i = threadId * batchSize;
-                    i < (threadId + 1) * batchSize; i++){
-                    cc->findOne(threadId, BSON("x" << i),
-                        BSON("arr" << BSON("$elemMatch" <<
-                        BSON("x" << 2))));
+                for (int i=0; i < cc->getIterations() / totalThreads; i++) {
+                    cc->findOne(threadId,
+                                BSON("x" << i % DATA_SIZE_TS),
+                                BSON("arr" << BSON("$elemMatch" <<
+                                                   BSON("x" << 2))));
                 }
             }
     };
