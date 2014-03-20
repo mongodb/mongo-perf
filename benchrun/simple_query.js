@@ -158,4 +158,32 @@ tests.push( { name: "Queries.FindWideDocProjection",
                     filter: { x : 1 } }
               ] } );
 
+
+tests.push( { name: "Queries.FindProjectionThreeFieldsCovered",
+              pre: function( collection ) {
+                  collection.drop();
+                  for ( var i = 0; i < 1000; i++ ) {
+                      collection.insert( { x : i, y: i, z: i } );
+                  }
+                  collection.ensureIndex( { x : 1, y : 1, z : 1 } );
+              },
+              ops: [
+                  { op: "find",
+                    query: { x: { $gte : 0 } },
+                    filter: { x : 1, y : 1, z : 1, _id : 0 } }
+              ] } );
+
+
+tests.push( { name: "Queries.FindProjectionThreeFields",
+              pre: function( collection ) {
+                  collection.drop();
+                  for ( var i = 0; i < 1000; i++ ) {
+                      collection.insert( { x : i, y: i, z: i } );
+                  }
+              },
+              ops: [
+                  { op: "find",
+                    query: { },
+                    filter: { x : 1, y : 1, z : 1, _id : 0 } }
+              ] } );
 // left off at: RegexPrefixFindOne
