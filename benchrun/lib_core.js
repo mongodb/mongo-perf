@@ -80,3 +80,11 @@ function runTest( db, test, threadNumbers ) {
 
     return allResults;
 }
+
+function findTest( fragment ) {
+    for ( var i = 0; i < tests.length; i++ ) {
+        if ( tests[i].name.indexOf( fragment ) >= 0 )
+            return tests[i];
+    }
+    throw "can't find test with fragment [" + fragment + "]";
+}
