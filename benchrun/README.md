@@ -13,10 +13,10 @@ To report into the same mongod you're testing against:
     mongo --eval "label='test1'" simple_*.js mixed_*.js lib_core.js lib_report.js
 
 To experiment with a single test
-   mongo <test file> lib_core.js --shell
-   > runTest( db, findTest( "<fragment>" ) , [ 2 , 6 ] )
+    mongo <test file> lib_core.js --shell
+    > runTest( db, findTest( "<fragment>" ) , [ 2 , 6 ] )
 
-   mongo simple_insert.js lib_core.js --shell
-   > runTest( db, findTest( "EmptyCapped" ) , [ 2 , 6 ] )
+    mongo simple_insert.js lib_core.js --shell
+    > runTest( db, findTest( "EmptyCapped" ) , [ 2 , 6 ] )
 
 
