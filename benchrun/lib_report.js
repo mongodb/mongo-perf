@@ -46,6 +46,7 @@ function runTests() {
     }
 
     var threadNumbers = [ 1, 2, 4, 8, 16 ];
+    //var threadNumbers = [ 1, 2, 4 ];
 
     print( "Number of Tests: " + tests.length );
     var guess = 1.1 * threadNumbers.length * 5 * tests.length;

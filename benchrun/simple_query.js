@@ -75,8 +75,7 @@ tests.push( { name : "Queries.IntNonIDRange",
                   { op: "find", query: { x : { $gt : 50, $lt : 100 } } }
               ] } );
 
-
-// left off at: RegexPrefixFindOne
+// PROJECTION TESTS
 
 tests.push( { name: "Queries.IntNonIdFindOneProjectionCovered",
               pre: function( collection ) {
@@ -94,3 +93,69 @@ tests.push( { name: "Queries.IntNonIdFindOneProjectionCovered",
               ] } );
 
 
+tests.push( { name: "Queries.IntNonIdFindOneProjection",
+              pre: function( collection ) {
+                  collection.drop();
+                  for ( var i = 0; i < 1000; i++ ) {
+                      collection.insert( { x : i } );
+                  }
+                  collection.ensureIndex( { x : 1 } );
+              },
+              ops: [
+                  { op: "find",
+                    query: { x : { "#RAND_INT" : [ 0, 1000 ] } },
+                    limit: 1,
+                    filter: { x : 1 } }
+              ] } );
+
+
+tests.push( { name: "Queries.IntNonIdFindProjectionCovered",
+              pre: function( collection ) {
+                  collection.drop();
+                  for ( var i = 0; i < 1000; i++ ) {
+                      collection.insert( { x : i } );
+                  }
+              },
+              ops: [
+                  { op: "find",
+                    query: { x: { $gte : 0 } },
+                    filter: { x : 1, _id : 0 } }
+              ] } );
+
+
+tests.push( { name: "Queries.FindProjection",
+              pre: function( collection ) {
+                  collection.drop();
+                  for ( var i = 0; i < 1000; i++ ) {
+                      collection.insert( { x : i } );
+                  }
+                  collection.ensureIndex( { x : 1 } );
+              },
+              ops: [
+                  { op: "find",
+                    query: { },
+                    filter: { x : 1 } }
+              ] } );
+
+
+tests.push( { name: "Queries.FindWideDocProjection",
+              pre: function( collection ) {
+                  collection.drop();
+                  for ( var i = 0; i < 1000; i++ ) {
+                      collection.insert( { a : i, 
+                          b: i, c: i, d: i, e: i,
+                          f: i, g: i, h: i, i: i,
+                          j: i, k: i, l: i, m: i,
+                          n: i, o: i, p: i, q: i,
+                          r: i, s: i, t: i, u: i,
+                          v: i, w: i, x: i, y: i, z: 1
+                      } );
+                  }
+              },
+              ops: [
+                  { op: "find",
+                    query: { },
+                    filter: { x : 1 } }
+              ] } );
+
+// left off at: RegexPrefixFindOne
