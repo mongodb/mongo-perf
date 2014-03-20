@@ -186,4 +186,19 @@ tests.push( { name: "Queries.FindProjectionThreeFields",
                     query: { },
                     filter: { x : 1, y : 1, z : 1, _id : 0 } }
               ] } );
+
+
+tests.push( { name: "Queries.FindProjectionDottedField",
+              pre: function( collection ) {
+                  collection.drop();
+                  for ( var i = 0; i < 1000; i++ ) {
+                      collection.insert( { x : { y: i } } );
+                  }
+              },
+              ops: [
+                  { op: "find",
+                    query: { },
+                    filter: { 'x.y' : 1, _id : 0 } }
+              ] } );
+
 // left off at: RegexPrefixFindOne
