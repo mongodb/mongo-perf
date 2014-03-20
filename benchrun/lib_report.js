@@ -22,21 +22,28 @@ function formateDate( now ) {
 function runTests() {
 
     var resultsCollection = db.getSisterDB( "bench_results" ).raw;
-    resultsCollection.ensureIndex( { label : 1 } );
-
-    resultsCollection.remove( { label : label } );
+    resultsCollection.ensureIndex( { label : 1 }, { unique : true } );
 
     var myId = new ObjectId();
     var now = new Date();
 
     var bi = db.runCommand( "buildInfo" );
-    resultsCollection.insert( { _id : myId,
-                                commit : bi.gitVersion,
-                                label: label,
-                                platform : bi.sysInfo.split( " " )[0],
-                                run_date: formateDate( now ),
-                                run_time: now,
-                                version: bi.version } );
+    var basicFields = { commit : bi.gitVersion,
+                        label: label,
+                        platform : bi.sysInfo.split( " " )[0],
+                        run_date: formateDate( now ),
+                        run_time: now,
+                        version: bi.version };
+
+    var oldDoc = resultsCollection.findOne( { label : label } );
+    if ( oldDoc ) {
+        myId = oldDoc._id;
+        resultsCollection.update( { _id : myId } , { $set : basicFields } );
+    }
+    else {
+        basicFields._id = myId;
+        resultsCollection.insert( basicFields );
+    }
 
     var threadNumbers = [ 1, 2, 4, 8, 16 ];
 
@@ -49,9 +56,15 @@ function runTests() {
 
         var allResults = runTest( db, test, threadNumbers );
 
-        resultsCollection.update( { _id : myId },
-                                  { $push : { "singledb" : { name : test.name,
-                                                             results : allResults } } } );
+        if ( resultsCollection.findOne( { _id : myId, "singledb.name" : test.name } ) ) {
+            resultsCollection.update( { _id : myId, "singledb.name" : test.name },
+                                      { $set : { "singledb.$.results" : allResults } } );
+        }
+        else {
+            resultsCollection.update( { _id : myId },
+                                      { $push : { "singledb" : { name : test.name,
+                                                                 results : allResults } } } );
+        }
 
     }
 
