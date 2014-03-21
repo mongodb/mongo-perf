@@ -115,6 +115,7 @@ tests.push( { name: "Queries.IntNonIdFindProjectionCovered",
                   for ( var i = 0; i < 1000; i++ ) {
                       collection.insert( { x : i } );
                   }
+                  collection.ensureIndex( { x : 1 } );
               },
               ops: [
                   { op: "find",
