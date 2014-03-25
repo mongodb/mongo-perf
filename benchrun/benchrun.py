@@ -6,7 +6,7 @@ from os import remove
 
 
 def parse_arguments():
-    usage = "python marathon.py -f <list of test files> -t <list of thread configurations>"
+    usage = "python benchrun.py -f <list of test files> -t <list of thread configurations>"
     parser = ArgumentParser(description="Performance testing script framework thing.", usage=usage)
 
     parser.add_argument('-f', '--testfiles', dest='testfiles', nargs="+",
@@ -37,7 +37,7 @@ def main():
 
     for testfile in args.testfiles:
         print("\n" + testfile + "\n===================")
-        shellcmd = "mongo " + testfile + " warmup.js " + runfile.name
+        shellcmd = "mongo " + testfile + " utils.js " + runfile.name
         # For some reason, using Popen or call will not work here.
         # Even if I redirect STDOUT somewhere sensible, it just disappears.
         print(check_output(shellcmd, shell=True))
