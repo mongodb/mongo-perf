@@ -18,5 +18,20 @@ tests.push( { name: "Insert::EmptyCapped",
                   { op: "insert", doc: {} }
               ] } );
 
+/**
+tests.push( { name: "Insert::EmptyBatched",
+              pre: function( collection ) {
+                  collection.drop();
+              },
+              ops: [
+                  // { op: "insert", doc: }
+              ] } );
+
+tests.push( { name: "Insert::JustID",
+              pre: function( collection ) { collection.drop(); },
+              ops: [
+                  { op: "insert", doc: }
+              ] } );
+ */
 
 
