@@ -36,6 +36,20 @@ function prepOp(collection, op) {
     return op;
 }
 
+function formatRunDate(now) {
+    function pad(dateComponent) {
+        dateComponent = "" + dateComponent;
+        while (dateComponent.length < 2) {
+            dateComponent = "0" + dateComponent;
+        }
+        return dateComponent;
+    }
+
+    return (1900 + now.getYear() + "-" +
+            pad(now.getMonth() + 1) + "-" +
+            pad(now.getDate()));
+}
+
 function runTest(test, thread, multidb) {
     var collections = [];
 
@@ -87,11 +101,43 @@ function runTest(test, thread, multidb) {
     return { ops_per_sec: total };
 }
 
-function runTests(threadCounts, multidb) {
-    // Start delimiter for the useful output to be displayed.
+
+
+function runTests(threadCounts, multidb, reportLabel) {
+    var testResults = {};
+    // The following are only used when reportLabel is not None.
+    var resultsCollection = db.getSiblingDB("bench_results").raw;
+    var myId = 0;
+
+    // Set up the reporting database and the object that will hold these tests' info.
+    if (reportLabel) {
+        resultsCollection.ensureIndex({ label: 1 }, { unique: true });
+
+        var now = new Date();
+        myId = new ObjectId();
+        var bi = db.runCommand("buildInfo");
+        var basicFields = {
+            commit:     bi.gitVersion,
+            label:      reportLabel,
+            platform:   bi.sysInfo.split(" ")[0],
+            run_date:   formatRunDate(now),
+            run_time:   now,
+            version:    bi.version
+        };
+
+        var oldDoc = resultsCollection.findOne({ label: reportLabel });
+        if (oldDoc) {
+            myId = oldDoc._id;
+            resultsCollection.update({ _id: myId }, { $set: basicFields });
+        } else {
+            basicFields._id = myId;
+            resultsCollection.insert(basicFields);
+        }
+    }
+
     print("@@@START@@@");
 
-    var testResults = {};
+    // Run all tests in the test file.
     for (var i = 0; i < tests.length; i++) {
         var test = tests[i];
         print(test.name);
@@ -102,6 +148,17 @@ function runTests(threadCounts, multidb) {
             threadResults[threadCount] = runTest(test, threadCount, multidb);
         }
         testResults[test] = threadResults;
+
+        if (reportLabel) {
+            if (resultsCollection.findOne({ _id: myId, "singledb.name": test.name })) {
+                resultsCollection.update({ _id: myId, "singledb.name": test.name },
+                                         { $set: { "singledb.$.results": threadResults } });
+            } else {
+                resultsCollection.update({ _id: myId },
+                                         { $push: { "singledb": { name: test.name,
+                                                                  results: threadResults } } });
+            }
+        }
     }
 
     // End delimiter for the useful output to be displayed.
