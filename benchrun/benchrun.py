@@ -54,7 +54,7 @@ def main():
 
     # Read test output.
     readout = False
-    for line in mongo_proc.stdout:
+    for line in iter(mongo_proc.stdout.readline, ''):
         line = line.strip()
         if line == "@@@START@@@":
             readout = True
