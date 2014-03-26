@@ -15,12 +15,11 @@ def parse_arguments():
                         help='Specify which thread configuration to use',
                         type=int, default=[1, 2, 4, 8, 12, 16])
     parser.add_argument('-m', '--multidb', dest='multidb',
-                        help="Specify how many databases the test should use.",
+                        help='Specify how many databases the test should use',
                         type=int, default=1)
-    parser.add_argument('-r', '--report', dest='reportlabel',
-                        help=("Specify whether report stats should be saved to bench_results db,"
-                              "and the label to assign to those stats."),
-                        default="")
+    parser.add_argument('-l', '--label', dest='reportlabel',
+                        help='Specify the label for the report stats saved to bench_results db',
+                        default='')
 
     return parser.parse_known_args()
 
