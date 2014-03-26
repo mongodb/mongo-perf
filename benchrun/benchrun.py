@@ -1,7 +1,7 @@
 # it's a marathon not a sprint bro
 
 from argparse import ArgumentParser
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, call
 
 
 def parse_arguments():
@@ -23,6 +23,11 @@ def parse_arguments():
 
 def main():
     args, extra_args = parse_arguments()
+
+    # Print version info.
+    call(["mongo", "--eval",
+          "print('db version: ' + db.version()); db.serverBuildInfo().gitVersion;"])
+    print("")
 
     if args.multidb < 1:
         print("MultiDB option must be greater than zero. Will be set to 1.")
