@@ -38,7 +38,7 @@ def main():
 
     # Open a mongo shell subprocess and load necessary files.
     mongo_proc = Popen("mongo", stdin=PIPE, stdout=PIPE)
-    mongo_proc.stdin.write("load('utils.js')\n")
+    mongo_proc.stdin.write("load('util/utils.js')\n")
     for testfile in args.testfiles:
         mongo_proc.stdin.write("load('" + testfile + "')\n")
 
