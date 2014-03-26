@@ -1,8 +1,7 @@
 # it's a marathon not a sprint bro
 
 from argparse import ArgumentParser
-from subprocess import check_output
-from os import remove
+from subprocess import Popen, PIPE
 
 
 def parse_arguments():
@@ -29,22 +28,33 @@ def main():
         print("MultiDB option must be greater than zero. Will be set to 1.")
         args.multidb = 1
 
-    # For some reason, using NamedTemporaryFile will not work here.
-    # The NamedTemporaryFile won't run properly when it's passed to the mongo shell.
-    runfile = open("totally_temp.js", 'w')
-    runfile.write("runTests(" + str(args.threads) + ", " + str(args.multidb).lower() + ");")
-    runfile.close()
-
     for testfile in args.testfiles:
-        print("\n" + testfile + "\n===================")
-        shellcmd = "mongo " + testfile + " utils.js " + runfile.name
-        # For some reason, using Popen or call will not work here.
-        # Even if I redirect STDOUT somewhere sensible, it just disappears.
-        print(check_output(shellcmd, shell=True))
+        # Open a mongo shell subprocess
+        mongo_proc = Popen("mongo", stdin=PIPE, stdout=PIPE)
+        mongo_proc.stdin.write("load('utils.js')\n")
 
-    # Sort of dangerous, probably. Oh well.
-    # Other people probably won't name their files like a Valley Girl so I'm probably safe.
-    remove("totally_temp.js")
+        print(testfile + "\n===================")
+
+        # Pipe commands to the mongo shell to kickoff the test.
+        cmdstr = "load('" + testfile + "');\n"
+        cmdstr += "runTests(" + str(args.threads) + ", " + str(args.multidb).lower() + ");\n"
+        mongo_proc.stdin.write(cmdstr)
+        mongo_proc.stdin.close()
+
+        # Read test output.
+        start, end = False, False
+        for line in mongo_proc.stdout:
+            line = line.strip()
+            if line == "@@@START@@@":
+                start = True
+            elif line == "@@@END@@@":
+                end = True
+            elif start and not end:
+                print line
+
+        # Print newline after done with this test file.
+        print("")
+
     print("Finished Testing.")
 
 

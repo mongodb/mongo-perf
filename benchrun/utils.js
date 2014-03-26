@@ -88,6 +88,9 @@ function runTest(test, thread, multidb) {
 }
 
 function runTests(threadCounts, multidb) {
+    // Start delimiter for the useful output to be displayed.
+    print("@@@START@@@");
+
     var testResults = {};
     for (var i = 0; i < tests.length; i++) {
         var test = tests[i];
@@ -100,6 +103,9 @@ function runTests(threadCounts, multidb) {
         }
         testResults[test] = threadResults;
     }
+
+    // End delimiter for the useful output to be displayed.
+    print("@@@END@@@");
 
     return testResults;
 }
