@@ -2,6 +2,7 @@
 
 from argparse import ArgumentParser
 from subprocess import Popen, PIPE, call
+import sys
 
 
 def parse_arguments():
@@ -20,6 +21,9 @@ def parse_arguments():
     parser.add_argument('-l', '--label', dest='reportlabel',
                         help='Specify the label for the report stats saved to bench_results db',
                         default='')
+    parser.add_argument('-s', '--shell', dest='shellpath',
+                        help="Path to the mongo shell executable to use.",
+                        default='mongo')
 
     return parser.parse_known_args()
 
@@ -27,17 +31,21 @@ def parse_arguments():
 def main():
     args, extra_args = parse_arguments()
 
+    if not args.testfiles:
+        print("Must provide at least one test file. Run with --help for details.")
+        sys.exit(1)
+
     if args.multidb < 1:
         print("MultiDB option must be greater than zero. Will be set to 1.")
         args.multidb = 1
 
     # Print version info.
-    call(["mongo", "--eval",
+    call([args.shellpath, "--eval",
           "print('db version: ' + db.version()); db.serverBuildInfo().gitVersion;"])
     print("")
 
     # Open a mongo shell subprocess and load necessary files.
-    mongo_proc = Popen("mongo", stdin=PIPE, stdout=PIPE)
+    mongo_proc = Popen(args.shellpath, stdin=PIPE, stdout=PIPE)
     mongo_proc.stdin.write("load('util/utils.js')\n")
     for testfile in args.testfiles:
         mongo_proc.stdin.write("load('" + testfile + "')\n")
