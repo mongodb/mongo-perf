@@ -44,5 +44,3 @@ tests.push( { name: "Remove.IntNonIdIndex",
                   { op: "remove",
                     query: { x : { "#RAND_INT" : [ 0, 1000 ] } } }
               ] } );
-
-

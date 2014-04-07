@@ -1,7 +1,7 @@
 if ( typeof(tests) != "object" ) {
     tests = [];
 }
-/*
+
 tests.push( { name: "Commands.CountsFullCollection",
               pre: function( collection ) {
                   collection.drop();
@@ -44,7 +44,7 @@ tests.push( { name: "Commands.FindAndModifyInserts",
                                 query : { _id : { "#RAND_INT" : [ 0, 999999999 ] } },
                                 update : { _id : { "#RAND_INT" : [ 0, 999999999 ] } } } }
               ] } );
-*/
+
 function genDistinctTest( name, index, query ) {
     var doc = { name : name };
     if ( index ) {

@@ -75,6 +75,34 @@ tests.push( { name : "Queries.IntNonIDRange",
                   { op: "find", query: { x : { $gt : 50, $lt : 100 } } }
               ] } );
 
+tests.push( { name: "Queries.RegexPrefixFindOne",
+              pre: function( collection ) {
+                  collection.drop();
+                  for ( var i = 0; i < 1000; i++ ) {
+                      collection.insert( { x : i.toString() } );
+                  }
+                  collection.ensureIndex( { x : 1 } );
+              },
+              ops : [
+                  { op: "find", query: { x: /^500/ } }
+              ] } );
+
+tests.push( { name: "Queries.TwoInts",
+              pre: function( collection ) {
+                  collection.drop();
+                  for ( var i = 0; i < 1000; i++ ) {
+                      collection.insert( { x: i, y: 2*i } );
+                  }
+                  collection.ensureIndex({x: 1});
+                  collection.ensureIndex({y: 1});
+              },
+              ops : [
+                  { op: "find",
+                    query: { x: { "#SEQ_INT": { seq_id: 0, start: 0, step: 1, mod: 1000 } },
+                             y: { "#SEQ_INT": { seq_id: 1, start: 0, step: 2, mod: 2000 } } }
+                  }
+              ] } );
+
 // PROJECTION TESTS
 
 tests.push( { name: "Queries.IntNonIdFindOneProjectionCovered",
@@ -201,5 +229,3 @@ tests.push( { name: "Queries.FindProjectionDottedField",
                     query: { },
                     filter: { 'x.y' : 1, _id : 0 } }
               ] } );
-
-// left off at: RegexPrefixFindOne
