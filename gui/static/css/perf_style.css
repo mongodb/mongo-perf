@@ -12,7 +12,7 @@ body {
   float: left;
 }
 
-.gofloat { 
+.gofloat {
   clear: both;
   float: left;
 }
@@ -77,7 +77,66 @@ body {
   padding:3px;
 }
 
-a { 
-  color: #413839; 
+a {
+  color: #413839;
 }
 
+.section-break {
+  height: 20px;
+  display: inline-block;
+  width: 100%
+}
+
+.test-entry {
+  display:inline-block;
+}
+.labels-box {
+  display: block;
+  float: right;
+  width:300px;
+}
+.legend-box {
+  background-color:#fff;
+  padding:2px 8px 2px 2px;
+  margin-bottom:8px;
+  border-radius: 3px 3px 3px 3px;
+  border:1px solid #E6E6E6;
+  display:inline-block;
+  margin:0 10px;
+  float:left;
+}
+
+.dygraph-wrapper {
+  width:600px;
+  height:300px;
+  display:block;
+  float: left
+}
+
+.dygraph-labels {
+  font-size: 11px;
+  padding:2px 8px 2px 2px;
+  margin-bottom:8px;
+  display:inline-block;
+  margin:0 10px;
+  max-width: 300px;
+  float:left;
+}
+
+.chart-entry {
+  margin: 4px 0;
+}
+
+.chart-info {
+  display:block;
+  float:left;
+}
+
+.chart-box {
+  border-style:solid;
+  border-width:1px;
+  width:16px;
+  height:10px;
+  margin:3px 0 3px 4px;
+  background-color:white;
+}
