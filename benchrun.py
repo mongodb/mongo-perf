@@ -1,5 +1,3 @@
-# it's a marathon not a sprint bro
-
 from argparse import ArgumentParser
 from subprocess import Popen, PIPE, call
 import sys
