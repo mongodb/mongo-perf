@@ -38,12 +38,12 @@ def main():
         args.multidb = 1
 
     # Print version info.
-    call([args.shellpath, "--eval",
+    call([args.shellpath, "--norc", "--eval",
           "print('db version: ' + db.version()); db.serverBuildInfo().gitVersion;"])
     print("")
 
     # Open a mongo shell subprocess and load necessary files.
-    mongo_proc = Popen(args.shellpath, stdin=PIPE, stdout=PIPE)
+    mongo_proc = Popen([args.shellpath, "--norc"], stdin=PIPE, stdout=PIPE)
     mongo_proc.stdin.write("load('util/utils.js')\n")
     for testfile in args.testfiles:
         mongo_proc.stdin.write("load('" + testfile + "')\n")
