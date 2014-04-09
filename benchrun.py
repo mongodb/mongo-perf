@@ -19,6 +19,12 @@ def parse_arguments():
     parser.add_argument('-l', '--label', dest='reportlabel',
                         help='Specify the label for the report stats saved to bench_results db',
                         default='')
+    parser.add_argument('--rhost', '--reporthost', dest='reporthost',
+                        help='Host name of the mongod where the results will be saved',
+                        default='localhost')
+    parser.add_argument('--rport', '--reportport', dest='reportport',
+                        help='Port of the mongod where the results will be saved',
+                        default='27017')
     parser.add_argument('-s', '--shell', dest='shellpath',
                         help="Path to the mongo shell executable to use.",
                         default='mongo')
@@ -52,7 +58,9 @@ def main():
     cmdstr = ("runTests(" +
               str(args.threads) + ", " +
               str(args.multidb) + ", " +
-              "'" + str(args.reportlabel) + "'" +
+              "'" + args.reportlabel + "', " +
+              "'" + args.reporthost + "', " +
+              "'" + args.reportport + "'" +
               ");\n")
     mongo_proc.stdin.write(cmdstr)
     mongo_proc.stdin.close()

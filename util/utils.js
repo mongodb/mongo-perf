@@ -103,11 +103,17 @@ function runTest(test, thread, multidb) {
 
 
 
-function runTests(threadCounts, multidb, reportLabel) {
+function runTests(threadCounts, multidb, reportLabel, reportHost, reportPort) {
     var testResults = {};
     // The following are only used when reportLabel is not None.
     var resultsCollection = db.getSiblingDB("bench_results").raw;
     var myId = 0;
+
+    // If dumping the results to a remote host.
+    if (reportHost !== "localhost" || reportPort !== "27017") {
+        var connection = new Mongo(reportHost + ":" + reportPort);
+        resultsCollection = connection.getDB("bench_results").raw;
+    }
 
     // Set up the reporting database and the object that will hold these tests' info.
     if (reportLabel) {
