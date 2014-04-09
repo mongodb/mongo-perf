@@ -1,14 +1,6 @@
 tmp/*
-anomaly
-.Rhistory
-.scon*
 *.log
 *.txt
 tags
 *.pyc
 *.swp
-db/*
-*.o
-*.a
-benchmark
-mongo-cxx-driver/build/*
