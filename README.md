@@ -21,10 +21,10 @@ boto (optional)
 
 ### HOW TO RUN:
 *To run a micro benchmarking test or tests:*  
-`python benchrun.py -f <list of testfiles> -t <list of thread configs> [-m <number of dbs>] [-r <report label>] [-s <shell path>]`  
+`python benchrun.py -f <list of testfiles> -t <list of thread configs> [-m <number of dbs>] [-l <report label>] [-s <shell path>]`  
 
 For example, to run the `simple_insert.js` test case on 1, 2, and 4 threads, no multi-db, generating a report called *insert01* and using the basic mongo shell:  
-`python benchrun.py -f testcases/simple_insert.js -t 1 2 4 -r insert01`
+`python benchrun.py -f testcases/simple_insert.js -t 1 2 4 -l insert01`
 
 *To run the GUI interface to view results in a graph:*  
 ```
