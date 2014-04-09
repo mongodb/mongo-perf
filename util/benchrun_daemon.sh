@@ -12,7 +12,6 @@ NUM_CPUS=$(grep ^processor /proc/cpuinfo | wc -l)
 RHOST="mongo-perf-1.vpc1.build.10gen.cc"
 RPORT=27017
 BREAK_PATH=/home/mongo-perf/build-perf
-TEST_DIR=$MPERFPATH/testcases
 SLEEPTIME=60
 
 function do_git_tasks() {
@@ -45,14 +44,14 @@ function run_build() {
 function run_mongo-perf() {
     # Kick off a mongod process.
     cd $BUILD_DIR
-    ./mongod --dbpath "$(DBPATH)" &
+    ./mongod --dbpath "$DBPATH" --smallfiles &
     MONGOD_PID=$!
 
     cd $MPERFPATH
     TIME="$(date "+%m%d%Y|%H:%M")"
     echo $TIME
 
-    TESTCASES=$(ls $TESTDIR)
+    TESTCASES=$(find testcases/ -name *.js)
     # Run with one DB.
     python benchrun.py -l "$TIME-linux" --rhost "$RHOST" --rport "$RPORT" -t 1 2 4 8 16 -s "$SHELLPATH" -f $TESTCASES
     # Run with multi-DB (4 DBs.)
