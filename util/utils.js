@@ -156,13 +156,19 @@ function runTests(threadCounts, multidb, reportLabel, reportHost, reportPort) {
         testResults[test] = threadResults;
 
         if (reportLabel) {
-            if (resultsCollection.findOne({ _id: myId, "singledb.name": test.name })) {
-                resultsCollection.update({ _id: myId, "singledb.name": test.name },
-                                         { $set: { "singledb.$.results": threadResults } });
+            var resultsArr = (multidb > 1) ? "multidb" : "singledb";
+
+            var queryDoc = { _id: myId };
+            queryDoc[resultsArr + ".name"] = test.name;
+
+            if (resultsCollection.findOne(queryDoc)) {
+                var innerUpdateDoc = {};
+                innerUpdateDoc[resultsArr + ".$.results"] = threadResults;
+                resultsCollection.update(queryDoc, { $set: innerUpdateDoc } );
             } else {
-                resultsCollection.update({ _id: myId },
-                                         { $push: { "singledb": { name: test.name,
-                                                                  results: threadResults } } });
+                var innerUpdateDoc = {};
+                innerUpdateDoc[resultsArr] = { name: test.name, results: threadResults };
+                resultsCollection.update({ _id: myId }, { $push: innerUpdateDoc });
             }
         }
     }
