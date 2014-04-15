@@ -128,8 +128,10 @@ def raw_data(versions, labels, multidb, dates, platforms, start, end, limit):
 
     for index in xrange(0, result_size):
         entry = cursor[index]
-        if multidb in entry:
-            results = entry[multidb]
+
+        for mdb in multidb.split(' '):
+            mdbstr  = 'singledb' if mdb == '0' else 'multidb'
+            results = entry[mdbstr]
 
             for result in results:
                 row = dict(commit=entry['commit'],
@@ -173,8 +175,7 @@ def results_page():
     # tests run before this date (used in range query)
     end = request.GET.get('end')
     # single db or multi db
-    multidb = request.GET.get('multidb', '0')
-    multidb = 'singledb' if multidb == '0' else 'multidb'
+    multidb = request.GET.get('multidb', '0 1')
 
     # handler for home page to display recent tests
     # we need to query for each recent test separately and

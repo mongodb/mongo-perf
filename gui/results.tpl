@@ -40,7 +40,7 @@
         % dates = ' '.join(request.GET.getall('dates'))
         % home = ' '.join(request.GET.getall('home'))
         % metric = request.GET.get('metric', 'ops_per_sec')
-        % multidb = request.GET.get('multidb', '0')
+        % multidb = request.GET.get('multidb', '0 1')
         % limit = request.GET.get('limit', '10')
         % start = request.GET.get('start', '')
         % end = request.GET.get('end', '')

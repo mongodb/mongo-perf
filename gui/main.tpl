@@ -24,12 +24,12 @@
         <ul>
           %if rows:
           %for row in rows:
-          <li><a href="results?versions={{row['version']}}&amp;dates={{row['run_date']}}&amp;labels={{row['label']}}&amp;multidb=0&amp;limit=1">
+          <li><a href="results?versions={{row['version']}}&amp;dates={{row['run_date']}}&amp;labels={{row['label']}}&amp;limit=1">
             {{row['label']}} - {{row['platform']}} - {{row['version']}} - {{row['run_date']}}</a>
           </li>
           %end
           %limit=len(rows)
-          <li><a href="results?home={{rows}}&amp;multidb=0&amp;limit={{limit}}">See all</a></li>
+          <li><a href="results?home={{rows}}&amp;multidb=0%201&amp;limit={{limit}}">See all</a></li>
           %end
         </ul>
       </div>
@@ -37,21 +37,21 @@
       <div id="labels">
         <ul>
           %for label in labels:
-          <li><a href="results?labels={{label}}&amp;versions={{versions[0]}}&amp;multidb=0&amp;limit={{limit}}">{{label}}</a></li>
+          <li><a href="results?labels={{label}}&amp;versions={{versions[0]}}&amp;multidb=0%201&amp;limit={{limit}}">{{label}}</a></li>
           %end
         </ul>
       </div>
       <div id="platforms">
         <ul>
           %for platform in platforms:
-          <li><a href="results?platforms={{platform}}&amp;versions={{versions[0]}}&amp;multidb=0&amp;limit={{limit}}">{{platform}}</a></li>
+          <li><a href="results?platforms={{platform}}&amp;versions={{versions[0]}}&amp;multidb=0%201&amp;limit={{limit}}">{{platform}}</a></li>
           %end
         </ul>
       </div>
       <div id="versions">
         <ul>
           %for version in versions:
-          <li><a href="results?versions={{version}}&amp;multidb=0&amp;limit={{limit}}">{{version}}</a></li>
+          <li><a href="results?versions={{version}}&amp;multidb=0%201&amp;limit={{limit}}">{{version}}</a></li>
           %end
         </ul>
       </div>
@@ -75,7 +75,7 @@
           %end
           <h2>Limit</h2>
           <input type="text" name="limit" size="2" value="5"/><br><br>
-          <input type="hidden" name="multidb" value="0"/><br><br>
+          <input type="hidden" name="multidb" value="0 1"/><br><br>
           <button action='submit'>Submit</button>
         </form>
       </div>
