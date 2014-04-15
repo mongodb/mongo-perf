@@ -5,13 +5,14 @@ set -x
 #Defaults
 MPERFPATH=/home/mongo-perf/mongo-perf
 BUILD_DIR=/home/mongo-perf/mongo
+DBPATH=/home/mongo-perf/db
 SHELLPATH=$BUILD_DIR/mongo
-DBPATH=$BUILD_DIR/db
 BRANCH=master
 NUM_CPUS=$(grep ^processor /proc/cpuinfo | wc -l)
 RHOST="mongo-perf-1.vpc1.build.10gen.cc"
 RPORT=27017
 BREAK_PATH=/home/mongo-perf/build-perf
+TEST_DIR=$MPERFPATH/testcases
 SLEEPTIME=60
 
 function do_git_tasks() {
@@ -44,21 +45,24 @@ function run_build() {
 function run_mongo-perf() {
     # Kick off a mongod process.
     cd $BUILD_DIR
-    ./mongod --dbpath "$DBPATH" --smallfiles &
+    ./mongod --dbpath "$(DBPATH)" --smallfiles --fork --logpath mongoperf.log
     MONGOD_PID=$!
+
+    sleep 30
 
     cd $MPERFPATH
     TIME="$(date "+%m%d%Y|%H:%M")"
-    echo $TIME
 
     TESTCASES=$(find testcases/ -name *.js)
     # Run with one DB.
     python benchrun.py -l "$TIME-linux" --rhost "$RHOST" --rport "$RPORT" -t 1 2 4 8 16 -s "$SHELLPATH" -f $TESTCASES
     # Run with multi-DB (4 DBs.)
-    python benchrun.py -l "$TIME-linux" --rhost "$RHOST" --rport "$RPORT" -t 1 2 4 8 16 -s "$SHELLPATH" -m 4 -f $TESTCASES
+    python benchrun.py -l "$TIME-linux-multi" --rhost "$RHOST" --rport "$RPORT" -t 1 2 4 8 16 -s "$SHELLPATH" -m 4 -f $TESTCASES
 
-    # Kill the mongod process.
-    kill -9 $MONGOD_PID
+    # Kill the mongod process and perform cleanup.
+    kill -n 9 $MONGOD_PID
+    pkill -9 mongod
+    rm -rf $DBPATH/*
 }
 
 
