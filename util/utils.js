@@ -76,6 +76,16 @@ function runTest(test, thread, multidb) {
         }
     }
 
+    // If the 'pre' function did not create the collections, then we should
+    // explicitly do so now. We want the collections to be pre-allocated so
+    // that allocation time is not incorporated into the benchmark.
+    for (var i = 0; i < multidb; i++) {
+        var theDb = db.getSiblingDB('test' + i);
+        // This will silently fail and with no side-effects if the collection
+        // already exists.
+        theDb.createCollection(collections[i].getName());
+    }
+
     var benchArgs = { ops:      new_ops,
                       seconds:  5,
                       host:     db.getMongo().host,
