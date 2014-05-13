@@ -17,6 +17,7 @@
 import sys
 import json
 import pymongo
+import bson
 from bottle import *
 import logging as logr
 import logging.handlers
@@ -25,7 +26,7 @@ from collections import defaultdict
 from copy import copy
 
 MONGO_PERF_HOST = "localhost"
-MONGO_PERF_PORT = 27017
+MONGO_PERF_PORT = 27019
 MP_DB_NAME = "bench_results"
 db = pymongo.Connection(host=MONGO_PERF_HOST, 
                          port=MONGO_PERF_PORT)[MP_DB_NAME]
@@ -35,22 +36,7 @@ db = pymongo.Connection(host=MONGO_PERF_HOST,
 def send_static(filename):
     return static_file(filename, root='./static')
 
-
-@route("/host")
-def host_page():
-    result = {}
-    result['date'] = request.GET.get('date', '')
-    result['label'] = request.GET.get('label', '')
-    result['version'] = request.GET.get('version', '')
-    host = db.host.find_one({"build_info.version": result['version'],
-                                "label": result['label'],
-                                "run_date": result['date']
-                            })
-    return template('host.tpl', host=host)
-
-
-@route("/raw")
-def raw_data(versions, labels, multidb, dates, platforms, start, end, limit):
+def raw_data(versions, labels, multidb, dates, platforms, start, end, limit, ids):
     """ Pulls and aggregates raw data from database matching query parameters
         :Parameters:
         - ``"versions"``: specific mongod versions we want to view tests for
@@ -86,7 +72,7 @@ def raw_data(versions, labels, multidb, dates, platforms, start, end, limit):
             version_query = {'version': {'$regex':
                                          versions[1:-1], '$options': 'i'}}
         else:
-            version_query = {'version': {'$in': versions.split(" ")}}
+            version_query = {'version': {'$in': versions}}
     else:
         version_query = {}
 
@@ -95,7 +81,7 @@ def raw_data(versions, labels, multidb, dates, platforms, start, end, limit):
             platforms_query = {'platform': {'$regex':
                                             platforms[1:-1], '$options': 'i'}}
         else:
-            platforms_query = {'platform': {'$in': platforms.split(" ")}}
+            platforms_query = {'platform': {'$in': platforms}}
     else:
         platforms_query = {}
 
@@ -104,7 +90,7 @@ def raw_data(versions, labels, multidb, dates, platforms, start, end, limit):
             date_query = {'run_date': {'$regex':
                                        dates[1:-1], '$options': 'i'}}
         else:
-            date_query = {'run_date': {'$in': dates.split(" ")}}
+            date_query = {'run_date': {'$in': dates}}
     else:
         date_query = {}
 
@@ -113,25 +99,30 @@ def raw_data(versions, labels, multidb, dates, platforms, start, end, limit):
             label_query = {'label': {'$regex':
                                      labels[1:-1], '$options': 'i'}}
         else:
-            label_query = {'label': {'$in': labels.split(" ")}}
+            label_query = {'label': {'$in': labels}}
     else:
         label_query = {}
 
-    cursor = db.raw.find({"$and": [version_query, label_query, 
-            platforms_query, date_query, start_query, end_query]})\
-        .sort([ ('run_date', pymongo.DESCENDING), 
-                ('platform', pymongo.DESCENDING)])\
-        .limit(limit)
+    if ids:
+        objids = []
+        for id in ids:
+            objids.append(bson.objectid.ObjectId(id));
+        id_query = {'_id': {'$in': objids}}
+    else:
+        id_query = {}
+
+    query = {"$and": [version_query, label_query, 
+            platforms_query, date_query, start_query, end_query, id_query]}
+    cursor = db.raw.find(query).sort([ ('run_date', pymongo.DESCENDING), 
+                                    ('platform', pymongo.DESCENDING)]).limit(limit)
 
     aggregate = defaultdict(list)
     result_size = cursor.count(with_limit_and_skip=True)
 
     for index in xrange(0, result_size):
         entry = cursor[index]
-
         for mdb in multidb.split(' '):
-            mdbstr  = 'singledb' if mdb == '0' else 'multidb'
-
+            mdbstr = 'singledb' if mdb == '0' else 'multidb'
             if mdbstr in entry:
                 results = entry[mdbstr]
 
@@ -158,16 +149,18 @@ def raw_data(versions, labels, multidb, dates, platforms, start, end, limit):
 def results_page():
     """Handler for results page
     """
+    #_ids of tests we want to view
+    ids = request.GET.getall("id")
     # specific platforms we want to view tests for
-    platforms = ' '.join(request.GET.getall('platforms'))
+    platforms = request.GET.getall('platforms')
     # specific mongod versions we want to view tests for
-    versions = ' '.join(request.GET.getall('versions'))
+    versions = request.GET.getall('versions')
     # specific dates for tests to be viewed
-    dates = ' '.join(request.GET.getall('dates'))
+    dates = request.GET.getall('dates')
     # special data structure for recent tests
-    home = ' '.join(request.GET.getall('home'))
+    home = request.GET.getall('home')
     # test host label
-    labels = ' '.join(request.GET.getall('labels'))
+    labels = request.GET.getall('labels')
     # test metric of interest
     metric = request.GET.get('metric', 'ops_per_sec')
     # # of tests to return
@@ -191,7 +184,7 @@ def results_page():
                 for attrib in result:
                     result[attrib] = '/' + result[attrib] + '/'
                 tmp = raw_data(result['version'], result['label'], multidb,
-                               result['run_date'], result['platform'], None, None, limit)
+                               result['run_date'], result['platform'], None, None, limit, ids)
                 for result in tmp:
                     results.append(result)
             results = merge(results)
@@ -199,7 +192,7 @@ def results_page():
             print e
     else:
         results = raw_data(versions, labels, multidb, dates,
-                           platforms, start, end, limit)
+                           platforms, start, end, limit, ids)
 
     threads = set()
     dygraph_results = []
@@ -263,6 +256,32 @@ def to_dygraphs_data_format(in_data):
 
     return graph_data, labels
 
+def get_all_rows():
+    all_rows = []
+    csr = db.raw.find()
+    for record in csr:
+        tmpdoc = {"commit": record["commit"],
+                  "label": record["label"],
+                  "date": record["run_date"],
+                  "_id": record["_id"]}
+        all_rows.append(tmpdoc) 
+    return all_rows
+
+@route("/test")
+def test_page():
+    platforms = db.raw.distinct("platform")
+    versions = db.raw.distinct("version")
+    labels = db.raw.distinct("label")
+    platforms = filter(None, platforms)
+    versions = filter(None, versions)
+    labels = filter(None, labels)
+    versions = sorted(versions, reverse=True)
+    rows = None
+
+    allrows = get_all_rows()
+
+    return template('comp.tpl', allrows=allrows)
+
 
 @route("/")
 def main_page():
@@ -298,4 +317,4 @@ def main_page():
 
 if __name__ == '__main__':
     do_reload = '--reload' in sys.argv
-    run(host='0.0.0.0', server=AutoServer, debug=do_reload)
+    run(host='0.0.0.0', server=AutoServer)
