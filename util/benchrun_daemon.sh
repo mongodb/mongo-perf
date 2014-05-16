@@ -45,7 +45,7 @@ function run_build() {
 function run_mongo-perf() {
     # Kick off a mongod process.
     cd $BUILD_DIR
-    ./mongod --dbpath "$(DBPATH)" --smallfiles --fork --logpath mongoperf.log
+    ./mongod --dbpath "${DBPATH}" --smallfiles --fork --logpath mongoperf.log
     MONGOD_PID=$!
 
     sleep 30
