@@ -3,21 +3,21 @@
 #Find us if you have any questions, future user!
 set -x
 #Defaults
-MPERFPATH=/home/mongo-perf/mongo-perf
-BUILD_DIR=/home/mongo-perf/mongo
-DBPATH=/home/mongo-perf/db
+MPERFPATH=${HOME}/mongo-perf-qconner
+BUILD_DIR=${HOME}/mongo-qconner
+DBPATH=${HOME}/db
 SHELLPATH=$BUILD_DIR/mongo
 BRANCH=master
 NUM_CPUS=$(grep ^processor /proc/cpuinfo | wc -l)
 RHOST="mongo-perf-1.vpc1.build.10gen.cc"
 RPORT=27017
-BREAK_PATH=/home/mongo-perf/build-perf
+BREAK_PATH=${HOME}/build-perf
 TEST_DIR=$MPERFPATH/testcases
 SLEEPTIME=60
 
 function do_git_tasks() {
     cd $BUILD_DIR
-    git checkout $BRANCHG
+    git checkout $BRANCH
     git clean -fqdx
     git pull
 
@@ -39,7 +39,7 @@ function do_git_tasks() {
 
 function run_build() {
     cd $BUILD_DIR
-    scons -j $NUM_CPUS mongod mongo
+    scons -j $NUM_CPUS --64 --release mongod mongo
 }
 
 function run_mongo-perf() {
@@ -54,10 +54,14 @@ function run_mongo-perf() {
     TIME="$(date "+%m%d%Y|%H:%M")"
 
     TESTCASES=$(find testcases/ -name *.js)
+
     # Run with one DB.
-    python benchrun.py -l "$TIME-linux" --rhost "$RHOST" --rport "$RPORT" -t 1 2 4 8 16 -s "$SHELLPATH" -f $TESTCASES
+    echo 3 > /proc/sys/vm/drop_caches
+    python benchrun.py -l "$TIME-linux" --rhost "$RHOST" --rport "$RPORT" -t 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 18 20 22 24 26 28 30 32 -s "$SHELLPATH" -f $TESTCASES
+
     # Run with multi-DB (4 DBs.)
-    python benchrun.py -l "$TIME-linux-multi" --rhost "$RHOST" --rport "$RPORT" -t 1 2 4 8 16 -s "$SHELLPATH" -m 4 -f $TESTCASES
+    echo 3 > /proc/sys/vm/drop_caches
+    python benchrun.py -l "$TIME-linux-multi" --rhost "$RHOST" --rport "$RPORT" -t 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 18 20 22 24 26 28 30 32 -s "$SHELLPATH" -m 4 -f $TESTCASES
 
     # Kill the mongod process and perform cleanup.
     kill -n 9 $MONGOD_PID
