@@ -28,7 +28,7 @@ from copy import copy
 from pprint import pprint
 
 MONGO_PERF_HOST = "localhost"
-MONGO_PERF_PORT = 27019
+MONGO_PERF_PORT = 27017
 MP_DB_NAME = "bench_results"
 db = pymongo.Connection(host=MONGO_PERF_HOST, 
                          port=MONGO_PERF_PORT)[MP_DB_NAME]
@@ -101,7 +101,7 @@ def gen_query(versions, labels, dates, platforms, start, end, limit, ids, commit
 
     if commits:
         if commits.startswith('/') and commits.endswith('/'):
-            commit_query = {'commit': { '$regex': commit[1:-1] }}
+            commit_query = {'commit': { '$regex': commits[1:-1] }}
     else:
         commit_query = {}
 
@@ -145,7 +145,7 @@ def process_cursor(cursor, multidb):
 
 def raw_data(versions, labels, multidb, dates, platforms, start, end, limit, ids, commits):
     cursor = gen_query(versions, labels, dates, platforms, start, end, limit, ids, commits)
-    result = process_cursor(multidb, cursor)
+    result = process_cursor(cursor, multidb)
     return result
 
 @route("/results")
@@ -270,17 +270,7 @@ def get_all_rows():
         all_rows.append(tmpdoc) 
     return all_rows
 
-@route("/test2")
-def test_page():
-    allrows = get_all_rows()
-    return template('comp.tpl', allrows=allrows)
-
-@route("/test")
-def test_page():
-    commit_regex = request.GET.get('commit')
-    date_regex = request.GET.get('date')
-    label_regex = request.GET.get('label')
-
+def get_rows(commit_regex, date_regex, label_regex):
     if commit_regex is not None:
         commit_regex = '/' + commit_regex + '/'
     if date_regex is not None:
@@ -294,9 +284,30 @@ def test_page():
         tmpdoc = {"commit": record["commit"],
                   "label": record["label"],
                   "date": record["run_date"],
-                  "_id": record["_id"]}
+                  "_id": str(record["_id"])}
         rows.append(tmpdoc) 
-    return template('comp.tpl', allrows=rows)
+    return rows
+
+
+@route("/testdata")
+def test_page():
+    allrows = get_all_rows()
+    return template('comp.tpl', allrows=allrows)
+
+@route("/test")
+def test_page():
+    commit_regex = request.GET.get('commit')
+    date_regex = request.GET.get('date')
+    label_regex = request.GET.get('label')
+    nohtml = request.GET.get('nohtml')
+
+    rows = get_rows(commit_regex, date_regex, label_regex)
+
+    if nohtml:
+        response.content_type = 'application/json'
+        return json.dumps(rows)
+    else: 
+        return template('comp.tpl', allrows=rows)
 
 
 @route("/")
