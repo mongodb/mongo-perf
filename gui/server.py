@@ -279,11 +279,12 @@ def main_page():
     
     # restricted to benchmark tests for most recent MongoDB version
     if versions:
-        cursor = db.raw.find({"version": versions[0]},
+        #{"version": versions[0]}
+        cursor = db.raw.find({},
                              {"_id" : 0, "singledb" : 0, 
-                             "multidb" : 0, "commit" : 0})\
-            .limit(len(labels)).sort([('run_date', pymongo.DESCENDING)])
-        needed = ['label', 'platform', 'run_date', 'version']
+                             "multidb" : 0})\
+            .limit(100).sort([('run_time', pymongo.DESCENDING)])
+        needed = ['commit', 'label', 'platform', 'run_date', 'version']
         rows = []
 
         for record in cursor:
@@ -291,11 +292,11 @@ def main_page():
 
         rows = sorted([dict(t) for t in set([tuple(d.items())
                        for d in rows])], key=lambda t:
-                     (t['run_date'], t['label']), reverse=True)
+                     (t['run_time'], t['commit'], t['platform']), reverse=True)
 
     return template('main.tpl', rows=rows, labels=labels,
                     versions=versions, platforms=platforms)
 
 if __name__ == '__main__':
     do_reload = '--reload' in sys.argv
-    run(host='0.0.0.0', server=AutoServer, debug=do_reload)
+    run(host='0.0.0.0', port=8888, server=AutoServer, debug=do_reload)

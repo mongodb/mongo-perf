@@ -87,7 +87,7 @@ function runTest(test, thread, multidb) {
     }
 
     var benchArgs = { ops:      new_ops,
-                      seconds:  5,
+                      seconds:  2,
                       host:     db.getMongo().host,
                       parallel: thread };
 

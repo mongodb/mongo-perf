@@ -21,17 +21,20 @@
       </ul>
       <div id="dash">
         Recent Benchmark Tests:
-        <ul>
+        <table border="1" style="width:300px">
           %if rows:
+          <tr>
+            <th>commit</th><th>label</th><th>platform</th><th>version</th><th>run time</th>
+          </tr>
           %for row in rows:
-          <li><a href="results?versions={{row['version']}}&amp;dates={{row['run_date']}}&amp;labels={{row['label']}}&amp;multidb=0%201&amp;limit=1">
-            {{row['label']}} - {{row['platform']}} - {{row['version']}} - {{row['run_date']}}</a>
-          </li>
+          <tr>
+            <td>{{row['commit']}}</td><td><a href="results?versions={{row['version']}}&amp;dates={{row['run_date']}}&amp;labels={{row['label']}}&amp;multidb=0%201&amp;limit=1">{{row['label']}}</a></td><td>{{row['platform']}}</td><td>{{row['version']}}</td><td>{{row['run_time']}}</td>
+          </tr>
           %end
           %limit=len(rows)
-          <li><a href="results?home={{rows}}&amp;multidb=0%201&amp;limit={{limit}}">See all</a></li>
           %end
-        </ul>
+        </table>   
+        <li><a href="results?home={{rows}}&amp;multidb=0%201&amp;limit={{limit}}">See all</a></li>
       </div>
       %limit=10
       <div id="labels">
