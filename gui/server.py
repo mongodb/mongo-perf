@@ -107,7 +107,7 @@ def gen_query(versions, labels, dates, platforms, start, end, limit, ids, commit
 
     query = {"$and": [version_query, label_query, 
             platforms_query, date_query, start_query, end_query, id_query, commit_query]}
-    cursor = db.raw.find(query).sort([ ('run_date', pymongo.DESCENDING), 
+    cursor = db.raw.find(query).sort([ ('run_date', pymongo.ASCENDING), 
                                     ('platform', pymongo.DESCENDING)])
     if limit:
         cursor.limit(limit)

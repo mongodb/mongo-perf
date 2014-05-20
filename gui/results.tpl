@@ -162,10 +162,10 @@
               labels: {{!dygraph_data['labels_json']}},
               strokeWidth: 3, //width of lines connecting data points
               colors: dycolors,
-              labelsSeparateLines: true,
               labelsDiv: "graph-labels-{{k}}",
               includeZero: true, //ensure y-axis starts at 0
-
+              xlabel: 'Run Date', //label for x-axis
+              xRangePad: 5
             });
           dygraphs.push(dygraph_{{k}});
 
