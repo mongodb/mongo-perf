@@ -137,17 +137,35 @@
           <div id="graph_{{k}}" class="graph" style="width:600px;height:300px;"></div>
         </div>
         <script>
+        function get_date_data(start_data) {
+            out_data = []
+            for(var i = 0; i < start_data.length; i++) {
+                temp_list = []
+                for(var j = 0; j < start_data[i].length; j++) {
+                    if(j === 0) {
+                        temp_list.push(new Date(start_data[i][j]))
+                    } else {
+                        temp_list.push(start_data[i][j])
+                    }
+                }
+                out_data.push(temp_list)
+            }
+            return out_data
+        }
+        var date_data = get_date_data({{!dygraph_data['data']}});
+        console.log(date_data);
         $("#graph-labels-{{k}}").ready(function(){
           var dygraph_{{k}} = new Dygraph(
             $('#graph_{{k}}')[0],
-            {{!dygraph_data['data']}},
+            date_data,
             {
               labels: {{!dygraph_data['labels_json']}},
-              strokeWidth: 3,
-              xRangePad: 2,
+              strokeWidth: 3, //width of lines connecting data points
               colors: dycolors,
               labelsSeparateLines: true,
-              labelsDiv: "graph-labels-{{k}}"
+              labelsDiv: "graph-labels-{{k}}",
+              includeZero: true, //ensure y-axis starts at 0
+
             });
           dygraphs.push(dygraph_{{k}});
 

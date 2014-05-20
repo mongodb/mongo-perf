@@ -197,23 +197,40 @@ def results_page():
         results = raw_data(versions, labels, multidb, dates,
                            platforms, start, end, limit, ids, None)
 
-    threads = set()
-    dygraph_results = []
+
+    new_results = []
+    dates = set()
+    threads = [] 
     for outer_result in results:
-        out = []
-        for i, result in enumerate(outer_result['results']):
-            out.append({'label': " / ".join((result['label'], result['version'], 
-                    result['date'])), 'data': sorted([int(k), v[metric]]
-                        for (k, v) in result.iteritems() if k.isdigit())
-                        })
-            threads.update(int(k) for k in result if k.isdigit())
-        dygraph_data, dygraph_labels = to_dygraphs_data_format(out)
-        dygraph_results.append({'data': json.dumps(dygraph_data),
-                                'labels_json': json.dumps(dygraph_labels),
-                                'labels_list': dygraph_labels})
+        #goal here is to create "data" and "labels"
+        dy_map = {}
+        results_section = []
+        for result in outer_result['results']:
+            #if we need to construct threads
+            if len(threads) == 0:
+                threadset = set()
+                for k in result.keys():
+                    if k.isdigit():
+                        threadset.add(k)
+                threads = list(threadset)
+                threads.sort(key=int)
+            result_entry = []
+            result_entry.append(result['date'])
+            for thread in threads:
+                result_entry.append(result[thread]['ops_per_sec'])
+            #here we have [<date>, ops1, ops2...]
+            results_section.append(result_entry)
+
+        #construct final object
+        labels = ['Run Date']
+        labels.extend(threads)
+        new_results.append({ 'data': json.dumps(results_section),
+                             'labels_json': json.dumps(labels),
+                             'labels_list': labels})
+
 
     return template('results.tpl', results=results, request=request,
-                    dygraph_results=dygraph_results, threads=sorted(threads))
+                    dygraph_results=new_results, threads=sorted(threads))
 
 
 def merge(results):
