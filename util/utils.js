@@ -196,7 +196,6 @@ function runTests(threadCounts, multidb, reportLabel, reportHost, reportPort) {
             newResults.mean_ops_per_sec = mean;
             newResults.variance = variance;
             newResults.standardDeviation = Math.sqrt(variance);
-            pprint(newResults);
             threadResults[threadCount] = newResults;
         }
         testResults[test] = threadResults;
