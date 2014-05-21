@@ -10,7 +10,7 @@
     <script type="text/javascript" src="static/js/jquery-ui-1.10.1.custom.min.js"></script>
     <script type="text/javascript" src="static/js/perf_lib.js"></script>
     <script>
-        function filter_button() {
+        function filter() {
             var commitregex = $("#commitfield")[0].value;
             var dateregex = $("#datefield")[0].value;
             var labelregex = $("#labelfield")[0].value;
@@ -39,6 +39,12 @@
             );
             return false;
         }
+
+        window.onload=function() {
+            $('#commitfield').bind("keyup", filter);
+            $('#datefield').bind("keyup", filter);
+            $('#labelfield').bind("keyup", filter);
+        }
     </script>
   </head>
   <body>
@@ -52,7 +58,6 @@
             <td><input type="text" id="commitfield" name="commit" />
             <td><input type="text" id="datefield" name="date" />
             <td><input type="text" id="labelfield" name="label" />
-            <td><button type="button" onclick="filter_button()">Filter</button></td>
           </tr>
           <tr>
             <th>Select</th>
