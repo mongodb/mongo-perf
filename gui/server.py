@@ -299,4 +299,4 @@ def main_page():
 
 if __name__ == '__main__':
     do_reload = '--reload' in sys.argv
-    run(host='0.0.0.0', port=8888, server=AutoServer, debug=do_reload)
+    run(host='0.0.0.0', port=80, server=AutoServer, debug=do_reload)

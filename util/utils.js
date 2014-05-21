@@ -86,8 +86,9 @@ function runTest(test, thread, multidb) {
         theDb.createCollection(collections[i].getName());
     }
 
+    // new approach runs for 1 second and counts ops, but does this repeatedly to characterize second-to-second variance
     var benchArgs = { ops:      new_ops,
-                      seconds:  2,
+                      seconds:  1,
                       host:     db.getMongo().host,
                       parallel: thread };
 
@@ -112,6 +113,25 @@ function runTest(test, thread, multidb) {
 }
 
 
+function getVariance( numericArray ) {
+	var avg = getMean( numericArray );
+    var i = numericArray.length;
+    var x = 0;
+ 
+	while( i-- ){
+		x += Math.pow( (numericArray[ i ] - axg), 2 );
+	}
+	x /= numericArray.length;
+	return x;
+}
+
+function getMean( values ) {
+    var sum = 0.0;
+    for (var j=0; j < values.length; j++) {
+         sum += values[j];
+    }
+    return sum / values.length;
+}
 
 function runTests(threadCounts, multidb, reportLabel, reportHost, reportPort) {
     var testResults = {};
@@ -161,7 +181,23 @@ function runTests(threadCounts, multidb, reportLabel, reportHost, reportPort) {
         var threadResults = {};
         for (var t = 0; t < threadCounts.length; t++) {
             var threadCount = threadCounts[t];
-            threadResults[threadCount] = runTest(test, threadCount, multidb);
+            var results = []
+            for (var j=0; j < 30; j++) {
+                results[j] = runTest(test, threadCount, multidb);
+            }
+            var values = []
+            for (var j=0; j < 30; j++) {
+                values[j] = results[j].ops_per_sec
+            }
+            var mean = getMean(values);
+            var variance = getVariance(values, 13);  // 13 digits of precision
+            var newResults = {}
+            newResults.ops_per_sec = values;
+            newResults.mean_ops_per_sec = mean;
+            newResults.variance = variance;
+            newResults.standardDeviation = Math.sqrt(variance);
+            pprint(newResults);
+            threadResults[threadCount] = newResults;
         }
         testResults[test] = threadResults;
 

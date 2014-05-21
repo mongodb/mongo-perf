@@ -51,8 +51,10 @@ def main():
     # Open a mongo shell subprocess and load necessary files.
     mongo_proc = Popen([args.shellpath, "--norc"], stdin=PIPE, stdout=PIPE)
     mongo_proc.stdin.write("load('util/utils.js')\n")
+    print "load('util/utils.js')"
     for testfile in args.testfiles:
         mongo_proc.stdin.write("load('" + testfile + "')\n")
+        print "load('" + testfile + "')"
 
     # Pipe commands to the mongo shell to kickoff the test.
     cmdstr = ("runTests(" +
@@ -63,6 +65,7 @@ def main():
               "'" + args.reportport + "'" +
               ");\n")
     mongo_proc.stdin.write(cmdstr)
+    print cmdstr
     mongo_proc.stdin.close()
 
     # Read test output.
