@@ -138,9 +138,9 @@
         </div>
         <script>
         function get_date_data(start_data) {
-            out_data = []
+            var out_data = []
             for(var i = 0; i < start_data.length; i++) {
-                temp_list = []
+                var temp_list = []
                 for(var j = 0; j < start_data[i].length; j++) {
                     if(j === 0) {
                         temp_list.push(new Date(start_data[i][j]))
@@ -152,12 +152,11 @@
             }
             return out_data
         }
-        var date_data = get_date_data({{!dygraph_data['data']}});
-        console.log(date_data);
+        var date_data_{{k}} = get_date_data({{!dygraph_data['data']}});
         $("#graph-labels-{{k}}").ready(function(){
           var dygraph_{{k}} = new Dygraph(
             $('#graph_{{k}}')[0],
-            date_data,
+            date_data_{{k}},
             {
               labels: {{!dygraph_data['labels_json']}},
               strokeWidth: 3, //width of lines connecting data points
