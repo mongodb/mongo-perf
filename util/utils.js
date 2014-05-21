@@ -119,7 +119,7 @@ function getVariance( numericArray ) {
     var x = 0;
  
 	while( i-- ){
-		x += Math.pow( (numericArray[ i ] - axg), 2 );
+		x += Math.pow( (numericArray[ i ] - avg), 2 );
 	}
 	x /= numericArray.length;
 	return x;
