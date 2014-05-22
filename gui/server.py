@@ -129,7 +129,7 @@ def process_cursor(cursor, multidb):
                     row = dict(commit=entry['commit'],
                                platform=entry['platform'],
                                version=entry['version'],
-                               date=entry['run_date'],
+                               date=entry['run_time'].isoformat(),
                                label=entry['label'])
                     for (n, res) in result['results'].iteritems():
                         row[n] = res
@@ -300,7 +300,7 @@ def get_rows(commit_regex, date_regex, label_regex):
     for record in csr:
         tmpdoc = {"commit": record["commit"],
                   "label": record["label"],
-                  "date": record["run_date"],
+                  "date": record["run_time"],
                   "_id": str(record["_id"])}
         rows.append(tmpdoc) 
     return rows
