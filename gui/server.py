@@ -175,28 +175,8 @@ def results_page():
     # single db or multi db
     multidb = request.GET.get('multidb', '0 1')
 
-    # handler for home page to display recent tests
-    # we need to query for each recent test separately and
-    # then merge the results for subsequent display
-    if home:
-        results = []
-        try:
-            from ast import literal_eval
-            for platform in literal_eval(home):
-                result = literal_eval(json.dumps(platform))
-                for attrib in result:
-                    result[attrib] = '/' + result[attrib] + '/'
-                tmp = raw_data(result['version'], result['label'], multidb,
-                               result['run_date'], result['platform'], None, None, limit, ids, None)
-                for result in tmp:
-                    results.append(result)
-            results = merge(results)
-        except BaseException, e:
-            print e
-    else:
-        results = raw_data(versions, labels, multidb, dates,
-                           platforms, start, end, limit, ids, None)
-
+    results = raw_data(versions, labels, multidb, dates,
+                       platforms, start, end, limit, ids, None)
 
     new_results = []
     dates = set()
@@ -233,30 +213,6 @@ def results_page():
                     dygraph_results=new_results, threads=sorted(threads))
 
 
-def merge(results):
-    """This takes separate results that have been pulled
-        and aggregated - using the raw_data function, and
-        reaggregates them in the same way raw_data does
-    """
-    aggregate = defaultdict(list)
-    for result in results:
-        row = dict(label=result['results'][0]['label'],
-                   platform=result['results'][0]['platform'],
-                   version=result['results'][0]['version'],
-                   commit=result['results'][0]['commit'],
-                   date=result['results'][0]['date'])
-        for (n, res) in result['results'][0].iteritems():
-            row[n] = res
-        aggregate[result['name']].append(row)
-
-    aggregate = sorted(aggregate.iteritems(), key=lambda (k, v): k)
-    out = []
-
-    for item in aggregate:
-        out.append({'name': item[0], 'results': item[1]})
-
-    return out
-
 def to_dygraphs_data_format(in_data):
     """returns js string containing the dygraphs data
     representation of the input and a js string containing
@@ -276,17 +232,6 @@ def to_dygraphs_data_format(in_data):
 
     return graph_data, labels
 
-def get_all_rows():
-    all_rows = []
-    csr = db.raw.find()
-    for record in csr:
-        tmpdoc = {"commit": record["commit"],
-                  "label": record["label"],
-                  "date": record["run_date"],
-                  "_id": record["_id"]}
-        all_rows.append(tmpdoc) 
-    return all_rows
-
 def get_rows(commit_regex, date_regex, label_regex):
     if commit_regex is not None:
         commit_regex = '/' + commit_regex + '/'
@@ -305,13 +250,7 @@ def get_rows(commit_regex, date_regex, label_regex):
         rows.append(tmpdoc) 
     return rows
 
-
-@route("/testdata")
-def test_page():
-    allrows = get_all_rows()
-    return template('comp.tpl', allrows=allrows)
-
-@route("/test")
+@route("/")
 def test_page():
     commit_regex = request.GET.get('commit')
     date_regex = request.GET.get('date')
@@ -326,38 +265,6 @@ def test_page():
     else: 
         return template('comp.tpl', allrows=rows)
 
-
-@route("/")
-def main_page():
-    """Handler for main page
-    """
-    platforms = db.raw.distinct("platform")
-    versions = db.raw.distinct("version")
-    labels = db.raw.distinct("label")
-    platforms = filter(None, platforms)
-    versions = filter(None, versions)
-    labels = filter(None, labels)
-    versions = sorted(versions, reverse=True)
-    rows = None
-    
-    # restricted to benchmark tests for most recent MongoDB version
-    if versions:
-        cursor = db.raw.find({"version": versions[0]},
-                             {"_id" : 0, "singledb" : 0, 
-                             "multidb" : 0, "commit" : 0})\
-            .limit(len(labels)).sort([('run_date', pymongo.DESCENDING)])
-        needed = ['label', 'platform', 'run_date', 'version']
-        rows = []
-
-        for record in cursor:
-            rows.append(record)
-
-        rows = sorted([dict(t) for t in set([tuple(d.items())
-                       for d in rows])], key=lambda t:
-                     (t['run_date'], t['label']), reverse=True)
-
-    return template('main.tpl', rows=rows, labels=labels,
-                    versions=versions, platforms=platforms)
 
 if __name__ == '__main__':
     do_reload = '--reload' in sys.argv
