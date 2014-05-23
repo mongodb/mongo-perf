@@ -38,14 +38,14 @@ db = pymongo.Connection(host=MONGO_PERF_HOST,
 def send_static(filename):
     return static_file(filename, root='./static')
 
-def gen_query(versions, labels, dates, platforms, start, end, limit, ids, commits):
+def gen_query(labels, dates, start, end, limit, ids, commits):
     if start:
-        start_query = {'run_date': {'$gte': start}}
+        start_query = {'run_time': {'$gte': start}}
     else:
         start_query = {}
 
     if end:
-        end_query = {'run_date': {'$lte': end}}
+        end_query = {'run_time': {'$lte': end}}
     else:
         end_query = {}
 
@@ -54,24 +54,6 @@ def gen_query(versions, labels, dates, platforms, start, end, limit, ids, commit
             limit = int(limit)
         except ValueError:
             limit = None
-
-    if versions:
-        if versions.startswith('/') and versions.endswith('/'):
-            version_query = {'version': {'$regex':
-                                         versions[1:-1], '$options': 'i'}}
-        else:
-            version_query = {'version': {'$in': versions}}
-    else:
-        version_query = {}
-
-    if platforms:
-        if platforms.startswith('/') and platforms.endswith('/'):
-            platforms_query = {'platform': {'$regex':
-                                            platforms[1:-1], '$options': 'i'}}
-        else:
-            platforms_query = {'platform': {'$in': platforms}}
-    else:
-        platforms_query = {}
 
     if dates:
         if dates.startswith('/') and dates.endswith('/'):
@@ -105,8 +87,7 @@ def gen_query(versions, labels, dates, platforms, start, end, limit, ids, commit
     else:
         commit_query = {}
 
-    query = {"$and": [version_query, label_query, 
-            platforms_query, date_query, start_query, end_query, id_query, commit_query]}
+    query = {"$and": [label_query, date_query, start_query, end_query, id_query, commit_query]}
     cursor = db.raw.find(query).sort([ ('run_date', pymongo.ASCENDING), 
                                     ('platform', pymongo.DESCENDING)])
     if limit:
@@ -143,8 +124,8 @@ def process_cursor(cursor, multidb):
 
     return out
 
-def raw_data(versions, labels, multidb, dates, platforms, start, end, limit, ids, commits):
-    cursor = gen_query(versions, labels, dates, platforms, start, end, limit, ids, commits)
+def raw_data(labels, multidb, dates, start, end, limit, ids, commits):
+    cursor = gen_query(labels, dates, start, end, limit, ids, commits)
     result = process_cursor(cursor, multidb)
     return result
 
@@ -154,18 +135,10 @@ def results_page():
     """
     #_ids of tests we want to view
     ids = request.GET.getall("id")
-    # specific platforms we want to view tests for
-    platforms = request.GET.getall('platforms')
-    # specific mongod versions we want to view tests for
-    versions = request.GET.getall('versions')
     # specific dates for tests to be viewed
     dates = request.GET.getall('dates')
-    # special data structure for recent tests
-    home = request.GET.getall('home')
     # test host label
     labels = request.GET.getall('labels')
-    # test metric of interest
-    metric = request.GET.get('metric', 'ops_per_sec')
     # # of tests to return
     limit = request.GET.get('limit')
     # tests run from this date (used in range query)
@@ -175,8 +148,8 @@ def results_page():
     # single db or multi db
     multidb = request.GET.get('multidb', '0 1')
 
-    results = raw_data(versions, labels, multidb, dates,
-                       platforms, start, end, limit, ids, None)
+    results = raw_data(labels, multidb, dates,
+                       start, end, limit, ids, None)
 
     new_results = []
     dates = set()
@@ -240,7 +213,7 @@ def get_rows(commit_regex, date_regex, label_regex):
     if label_regex is not None:
         label_regex = '/' + label_regex + '/'
     
-    csr = gen_query(None, label_regex, date_regex, None, None, None, None, None, commit_regex)
+    csr = gen_query(label_regex, date_regex, None, None, None, None, commit_regex)
     rows = []
     for record in csr:
         tmpdoc = {"commit": record["commit"],
