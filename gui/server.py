@@ -218,7 +218,7 @@ def get_rows(commit_regex, date_regex, label_regex):
     for record in csr:
         tmpdoc = {"commit": record["commit"],
                   "label": record["label"],
-                  "date": record["run_time"],
+                  "date": record["run_time"].isoformat(),
                   "_id": str(record["_id"])}
         rows.append(tmpdoc) 
     return rows

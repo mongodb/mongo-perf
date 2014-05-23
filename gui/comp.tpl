@@ -16,7 +16,7 @@
             var labelregex = $("#labelfield")[0].value;
             var reqdata = {commit: commitregex, date: dateregex, label: labelregex, nohtml:true};
             //1) make ajax call to get rows back
-            $.get("/test", reqdata).done(function(data) {
+            $.get("/", reqdata).done(function(data) {
                     //2) iterate over all rows
                     valrows = $('[name="docrow"]')
                     for(var i = 0; i < valrows.length; i++) {
@@ -55,22 +55,22 @@
         <table class="table table-striped">
           <tr>
             <td></td>
-            <td><input type="text" id="commitfield" name="commit" />
-            <td><input type="text" id="datefield" name="date" />
             <td><input type="text" id="labelfield" name="label" />
+            <td><input type="text" id="datefield" name="date" />
+            <td><input type="text" id="commitfield" name="commit" />
           </tr>
           <tr>
             <th>Select</th>
-            <th>Git Hash</th>
-            <th>Date</th>
             <th>Label</th>
+            <th>Date</th>
+            <th>Git Hash</th>
           </tr>
           %for row in allrows:
           <tr id="{{row['_id']}}" name="docrow">
             <td><input type="checkbox" name="id" value={{row["_id"]}}></td>
-            <td>{{row["commit"]}}</td>
-            <td>{{row["date"]}}</td>
             <td>{{row["label"]}}</td>
+            <td>{{row["date"]}}</td>
+            <td>{{row["commit"]}}</td>
           </tr>
           %end
         </table>
