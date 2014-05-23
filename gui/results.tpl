@@ -30,10 +30,30 @@
             function dyToggle(graphIdx, seriesIdx, el) {
               dygraphs[graphIdx].setVisibility(seriesIdx, el.checked);
             }
+
+            //TODO fix this to do it properly, its an ugly hack
+            function useThreads() {
+                var myurl = document.URL;
+                myurl = myurl + '&xaxis=1'
+                alert(myurl);
+                window.location.replace(myurl);
+            }
+            function useTime() {
+                var myurl = document.URL;
+                myurl = myurl + '&xaxis=0'
+                alert(myurl);
+                window.location.replace(myurl);
+            }
         </script>
     </head>
     <body>
         <h1>MongoDB Benchmark Results (<a href="/">Home</a>)</h1>
+        %if use_dates:
+        <button onclick='useThreads()' >Use Threads</button>
+        %else:
+        <button onclick='useTime()' >Use Time</button>
+        %end
+        <br />
         %import urllib
         %for k, (outer_result, dygraph_data) in enumerate(zip(results, dygraph_results)):
         <div class="test-entry">
@@ -56,7 +76,7 @@
                 %for i, result in enumerate(outer_result['results']):
                 <tr>
                     <td>{{i+1}}</td>
-                    <td>{{result['label']}}</a></td>
+                    <td>{{result['label']}}</td>
                     <td>{{result['platform']}}</td>
                     <td>{{result['version']}}</td>
                     <td>{{result['date']}}</td>
@@ -73,6 +93,7 @@
           <div id="graph_{{k}}" class="graph" style="width:600px;height:300px;"></div>
         </div>
         <script>
+        //TODO this function should be pulled out of the templated loop
         function get_date_data(start_data) {
             var out_data = []
             for(var i = 0; i < start_data.length; i++) {
@@ -88,11 +109,17 @@
             }
             return out_data
         }
-        var date_data_{{k}} = get_date_data({{!dygraph_data['data']}});
+        %if use_dates:
+            var date_data_{{k}} = get_date_data({{!dygraph_data['data']}});
+        %end
         $("#graph-labels-{{k}}").ready(function(){
           var dygraph_{{k}} = new Dygraph(
             $('#graph_{{k}}')[0],
-            date_data_{{k}},
+            %if use_dates:
+                date_data_{{k}},
+            %else:
+                {{!dygraph_data['data']}},
+            %end
             {
               hideOverlayOnMouseOut: false,
               labels: {{!dygraph_data['labels_json']}},
@@ -100,8 +127,12 @@
               colors: dycolors,
               labelsDiv: "graph-labels-{{k}}",
               includeZero: true, //ensure y-axis starts at 0
-              xlabel: 'Run Date', //label for x-axis
-              xRangePad: 5
+              xRangePad: 5,
+              %if use_dates:
+              xlabel: 'Run Date' //label for x-axis
+              %else:
+              xlabel: 'Threads' //label for x-axis
+              %end
             });
           dygraphs.push(dygraph_{{k}});
 
