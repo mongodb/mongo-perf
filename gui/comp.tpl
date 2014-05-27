@@ -47,6 +47,7 @@
         }
     </script>
   </head>
+  <div class="container">
   <body>
     <h1>MongoDB Performance Benchmarks</h1>
     <div id="selection">
@@ -55,15 +56,15 @@
         <table class="table table-striped">
           <tr>
             <td></td>
-            <td><input type="text" id="labelfield" name="label" />
-            <td><input type="text" id="datefield" name="date" />
-            <td><input type="text" id="commitfield" name="commit" />
+            <td><input type="text" id="labelfield" name="label" placeholder="Label Filter" />
+            <td><input type="text" id="datefield" name="date" placeholder="Date Filter" />
+            <td><input type="text" id="commitfield" name="commit" placeholder="Commit Filter" />
           </tr>
           <tr>
-            <th>Select</th>
-            <th>Label</th>
-            <th>Date</th>
-            <th>Git Hash</th>
+            <th style="width: 10%">Select</th>
+            <th style="width: 35%">Label</th>
+            <th style="width: 20%">Date</th>
+            <th style="width: 35%">Git Hash</th>
           </tr>
           %for row in allrows:
           <tr id="{{row['_id']}}" name="docrow">
@@ -78,4 +79,5 @@
       </form>
     </div>
   </body>
+  </div>
 </html>
