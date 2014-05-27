@@ -40,6 +40,30 @@
             return false;
         }
 
+        var selectBool = false;
+        function selectClicked() {
+            var selectRows = $('[name="id"]')
+            alert(selectRows.length);
+            for(var i = 0; i < selectRows.length; i++) {
+                if(!selectBool) {
+                    //set to selected
+                    selectRows[i].checked=true;
+                } else {
+                    //set to unselected
+                    selectRows[i].checked=false;
+                }
+            }
+
+            if(!selectBool) {
+                $('#selectall')[0].innerHTML = "Unselect All";
+            } else {
+                $('#selectall')[0].innerHTML = "Select All";
+            }
+
+            selectBool = !selectBool;
+            return false;
+        }
+
         window.onload=function() {
             $('#commitfield').bind("keyup", filter);
             $('#datefield').bind("keyup", filter);
@@ -52,10 +76,10 @@
     <h1>MongoDB Performance Benchmarks</h1>
     <div id="selection">
       <form name="custom_form" id="custom_form" action="results" method="get">
-        <button action="submit">Submit</button>
+        <button action="submit" class="btn btn-primary">Submit</button>
         <table class="table table-striped">
           <tr>
-            <td></td>
+            <td><button onclick="selectClicked();" class="btn btn-default" type="button" id="selectall">Select All</button></td>
             <td><input type="text" id="labelfield" name="label" placeholder="Label Filter" />
             <td><input type="text" id="datefield" name="date" placeholder="Date Filter" />
             <td><input type="text" id="commitfield" name="commit" placeholder="Commit Filter" />
@@ -75,7 +99,7 @@
           </tr>
           %end
         </table>
-        <button action="submit">Submit</button>
+        <button action="submit" class="btn btn-primary">Submit</button>
       </form>
     </div>
   </body>
