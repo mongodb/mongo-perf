@@ -6,6 +6,7 @@
         <link href="static/css/jquery-ui-1.10.1.custom.min.css" rel="stylesheet">
         <link rel="stylesheet" href="static/css/page.css">
         <link href="static/css/perf_style.css" rel="stylesheet">
+        <link href="static/bootstrap-3.1.1-dist/css/bootstrap.min.css" rel="stylesheet">
         <script type="text/javascript" src="static/js/jquery-1.9.1.min.js"></script>
         <script type="text/javascript" src="static/js/jquery-ui-1.10.1.custom.min.js"></script>
         <script type="text/javascript" src="static/js/perf_lib.js"></script>
@@ -46,6 +47,7 @@
             }
         </script>
     </head>
+    <div class="container">
     <body>
         <h1>MongoDB Benchmark Results (<a href="/">Home</a>)</h1>
         %if use_dates:
@@ -58,15 +60,15 @@
         %for k, (outer_result, dygraph_data) in enumerate(zip(results, dygraph_results)):
         <div class="test-entry">
         <h2 id="{{outer_result['name']}}">{{outer_result['name']}}</h2>
-        <table class="display">
+        <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>Num</th>
-                    <th>Label</th>
-                    <th>Platform</th>
-                    <th>Version</th>
-                    <th>Date</th>
-                    <th>Commit</th>
+                    <th style="width: 5%">Num</th>
+                    <th style="width: 15%">Label</th>
+                    <th style="width: 10%">Platform</th>
+                    <th style="width: 10%">Version</th>
+                    <th style="width: 10%">Date</th>
+                    <th style="width: 10%">Commit</th>
                     %for thread in threads:
                     <th>{{thread}} thread{{'' if thread == 1 else 's'}}</th>
                     %end
@@ -89,6 +91,7 @@
             </tbody>
         </table>
         <br/>
+        <div class="container">
         <div class="dygraph-wrapper">
           <div id="graph_{{k}}" class="graph" style="width:600px;height:300px;"></div>
         </div>
@@ -152,12 +155,13 @@
             <label>{{entry}}</label>
           </div>
           %end
-
         </div>
         <div class="dygraph-labels" id="graph-labels-{{k}}"></div>
+        </div> //container
         <div class="section-break"></div>
       </div>
         %end
+    </div> //container
     </body>
 </html>
 %# vim: set ft=html:
