@@ -36,13 +36,11 @@
             function useThreads() {
                 var myurl = document.URL;
                 myurl = myurl + '&xaxis=1'
-                alert(myurl);
                 window.location.replace(myurl);
             }
             function useTime() {
                 var myurl = document.URL;
                 myurl = myurl + '&xaxis=0'
-                alert(myurl);
                 window.location.replace(myurl);
             }
         </script>

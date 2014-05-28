@@ -43,7 +43,6 @@
         var selectBool = false;
         function selectClicked() {
             var selectRows = $('[name="id"]')
-            alert(selectRows.length);
             for(var i = 0; i < selectRows.length; i++) {
                 if(!selectBool) {
                     //set to selected
