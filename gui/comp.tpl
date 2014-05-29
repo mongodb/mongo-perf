@@ -109,7 +109,7 @@
             <td><input type="checkbox" name="id" value={{row["_id"]}}></td>
             <td>{{row["label"]}}</td>
             <td>{{row["date"]}}</td>
-            <td>{{row["commit"]}}</td>
+            <td><a href="https://github.com/mongodb/mongo/commit/{{row['commit']}}">{{row['commit']}}</a></td>
           </tr>
           %end
         </table>
