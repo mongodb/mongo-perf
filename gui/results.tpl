@@ -155,11 +155,11 @@
           %end
         </div>
         <div class="dygraph-labels" id="graph-labels-{{k}}"></div>
-        </div> //container
+        </div>
         <div class="section-break"></div>
       </div>
         %end
-    </div> //container
+    </div>
     </body>
 </html>
 %# vim: set ft=html:
