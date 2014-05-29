@@ -5,11 +5,24 @@
     <title>MongoDB Performance Benchmarks</title>
     <link href="static/css/jquery-ui-1.10.1.custom.min.css" rel="stylesheet">
     <link href="static/css/perf_style.css" rel="stylesheet">
+    <link href="static/css/page.css" rel="stylesheet">
     <link href="static/bootstrap-3.1.1-dist/css/bootstrap.min.css" rel="stylesheet">
     <script type="text/javascript" src="static/js/jquery-1.9.1.min.js"></script>
     <script type="text/javascript" src="static/js/jquery-ui-1.10.1.custom.min.js"></script>
+    <script type="text/javascript" src="static/js/jquery.dataTables.min.js"></script>
     <script type="text/javascript" src="static/js/perf_lib.js"></script>
     <script>
+        $(document).ready(function(){
+            $('#selectTable').dataTable({
+                    "bPaginate": false,
+                    "bLengthChange": false,
+                    "bFilter": false,
+                    "bInfo": false,
+                    "bSortable": true,
+                    "bAutoWidth": true,
+                });
+        });
+
         function filter() {
             var commitregex = $("#commitfield")[0].value;
             var dateregex = $("#datefield")[0].value;
@@ -76,19 +89,21 @@
     <div id="selection">
       <form name="custom_form" id="custom_form" action="results" method="get">
         <button action="submit" class="btn btn-primary">Submit</button>
-        <table class="table table-striped">
-          <tr>
-            <td><button onclick="selectClicked();" class="btn btn-default" type="button" id="selectall">Select All</button></td>
-            <td><input type="text" id="labelfield" name="label" placeholder="Label Filter" />
-            <td><input type="text" id="datefield" name="date" placeholder="Date Filter" />
-            <td><input type="text" id="commitfield" name="commit" placeholder="Commit Filter" />
-          </tr>
-          <tr>
-            <th style="width: 10%">Select</th>
-            <th style="width: 35%">Label</th>
-            <th style="width: 20%">Date</th>
-            <th style="width: 35%">Git Hash</th>
-          </tr>
+        <table id="selectTable" class="table table-striped">
+          <thead>
+              <tr>
+                <td><button onclick="selectClicked();" class="btn btn-default" type="button" id="selectall">Select All</button></td>
+                <td><input type="text" id="labelfield" name="label" placeholder="Label Filter" /></td>
+                <td><input type="text" id="datefield" name="date" placeholder="Date Filter" /></td>
+                <td><input type="text" id="commitfield" name="commit" placeholder="Commit Filter" /></td>
+              </tr>
+              <tr>
+                <th style="width: 10%">Select</th>
+                <th style="width: 35%">Label</th>
+                <th style="width: 20%">Date</th>
+                <th style="width: 35%">Git Hash</th>
+              </tr>
+          </thead>
           %for row in allrows:
           <tr id="{{row['_id']}}" name="docrow">
             <td><input type="checkbox" name="id" value={{row["_id"]}}></td>
