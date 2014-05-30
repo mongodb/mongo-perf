@@ -149,6 +149,9 @@ def results_page():
     multidb = request.GET.get('multidb', '0 1')
     # x-axis-type 0 == time, 1 == threads
     xaxis = request.GET.get('xaxis', '0')
+    # spread dates
+    spread = request.GET.get('spread', '0')
+    spread_dates = True if spread == '1' else False
 
     results = raw_data(labels, multidb, dates,
                        start, end, limit, ids, None)
@@ -187,7 +190,7 @@ def results_page():
         print "USING DATES"
         return template('results.tpl', results=results, request=request,
                         dygraph_results=new_results, threads=sorted(threads),
-                        use_dates=True)
+                        use_dates=True, spread_dates=spread_dates)
     elif xaxis == '1':
         #xaxis is threads
         threads = set()
@@ -206,7 +209,7 @@ def results_page():
                                     'labels_list': dygraph_labels})
         return template('results.tpl', results=results, request=request,
                         dygraph_results=dygraph_results, threads=sorted(threads),
-                        use_dates=False)
+                        use_dates=False, spread_dates=False)
 
 
 
