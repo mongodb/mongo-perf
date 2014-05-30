@@ -13,6 +13,7 @@
         <script type="text/javascript" src="static/js/jquery.dataTables.min.js"></script>
         <script type="text/javascript" src="static/js/dygraph-combined.js"></script>
         <script>
+            reloadlist = []
             $(document).ready(function(){
                 $('table').dataTable({
                         "bPaginate": false,
@@ -43,6 +44,46 @@
                 myurl = myurl + '&xaxis=0'
                 window.location.replace(myurl);
             }
+
+            function spreadDates() {
+                var myurl = document.URL;
+                myurl = myurl + '&spread=1'
+                window.location.replace(myurl);
+            }
+            function dontSpreadDates() {
+                var myurl = document.URL;
+                myurl = myurl + '&spread=0'
+                window.location.replace(myurl);
+            }
+
+
+            %if spread_dates:
+            var even_spread = true;
+            %else:
+            var even_spread = false;
+            %end
+
+            function get_date_data(start_data) {
+                var out_data = [];
+                var spread_counter = 0;
+                for(var i = 0; i < start_data.length; i++) {
+                    var temp_list = []
+                    for(var j = 0; j < start_data[i].length; j++) {
+                        if(j === 0) {
+                            if(even_spread) {
+                                temp_list.push(spread_counter);
+                                spread_counter += 1;
+                            } else {
+                                temp_list.push(new Date(start_data[i][j]))
+                            }
+                        } else {
+                            temp_list.push(start_data[i][j])
+                        }
+                    }
+                    out_data.push(temp_list)
+                }
+                return out_data
+            }
         </script>
     </head>
     <div class="container">
@@ -52,6 +93,12 @@
         <button onclick='useThreads()' >Use Threads</button>
         %else:
         <button onclick='useTime()' >Use Time</button>
+        %end
+
+        %if spread_dates:
+        <button onclick='dontSpreadDates()' >Dont Spread Dates</button>
+        %else:
+        <button onclick='spreadDates()' >Spread Dates</button>
         %end
         <br />
         %import urllib
@@ -94,26 +141,11 @@
           <div id="graph_{{k}}" class="graph" style="width:600px;height:300px;"></div>
         </div>
         <script>
-        //TODO this function should be pulled out of the templated loop
-        function get_date_data(start_data) {
-            var out_data = []
-            for(var i = 0; i < start_data.length; i++) {
-                var temp_list = []
-                for(var j = 0; j < start_data[i].length; j++) {
-                    if(j === 0) {
-                        temp_list.push(new Date(start_data[i][j]))
-                    } else {
-                        temp_list.push(start_data[i][j])
-                    }
-                }
-                out_data.push(temp_list)
-            }
-            return out_data
-        }
         %if use_dates:
             var date_data_{{k}} = get_date_data({{!dygraph_data['data']}});
         %end
-        $("#graph-labels-{{k}}").ready(function(){
+        //TODO parameterize
+        function dygraph_ready_{{k}}() {
           var dygraph_{{k}} = new Dygraph(
             $('#graph_{{k}}')[0],
             %if use_dates:
@@ -142,7 +174,8 @@
             $(this).css("background-color", dycolors[idx % dycolors.length]);
           });
 
-        });
+        };
+        $("#graph-labels-{{k}}").ready(dygraph_ready_{{k}});
 
         </script>
         <div id="legendContainer_{{k}}" class="legend-box">
