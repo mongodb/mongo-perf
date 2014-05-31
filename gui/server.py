@@ -38,14 +38,14 @@ db = pymongo.Connection(host=MONGO_PERF_HOST,
 def send_static(filename):
     return static_file(filename, root='./static')
 
-def gen_query(versions, labels, dates, platforms, start, end, limit, ids, commits):
+def gen_query(labels, dates, start, end, limit, ids, commits):
     if start:
-        start_query = {'run_date': {'$gte': start}}
+        start_query = {'run_time': {'$gte': start}}
     else:
         start_query = {}
 
     if end:
-        end_query = {'run_date': {'$lte': end}}
+        end_query = {'run_time': {'$lte': end}}
     else:
         end_query = {}
 
@@ -54,24 +54,6 @@ def gen_query(versions, labels, dates, platforms, start, end, limit, ids, commit
             limit = int(limit)
         except ValueError:
             limit = None
-
-    if versions:
-        if versions.startswith('/') and versions.endswith('/'):
-            version_query = {'version': {'$regex':
-                                         versions[1:-1], '$options': 'i'}}
-        else:
-            version_query = {'version': {'$in': versions}}
-    else:
-        version_query = {}
-
-    if platforms:
-        if platforms.startswith('/') and platforms.endswith('/'):
-            platforms_query = {'platform': {'$regex':
-                                            platforms[1:-1], '$options': 'i'}}
-        else:
-            platforms_query = {'platform': {'$in': platforms}}
-    else:
-        platforms_query = {}
 
     if dates:
         if dates.startswith('/') and dates.endswith('/'):
@@ -105,8 +87,7 @@ def gen_query(versions, labels, dates, platforms, start, end, limit, ids, commit
     else:
         commit_query = {}
 
-    query = {"$and": [version_query, label_query, 
-            platforms_query, date_query, start_query, end_query, id_query, commit_query]}
+    query = {"$and": [label_query, date_query, start_query, end_query, id_query, commit_query]}
     cursor = db.raw.find(query).sort([ ('run_date', pymongo.ASCENDING), 
                                     ('platform', pymongo.DESCENDING)])
     if limit:
@@ -129,7 +110,7 @@ def process_cursor(cursor, multidb):
                     row = dict(commit=entry['commit'],
                                platform=entry['platform'],
                                version=entry['version'],
-                               date=entry['run_date'],
+                               date=entry['run_time'].isoformat(),
                                label=entry['label'])
                     for (n, res) in result['results'].iteritems():
                         row[n] = res
@@ -143,8 +124,8 @@ def process_cursor(cursor, multidb):
 
     return out
 
-def raw_data(versions, labels, multidb, dates, platforms, start, end, limit, ids, commits):
-    cursor = gen_query(versions, labels, dates, platforms, start, end, limit, ids, commits)
+def raw_data(labels, multidb, dates, start, end, limit, ids, commits):
+    cursor = gen_query(labels, dates, start, end, limit, ids, commits)
     result = process_cursor(cursor, multidb)
     return result
 
@@ -154,18 +135,10 @@ def results_page():
     """
     #_ids of tests we want to view
     ids = request.GET.getall("id")
-    # specific platforms we want to view tests for
-    platforms = request.GET.getall('platforms')
-    # specific mongod versions we want to view tests for
-    versions = request.GET.getall('versions')
     # specific dates for tests to be viewed
     dates = request.GET.getall('dates')
-    # special data structure for recent tests
-    home = request.GET.getall('home')
     # test host label
     labels = request.GET.getall('labels')
-    # test metric of interest
-    metric = request.GET.get('metric', 'ops_per_sec')
     # # of tests to return
     limit = request.GET.get('limit')
     # tests run from this date (used in range query)
@@ -174,88 +147,71 @@ def results_page():
     end = request.GET.get('end')
     # single db or multi db
     multidb = request.GET.get('multidb', '0 1')
+    # x-axis-type 0 == time, 1 == threads
+    xaxis = request.GET.get('xaxis', '0')
+    # spread dates
+    spread = request.GET.get('spread', '0')
+    spread_dates = True if spread == '1' else False
 
-    # handler for home page to display recent tests
-    # we need to query for each recent test separately and
-    # then merge the results for subsequent display
-    if home:
-        results = []
-        try:
-            from ast import literal_eval
-            for platform in literal_eval(home):
-                result = literal_eval(json.dumps(platform))
-                for attrib in result:
-                    result[attrib] = '/' + result[attrib] + '/'
-                tmp = raw_data(result['version'], result['label'], multidb,
-                               result['run_date'], result['platform'], None, None, limit, ids, None)
-                for result in tmp:
-                    results.append(result)
-            results = merge(results)
-        except BaseException, e:
-            print e
-    else:
-        results = raw_data(versions, labels, multidb, dates,
-                           platforms, start, end, limit, ids, None)
+    results = raw_data(labels, multidb, dates,
+                       start, end, limit, ids, None)
+
+    #check to see if we want the x-axis as time
+    if xaxis == '0':
+        new_results = []
+        dates = set()
+        threads = [] 
+        for outer_result in results:
+            #goal here is to create "data" and "labels"
+            dy_map = {}
+            results_section = []
+            for result in outer_result['results']:
+                #if we need to construct threads
+                if len(threads) == 0:
+                    threadset = set()
+                    for k in result.keys():
+                        if k.isdigit():
+                            threadset.add(k)
+                    threads = list(threadset)
+                    threads.sort(key=int)
+                result_entry = []
+                result_entry.append(result['date'])
+                for thread in threads:
+                    result_entry.append(result[thread]['ops_per_sec'])
+                #here we have [<date>, ops1, ops2...]
+                results_section.append(result_entry)
+
+            #construct final object
+            labels = ['Run Date']
+            labels.extend(threads)
+            new_results.append({ 'data': json.dumps(results_section),
+                                 'labels_json': json.dumps(labels),
+                                 'labels_list': labels})
+        print "USING DATES"
+        return template('results.tpl', results=results, request=request,
+                        dygraph_results=new_results, threads=sorted(threads),
+                        use_dates=True, spread_dates=spread_dates)
+    elif xaxis == '1':
+        #xaxis is threads
+        threads = set()
+        dygraph_results = []
+        for outer_result in results:
+            out = []
+            for i, result in enumerate(outer_result['results']):
+                out.append({'label': ' / '.join((result['label'], result['version'],
+                                                 result['date'])),
+                            'data': sorted([int(k), v['ops_per_sec']] 
+                                           for (k, v) in result.iteritems() if k.isdigit())})
+                threads.update(int(k) for k in result if k.isdigit())
+            dygraph_data, dygraph_labels = to_dygraphs_data_format(out)
+            dygraph_results.append({'data': json.dumps(dygraph_data),
+                                    'labels_json': json.dumps(dygraph_labels),
+                                    'labels_list': dygraph_labels})
+        return template('results.tpl', results=results, request=request,
+                        dygraph_results=dygraph_results, threads=sorted(threads),
+                        use_dates=False, spread_dates=False)
 
 
-    new_results = []
-    dates = set()
-    threads = [] 
-    for outer_result in results:
-        #goal here is to create "data" and "labels"
-        dy_map = {}
-        results_section = []
-        for result in outer_result['results']:
-            #if we need to construct threads
-            if len(threads) == 0:
-                threadset = set()
-                for k in result.keys():
-                    if k.isdigit():
-                        threadset.add(k)
-                threads = list(threadset)
-                threads.sort(key=int)
-            result_entry = []
-            result_entry.append(result['date'])
-            for thread in threads:
-                result_entry.append(result[thread]['ops_per_sec'])
-            #here we have [<date>, ops1, ops2...]
-            results_section.append(result_entry)
-
-        #construct final object
-        labels = ['Run Date']
-        labels.extend(threads)
-        new_results.append({ 'data': json.dumps(results_section),
-                             'labels_json': json.dumps(labels),
-                             'labels_list': labels})
-
-
-    return template('results.tpl', results=results, request=request,
-                    dygraph_results=new_results, threads=sorted(threads))
-
-
-def merge(results):
-    """This takes separate results that have been pulled
-        and aggregated - using the raw_data function, and
-        reaggregates them in the same way raw_data does
-    """
-    aggregate = defaultdict(list)
-    for result in results:
-        row = dict(label=result['results'][0]['label'],
-                   platform=result['results'][0]['platform'],
-                   version=result['results'][0]['version'],
-                   commit=result['results'][0]['commit'],
-                   date=result['results'][0]['date'])
-        for (n, res) in result['results'][0].iteritems():
-            row[n] = res
-        aggregate[result['name']].append(row)
-
-    aggregate = sorted(aggregate.iteritems(), key=lambda (k, v): k)
-    out = []
-
-    for item in aggregate:
-        out.append({'name': item[0], 'results': item[1]})
-
-    return out
 
 def to_dygraphs_data_format(in_data):
     """returns js string containing the dygraphs data
@@ -276,17 +232,6 @@ def to_dygraphs_data_format(in_data):
 
     return graph_data, labels
 
-def get_all_rows():
-    all_rows = []
-    csr = db.raw.find()
-    for record in csr:
-        tmpdoc = {"commit": record["commit"],
-                  "label": record["label"],
-                  "date": record["run_date"],
-                  "_id": record["_id"]}
-        all_rows.append(tmpdoc) 
-    return all_rows
-
 def get_rows(commit_regex, date_regex, label_regex):
     if commit_regex is not None:
         commit_regex = '/' + commit_regex + '/'
@@ -295,23 +240,17 @@ def get_rows(commit_regex, date_regex, label_regex):
     if label_regex is not None:
         label_regex = '/' + label_regex + '/'
     
-    csr = gen_query(None, label_regex, date_regex, None, None, None, None, None, commit_regex)
+    csr = gen_query(label_regex, date_regex, None, None, None, None, commit_regex)
     rows = []
     for record in csr:
         tmpdoc = {"commit": record["commit"],
                   "label": record["label"],
-                  "date": record["run_date"],
+                  "date": record["run_time"].isoformat(),
                   "_id": str(record["_id"])}
         rows.append(tmpdoc) 
     return rows
 
-
-@route("/testdata")
-def test_page():
-    allrows = get_all_rows()
-    return template('comp.tpl', allrows=allrows)
-
-@route("/test")
+@route("/")
 def test_page():
     commit_regex = request.GET.get('commit')
     date_regex = request.GET.get('date')
@@ -327,6 +266,7 @@ def test_page():
         return template('comp.tpl', allrows=rows)
 
 
+<<<<<<< HEAD
 @route("/")
 def main_page():
     """Handler for main page
@@ -360,6 +300,8 @@ def main_page():
     return template('main.tpl', rows=rows, labels=labels,
                     versions=versions, platforms=platforms)
 
+=======
+>>>>>>> a8fb36208b9220300e3891abc0275daed053e123
 if __name__ == '__main__':
     do_reload = '--reload' in sys.argv
     run(host='0.0.0.0', port=80, server=AutoServer, debug=do_reload)
