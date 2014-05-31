@@ -17,12 +17,15 @@
 import sys
 import json
 import pymongo
+import bson
 from bottle import *
 import logging as logr
 import logging.handlers
 from datetime import datetime
 from collections import defaultdict
 from copy import copy
+
+from pprint import pprint
 
 MONGO_PERF_HOST = "localhost"
 MONGO_PERF_PORT = 27017
@@ -35,34 +38,7 @@ db = pymongo.Connection(host=MONGO_PERF_HOST,
 def send_static(filename):
     return static_file(filename, root='./static')
 
-
-@route("/host")
-def host_page():
-    result = {}
-    result['date'] = request.GET.get('date', '')
-    result['label'] = request.GET.get('label', '')
-    result['version'] = request.GET.get('version', '')
-    host = db.host.find_one({"build_info.version": result['version'],
-                                "label": result['label'],
-                                "run_date": result['date']
-                            })
-    return template('host.tpl', host=host)
-
-
-@route("/raw")
-def raw_data(versions, labels, multidb, dates, platforms, start, end, limit):
-    """ Pulls and aggregates raw data from database matching query parameters
-        :Parameters:
-        - ``"versions"``: specific mongod versions we want to view tests for
-        - ``"labels"``: test host label
-        - ``"multidb"``: single db or multi db
-        - ``"dates"``: specific dates for tests to be viewed
-        - ``"platforms"``: specific platforms we want to view tests for
-        - ``"start"``: tests run from this date (used in range query)
-        - ``"end"``: tests run before this date (used in range query)
-        - ``"limit"``: # of tests to return
-    """
-
+def gen_query(versions, labels, dates, platforms, start, end, limit, ids, commits):
     if start:
         start_query = {'run_date': {'$gte': start}}
     else:
@@ -77,16 +53,14 @@ def raw_data(versions, labels, multidb, dates, platforms, start, end, limit):
         try:
             limit = int(limit)
         except ValueError:
-            limit = 10
-    else:
-        limit = 10
+            limit = None
 
     if versions:
         if versions.startswith('/') and versions.endswith('/'):
             version_query = {'version': {'$regex':
                                          versions[1:-1], '$options': 'i'}}
         else:
-            version_query = {'version': {'$in': versions.split(" ")}}
+            version_query = {'version': {'$in': versions}}
     else:
         version_query = {}
 
@@ -95,7 +69,7 @@ def raw_data(versions, labels, multidb, dates, platforms, start, end, limit):
             platforms_query = {'platform': {'$regex':
                                             platforms[1:-1], '$options': 'i'}}
         else:
-            platforms_query = {'platform': {'$in': platforms.split(" ")}}
+            platforms_query = {'platform': {'$in': platforms}}
     else:
         platforms_query = {}
 
@@ -104,7 +78,7 @@ def raw_data(versions, labels, multidb, dates, platforms, start, end, limit):
             date_query = {'run_date': {'$regex':
                                        dates[1:-1], '$options': 'i'}}
         else:
-            date_query = {'run_date': {'$in': dates.split(" ")}}
+            date_query = {'run_date': {'$in': dates}}
     else:
         date_query = {}
 
@@ -113,25 +87,41 @@ def raw_data(versions, labels, multidb, dates, platforms, start, end, limit):
             label_query = {'label': {'$regex':
                                      labels[1:-1], '$options': 'i'}}
         else:
-            label_query = {'label': {'$in': labels.split(" ")}}
+            label_query = {'label': {'$in': labels}}
     else:
         label_query = {}
 
-    cursor = db.raw.find({"$and": [version_query, label_query, 
-            platforms_query, date_query, start_query, end_query]})\
-        .sort([ ('run_date', pymongo.DESCENDING), 
-                ('platform', pymongo.DESCENDING)])\
-        .limit(limit)
+    if ids:
+        objids = []
+        for id in ids:
+            objids.append(bson.objectid.ObjectId(id));
+        id_query = {'_id': {'$in': objids}}
+    else:
+        id_query = {}
 
+    if commits:
+        if commits.startswith('/') and commits.endswith('/'):
+            commit_query = {'commit': { '$regex': commits[1:-1] }}
+    else:
+        commit_query = {}
+
+    query = {"$and": [version_query, label_query, 
+            platforms_query, date_query, start_query, end_query, id_query, commit_query]}
+    cursor = db.raw.find(query).sort([ ('run_date', pymongo.ASCENDING), 
+                                    ('platform', pymongo.DESCENDING)])
+    if limit:
+        cursor.limit(limit)
+
+    return cursor
+
+def process_cursor(cursor, multidb):
     aggregate = defaultdict(list)
     result_size = cursor.count(with_limit_and_skip=True)
 
     for index in xrange(0, result_size):
         entry = cursor[index]
-
         for mdb in multidb.split(' '):
-            mdbstr  = 'singledb' if mdb == '0' else 'multidb'
-
+            mdbstr = 'singledb' if mdb == '0' else 'multidb'
             if mdbstr in entry:
                 results = entry[mdbstr]
 
@@ -153,21 +143,27 @@ def raw_data(versions, labels, multidb, dates, platforms, start, end, limit):
 
     return out
 
+def raw_data(versions, labels, multidb, dates, platforms, start, end, limit, ids, commits):
+    cursor = gen_query(versions, labels, dates, platforms, start, end, limit, ids, commits)
+    result = process_cursor(cursor, multidb)
+    return result
 
 @route("/results")
 def results_page():
     """Handler for results page
     """
+    #_ids of tests we want to view
+    ids = request.GET.getall("id")
     # specific platforms we want to view tests for
-    platforms = ' '.join(request.GET.getall('platforms'))
+    platforms = request.GET.getall('platforms')
     # specific mongod versions we want to view tests for
-    versions = ' '.join(request.GET.getall('versions'))
+    versions = request.GET.getall('versions')
     # specific dates for tests to be viewed
-    dates = ' '.join(request.GET.getall('dates'))
+    dates = request.GET.getall('dates')
     # special data structure for recent tests
-    home = ' '.join(request.GET.getall('home'))
+    home = request.GET.getall('home')
     # test host label
-    labels = ' '.join(request.GET.getall('labels'))
+    labels = request.GET.getall('labels')
     # test metric of interest
     metric = request.GET.get('metric', 'ops_per_sec')
     # # of tests to return
@@ -191,7 +187,7 @@ def results_page():
                 for attrib in result:
                     result[attrib] = '/' + result[attrib] + '/'
                 tmp = raw_data(result['version'], result['label'], multidb,
-                               result['run_date'], result['platform'], None, None, limit)
+                               result['run_date'], result['platform'], None, None, limit, ids, None)
                 for result in tmp:
                     results.append(result)
             results = merge(results)
@@ -199,25 +195,42 @@ def results_page():
             print e
     else:
         results = raw_data(versions, labels, multidb, dates,
-                           platforms, start, end, limit)
+                           platforms, start, end, limit, ids, None)
 
-    threads = set()
-    dygraph_results = []
+
+    new_results = []
+    dates = set()
+    threads = [] 
     for outer_result in results:
-        out = []
-        for i, result in enumerate(outer_result['results']):
-            out.append({'label': " / ".join((result['label'], result['version'], 
-                    result['date'])), 'data': sorted([int(k), v[metric]]
-                        for (k, v) in result.iteritems() if k.isdigit())
-                        })
-            threads.update(int(k) for k in result if k.isdigit())
-        dygraph_data, dygraph_labels = to_dygraphs_data_format(out)
-        dygraph_results.append({'data': json.dumps(dygraph_data),
-                                'labels_json': json.dumps(dygraph_labels),
-                                'labels_list': dygraph_labels})
+        #goal here is to create "data" and "labels"
+        dy_map = {}
+        results_section = []
+        for result in outer_result['results']:
+            #if we need to construct threads
+            if len(threads) == 0:
+                threadset = set()
+                for k in result.keys():
+                    if k.isdigit():
+                        threadset.add(k)
+                threads = list(threadset)
+                threads.sort(key=int)
+            result_entry = []
+            result_entry.append(result['date'])
+            for thread in threads:
+                result_entry.append(result[thread]['ops_per_sec'])
+            #here we have [<date>, ops1, ops2...]
+            results_section.append(result_entry)
+
+        #construct final object
+        labels = ['Run Date']
+        labels.extend(threads)
+        new_results.append({ 'data': json.dumps(results_section),
+                             'labels_json': json.dumps(labels),
+                             'labels_list': labels})
+
 
     return template('results.tpl', results=results, request=request,
-                    dygraph_results=dygraph_results, threads=sorted(threads))
+                    dygraph_results=new_results, threads=sorted(threads))
 
 
 def merge(results):
@@ -262,6 +275,56 @@ def to_dygraphs_data_format(in_data):
         labels.append(series['label'])
 
     return graph_data, labels
+
+def get_all_rows():
+    all_rows = []
+    csr = db.raw.find()
+    for record in csr:
+        tmpdoc = {"commit": record["commit"],
+                  "label": record["label"],
+                  "date": record["run_date"],
+                  "_id": record["_id"]}
+        all_rows.append(tmpdoc) 
+    return all_rows
+
+def get_rows(commit_regex, date_regex, label_regex):
+    if commit_regex is not None:
+        commit_regex = '/' + commit_regex + '/'
+    if date_regex is not None:
+        date_regex = '/' + date_regex + '/'
+    if label_regex is not None:
+        label_regex = '/' + label_regex + '/'
+    
+    csr = gen_query(None, label_regex, date_regex, None, None, None, None, None, commit_regex)
+    rows = []
+    for record in csr:
+        tmpdoc = {"commit": record["commit"],
+                  "label": record["label"],
+                  "date": record["run_date"],
+                  "_id": str(record["_id"])}
+        rows.append(tmpdoc) 
+    return rows
+
+
+@route("/testdata")
+def test_page():
+    allrows = get_all_rows()
+    return template('comp.tpl', allrows=allrows)
+
+@route("/test")
+def test_page():
+    commit_regex = request.GET.get('commit')
+    date_regex = request.GET.get('date')
+    label_regex = request.GET.get('label')
+    nohtml = request.GET.get('nohtml')
+
+    rows = get_rows(commit_regex, date_regex, label_regex)
+
+    if nohtml:
+        response.content_type = 'application/json'
+        return json.dumps(rows)
+    else: 
+        return template('comp.tpl', allrows=rows)
 
 
 @route("/")
