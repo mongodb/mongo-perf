@@ -89,6 +89,9 @@ do
         continue
     else
         run_build
-        run_mongo-perf
+        if [ $? == 0 ]
+        then
+            run_mongo-perf
+        fi
     fi
 done
