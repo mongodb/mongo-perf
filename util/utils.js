@@ -103,18 +103,26 @@ function runTest(test, thread, multidb) {
 
     print("\t" + thread + "\t" + total);
 
+    var total_old =
+        result["insert_old"] +
+        result["query_old"] +
+        result["update_old"] +
+        result["delete_old"] +
+        result["getmore_old"] +
+        result["command_old"];
+
     if ("post" in test) {
         for (var i = 0; i < multidb; i++) {
             test.post(collections[i]);
         }
     }
 
-    return { ops_per_sec: total };
+    return { ops_per_sec: total, ops_per_sec_old: total_old };
 }
 
 
 function getVariance( numericArray ) {
-	var avg = getMean( numericArray );
+    var avg = getMean( numericArray );
     var i = numericArray.length;
     var x = 0;
  
@@ -124,6 +132,21 @@ function getVariance( numericArray ) {
 	x /= numericArray.length;
 	return x;
 }
+
+/*
+function getVariance2( numericArray ) {
+    var sumX = 0;
+    var sumXX = 0;
+
+    var len = numericArray.length;
+    while (len--) {
+        sumX += numericArray[len];
+        sumXX += numericArray[len] * numericArray[len];
+    }
+    // not as accurate as two-pass algorithm above
+    return ( sumXX - sumX * sumX / numericArray.length ) / numericArray.length;
+}
+*/
 
 function getMean( values ) {
     var sum = 0.0;
@@ -186,16 +209,26 @@ function runTests(threadCounts, multidb, reportLabel, reportHost, reportPort) {
                 results[j] = runTest(test, threadCount, multidb);
             }
             var values = []
+            var values_old = []
             for (var j=0; j < 30; j++) {
                 values[j] = results[j].ops_per_sec
+                values_old[j] = results[j].ops_per_sec_old
             }
             var mean = getMean(values);
-            var variance = getVariance(values, 13);  // 13 digits of precision
+            var mean_old = getMean(values_old);
+            var variance_old = getVariance(values_old);
+            print("old_stddev: " + Math.sqrt(variance_old));
+            var variance = getVariance(values);
+            print("new_stddev: " + Math.sqrt(variance));
             var newResults = {}
             newResults.ops_per_sec = values;
+            newResults.ops_per_sec_old = values_old;
             newResults.mean_ops_per_sec = mean;
+            newResults.mean_ops_per_sec_old = mean_old;
             newResults.variance = variance;
+            newResults.variance_old = variance_old;
             newResults.standardDeviation = Math.sqrt(variance);
+            newResults.standardDeviation_old = Math.sqrt(variance_old);
             threadResults[threadCount] = newResults;
         }
         testResults[test] = threadResults;
