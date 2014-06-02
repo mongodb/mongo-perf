@@ -13,6 +13,7 @@
         <script type="text/javascript" src="static/js/jquery.dataTables.min.js"></script>
         <script type="text/javascript" src="static/js/dygraph-combined.js"></script>
         <script>
+            reloadlist = []
             $(document).ready(function(){
                 $('table').dataTable({
                         "bPaginate": false,
