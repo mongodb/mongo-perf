@@ -23,11 +23,17 @@
                 });
         });
 
+        function isVisible(elem) {
+            return elem.offsetWidth > 0 || elem.offsetHeight > 0;
+        }
+
         function filter() {
             var commitregex = $("#commitfield")[0].value;
-            var dateregex = $("#datefield")[0].value;
+            var startdate = $("#startfield")[0].value;
+            var enddate = $("#endfield")[0].value;
             var labelregex = $("#labelfield")[0].value;
-            var reqdata = {commit: commitregex, date: dateregex, label: labelregex, nohtml:true};
+            var reqdata = {commit: commitregex, start: startdate, end: enddate, label: labelregex, nohtml:true};
+
             //1) make ajax call to get rows back
             $.get("/", reqdata).done(function(data) {
                     //2) iterate over all rows
@@ -58,8 +64,10 @@
             var selectRows = $('[name="id"]')
             for(var i = 0; i < selectRows.length; i++) {
                 if(!selectBool) {
-                    //set to selected
-                    selectRows[i].checked=true;
+                    //set to selected if its not hidden
+                    if(isVisible(selectRows[i])) {
+                        selectRows[i].checked=true;
+                    }
                 } else {
                     //set to unselected
                     selectRows[i].checked=false;
@@ -80,21 +88,32 @@
             $('#commitfield').bind("keyup", filter);
             $('#datefield').bind("keyup", filter);
             $('#labelfield').bind("keyup", filter);
+            $('#startfield').datepicker({
+              onSelect: function(dateText, isnt) {
+                filter();
+             }
+            });
+            $('#endfield').datepicker({
+              onSelect: function(dateText, isnt) {
+                filter();
+             }
+            });
         }
     </script>
   </head>
   <div class="container">
   <body>
     <h1>MongoDB Performance Benchmarks</h1>
-    <div id="selection">
+    <div id="selection" class="row">
       <form name="custom_form" id="custom_form" action="results" method="get">
         <button action="submit" class="btn btn-primary">Submit</button>
         <table id="selectTable" class="table table-striped">
           <thead>
               <tr>
                 <td><button onclick="selectClicked();" class="btn btn-default" type="button" id="selectall">Select All</button></td>
-                <td><input type="text" id="labelfield" name="label" placeholder="Label Filter" /></td>
-                <td><input type="text" id="datefield" name="date" placeholder="Date Filter" /></td>
+                <td><input type="text" id="labelfield" placeholder="Label Filter" /></td>
+                <td><input type="text" id="startfield" placeholder="Start Date Filter" />
+                    <input type="text" id="endfield" placeholder="End Date Filter" /></td>
                 <td><input type="text" id="commitfield" name="commit" placeholder="Commit Filter" /></td>
               </tr>
               <tr>

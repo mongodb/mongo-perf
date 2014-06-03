@@ -187,7 +187,6 @@ def results_page():
             new_results.append({ 'data': json.dumps(results_section),
                                  'labels_json': json.dumps(labels),
                                  'labels_list': labels})
-        print "USING DATES"
         return template('results.tpl', results=results, request=request,
                         dygraph_results=new_results, threads=sorted(threads),
                         use_dates=True, spread_dates=spread_dates)
@@ -232,15 +231,13 @@ def to_dygraphs_data_format(in_data):
 
     return graph_data, labels
 
-def get_rows(commit_regex, date_regex, label_regex):
+def get_rows(commit_regex, start_date, end_date, label_regex):
     if commit_regex is not None:
         commit_regex = '/' + commit_regex + '/'
-    if date_regex is not None:
-        date_regex = '/' + date_regex + '/'
     if label_regex is not None:
         label_regex = '/' + label_regex + '/'
     
-    csr = gen_query(label_regex, date_regex, None, None, None, None, commit_regex)
+    csr = gen_query(label_regex, None, start_date, end_date, None, None, commit_regex)
     rows = []
     for record in csr:
         tmpdoc = {"commit": record["commit"],
@@ -253,11 +250,22 @@ def get_rows(commit_regex, date_regex, label_regex):
 @route("/")
 def test_page():
     commit_regex = request.GET.get('commit')
-    date_regex = request.GET.get('date')
+    start_date = request.GET.get('start')
+    end_date = request.GET.get('end')
     label_regex = request.GET.get('label')
     nohtml = request.GET.get('nohtml')
 
-    rows = get_rows(commit_regex, date_regex, label_regex)
+    #convert to appropriate type
+    if start_date:
+        start = datetime.strptime(start_date, '%m/%d/%Y')
+    else:
+        start = None
+    if end_date:
+        end = datetime.strptime(end_date, '%m/%d/%Y')
+    else:
+        end = None
+
+    rows = get_rows(commit_regex, start, end, label_regex)
 
     if nohtml:
         response.content_type = 'application/json'
