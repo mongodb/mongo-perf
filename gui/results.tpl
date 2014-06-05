@@ -95,11 +95,6 @@
         <button onclick='useTime()' >Use Time</button>
         %end
 
-        %if spread_dates:
-        <button onclick='dontSpreadDates()' >Dont Spread Dates</button>
-        %else:
-        <button onclick='spreadDates()' >Spread Dates</button>
-        %end
         <br />
         %import urllib
         %for k, (outer_result, dygraph_data) in enumerate(zip(results, dygraph_results)):
@@ -141,6 +136,10 @@
           <div id="graph_{{k}}" class="graph" style="width:600px;height:300px;"></div>
         </div>
         <script>
+        var num_map_{{k}} = {}
+        %for i, result in enumerate(outer_result['results']):
+        num_map_{{k}}[{{i + 1}}] = "{{result['commit'][:7]}}";
+        %end
         %if use_dates:
             var date_data_{{k}} = get_date_data({{!dygraph_data['data']}});
         %end
@@ -162,6 +161,22 @@
               includeZero: true, //ensure y-axis starts at 0
               xRangePad: 5,
               %if use_dates:
+              axes: {
+                x: {
+                  axisLabelFormatter: function(x) {
+                    var xval = parseFloat(x);
+                    var xfloor = parseInt(x);
+                    if(xval === xfloor) {
+                        return num_map_{{k}}[xval];
+                    } else {
+                        return "";
+                    }
+                  },
+                  valueFormatter: function(x) {
+                    return num_map_{{k}}[x];
+                  }
+                }
+              },
               xlabel: 'Run Date' //label for x-axis
               %else:
               xlabel: 'Threads' //label for x-axis

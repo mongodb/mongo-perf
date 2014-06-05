@@ -1,5 +1,7 @@
 from argparse import ArgumentParser
 from subprocess import Popen, PIPE, call
+import git
+import pymongo
 import sys
 
 
@@ -28,6 +30,9 @@ def parse_arguments():
     parser.add_argument('-s', '--shell', dest='shellpath',
                         help="Path to the mongo shell executable to use.",
                         default='mongo')
+    parser.add_argument('--mongo-repo-path', dest='repo_path',
+                        help='Path to a mongo repo to collect commit information',
+                        default='/home/ace/mongo/')
 
     return parser.parse_known_args()
 
@@ -48,6 +53,15 @@ def main():
           "print('db version: ' + db.version()); db.serverBuildInfo().gitVersion;"])
     print("")
 
+    # Get commit info
+    repo = git.Repo(args.repo_path)
+    # Get buildinfo in order to get commit hash
+    client = pymongo.MongoClient()
+    buildinfo = client['test'].command("buildinfo")
+    commithash = buildinfo['gitVersion']
+    # Use hash to get commit_date
+    committed_date = repo.commit(commithash).committed_date
+
     # Open a mongo shell subprocess and load necessary files.
     mongo_proc = Popen([args.shellpath, "--norc"], stdin=PIPE, stdout=PIPE)
     mongo_proc.stdin.write("load('util/utils.js')\n")
@@ -60,7 +74,8 @@ def main():
               str(args.multidb) + ", " +
               "'" + args.reportlabel + "', " +
               "'" + args.reporthost + "', " +
-              "'" + args.reportport + "'" +
+              "'" + args.reportport + "', " +
+              str(committed_date) +
               ");\n")
     mongo_proc.stdin.write(cmdstr)
     mongo_proc.stdin.close()

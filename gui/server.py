@@ -40,12 +40,12 @@ def send_static(filename):
 
 def gen_query(labels, dates, start, end, limit, ids, commits):
     if start:
-        start_query = {'run_time': {'$gte': start}}
+        start_query = {'commit_date': {'$gte': start}}
     else:
         start_query = {}
 
     if end:
-        end_query = {'run_time': {'$lte': end}}
+        end_query = {'commit_date': {'$lte': end}}
     else:
         end_query = {}
 
@@ -88,7 +88,7 @@ def gen_query(labels, dates, start, end, limit, ids, commits):
         commit_query = {}
 
     query = {"$and": [label_query, date_query, start_query, end_query, id_query, commit_query]}
-    cursor = db.raw.find(query).sort([ ('run_date', pymongo.ASCENDING), 
+    cursor = db.raw.find(query).sort([ ('commit_date', pymongo.ASCENDING),
                                     ('platform', pymongo.DESCENDING)])
     if limit:
         cursor.limit(limit)
@@ -110,7 +110,7 @@ def process_cursor(cursor, multidb):
                     row = dict(commit=entry['commit'],
                                platform=entry['platform'],
                                version=entry['version'],
-                               date=entry['run_time'].isoformat(),
+                               date=entry['commit_date'].isoformat(),
                                label=entry['label'])
                     for (n, res) in result['results'].iteritems():
                         row[n] = res
@@ -150,7 +150,7 @@ def results_page():
     # x-axis-type 0 == time, 1 == threads
     xaxis = request.GET.get('xaxis', '0')
     # spread dates
-    spread = request.GET.get('spread', '0')
+    spread = request.GET.get('spread', '1')
     spread_dates = True if spread == '1' else False
 
     results = raw_data(labels, multidb, dates,
@@ -242,7 +242,7 @@ def get_rows(commit_regex, start_date, end_date, label_regex):
     for record in csr:
         tmpdoc = {"commit": record["commit"],
                   "label": record["label"],
-                  "date": record["run_time"].isoformat(),
+                  "date": record["commit_date"].isoformat(),
                   "_id": str(record["_id"])}
         rows.append(tmpdoc) 
     return rows

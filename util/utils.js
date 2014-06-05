@@ -113,7 +113,7 @@ function runTest(test, thread, multidb) {
 
 
 
-function runTests(threadCounts, multidb, reportLabel, reportHost, reportPort) {
+function runTests(threadCounts, multidb, reportLabel, reportHost, reportPort, commitDate) {
     var testResults = {};
     // The following are only used when reportLabel is not None.
     var resultsCollection = db.getSiblingDB("bench_results").raw;
@@ -133,12 +133,13 @@ function runTests(threadCounts, multidb, reportLabel, reportHost, reportPort) {
         myId = new ObjectId();
         var bi = db.runCommand("buildInfo");
         var basicFields = {
-            commit:     bi.gitVersion,
-            label:      reportLabel,
-            platform:   bi.sysInfo.split(" ")[0],
-            run_date:   formatRunDate(now),
-            run_time:   now,
-            version:    bi.version
+            commit:      bi.gitVersion,
+            label:       reportLabel,
+            platform:    bi.sysInfo.split(" ")[0],
+            run_date:    formatRunDate(now),
+            run_time:    now,
+            commit_date: new Date(commitDate * 1000),
+            version:     bi.version
         };
 
         var oldDoc = resultsCollection.findOne({ label: reportLabel });
