@@ -16,10 +16,10 @@ def parse_arguments():
     parser.add_argument('-m', '--multidb', dest='multidb',
                         help='Specify how many databases the test should use',
                         type=int, default=1)
-    parser.add_argument('-e', '--trialTime', dest='seconds',
+    parser.add_argument('--trialTime', dest='seconds',
                         help='Specify how many seconds to run each trial',
                         type=int, default=5)
-    parser.add_argument('-e', '--trialCount', dest='trials',
+    parser.add_argument('--trialCount', dest='trials',
                         help='Specify how many trials to run',
                         type=int, default=30)
     parser.add_argument('-l', '--label', dest='reportlabel',
