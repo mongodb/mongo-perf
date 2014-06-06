@@ -50,7 +50,7 @@ function formatRunDate(now) {
             pad(now.getDate()));
 }
 
-function runTest(test, thread, multidb) {
+function runTest(test, thread, multidb, runSeconds) {
     var collections = [];
 
     for (var i = 0; i < multidb; i++) {
@@ -86,9 +86,9 @@ function runTest(test, thread, multidb) {
         theDb.createCollection(collections[i].getName());
     }
 
-    // new approach runs for 1 second and counts ops, but does this repeatedly to characterize second-to-second variance
+    // call the built-in function
     var benchArgs = { ops:      new_ops,
-                      seconds:  1,
+                      seconds:  runSeconds,
                       host:     db.getMongo().host,
                       parallel: thread };
 
@@ -156,7 +156,7 @@ function getMean( values ) {
     return sum / values.length;
 }
 
-function runTests(threadCounts, multidb, reportLabel, reportHost, reportPort) {
+function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHost, reportPort) {
     var testResults = {};
     // The following are only used when reportLabel is not None.
     var resultsCollection = db.getSiblingDB("bench_results").raw;
@@ -205,12 +205,12 @@ function runTests(threadCounts, multidb, reportLabel, reportHost, reportPort) {
         for (var t = 0; t < threadCounts.length; t++) {
             var threadCount = threadCounts[t];
             var results = []
-            for (var j=0; j < 30; j++) {
-                results[j] = runTest(test, threadCount, multidb);
+            for (var j=0; j < trials; j++) {
+                results[j] = runTest(test, threadCount, multidb, seconds);
             }
             var values = []
             var values_old = []
-            for (var j=0; j < 30; j++) {
+            for (var j=0; j < trials; j++) {
                 values[j] = results[j].ops_per_sec
                 values_old[j] = results[j].ops_per_sec_old
             }

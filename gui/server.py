@@ -27,7 +27,9 @@ from copy import copy
 
 from pprint import pprint
 
-MONGO_PERF_HOST = "localhost"
+#MONGO_PERF_HOST = "localhost"
+#MONGO_PERF_HOST = "ec2-54-200-68-243.us-west-2.compute.amazonaws.com"
+MONGO_PERF_HOST = "192.168.1.155"
 MONGO_PERF_PORT = 27017
 MP_DB_NAME = "bench_results"
 db = pymongo.Connection(host=MONGO_PERF_HOST, 
@@ -251,7 +253,7 @@ def get_rows(commit_regex, date_regex, label_regex):
     return rows
 
 @route("/")
-def test_page():
+def new_main_page():
     commit_regex = request.GET.get('commit')
     date_regex = request.GET.get('date')
     label_regex = request.GET.get('label')
@@ -266,42 +268,6 @@ def test_page():
         return template('comp.tpl', allrows=rows)
 
 
-<<<<<<< HEAD
-@route("/")
-def main_page():
-    """Handler for main page
-    """
-    platforms = db.raw.distinct("platform")
-    versions = db.raw.distinct("version")
-    labels = db.raw.distinct("label")
-    platforms = filter(None, platforms)
-    versions = filter(None, versions)
-    labels = filter(None, labels)
-    versions = sorted(versions, reverse=True)
-    rows = None
-    
-    # restricted to benchmark tests for most recent MongoDB version
-    if versions:
-        #{"version": versions[0]}
-        cursor = db.raw.find({},
-                             {"_id" : 0, "singledb" : 0, 
-                             "multidb" : 0})\
-            .limit(100).sort([('run_time', pymongo.DESCENDING)])
-        needed = ['commit', 'label', 'platform', 'run_date', 'version']
-        rows = []
-
-        for record in cursor:
-            rows.append(record)
-
-        rows = sorted([dict(t) for t in set([tuple(d.items())
-                       for d in rows])], key=lambda t:
-                     (t['run_time'], t['commit'], t['platform']), reverse=True)
-
-    return template('main.tpl', rows=rows, labels=labels,
-                    versions=versions, platforms=platforms)
-
-=======
->>>>>>> a8fb36208b9220300e3891abc0275daed053e123
 if __name__ == '__main__':
     do_reload = '--reload' in sys.argv
-    run(host='0.0.0.0', port=80, server=AutoServer, debug=do_reload)
+    run(host='0.0.0.0', port=8080, server=AutoServer, debug=do_reload)

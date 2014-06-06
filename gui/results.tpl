@@ -129,7 +129,7 @@
                     <td>{{result['date']}}</td>
                     <td><a href="https://github.com/mongodb/mongo/commit/{{result['commit']}}" target="_blank">{{result['commit'][:7]}}</a></td>
                     %for thread in threads:
-                    <td>{{"{0:.2f}".format(result[str(thread)]["ops_per_sec"])}}</td>
+                    <td>{{"{0:.2f}".format(result[str(thread)]["mean_ops_per_sec"])}}</td>
                     %end
                 </tr>
                 %end

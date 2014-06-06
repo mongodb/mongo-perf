@@ -2,6 +2,32 @@ if ( typeof(tests) != "object" ) {
     tests = [];
 }
 
+tests.push( { name: "Commands.illegalOp",
+              ops: [
+                  { op: "command", ns : "#B_DB", command : { "notExist" : 1 } }
+              ] } );
+
+tests.push( { name: "Commands.rs.status",
+              ops: [
+                  { op: "command", ns : "#B_DB", command : { "replSetGetStatus" : 1 } }
+              ] } );
+
+tests.push( { name: "Commands.buildInfo",
+              ops: [
+                  { op: "command", ns : "#B_DB", command : { "buildInfo" : 1 } }
+              ] } );
+
+tests.push( { name: "Commands.isMaster",
+              ops: [
+                  { op: "command", ns : "#B_DB", command : { "isMaster" : 1 } }
+              ] } );
+
+
+tests.push( { name: "nop",
+              ops: [
+                  { op: "nop" }
+              ] } );
+
 tests.push( { name: "Commands.CountsFullCollection",
               pre: function( collection ) {
                   collection.drop();
