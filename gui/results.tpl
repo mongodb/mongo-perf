@@ -138,7 +138,13 @@
         <script>
         var num_map_{{k}} = {}
         %for i, result in enumerate(outer_result['results']):
-        num_map_{{k}}[{{i + 1}}] = "{{result['commit'][:7]}}";
+        var commitdate = new Date("{{result['date']}}");
+        var commitversion = "{{result['version']}}"
+        if(commitversion.indexOf("pre") >= 0) {
+            num_map_{{k}}[{{i + 1}}] = "{{result['commit'][:7]}}";
+        } else {
+            num_map_{{k}}[{{i + 1}}] = "{{result['version']}}";
+        }
         %end
         %if use_dates:
             var date_data_{{k}} = get_date_data({{!dygraph_data['data']}});
