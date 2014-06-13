@@ -32,7 +32,8 @@
             var startdate = $("#startfield")[0].value;
             var enddate = $("#endfield")[0].value;
             var labelregex = $("#labelfield")[0].value;
-            var reqdata = {commit: commitregex, start: startdate, end: enddate, label: labelregex, nohtml:true};
+            var versionregex = $("#versionfield")[0].value;
+            var reqdata = {commit: commitregex, start: startdate, end: enddate, label: labelregex, version: versionregex, nohtml:true};
 
             //1) make ajax call to get rows back
             $.get("/", reqdata).done(function(data) {
@@ -88,6 +89,7 @@
             $('#commitfield').bind("keyup", filter);
             $('#datefield').bind("keyup", filter);
             $('#labelfield').bind("keyup", filter);
+            $('#versionfield').bind("keyup", filter);
             $('#startfield').datepicker({
               onSelect: function(dateText, isnt) {
                 filter();
@@ -112,13 +114,15 @@
               <tr>
                 <td><button onclick="selectClicked();" class="btn btn-default" type="button" id="selectall">Select All</button></td>
                 <td><input type="text" id="labelfield" placeholder="Label Filter" /></td>
+                <td><input type="text" id="versionfield" placeholder="Version Filter" /></td>
                 <td><input type="text" id="startfield" placeholder="Start Date Filter" />
                     <input type="text" id="endfield" placeholder="End Date Filter" /></td>
                 <td><input type="text" id="commitfield" name="commit" placeholder="Commit Filter" /></td>
               </tr>
               <tr>
                 <th style="width: 10%">Select</th>
-                <th style="width: 35%">Label</th>
+                <th style="width: 25%">Label</th>
+                <th style="width: 10%">Version</th>
                 <th style="width: 20%">Date</th>
                 <th style="width: 35%">Git Hash</th>
               </tr>
@@ -127,6 +131,7 @@
           <tr id="{{row['_id']}}" name="docrow">
             <td><input type="checkbox" name="id" value={{row["_id"]}}></td>
             <td>{{row["label"]}}</td>
+            <td>{{row["version"]}}</td>
             <td>{{row["date"]}}</td>
             <td><a href="https://github.com/mongodb/mongo/commit/{{row['commit']}}">{{row['commit']}}</a></td>
           </tr>

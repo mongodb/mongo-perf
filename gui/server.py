@@ -38,7 +38,7 @@ db = pymongo.Connection(host=MONGO_PERF_HOST,
 def send_static(filename):
     return static_file(filename, root='./static')
 
-def gen_query(labels, dates, start, end, limit, ids, commits):
+def gen_query(labels, dates, versions, start, end, limit, ids, commits):
     if start:
         start_query = {'commit_date': {'$gte': start}}
     else:
@@ -73,6 +73,15 @@ def gen_query(labels, dates, start, end, limit, ids, commits):
     else:
         label_query = {}
 
+    if versions:
+        if versions.startswith('/') and versions.endswith('/'):
+            version_query = {'version': {'$regex':
+                                         versions[1:-1], '$options': 'i'}}
+        else:
+            version_query = {'version': {'$in': versions}}
+    else:
+        version_query = {}
+
     if ids:
         objids = []
         for id in ids:
@@ -87,7 +96,7 @@ def gen_query(labels, dates, start, end, limit, ids, commits):
     else:
         commit_query = {}
 
-    query = {"$and": [label_query, date_query, start_query, end_query, id_query, commit_query]}
+    query = {"$and": [label_query, date_query, version_query, start_query, end_query, id_query, commit_query]}
     cursor = db.raw.find(query).sort([ ('commit_date', pymongo.ASCENDING),
                                     ('platform', pymongo.DESCENDING)])
     if limit:
@@ -125,7 +134,7 @@ def process_cursor(cursor, multidb):
     return out
 
 def raw_data(labels, multidb, dates, start, end, limit, ids, commits):
-    cursor = gen_query(labels, dates, start, end, limit, ids, commits)
+    cursor = gen_query(labels, dates, None, start, end, limit, ids, commits)
     result = process_cursor(cursor, multidb)
     return result
 
@@ -231,17 +240,20 @@ def to_dygraphs_data_format(in_data):
 
     return graph_data, labels
 
-def get_rows(commit_regex, start_date, end_date, label_regex):
+def get_rows(commit_regex, start_date, end_date, label_regex, version_regex):
     if commit_regex is not None:
         commit_regex = '/' + commit_regex + '/'
     if label_regex is not None:
         label_regex = '/' + label_regex + '/'
+    if version_regex is not None:
+        version_regex = '/' + version_regex + '/'
     
-    csr = gen_query(label_regex, None, start_date, end_date, None, None, commit_regex)
+    csr = gen_query(label_regex, None, version_regex, start_date, end_date, None, None, commit_regex)
     rows = []
     for record in csr:
         tmpdoc = {"commit": record["commit"],
                   "label": record["label"],
+                  "version": record["version"],
                   "date": record["commit_date"].isoformat(),
                   "_id": str(record["_id"])}
         rows.append(tmpdoc) 
@@ -253,6 +265,7 @@ def test_page():
     start_date = request.GET.get('start')
     end_date = request.GET.get('end')
     label_regex = request.GET.get('label')
+    version_regex = request.GET.get('version')
     nohtml = request.GET.get('nohtml')
 
     #convert to appropriate type
@@ -265,7 +278,7 @@ def test_page():
     else:
         end = None
 
-    rows = get_rows(commit_regex, start, end, label_regex)
+    rows = get_rows(commit_regex, start, end, label_regex, version_regex)
 
     if nohtml:
         response.content_type = 'application/json'
