@@ -41,6 +41,10 @@
 
         });
 
+        function isVisible(elem) {
+            return elem.offsetWidth > 0 || elem.offsetHeight > 0;
+        }
+
         var selectBool = false;
         function selectClicked() {
             var selectRows = $('[name="id"]')
