@@ -16,11 +16,26 @@
             $('#selectTable').dataTable({
                     "bPaginate": false,
                     "bLengthChange": false,
-                    "bFilter": false,
                     "bInfo": false,
                     "bSortable": true,
                     "bAutoWidth": true,
-                });
+                    "dom": "lrtip"
+            });
+
+            var table = $('#selectTable').DataTable();
+
+            //manually set filtering up
+            $('#labelfield').on('keyup change', function() {
+                table.column(1).search(this.value).draw();
+            });
+            $('#versionfield').on('keyup change', function() {
+                table.column(2).search(this.value).draw();
+            });
+            //TODO get date range working
+            $('#commitfield').on('keyup change', function() {
+                table.column(4).search(this.value).draw();
+            });
+
         });
 
         function isVisible(elem) {
@@ -84,23 +99,6 @@
             selectBool = !selectBool;
             return false;
         }
-
-        window.onload=function() {
-            $('#commitfield').bind("keyup", filter);
-            $('#datefield').bind("keyup", filter);
-            $('#labelfield').bind("keyup", filter);
-            $('#versionfield').bind("keyup", filter);
-            $('#startfield').datepicker({
-              onSelect: function(dateText, isnt) {
-                filter();
-             }
-            });
-            $('#endfield').datepicker({
-              onSelect: function(dateText, isnt) {
-                filter();
-             }
-            });
-        }
     </script>
   </head>
   <div class="container">
@@ -112,12 +110,11 @@
         <table id="selectTable" class="table table-striped">
           <thead>
               <tr>
-                <td><button onclick="selectClicked();" class="btn btn-default" type="button" id="selectall">Select All</button></td>
-                <td><input type="text" id="labelfield" placeholder="Label Filter" /></td>
-                <td><input type="text" id="versionfield" placeholder="Version Filter" /></td>
-                <td><input type="text" id="startfield" placeholder="Start Date Filter" />
-                    <input type="text" id="endfield" placeholder="End Date Filter" /></td>
-                <td><input type="text" id="commitfield" name="commit" placeholder="Commit Filter" /></td>
+                <th><button onclick="selectClicked();" class="btn btn-default" type="button" id="selectall">Select All</button></td>
+                <th><input type="text" id="labelfield" placeholder="Label Filter" /></th>
+                <th><input type="text" id="versionfield" placeholder="Version Filter" /></th>
+                <th><input type="text" id="startfield" placeholder="Start Date Filter" /></th>
+                <th><input type="text" id="commitfield" name="commit" placeholder="Commit Filter" /></th>
               </tr>
               <tr>
                 <th style="width: 10%">Select</th>
