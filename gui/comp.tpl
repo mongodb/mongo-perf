@@ -32,48 +32,14 @@
                 table.column(2).search(this.value).draw();
             });
             //TODO get date range working
+            $('#datefield').on('keyup change', function() {
+                table.column(3).search(this.value).draw();
+            });
             $('#commitfield').on('keyup change', function() {
                 table.column(4).search(this.value).draw();
             });
 
         });
-
-        function isVisible(elem) {
-            return elem.offsetWidth > 0 || elem.offsetHeight > 0;
-        }
-
-        function filter() {
-            var commitregex = $("#commitfield")[0].value;
-            var startdate = $("#startfield")[0].value;
-            var enddate = $("#endfield")[0].value;
-            var labelregex = $("#labelfield")[0].value;
-            var versionregex = $("#versionfield")[0].value;
-            var reqdata = {commit: commitregex, start: startdate, end: enddate, label: labelregex, version: versionregex, nohtml:true};
-
-            //1) make ajax call to get rows back
-            $.get("/", reqdata).done(function(data) {
-                    //2) iterate over all rows
-                    valrows = $('[name="docrow"]')
-                    for(var i = 0; i < valrows.length; i++) {
-                        //see if row is in our ids
-                        var foundrow = false;
-                        //TODO should maintain data structure to do this
-                        for(var j = 0; j < data.length; j++) {
-                            if(data[j]['_id'] == valrows[i].id) {
-                                foundrow = true;
-                                break;
-                            }
-                        }
-                        if(foundrow) { //if found, ensure its not hidden
-                            valrows[i].style.display = '';
-                        } else { //else, ensure its hidden
-                            valrows[i].style.display = 'none';
-                        }
-                    }
-                }
-            );
-            return false;
-        }
 
         var selectBool = false;
         function selectClicked() {
@@ -113,7 +79,7 @@
                 <th><button onclick="selectClicked();" class="btn btn-default" type="button" id="selectall">Select All</button></td>
                 <th><input type="text" id="labelfield" placeholder="Label Filter" /></th>
                 <th><input type="text" id="versionfield" placeholder="Version Filter" /></th>
-                <th><input type="text" id="startfield" placeholder="Start Date Filter" /></th>
+                <th><input type="text" id="datefield" placeholder="Date Filter" /></th>
                 <th><input type="text" id="commitfield" name="commit" placeholder="Commit Filter" /></th>
               </tr>
               <tr>
