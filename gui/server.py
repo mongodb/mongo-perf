@@ -17,6 +17,7 @@
 import sys
 import json
 import pymongo
+import re
 import bson
 from bottle import *
 import logging as logr
@@ -138,32 +139,37 @@ def raw_data(labels, multidb, dates, start, end, limit, ids, commits):
     result = process_cursor(cursor, multidb)
     return result
 
+def getDefaultIDs():
+    prere = re.compile('pre')
+    #most recent baseline id
+    baselineid = db['raw'].find({'version': { '$not': prere}}, {'_id': 1}).sort('commit_date', pymongo.DESCENDING).limit(1)
+    #6 newer ids
+    newids = db['raw'].find({},{'_id': 1}).sort('commit_date', pymongo.DESCENDING).limit(6);
+    outlist = []
+    if baselineid.count(True) > 0:
+        outlist.append(str(baselineid[0]['_id']))
+    for i in range(newids.count(True)):
+        outlist.append(str(newids[i]['_id']))
+
+    return outlist
+
 @route("/results")
 def results_page():
     """Handler for results page
     """
     #_ids of tests we want to view
     ids = request.GET.getall("id")
-    # specific dates for tests to be viewed
-    dates = request.GET.getall('dates')
-    # test host label
-    labels = request.GET.getall('labels')
-    # # of tests to return
-    limit = request.GET.get('limit')
-    # tests run from this date (used in range query)
-    start = request.GET.get('start')
-    # tests run before this date (used in range query)
-    end = request.GET.get('end')
     # single db or multi db
     multidb = request.GET.get('multidb', '0 1')
     # x-axis-type 0 == time, 1 == threads
     xaxis = request.GET.get('xaxis', '0')
-    # spread dates
-    spread = request.GET.get('spread', '1')
-    spread_dates = True if spread == '1' else False
+    spread_dates = True
 
-    results = raw_data(labels, multidb, dates,
-                       start, end, limit, ids, None)
+    if len(ids) == 0:
+        ids = getDefaultIDs()
+
+    results = raw_data(None, multidb, None,
+                       None, None, None, ids, None)
 
     #check to see if we want the x-axis as time
     if xaxis == '0':
