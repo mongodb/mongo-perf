@@ -21,8 +21,9 @@
                         "bFilter": false,
                         "bInfo": false,
                         "bAutoWidth": true
-                    });
                 });
+                hideTablesClicked();
+            });
 
             var dygraphs = [];
             var dycolors = ["#7BBADE", "#93DE7F", "#F29E4A", "#FF7050",
@@ -32,6 +33,8 @@
             function dyToggle(graphIdx, seriesIdx, el) {
               dygraphs[graphIdx].setVisibility(seriesIdx, el.checked);
             }
+
+            var numGraphs = {{len(results)}};
 
             //TODO fix this to do it properly, its an ugly hack
             function useThreads() {
@@ -45,23 +48,60 @@
                 window.location.replace(myurl);
             }
 
-            function spreadDates() {
-                var myurl = document.URL;
-                myurl = myurl + '&spread=1'
-                window.location.replace(myurl);
+            function hideTablesClicked() {
+                //change button to show tables (and change function call)
+                $('#tablesbutton').attr('onclick', 'showTablesClicked()');
+                $('#tablesbutton').text('Show Tables');
+                //call hideTables
+                hideTables();
             }
-            function dontSpreadDates() {
-                var myurl = document.URL;
-                myurl = myurl + '&spread=0'
-                window.location.replace(myurl);
+
+            function showTablesClicked() {
+                //change button to show tables (and change function call)
+                $('#tablesbutton').attr('onclick', 'hideTablesClicked()');
+                $('#tablesbutton').text('Hide Tables');
+                //call showTables
+                showTables();
+            }
+
+            function hideTables() {
+                for(var i = 0; i < numGraphs; i++) {
+                    hideTableByIDClicked(i);
+                }
+            }
+
+            function showTables() {
+                for(var i = 0; i < numGraphs; i++) {
+                    showTableByIDClicked(i);
+                }
+            }
+
+            function hideTableByIDClicked(IDNum) {
+                //change button to show tables (and change function call)
+                $('#table' + IDNum + 'button').attr('onclick', 'showTableByIDClicked(' + IDNum + ')');
+                $('#table' + IDNum + 'button').text('Show Table');
+                //call hideTables
+                hideTableByID(IDNum);
+            }
+
+            function showTableByIDClicked(IDNum) {
+                $('#table' + IDNum + 'button').attr('onclick', 'hideTableByIDClicked(' + IDNum + ')');
+                $('#table' + IDNum + 'button').text('Hide Table');
+                //call hideTables
+                showTableByID(IDNum);
+            }
+
+            function hideTableByID(tableID) {
+                $('#table-' + tableID).css('display', 'none');
+            }
+
+            function showTableByID(tableID) {
+                $('#table-' + tableID).css('display', '');
             }
 
 
-            %if spread_dates:
+
             var even_spread = true;
-            %else:
-            var even_spread = false;
-            %end
 
             function get_date_data(start_data) {
                 var out_data = [];
@@ -95,12 +135,15 @@
         <button onclick='useTime()' >Use Time</button>
         %end
 
+        <button id='tablesbutton' onclick='showTablesClicked()'>Show Tables</button>
+
         <br />
         %import urllib
         %for k, (outer_result, dygraph_data) in enumerate(zip(results, dygraph_results)):
         <div class="test-entry">
         <h2 id="{{outer_result['name']}}">{{outer_result['name']}}</h2>
-        <table class="table table-striped">
+        <button id='table{{k}}button' onclick='showTableByIDClicked("{{k}}")'>Show Table</button>
+        <table class="table table-striped" id="table-{{k}}">
             <thead>
                 <tr>
                     <th style="width: 5%">Num</th>
