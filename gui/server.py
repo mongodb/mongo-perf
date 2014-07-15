@@ -27,9 +27,7 @@ from copy import copy
 
 from pprint import pprint
 
-#MONGO_PERF_HOST = "localhost"
-#MONGO_PERF_HOST = "ec2-54-200-68-243.us-west-2.compute.amazonaws.com"
-MONGO_PERF_HOST = "192.168.1.155"
+MONGO_PERF_HOST = "localhost"
 MONGO_PERF_PORT = 27017
 MP_DB_NAME = "bench_results"
 db = pymongo.Connection(host=MONGO_PERF_HOST, 
@@ -179,7 +177,7 @@ def results_page():
                 result_entry = []
                 result_entry.append(result['date'])
                 for thread in threads:
-                    result_entry.append(result[thread]['ops_per_sec'])
+                    result_entry.append([result[thread]['ops_per_sec'], result[thread]['standardDeviation']])
                 #here we have [<date>, ops1, ops2...]
                 results_section.append(result_entry)
 
@@ -202,7 +200,7 @@ def results_page():
             for i, result in enumerate(outer_result['results']):
                 out.append({'label': ' / '.join((result['label'], result['version'],
                                                  result['date'])),
-                            'data': sorted([int(k), v['ops_per_sec']] 
+                            'data': sorted([int(k), [v['ops_per_sec'], v['standardDeviation']]] 
                                            for (k, v) in result.iteritems() if k.isdigit())})
                 threads.update(int(k) for k in result if k.isdigit())
             dygraph_data, dygraph_labels = to_dygraphs_data_format(out)

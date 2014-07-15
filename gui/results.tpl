@@ -129,7 +129,9 @@
                     <td>{{result['date']}}</td>
                     <td><a href="https://github.com/mongodb/mongo/commit/{{result['commit']}}" target="_blank">{{result['commit'][:7]}}</a></td>
                     %for thread in threads:
-                    <td>{{"{0:.2f}".format(result[str(thread)]["mean_ops_per_sec"])}}</td>
+                     <td>{{"{0:.2f}".format(result[str(thread)]["ops_per_sec"])}} <br/>
+                         &sigma; = 
+                     {{"{0:.2f}".format(result[str(thread)]["standardDeviation"])}}</td>
                     %end
                 </tr>
                 %end
@@ -161,6 +163,7 @@
               labelsDiv: "graph-labels-{{k}}",
               includeZero: true, //ensure y-axis starts at 0
               xRangePad: 5,
+              errorBars: true,
               %if use_dates:
               xlabel: 'Run Date' //label for x-axis
               %else:
