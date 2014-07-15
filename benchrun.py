@@ -66,7 +66,8 @@ def main():
     buildinfo = client['test'].command("buildinfo")
     commithash = buildinfo['gitVersion']
     # Use hash to get commit_date
-    committed_date = repo.commit(commithash).committed_date
+    structTime = repo.commit(commithash).committed_date
+    committed_date = datetime.datetime(*structTime[:6])
 
     # Open a mongo shell subprocess and load necessary files.
     mongo_proc = Popen([args.shellpath, "--norc"], stdin=PIPE, stdout=PIPE)
