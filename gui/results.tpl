@@ -21,8 +21,9 @@
                         "bFilter": false,
                         "bInfo": false,
                         "bAutoWidth": true
-                    });
                 });
+                hideTablesClicked();
+            });
 
             var dygraphs = [];
             var dycolors = ["#7BBADE", "#93DE7F", "#F29E4A", "#FF7050",
@@ -32,6 +33,8 @@
             function dyToggle(graphIdx, seriesIdx, el) {
               dygraphs[graphIdx].setVisibility(seriesIdx, el.checked);
             }
+
+            var numGraphs = {{len(results)}};
 
             //TODO fix this to do it properly, its an ugly hack
             function useThreads() {
@@ -45,27 +48,64 @@
                 window.location.replace(myurl);
             }
 
-            function spreadDates() {
-                var myurl = document.URL;
-                myurl = myurl + '&spread=1'
-                window.location.replace(myurl);
+            function hideTablesClicked() {
+                //change button to show tables (and change function call)
+                $('#tablesbutton').attr('onclick', 'showTablesClicked()');
+                $('#tablesbutton').text('Show Tables');
+                //call hideTables
+                hideTables();
             }
-            function dontSpreadDates() {
-                var myurl = document.URL;
-                myurl = myurl + '&spread=0'
-                window.location.replace(myurl);
+
+            function showTablesClicked() {
+                //change button to show tables (and change function call)
+                $('#tablesbutton').attr('onclick', 'hideTablesClicked()');
+                $('#tablesbutton').text('Hide Tables');
+                //call showTables
+                showTables();
+            }
+
+            function hideTables() {
+                for(var i = 0; i < numGraphs; i++) {
+                    hideTableByIDClicked(i);
+                }
+            }
+
+            function showTables() {
+                for(var i = 0; i < numGraphs; i++) {
+                    showTableByIDClicked(i);
+                }
+            }
+
+            function hideTableByIDClicked(IDNum) {
+                //change button to show tables (and change function call)
+                $('#table' + IDNum + 'button').attr('onclick', 'showTableByIDClicked(' + IDNum + ')');
+                $('#table' + IDNum + 'button').text('Show Table');
+                //call hideTables
+                hideTableByID(IDNum);
+            }
+
+            function showTableByIDClicked(IDNum) {
+                $('#table' + IDNum + 'button').attr('onclick', 'hideTableByIDClicked(' + IDNum + ')');
+                $('#table' + IDNum + 'button').text('Hide Table');
+                //call hideTables
+                showTableByID(IDNum);
+            }
+
+            function hideTableByID(tableID) {
+                $('#table-' + tableID).css('display', 'none');
+            }
+
+            function showTableByID(tableID) {
+                $('#table-' + tableID).css('display', '');
             }
 
 
-            %if spread_dates:
+
             var even_spread = true;
-            %else:
-            var even_spread = false;
-            %end
 
             function get_date_data(start_data) {
                 var out_data = [];
-                var spread_counter = 0;
+                var spread_counter = 1;
                 for(var i = 0; i < start_data.length; i++) {
                     var temp_list = []
                     for(var j = 0; j < start_data[i].length; j++) {
@@ -95,17 +135,15 @@
         <button onclick='useTime()' >Use Time</button>
         %end
 
-        %if spread_dates:
-        <button onclick='dontSpreadDates()' >Dont Spread Dates</button>
-        %else:
-        <button onclick='spreadDates()' >Spread Dates</button>
-        %end
+        <button id='tablesbutton' onclick='showTablesClicked()'>Show Tables</button>
+
         <br />
         %import urllib
         %for k, (outer_result, dygraph_data) in enumerate(zip(results, dygraph_results)):
         <div class="test-entry">
         <h2 id="{{outer_result['name']}}">{{outer_result['name']}}</h2>
-        <table class="table table-striped">
+        <button id='table{{k}}button' onclick='showTableByIDClicked("{{k}}")'>Show Table</button>
+        <table class="table table-striped" id="table-{{k}}">
             <thead>
                 <tr>
                     <th style="width: 5%">Num</th>
@@ -143,6 +181,16 @@
           <div id="graph_{{k}}" class="graph" style="width:600px;height:300px;"></div>
         </div>
         <script>
+        var num_map_{{k}} = {}
+        %for i, result in enumerate(outer_result['results']):
+        var commitdate = new Date("{{result['date']}}");
+        var commitversion = "{{result['version']}}"
+        if(commitversion.indexOf("pre") >= 0) {
+            num_map_{{k}}[{{i + 1}}] = "{{result['commit'][:7]}}";
+        } else {
+            num_map_{{k}}[{{i + 1}}] = "{{result['version']}}";
+        }
+        %end
         %if use_dates:
             var date_data_{{k}} = get_date_data({{!dygraph_data['data']}});
         %end
@@ -165,6 +213,22 @@
               xRangePad: 5,
               errorBars: true,
               %if use_dates:
+              axes: {
+                x: {
+                  axisLabelFormatter: function(x) {
+                    var xval = parseFloat(x);
+                    var xfloor = parseInt(x);
+                    if(xval === xfloor) {
+                        return num_map_{{k}}[xval];
+                    } else {
+                        return "";
+                    }
+                  },
+                  valueFormatter: function(x) {
+                    return num_map_{{k}}[x];
+                  }
+                }
+              },
               xlabel: 'Run Date' //label for x-axis
               %else:
               xlabel: 'Threads' //label for x-axis

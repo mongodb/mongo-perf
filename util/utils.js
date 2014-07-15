@@ -148,6 +148,7 @@ function getVariance2( numericArray ) {
 }
 */
 
+<<<<<<< HEAD
 function getMean( values ) {
     var sum = 0.0;
     for (var j=0; j < values.length; j++) {
@@ -156,7 +157,7 @@ function getMean( values ) {
     return sum / values.length;
 }
 
-function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHost, reportPort) {
+function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHost, reportPort, commitDate) {
     var testResults = {};
     // The following are only used when reportLabel is not None.
     var resultsCollection = db.getSiblingDB("bench_results").raw;
@@ -176,12 +177,13 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHos
         myId = new ObjectId();
         var bi = db.runCommand("buildInfo");
         var basicFields = {
-            commit:     bi.gitVersion,
-            label:      reportLabel,
-            platform:   bi.sysInfo.split(" ")[0],
-            run_date:   formatRunDate(now),
-            run_time:   now,
-            version:    bi.version
+            commit:      bi.gitVersion,
+            label:       reportLabel,
+            platform:    bi.sysInfo.split(" ")[0],
+            run_date:    formatRunDate(now),
+            run_time:    now,
+            commit_date: new Date(commitDate * 1000),
+            version:     bi.version
         };
 
         var oldDoc = resultsCollection.findOne({ label: reportLabel });

@@ -16,41 +16,33 @@
             $('#selectTable').dataTable({
                     "bPaginate": false,
                     "bLengthChange": false,
-                    "bFilter": false,
                     "bInfo": false,
                     "bSortable": true,
                     "bAutoWidth": true,
-                });
+                    "dom": "lrtip"
+            });
+
+            var table = $('#selectTable').DataTable();
+
+            //manually set filtering up
+            $('#labelfield').on('keyup change', function() {
+                table.column(1).search(this.value).draw();
+            });
+            $('#versionfield').on('keyup change', function() {
+                table.column(2).search(this.value).draw();
+            });
+            //TODO get date range working
+            $('#datefield').on('keyup change', function() {
+                table.column(3).search(this.value).draw();
+            });
+            $('#commitfield').on('keyup change', function() {
+                table.column(4).search(this.value).draw();
+            });
+
         });
 
-        function filter() {
-            var commitregex = $("#commitfield")[0].value;
-            var dateregex = $("#datefield")[0].value;
-            var labelregex = $("#labelfield")[0].value;
-            var reqdata = {commit: commitregex, date: dateregex, label: labelregex, nohtml:true};
-            //1) make ajax call to get rows back
-            $.get("/", reqdata).done(function(data) {
-                    //2) iterate over all rows
-                    valrows = $('[name="docrow"]')
-                    for(var i = 0; i < valrows.length; i++) {
-                        //see if row is in our ids
-                        var foundrow = false;
-                        //TODO should maintain data structure to do this
-                        for(var j = 0; j < data.length; j++) {
-                            if(data[j]['_id'] == valrows[i].id) {
-                                foundrow = true;
-                                break;
-                            }
-                        }
-                        if(foundrow) { //if found, ensure its not hidden
-                            valrows[i].style.display = '';
-                        } else { //else, ensure its hidden
-                            valrows[i].style.display = 'none';
-                        }
-                    }
-                }
-            );
-            return false;
+        function isVisible(elem) {
+            return elem.offsetWidth > 0 || elem.offsetHeight > 0;
         }
 
         var selectBool = false;
@@ -58,8 +50,10 @@
             var selectRows = $('[name="id"]')
             for(var i = 0; i < selectRows.length; i++) {
                 if(!selectBool) {
-                    //set to selected
-                    selectRows[i].checked=true;
+                    //set to selected if its not hidden
+                    if(isVisible(selectRows[i])) {
+                        selectRows[i].checked=true;
+                    }
                 } else {
                     //set to unselected
                     selectRows[i].checked=false;
@@ -75,31 +69,27 @@
             selectBool = !selectBool;
             return false;
         }
-
-        window.onload=function() {
-            $('#commitfield').bind("keyup", filter);
-            $('#datefield').bind("keyup", filter);
-            $('#labelfield').bind("keyup", filter);
-        }
     </script>
   </head>
   <div class="container">
   <body>
     <h1>MongoDB Performance Benchmarks</h1>
-    <div id="selection">
+    <div id="selection" class="row">
       <form name="custom_form" id="custom_form" action="results" method="get">
         <button action="submit" class="btn btn-primary">Submit</button>
         <table id="selectTable" class="table table-striped">
           <thead>
               <tr>
-                <td><button onclick="selectClicked();" class="btn btn-default" type="button" id="selectall">Select All</button></td>
-                <td><input type="text" id="labelfield" name="label" placeholder="Label Filter" /></td>
-                <td><input type="text" id="datefield" name="date" placeholder="Date Filter" /></td>
-                <td><input type="text" id="commitfield" name="commit" placeholder="Commit Filter" /></td>
+                <th><button onclick="selectClicked();" class="btn btn-default" type="button" id="selectall">Select All</button></td>
+                <th><input type="text" id="labelfield" placeholder="Label Filter" /></th>
+                <th><input type="text" id="versionfield" placeholder="Version Filter" /></th>
+                <th><input type="text" id="datefield" placeholder="Date Filter" /></th>
+                <th><input type="text" id="commitfield" name="commit" placeholder="Commit Filter" /></th>
               </tr>
               <tr>
                 <th style="width: 10%">Select</th>
-                <th style="width: 35%">Label</th>
+                <th style="width: 25%">Label</th>
+                <th style="width: 10%">Version</th>
                 <th style="width: 20%">Date</th>
                 <th style="width: 35%">Git Hash</th>
               </tr>
@@ -108,6 +98,7 @@
           <tr id="{{row['_id']}}" name="docrow">
             <td><input type="checkbox" name="id" value={{row["_id"]}}></td>
             <td>{{row["label"]}}</td>
+            <td>{{row["version"]}}</td>
             <td>{{row["date"]}}</td>
             <td><a href="https://github.com/mongodb/mongo/commit/{{row['commit']}}">{{row['commit']}}</a></td>
           </tr>

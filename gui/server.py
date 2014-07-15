@@ -17,6 +17,7 @@
 import sys
 import json
 import pymongo
+import re
 import bson
 from bottle import *
 import logging as logr
@@ -38,14 +39,14 @@ db = pymongo.Connection(host=MONGO_PERF_HOST,
 def send_static(filename):
     return static_file(filename, root='./static')
 
-def gen_query(labels, dates, start, end, limit, ids, commits):
+def gen_query(labels, dates, versions, start, end, limit, ids, commits):
     if start:
-        start_query = {'run_time': {'$gte': start}}
+        start_query = {'commit_date': {'$gte': start}}
     else:
         start_query = {}
 
     if end:
-        end_query = {'run_time': {'$lte': end}}
+        end_query = {'commit_date': {'$lte': end}}
     else:
         end_query = {}
 
@@ -73,6 +74,15 @@ def gen_query(labels, dates, start, end, limit, ids, commits):
     else:
         label_query = {}
 
+    if versions:
+        if versions.startswith('/') and versions.endswith('/'):
+            version_query = {'version': {'$regex':
+                                         versions[1:-1], '$options': 'i'}}
+        else:
+            version_query = {'version': {'$in': versions}}
+    else:
+        version_query = {}
+
     if ids:
         objids = []
         for id in ids:
@@ -87,8 +97,8 @@ def gen_query(labels, dates, start, end, limit, ids, commits):
     else:
         commit_query = {}
 
-    query = {"$and": [label_query, date_query, start_query, end_query, id_query, commit_query]}
-    cursor = db.raw.find(query).sort([ ('run_date', pymongo.ASCENDING), 
+    query = {"$and": [label_query, date_query, version_query, start_query, end_query, id_query, commit_query]}
+    cursor = db.raw.find(query).sort([ ('commit_date', pymongo.ASCENDING),
                                     ('platform', pymongo.DESCENDING)])
     if limit:
         cursor.limit(limit)
@@ -110,7 +120,7 @@ def process_cursor(cursor, multidb):
                     row = dict(commit=entry['commit'],
                                platform=entry['platform'],
                                version=entry['version'],
-                               date=entry['run_time'].isoformat(),
+                               date=entry['commit_date'].isoformat(),
                                label=entry['label'])
                     for (n, res) in result['results'].iteritems():
                         row[n] = res
@@ -125,9 +135,23 @@ def process_cursor(cursor, multidb):
     return out
 
 def raw_data(labels, multidb, dates, start, end, limit, ids, commits):
-    cursor = gen_query(labels, dates, start, end, limit, ids, commits)
+    cursor = gen_query(labels, dates, None, start, end, limit, ids, commits)
     result = process_cursor(cursor, multidb)
     return result
+
+def getDefaultIDs():
+    prere = re.compile('pre')
+    #most recent baseline id
+    baselineid = db['raw'].find({'version': { '$not': prere}}, {'_id': 1}).sort('commit_date', pymongo.DESCENDING).limit(1)
+    #6 newer ids
+    newids = db['raw'].find({},{'_id': 1}).sort('commit_date', pymongo.DESCENDING).limit(6);
+    outlist = []
+    if baselineid.count(True) > 0:
+        outlist.append(str(baselineid[0]['_id']))
+    for i in range(newids.count(True)):
+        outlist.append(str(newids[i]['_id']))
+
+    return outlist
 
 @route("/results")
 def results_page():
@@ -135,26 +159,17 @@ def results_page():
     """
     #_ids of tests we want to view
     ids = request.GET.getall("id")
-    # specific dates for tests to be viewed
-    dates = request.GET.getall('dates')
-    # test host label
-    labels = request.GET.getall('labels')
-    # # of tests to return
-    limit = request.GET.get('limit')
-    # tests run from this date (used in range query)
-    start = request.GET.get('start')
-    # tests run before this date (used in range query)
-    end = request.GET.get('end')
     # single db or multi db
     multidb = request.GET.get('multidb', '0 1')
     # x-axis-type 0 == time, 1 == threads
     xaxis = request.GET.get('xaxis', '0')
-    # spread dates
-    spread = request.GET.get('spread', '0')
-    spread_dates = True if spread == '1' else False
+    spread_dates = True
 
-    results = raw_data(labels, multidb, dates,
-                       start, end, limit, ids, None)
+    if len(ids) == 0:
+        ids = getDefaultIDs()
+
+    results = raw_data(None, multidb, None,
+                       None, None, None, ids, None)
 
     #check to see if we want the x-axis as time
     if xaxis == '0':
@@ -187,7 +202,6 @@ def results_page():
             new_results.append({ 'data': json.dumps(results_section),
                                  'labels_json': json.dumps(labels),
                                  'labels_list': labels})
-        print "USING DATES"
         return template('results.tpl', results=results, request=request,
                         dygraph_results=new_results, threads=sorted(threads),
                         use_dates=True, spread_dates=spread_dates)
@@ -232,20 +246,21 @@ def to_dygraphs_data_format(in_data):
 
     return graph_data, labels
 
-def get_rows(commit_regex, date_regex, label_regex):
+def get_rows(commit_regex, start_date, end_date, label_regex, version_regex):
     if commit_regex is not None:
         commit_regex = '/' + commit_regex + '/'
-    if date_regex is not None:
-        date_regex = '/' + date_regex + '/'
     if label_regex is not None:
         label_regex = '/' + label_regex + '/'
+    if version_regex is not None:
+        version_regex = '/' + version_regex + '/'
     
-    csr = gen_query(label_regex, date_regex, None, None, None, None, commit_regex)
+    csr = gen_query(label_regex, None, version_regex, start_date, end_date, None, None, commit_regex)
     rows = []
     for record in csr:
         tmpdoc = {"commit": record["commit"],
                   "label": record["label"],
-                  "date": record["run_time"].isoformat(),
+                  "version": record["version"],
+                  "date": record["commit_date"].isoformat(),
                   "_id": str(record["_id"])}
         rows.append(tmpdoc) 
     return rows
@@ -253,11 +268,23 @@ def get_rows(commit_regex, date_regex, label_regex):
 @route("/")
 def new_main_page():
     commit_regex = request.GET.get('commit')
-    date_regex = request.GET.get('date')
+    start_date = request.GET.get('start')
+    end_date = request.GET.get('end')
     label_regex = request.GET.get('label')
+    version_regex = request.GET.get('version')
     nohtml = request.GET.get('nohtml')
 
-    rows = get_rows(commit_regex, date_regex, label_regex)
+    #convert to appropriate type
+    if start_date:
+        start = datetime.strptime(start_date, '%m/%d/%Y')
+    else:
+        start = None
+    if end_date:
+        end = datetime.strptime(end_date, '%m/%d/%Y')
+    else:
+        end = None
+
+    rows = get_rows(commit_regex, start, end, label_regex, version_regex)
 
     if nohtml:
         response.content_type = 'application/json'
