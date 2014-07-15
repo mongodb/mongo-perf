@@ -212,6 +212,7 @@
               includeZero: true, //ensure y-axis starts at 0
               xRangePad: 5,
               errorBars: true,
+              fillAlpha: 0.50,
               %if use_dates:
               axes: {
                 x: {
