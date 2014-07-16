@@ -72,7 +72,8 @@ def main():
       structTime = repo.commit(commithash).committed_date
       committed_date = datetime.datetime(*structTime[:6])
     else:
-      committed_date = datetime.datetime(repo.commit(commithash).committed_date)
+      scalarTime = repo.commit(commithash).committed_date
+      committed_date = datetime.datetime.fromtimestamp(scalarTime)
 
     # Open a mongo shell subprocess and load necessary files.
     mongo_proc = Popen([args.shellpath, "--norc"], stdin=PIPE, stdout=PIPE)
@@ -91,7 +92,7 @@ def main():
               "'" + args.reportlabel + "', " +
               "'" + args.reporthost + "', " +
               "'" + args.reportport + "', " +
-              "'" + str(committed_date) + "', " +
+              "'" + str(committed_date) + "'" +
               ");\n")
     mongo_proc.stdin.write(cmdstr)
     print cmdstr
