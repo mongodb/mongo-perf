@@ -103,21 +103,13 @@ function runTest(test, thread, multidb, runSeconds) {
 
     print("\t" + thread + "\t" + total);
 
-    var total_old =
-        result["insert_old"] +
-        result["query_old"] +
-        result["update_old"] +
-        result["delete_old"] +
-        result["getmore_old"] +
-        result["command_old"];
-
     if ("post" in test) {
         for (var i = 0; i < multidb; i++) {
             test.post(collections[i]);
         }
     }
 
-    return { ops_per_sec: total, ops_per_sec_old: total_old };
+    return { ops_per_sec: total };
 }
 
 
@@ -133,22 +125,6 @@ function getVariance( numericArray ) {
 	return x;
 }
 
-/*
-function getVariance2( numericArray ) {
-    var sumX = 0;
-    var sumXX = 0;
-
-    var len = numericArray.length;
-    while (len--) {
-        sumX += numericArray[len];
-        sumXX += numericArray[len] * numericArray[len];
-    }
-    // not as accurate as two-pass algorithm above
-    return ( sumXX - sumX * sumX / numericArray.length ) / numericArray.length;
-}
-*/
-
-<<<<<<< HEAD
 function getMean( values ) {
     var sum = 0.0;
     for (var j=0; j < values.length; j++) {
@@ -211,26 +187,14 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHos
                 results[j] = runTest(test, threadCount, multidb, seconds);
             }
             var values = []
-            var values_old = []
             for (var j=0; j < trials; j++) {
                 values[j] = results[j].ops_per_sec
-                values_old[j] = results[j].ops_per_sec_old
             }
             var mean = getMean(values);
-            var mean_old = getMean(values_old);
-            var variance_old = getVariance(values_old);
-            print("old_stddev: " + Math.sqrt(variance_old));
             var variance = getVariance(values);
-            print("new_stddev: " + Math.sqrt(variance));
             var newResults = {}
-            newResults.ops_per_sec = values;
-            newResults.ops_per_sec_old = values_old;
-            newResults.mean_ops_per_sec = mean;
-            newResults.mean_ops_per_sec_old = mean_old;
-            newResults.variance = variance;
-            newResults.variance_old = variance_old;
+            newResults.ops_per_sec = mean;
             newResults.standardDeviation = Math.sqrt(variance);
-            newResults.standardDeviation_old = Math.sqrt(variance_old);
             threadResults[threadCount] = newResults;
         }
         testResults[test] = threadResults;
