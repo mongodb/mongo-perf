@@ -1,6 +1,8 @@
 from argparse import ArgumentParser
 from subprocess import Popen, PIPE, call
 import git
+import datetime
+import platform
 import pymongo
 import sys
 
@@ -23,7 +25,7 @@ def parse_arguments():
                         type=int, default=5)
     parser.add_argument('--trialCount', dest='trials',
                         help='Specify how many trials to run',
-                        type=int, default=30)
+                        type=int, default=10)
     parser.add_argument('-l', '--label', dest='reportlabel',
                         help='Specify the label for the report stats saved to bench_results db',
                         default='')
@@ -66,8 +68,11 @@ def main():
     buildinfo = client['test'].command("buildinfo")
     commithash = buildinfo['gitVersion']
     # Use hash to get commit_date
-    structTime = repo.commit(commithash).committed_date
-    committed_date = datetime.datetime(*structTime[:6])
+    if platform.system() == 'Darwin':
+      structTime = repo.commit(commithash).committed_date
+      committed_date = datetime.datetime(*structTime[:6])
+    else:
+      committed_date = datetime.datetime(repo.commit(commithash).committed_date)
 
     # Open a mongo shell subprocess and load necessary files.
     mongo_proc = Popen([args.shellpath, "--norc"], stdin=PIPE, stdout=PIPE)
@@ -86,7 +91,7 @@ def main():
               "'" + args.reportlabel + "', " +
               "'" + args.reporthost + "', " +
               "'" + args.reportport + "', " +
-              str(committed_date) +
+              "'" + str(committed_date) + "', " +
               ");\n")
     mongo_proc.stdin.write(cmdstr)
     print cmdstr
