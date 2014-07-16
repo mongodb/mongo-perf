@@ -55,7 +55,8 @@ function runTest(test, thread, multidb, runSeconds) {
 
     for (var i = 0; i < multidb; i++) {
         var sibling_db = db.getSiblingDB('test' + i);
-        var coll = sibling_db.foo;
+        var foo = test.name.replace(".", "_");
+        var coll = sibling_db.getCollection(foo);
         collections.push(coll);
         coll.drop();
     }
