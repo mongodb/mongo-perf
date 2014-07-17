@@ -25,7 +25,7 @@ def parse_arguments():
                         type=int, default=5)
     parser.add_argument('--trialCount', dest='trials',
                         help='Specify how many trials to run',
-                        type=int, default=10)
+                        type=int, default=1)
     parser.add_argument('-l', '--label', dest='reportlabel',
                         help='Specify the label for the report stats saved to bench_results db',
                         default='')
