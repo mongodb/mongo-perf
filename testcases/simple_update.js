@@ -11,7 +11,8 @@ tests.push( { name: "Update.IncNoIndex",
                   collection.getDB().getLastError();
               },
               ops: [
-                  { op: "update",
+                  { op:  "update",
+                    safe: false, w: 0, j: false, writeCmd: false,
                     query: { _id : { "#RAND_INT" : [ 0, 1000 ] } },
                     update: { $inc : { x : 1 } } },
               ] } );
@@ -26,7 +27,8 @@ tests.push( { name: "Update.IncWithIndex",
                   collection.ensureIndex( { x : 1 } );
               },
               ops: [
-                  { op: "update",
+                  { op:  "update",
+                    safe: false, w: 0, j: false, writeCmd: false,
                     query: { _id : { "#RAND_INT" : [ 0, 1000 ] } },
                     update: { $inc : { x : 1 } } },
               ] } );
@@ -36,7 +38,8 @@ tests.push( { name: "Update.IncNoIndexUpsert",
                   collection.drop();
               },
               ops: [
-                  { op: "update",
+                  { op:  "update",
+                    safe: false, w: 0, j: false, writeCmd: false,
                     upsert : true,
                     query: { _id : { "#RAND_INT" : [ 0, 1000 ] } },
                     update: { $inc : { x : 1 } } },
@@ -48,7 +51,8 @@ tests.push( { name: "Update.IncWithIndexUpsert",
                   collection.ensureIndex( { x : 1 } );
               },
               ops: [
-                  { op: "update",
+                  { op:  "update",
+                    safe: false, w: 0, j: false, writeCmd: false,
                     upsert : true,
                     query: { _id : { "#RAND_INT" : [ 0, 1000 ] } },
                     update: { $inc : { x : 1 } } },
@@ -76,7 +80,8 @@ tests.push( { name: "Update.IncFewSmallDoc",
                  collection.getDB().getLastError();
               },
               ops: [
-                  { op: "update",
+                  { op:  "update",
+                    safe: false, w: 0, j: false, writeCmd: false,
                     query: { _id : { "#SEQ_INT" :
                                 { seq_id: 0, start: 0, step: 1, mod: 100 } } },
                     update: { $inc : { aa : 1,
@@ -101,7 +106,8 @@ tests.push( { name: "Update.IncFewLargeDoc",
                  collection.getDB().getLastError();
               },
               ops: [
-                  { op: "update",
+                  { op:  "update",
+                    safe: false, w: 0, j: false, writeCmd: false,
                     query: { _id : { "#SEQ_INT" :
                                 { seq_id: 0, start: 0, step: 1, mod: 100 } } },
                     update: { $inc : { aa : 1,
@@ -137,7 +143,8 @@ tests.push( { name: "Update.IncFewSmallDocLongFields",
                  collection.getDB().getLastError();
               },
               ops: [
-                  { op: "update",
+                  { op:  "update",
+                    safe: false, w: 0, j: false, writeCmd: false,
                     query: { _id : { "#SEQ_INT" :
                                 { seq_id: 0, start: 0, step: 1, mod: 100 } } },
                     update: { $inc : { "kbgcslcybg": 1,
@@ -162,7 +169,8 @@ tests.push( { name: "Update.IncFewLargeDocLongFields",
                  collection.getDB().getLastError();
               },
               ops: [
-                  { op: "update",
+                  { op:  "update",
+                    safe: false, w: 0, j: false, writeCmd: false,
                     query: { _id : { "#SEQ_INT" :
                                 { seq_id: 0, start: 0, step: 1, mod: 100 } } },
                     update: { $inc : { "kbgcslcybg": 1,
@@ -190,12 +198,14 @@ tests.push( { name: "Update.FieldAtOffset",
                   collection.getDB().getLastError();
               },
               ops: [
-                  { op: "update",
+                  { op:  "update",
+                    safe: false, w: 0, j: false, writeCmd: false,
                     multi: true,
                     query: {},
                     update: { $set: { "a_256": "a" } }
                   },
-                  { op: "update",
+                  { op:  "update",
+                    safe: false, w: 0, j: false, writeCmd: false,
                     multi: true,
                     query: {},
                     update: { $set: { "a_256": "aa" } }
@@ -215,7 +225,7 @@ var setupMMS = function( collection ) {
         base.h[i] = {};
         for (var j = 0; j < 60; j++) {
             base.h[i][j] = { n: 0, t: 0, v: 0 };
-			collection.insert(base);
+		collection.insert(base);
         }
     }
 };
@@ -224,7 +234,8 @@ var setupMMS = function( collection ) {
 tests.push( { name: "Update.MmsIncShallow1",
               pre: setupMMS,
               ops: [
-                  { op: "update",
+                  { op:  "update",
+                    safe: false, w: 0, j: false, writeCmd: false,
                     query: { _id: 0 },
                     update: { $inc: { a: 1 } }
                   }
@@ -234,7 +245,8 @@ tests.push( { name: "Update.MmsIncShallow1",
 tests.push( { name: "Update.MmsIncShallow2",
               pre: setupMMS,
               ops: [
-                  { op: "update",
+                  { op:  "update",
+                    safe: false, w: 0, j: false, writeCmd: false,
                     query: { _id: 0 },
                     update: { $inc: { a: 1, z: 1 } }
                   }
@@ -244,7 +256,8 @@ tests.push( { name: "Update.MmsIncShallow2",
 tests.push( { name: "Update.MmsIncDeep1",
               pre: setupMMS,
               ops: [
-                  { op: "update",
+                  { op:  "update",
+                    safe: false, w: 0, j: false, writeCmd: false,
                     query: { _id: 0 },
                     update: { $inc: { "h.23.59.n": 1 } }
                   }
@@ -255,7 +268,7 @@ tests.push( { name: "Update.MmsIncDeep1",
 tests.push( { name: "Update.MmsIncDeepSharedPath2",
               pre: setupMMS,
               ops: [
-                  { op: "update",
+                  { writeCmd: true, op:  "update",
                     query: { _id: 0 },
                     update: { $inc: { "h.23.59.n": 1,
                                       "h.23.59.t": 1 } }
@@ -267,7 +280,8 @@ tests.push( { name: "Update.MmsIncDeepSharedPath2",
 tests.push( { name: "Update.MmsIncDeepSharedPath3",
               pre: setupMMS,
               ops: [
-                  { op: "update",
+                  { op:  "update",
+                    safe: false, w: 0, j: false, writeCmd: false,
                     query: { _id: 0 },
                     update: { $inc: { "h.23.59.n": 1,
                                       "h.23.59.t": 1,
@@ -280,7 +294,8 @@ tests.push( { name: "Update.MmsIncDeepSharedPath3",
 tests.push( { name: "Update.MmsIncDeepDistinctPath2",
               pre: setupMMS,
               ops: [
-                  { op: "update",
+                  { op:  "update",
+                    safe: false, w: 0, j: false, writeCmd: false,
                     query: { _id: 0 },
                     update: { $inc: { "h.22.59.n": 1,
                                       "h.23.59.t": 1 } }
@@ -292,7 +307,8 @@ tests.push( { name: "Update.MmsIncDeepDistinctPath2",
 tests.push( { name: "Update.MmsIncDeepDistinctPath3",
               pre: setupMMS,
               ops: [
-                  { op: "update",
+                  { op:  "update",
+                    safe: false, w: 0, j: false, writeCmd: false,
                     query: { _id: 0 },
                     update: { $inc: { "h.21.59.n": 1,
                                       "h.22.59.t": 1,

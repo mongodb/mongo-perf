@@ -150,15 +150,15 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHos
     if (reportLabel) {
         resultsCollection.ensureIndex({ label: 1 }, { unique: true });
 
-        var now = new Date();
+        var startTime = new Date();
         myId = new ObjectId();
         var bi = db.runCommand("buildInfo");
         var basicFields = {
             commit:      bi.gitVersion,
             label:       reportLabel,
             platform:    bi.sysInfo.split(" ")[0],
-            run_date:    formatRunDate(now),
-            run_time:    now,
+            run_date:    formatRunDate(startTime),
+            run_time:    startTime,
             commit_date: new Date(commitDate * 1000),
             version:     bi.version
         };
@@ -186,6 +186,7 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHos
             var results = []
             for (var j=0; j < trials; j++) {
                 results[j] = runTest(test, threadCount, multidb, seconds);
+                results[j]['run_end_time'] = new Date();
             }
             var values = []
             for (var j=0; j < trials; j++) {
@@ -196,6 +197,7 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHos
             var newResults = {}
             newResults.ops_per_sec = mean;
             newResults.standardDeviation = Math.sqrt(variance);
+            newResults.run_end_time = new Date();
             threadResults[threadCount] = newResults;
         }
         testResults[test] = threadResults;

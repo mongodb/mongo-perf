@@ -10,9 +10,11 @@ tests.push( { name: "Remove.IntId",
                   }
               },
               ops: [
-                  { op: "insert",
+                  { op:  "insert",
+                    safe: false, w: 0, j: false, writeCmd: false,
                     doc: { _id : { "#RAND_INT" : [ 0, 1000 ] } } },
-                  { op: "remove",
+                  { op:  "remove",
+                    safe: false, w: 0, j: false, writeCmd: false,
                     query: { _id : { "#RAND_INT" : [ 0, 1000 ] } } }
               ] } );
 
@@ -24,9 +26,11 @@ tests.push( { name: "Remove.IntNonIdNoIndex",
                   }
               },
               ops: [
-                  { op: "insert",
+                  { op:  "insert",
+                    safe: false, w: 0, j: false, writeCmd: false,
                     doc: { x : { "#RAND_INT" : [ 0, 1000 ] } } },
-                  { op: "remove",
+                  { op:  "remove",
+                    safe: false, w: 0, j: false, writeCmd: false,
                     query: { x : { "#RAND_INT" : [ 0, 1000 ] } } }
               ] } );
 
@@ -39,8 +43,10 @@ tests.push( { name: "Remove.IntNonIdIndex",
                   collection.ensureIndex( { x : 1 } );
               },
               ops: [
-                  { op: "insert",
+                  { op:  "insert",
+                    safe: false, w: 0, j: false, writeCmd: false,
                     doc: { x : { "#RAND_INT" : [ 0, 1000 ] } } },
-                  { op: "remove",
+                  { op:  "remove",
+                    safe: false, w: 0, j: false, writeCmd: false,
                     query: { x : { "#RAND_INT" : [ 0, 1000 ] } } }
               ] } );

@@ -5,7 +5,9 @@ if ( typeof(tests) != "object" )
 tests.push( { name: "Insert.Empty",
               pre: function( collection ) { collection.drop(); },
               ops: [
-                  { op: "insert", doc: {} }
+                  { op:  "insert",
+                    safe: false, w: 0, j: false, writeCmd: false,
+                    doc: {} }
               ] } );
 
 tests.push( { name: "Insert.EmptyCapped",
@@ -15,13 +17,17 @@ tests.push( { name: "Insert.EmptyCapped",
                                                      size : 32 * 1024 } );
               },
               ops: [
-                  { op: "insert", doc: {} }
+                  { op:  "insert",
+                    safe: false, w: 0, j: false, writeCmd: false,
+                    doc: {} }
               ] } );
 
 tests.push( { name: "Insert.JustID",
               pre: function( collection ) { collection.drop(); },
               ops: [
-                  { op: "insert", doc: { _id: { "#OID": 1 } } }
+                  { op:  "insert", 
+                    safe: false, w: 0, j: false, writeCmd: false,
+                    doc: { _id: { "#OID": 1 } } }
               ] } );
 
 tests.push( { name: "Insert.IntID",
@@ -30,7 +36,9 @@ tests.push( { name: "Insert.IntID",
                   collection.ensureIndex({a: 1});
               },
               ops: [
-                  { op: "insert", doc:
+                  { op:  "insert",
+                    safe: false, w: 0, j: false, writeCmd: false,
+                    doc:
                         { _id: { "#SEQ_INT":
                             { seq_id: 0, start: 0, step: 1, unique: true } } } }
               ] } );
@@ -38,7 +46,8 @@ tests.push( { name: "Insert.IntID",
 tests.push( { name: "Insert.IntIDUpsert",
               pre: function( collection ) { collection.drop(); },
               ops: [
-                  { op: "update",
+                  { op:  "update",
+                    safe: false, w: 0, j: false, writeCmd: false,
                     upsert : true,
                     query: { _id: { "#SEQ_INT":
                                 { seq_id: 0, start: 0, step: 1, unique: true } } },
@@ -49,7 +58,9 @@ tests.push( { name: "Insert.IntIDUpsert",
 tests.push( { name: "Insert.JustNum",
               pre: function( collection ) { collection.drop(); },
               ops: [
-                  { op: "insert", doc:
+                  { op:  "insert",
+                    safe: false, w: 0, j: false, writeCmd: false,
+                    doc:
                         { x: { "#SEQ_INT":
                             { seq_id: 0, start: 0, step: 1, unique: true } } } }
               ] } );
@@ -60,7 +71,9 @@ tests.push( { name: "Insert.JustNumIndexedBefore",
                   collection.ensureIndex({x: 1});
               },
               ops: [
-                  { op: "insert", doc:
+                  { op:  "insert",
+                    safe: false, w: 0, j: false, writeCmd: false,
+                    doc:
                         { x: { "#SEQ_INT":
                             { seq_id: 0, start: 0, step: 1, unique: true } } } }
               ] } );
@@ -68,7 +81,9 @@ tests.push( { name: "Insert.JustNumIndexedBefore",
 tests.push( { name: "Insert.NumAndID",
               pre: function( collection ) { collection.drop(); },
               ops: [
-                  { op: "insert", doc:
+                  { op: "insert",
+                    safe: false, w: 0, j: false, writeCmd: false,
+                    doc:
                         { _id: { "#OID": 1 },
                           x: { "#SEQ_INT":
                                 { seq_id: 0, start: 0, step: 1, unique: true } } } }
