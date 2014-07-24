@@ -123,11 +123,11 @@ function getVariance( numericArray ) {
     var i = numericArray.length;
     var x = 0;
  
-	while( i-- ){
-		x += Math.pow( (numericArray[ i ] - avg), 2 );
-	}
-	x /= numericArray.length;
-	return x;
+    while( i-- ){
+        x += Math.pow( (numericArray[ i ] - avg), 2 );
+    }
+    x /= numericArray.length;
+    return x;
 }
 
 function getMean( values ) {
