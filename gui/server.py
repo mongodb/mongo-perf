@@ -26,7 +26,6 @@ from datetime import datetime
 from collections import defaultdict
 from copy import copy
 
-from pprint import pprint
 
 MONGO_PERF_HOST = "localhost"
 MONGO_PERF_PORT = 27017
@@ -120,7 +119,7 @@ def process_cursor(cursor, multidb):
                     row = dict(commit=entry['commit'],
                                platform=entry['platform'],
                                version=entry['version'],
-                               date=entry['commit_date'].isoformat(),
+                               date=entry['commit_date'].strftime("%b %d  %I:%M%p"),
                                label=entry['label'])
                     for (n, res) in result['results'].iteritems():
                         row[n] = res
@@ -203,7 +202,7 @@ def results_page():
                                  'labels_json': json.dumps(labels),
                                  'labels_list': labels})
         return template('results.tpl', results=results, request=request,
-                        dygraph_results=new_results, threads=sorted(threads),
+                        dygraph_results=new_results, threads=threads,
                         use_dates=True, spread_dates=spread_dates)
     elif xaxis == '1':
         #xaxis is threads
@@ -260,7 +259,7 @@ def get_rows(commit_regex, start_date, end_date, label_regex, version_regex):
         tmpdoc = {"commit": record["commit"],
                   "label": record["label"],
                   "version": record["version"],
-                  "date": record["commit_date"].isoformat(),
+                  "date": record["commit_date"].strftime("%b %d  %I:%M %p"),
                   "_id": str(record["_id"])}
         rows.append(tmpdoc) 
     return rows
