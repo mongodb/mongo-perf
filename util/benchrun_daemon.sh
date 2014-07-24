@@ -92,6 +92,13 @@ else
     echo "numactl not found on this machine"
 fi
 
+# disable transparent huge pages
+echo never | tee /sys/kernel/mm/transparent_hugepage/enabled /sys/kernel/mm/transparent_hugepage/defrag
+
+# if cpufreq scaling governor is present, ensure we aren't in power save (speed step) mode
+echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+
+
 
 while [ true ]
 do
