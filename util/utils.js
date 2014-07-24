@@ -87,13 +87,17 @@ function runTest(test, thread, multidb, runSeconds) {
         theDb.createCollection(collections[i].getName());
     }
 
-    // call the built-in function
+    // build a json document with arguments.
+    // these will become a BSONObj when we pass
+    // control to the built-in mongo shell function, benchRun()
     var benchArgs = { ops:      new_ops,
                       seconds:  runSeconds,
                       host:     db.getMongo().host,
                       parallel: thread };
 
+    // invoke the built-in mongo shell function
     var result = benchRun(benchArgs);
+
     var total =
         result["insert"] +
         result["query"] +
