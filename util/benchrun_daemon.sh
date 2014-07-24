@@ -52,17 +52,17 @@ function run_mongo-perf() {
     sleep 30
 
     cd $MPERFPATH
-    TIME="$(date "+%m%d%Y|%H:%M")"
+    TIME="$(date "+%m%d%Y_%H:%M")"
 
     TESTCASES=$(find testcases/ -name *.js)
 
     # Run with one DB.
     sudo bash -c "echo 3 > /proc/sys/vm/drop_caches"
-    python benchrun.py -l "${TIME}_${THIS_PLATFORM}" --rhost "$RHOST" --rport "$RPORT" -t 16 14 12 10 8 7 6 5 4 3 2 1 -s "$SHELLPATH" -f $TESTCASES
+    python benchrun.py -l "${TIME}_${THIS_PLATFORM}" --rhost "$RHOST" --rport "$RPORT" -t 16 14 12 10 8 7 6 5 4 3 2 1 -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 10 --mongo-repo-path ${BUILD_DIR}
 
     # Run with multi-DB (4 DBs.)
     sudo bash -c "echo 3 > /proc/sys/vm/drop_caches"
-    python benchrun.py -l "${TIME}_${THIS_PLATFORM}-multi" --rhost "$RHOST" --rport "$RPORT" -t 16 14 12 10 8 7 6 5 4 3 2 1 -s "$SHELLPATH" -m 4 -f $TESTCASES
+    python benchrun.py -l "${TIME}_${THIS_PLATFORM}-multi" --rhost "$RHOST" --rport "$RPORT" -t 16 14 12 10 8 7 6 5 4 3 2 1 -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 10 --mongo-repo-path ${BUILD_DIR}
 
     # Kill the mongod process and perform cleanup.
     kill -n 9 ${MONGOD_PID}   # doesn't get set?
@@ -71,6 +71,16 @@ function run_mongo-perf() {
 
 }
 
+
+# ensure numa zone reclaims are off
+numapath=$(which numactl)
+if [[ -x "$numapath" ]]
+then
+    echo "turning off numa zone reclaims"
+    sudo numactl --interleave=all
+else
+    echo "numactl not found on this machine"
+fi
 
 
 while [ true ]
