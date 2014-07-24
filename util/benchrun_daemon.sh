@@ -10,6 +10,7 @@ SHELLPATH=$BUILD_DIR/mongo
 BRANCH=master
 NUM_CPUS=$(grep ^processor /proc/cpuinfo | wc -l)
 RHOST="mongo-perf-1.vpc1.build.10gen.cc"
+RHOST="localhost"
 RPORT=27017
 BREAK_PATH=/home/mongo-perf/build-perf
 TEST_DIR=$MPERFPATH/testcases
@@ -54,15 +55,24 @@ function run_mongo-perf() {
     cd $MPERFPATH
     TIME="$(date "+%m%d%Y_%H:%M")"
 
+    # list of testcase definitions
     TESTCASES=$(find testcases/ -name *.js)
 
-    # Run with one DB.
+
+    # list of thread counts to run (high counts first to minimize startup cost of first trial)
+    THREAD_COUNTS="16 14 12 10 8 7 6 5 4 3 2 1"
+
+    # drop linux caches
     sudo bash -c "echo 3 > /proc/sys/vm/drop_caches"
-    python benchrun.py -l "${TIME}_${THIS_PLATFORM}" --rhost "$RHOST" --rport "$RPORT" -t 16 14 12 10 8 7 6 5 4 3 2 1 -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 10 --mongo-repo-path ${BUILD_DIR}
+
+    # Run with single DB.
+    python benchrun.py -l "${TIME}_${THIS_PLATFORM}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 10 --mongo-repo-path ${BUILD_DIR}
+
+    # drop linux caches
+    sudo bash -c "echo 3 > /proc/sys/vm/drop_caches"
 
     # Run with multi-DB (4 DBs.)
-    sudo bash -c "echo 3 > /proc/sys/vm/drop_caches"
-    python benchrun.py -l "${TIME}_${THIS_PLATFORM}-multi" --rhost "$RHOST" --rport "$RPORT" -t 16 14 12 10 8 7 6 5 4 3 2 1 -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 10 --mongo-repo-path ${BUILD_DIR}
+    python benchrun.py -l "${TIME}_${THIS_PLATFORM}-multi" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 10 --mongo-repo-path ${BUILD_DIR}
 
     # Kill the mongod process and perform cleanup.
     kill -n 9 ${MONGOD_PID}   # doesn't get set?
