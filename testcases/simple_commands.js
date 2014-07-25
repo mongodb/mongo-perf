@@ -2,14 +2,9 @@ if ( typeof(tests) != "object" ) {
     tests = [];
 }
 
-tests.push( { name: "Commands.illegalOp",
+tests.push( { name: "Commands.isMaster",
               ops: [
-                  { op: "command", ns : "#B_DB", command : { "notExist" : 1 } }
-              ] } );
-
-tests.push( { name: "Commands.rs.status",
-              ops: [
-                  { op: "command", ns : "#B_DB", command : { "replSetGetStatus" : 1 } }
+                  { op: "command", ns : "#B_DB", command : { "isMaster" : 1 } }
               ] } );
 
 tests.push( { name: "Commands.buildInfo",
@@ -17,13 +12,12 @@ tests.push( { name: "Commands.buildInfo",
                   { op: "command", ns : "#B_DB", command : { "buildInfo" : 1 } }
               ] } );
 
-tests.push( { name: "Commands.isMaster",
+tests.push( { name: "Commands.illegalOp",
               ops: [
-                  { op: "command", ns : "#B_DB", command : { "isMaster" : 1 } }
+                  { op: "command", ns : "#B_DB", command : { "notExist" : 1 } }
               ] } );
 
-
-tests.push( { name: "nop",
+tests.push( { name: "Commands.nop",
               ops: [
                   { op: "nop" }
               ] } );
