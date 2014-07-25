@@ -95,6 +95,20 @@ def main():
         mongo_proc.stdin.write("load('" + testfile + "')\n")
         print "load('" + testfile + "')"
 
+    # map booleans
+    if args.safeMode:
+        safeMode = 'true'
+    else:
+        safeMode = 'false'
+    if args.j:
+        j = 'true'
+    else:
+        j = 'false'
+    if args.writeCmd:
+        writeCmd = 'true'
+    else:
+        writeCmd = 'false'
+
     # Pipe commands to the mongo shell to kickoff the test.
     cmdstr = ("runTests(" +
               str(args.threads) + ", " +
@@ -105,10 +119,10 @@ def main():
               "'" + args.reporthost + "', " +
               "'" + args.reportport + "', " +
               "'" + str(committed_date) + "', " +
-              "'" + str(args.safeMode) + "', " +
+              str(safeMode) + ", " +
               str(args.w) + ", " +
-              "'" + str(args.j) + "', " +
-              "'" + str(args.writeCmd) + "'" +
+              str(j) + ", " +
+              str(writeCmd) +
               ");\n")
     mongo_proc.stdin.write(cmdstr)
     print cmdstr
