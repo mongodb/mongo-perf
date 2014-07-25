@@ -41,6 +41,18 @@ def parse_arguments():
     parser.add_argument('--mongo-repo-path', dest='repo_path',
                         help='Path to a mongo repo to collect commit information',
                         default='/home/ace/mongo/')
+    parser.add_argument('--safe', dest='safeMode',
+                        help='Call GLE after every op instead of every 100 ops',
+                        type=bool, default=False)
+    parser.add_argument('-w', dest='w',
+                        help='w write concern',
+                        type=int, default=0)
+    parser.add_argument('-j', dest='j',
+                        help='j write concern',
+                        type=bool, default=False)
+    parser.add_argument('--writeCmd', dest='writeCmd',
+                        help='use write command ILO legacy op',
+                        type=bool, default=False)
 
     return parser.parse_known_args()
 
@@ -92,7 +104,11 @@ def main():
               "'" + args.reportlabel + "', " +
               "'" + args.reporthost + "', " +
               "'" + args.reportport + "', " +
-              "'" + str(committed_date) + "'" +
+              "'" + str(committed_date) + "', " +
+              "'" + str(args.safeMode) + "', " +
+              str(args.w) + ", " +
+              "'" + str(args.j) + "', " +
+              "'" + str(args.writeCmd) + "'" +
               ");\n")
     mongo_proc.stdin.write(cmdstr)
     print cmdstr

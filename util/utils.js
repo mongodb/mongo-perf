@@ -50,7 +50,7 @@ function formatRunDate(now) {
             pad(now.getDate()));
 }
 
-function runTest(test, thread, multidb, runSeconds) {
+function runTest(test, thread, multidb, runSeconds, safe, w, j, writeCmd) {
     var collections = [];
 
     for (var i = 0; i < multidb; i++) {
@@ -68,6 +68,30 @@ function runTest(test, thread, multidb, runSeconds) {
         // (& should not be factored out for that reason.)
         for (var i = 0; i < multidb; i++) {
             new_ops.push(prepOp(collections[i], z));
+        }
+    });
+
+    // set write concern and write command modes
+    // this doesn't make sense for all tests so
+    // test cases must be defined with default values
+    // so this step can make the appropriate substitution
+    new_ops.forEach(function(z) {
+        //  set safe mode to call GLE every op
+        if ("safe" in z) {
+            z.safe = safe;
+        }
+        //  w write concern
+        if ("w" in z) {
+            z.w = w;
+        }
+        //  j write concern (boolean)
+        if ("j" in z) {
+            z.j = j;
+        }
+        //  use write command ILO legacy update, remove or insert op
+        //  n.b. currently only one op will be in the array
+        if ("writeCmd" in z) {
+            z.writeCmd = writeCmd;
         }
     });
 
@@ -131,14 +155,14 @@ function getVariance( numericArray ) {
 }
 
 function getMean( values ) {
-    var sum = 0.0;
+    var sum = 0;
     for (var j=0; j < values.length; j++) {
          sum += values[j];
     }
     return sum / values.length;
 }
 
-function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHost, reportPort, commitDate) {
+function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHost, reportPort, commitDate, safeGLE, writeConcernW, writeConcernJ, writeCmd) {
     var testResults = {};
     // The following are only used when reportLabel is not None.
     var resultsCollection = db.getSiblingDB("bench_results").raw;
@@ -189,7 +213,7 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHos
             var threadCount = threadCounts[t];
             var results = []
             for (var j=0; j < trials; j++) {
-                results[j] = runTest(test, threadCount, multidb, seconds);
+                results[j] = runTest(test, threadCount, multidb, seconds, safeGLE, writeConcernW, writeConcernJ, writeCmd);
                 results[j]['run_end_time'] = new Date();
             }
             var values = []
