@@ -10,7 +10,7 @@ SHELLPATH=$BUILD_DIR/mongo
 BRANCH=master
 NUM_CPUS=$(grep ^processor /proc/cpuinfo | wc -l)
 RHOST="mongo-perf-1.vpc1.build.10gen.cc"
-RHOST="localhost"
+#RHOST="localhost"
 RPORT=27017
 BREAK_PATH=/home/mongo-perf/build-perf
 TEST_DIR=$MPERFPATH/testcases
@@ -66,13 +66,13 @@ function run_mongo-perf() {
     sudo bash -c "echo 3 > /proc/sys/vm/drop_caches"
 
     # Run with single DB.
-    python benchrun.py -l "${TIME}_${THIS_PLATFORM}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 10 --mongo-repo-path ${BUILD_DIR}
+    python benchrun.py -l "${TIME}_${THIS_PLATFORM}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 10 --mongo-repo-path ${BUILD_DIR} --safe false -w 0 -j false --writeCmd false
 
     # drop linux caches
     sudo bash -c "echo 3 > /proc/sys/vm/drop_caches"
 
     # Run with multi-DB (4 DBs.)
-    python benchrun.py -l "${TIME}_${THIS_PLATFORM}-multi" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 10 --mongo-repo-path ${BUILD_DIR}
+    python benchrun.py -l "${TIME}_${THIS_PLATFORM}-multi" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 10 --mongo-repo-path ${BUILD_DIR} --safe false -w 0 -j false --writeCmd false
 
     # Kill the mongod process and perform cleanup.
     kill -n 9 ${MONGOD_PID}   # doesn't get set?
@@ -93,13 +93,13 @@ else
 fi
 
 # disable transparent huge pages
-echo never | tee /sys/kernel/mm/transparent_hugepage/enabled /sys/kernel/mm/transparent_hugepage/defrag
+echo never | sudo tee /sys/kernel/mm/transparent_hugepage/enabled /sys/kernel/mm/transparent_hugepage/defrag
 
 # if cpufreq scaling governor is present, ensure we aren't in power save (speed step) mode
-echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
 
 
-
+# main loop
 while [ true ]
 do
     if [ -e $BREAK_PATH ]
