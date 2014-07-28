@@ -223,6 +223,8 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHos
             var mean = getMean(values);
             var variance = getVariance(values);
             var newResults = {}
+            // uncomment if one needs to save the trial values that comprise the mean
+            //newResults.ops_per_sec_values = values;
             newResults.ops_per_sec = mean;
             newResults.standardDeviation = Math.sqrt(variance);
             newResults.run_end_time = new Date();
