@@ -40,7 +40,7 @@ def parse_arguments():
                         default='mongo')
     parser.add_argument('--mongo-repo-path', dest='repo_path',
                         help='Path to a mongo repo to collect commit information',
-                        default='/home/ace/mongo/')
+                        default='/home/mongo-perf/mongo')
     parser.add_argument('--safe', dest='safeMode',
                         help='Call GLE after every op instead of every 100 ops',
                         type=bool, default=False)
@@ -80,7 +80,7 @@ def main():
     buildinfo = client['test'].command("buildinfo")
     commithash = buildinfo['gitVersion']
     # Use hash to get commit_date
-    if platform.system() == 'Darwin':
+    if platform.system() == 'Darwin' or platform.system() == 'Windows':
       structTime = repo.commit(commithash).committed_date
       committed_date = datetime.datetime(*structTime[:6])
     else:
