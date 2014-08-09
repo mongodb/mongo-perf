@@ -187,7 +187,7 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHos
             platform:    bi.sysInfo.split(" ")[0],
             run_date:    formatRunDate(startTime),
             run_time:    startTime,
-            commit_date: new Date(commitDate * 1000),
+            commit_date: new Date(commitDate),
             version:     bi.version
         };
 
