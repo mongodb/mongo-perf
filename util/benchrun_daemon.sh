@@ -10,7 +10,6 @@ SHELLPATH=$BUILD_DIR/mongo
 BRANCH=master
 NUM_CPUS=$(grep ^processor /proc/cpuinfo | wc -l)
 RHOST="mongo-perf-1.vpc1.build.10gen.cc"
-#RHOST="localhost"
 RPORT=27017
 BREAK_PATH=/home/mongo-perf/build-perf
 TEST_DIR=$MPERFPATH/testcases
@@ -48,6 +47,7 @@ function run_mongo-perf() {
     # Kick off a mongod process.
     cd $BUILD_DIR
     ./mongod --dbpath "${DBPATH}" --smallfiles --fork --logpath mongoperf.log
+    # TODO: doesn't get set properly with --fork ?
     MONGOD_PID=$!
 
     sleep 30
@@ -59,28 +59,30 @@ function run_mongo-perf() {
     TESTCASES=$(find testcases/ -name *.js)
 
 
-    # list of thread counts to run (high counts first to minimize startup cost of first trial)
-    THREAD_COUNTS="16 14 12 10 8 7 6 5 4 3 2 1"
+    # list of thread counts to run (high counts first to minimize impact of first trial)
+    THREAD_COUNTS="16 8 4 2 1"
 
     # drop linux caches
     sudo bash -c "echo 3 > /proc/sys/vm/drop_caches"
 
     # Run with single DB.
-    python benchrun.py -l "${TIME}_${THIS_PLATFORM}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 10 --mongo-repo-path ${BUILD_DIR} --safe false -w 0 -j false --writeCmd false
+    python benchrun.py -l "${TIME}_${THIS_PLATFORM}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 8 --mongo-repo-path ${BUILD_DIR} --safe false -w 0 -j false --writeCmd false
 
     # drop linux caches
     sudo bash -c "echo 3 > /proc/sys/vm/drop_caches"
 
     # Run with multi-DB (4 DBs.)
-    python benchrun.py -l "${TIME}_${THIS_PLATFORM}-multi" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 10 --mongo-repo-path ${BUILD_DIR} --safe false -w 0 -j false --writeCmd false
+    python benchrun.py -l "${TIME}_${THIS_PLATFORM}-multi" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 8 --mongo-repo-path ${BUILD_DIR} --safe false -w 0 -j false --writeCmd false
 
     # Kill the mongod process and perform cleanup.
-    kill -n 9 ${MONGOD_PID}   # doesn't get set?
+    kill -n 9 ${MONGOD_PID}
     pkill -9 mongod         # kills all mongod processes -- assumes no other use for host
     rm -rf $DBPATH/*
 
 }
 
+
+# housekeeping
 
 # ensure numa zone reclaims are off
 numapath=$(which numactl)
