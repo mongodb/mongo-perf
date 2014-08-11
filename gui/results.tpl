@@ -230,7 +230,7 @@
                   }
                 }
               },
-              xlabel: 'Run Date' //label for x-axis
+              xlabel: 'Commit Date' //label for x-axis
               %else:
               xlabel: 'Threads' //label for x-axis
               %end

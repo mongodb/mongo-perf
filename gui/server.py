@@ -98,7 +98,9 @@ def gen_query(labels, dates, versions, start, end, limit, ids, commits):
 
     query = {"$and": [label_query, date_query, version_query, start_query, end_query, id_query, commit_query]}
     cursor = db.raw.find(query).sort([ ('commit_date', pymongo.ASCENDING),
-                                    ('platform', pymongo.DESCENDING)])
+                                       ('platform', pymongo.DESCENDING),
+                                       ('label', pymongo.ASCENDING)])
+
     if limit:
         cursor.limit(limit)
 
@@ -196,7 +198,7 @@ def results_page():
                 results_section.append(result_entry)
 
             #construct final object
-            labels = ['Run Date']
+            labels = ['Commit Date']
             labels.extend(threads)
             new_results.append({ 'data': json.dumps(results_section),
                                  'labels_json': json.dumps(labels),
@@ -294,4 +296,4 @@ def new_main_page():
 
 if __name__ == '__main__':
     do_reload = '--reload' in sys.argv
-    run(host='0.0.0.0', port=8080, server=AutoServer, debug=do_reload)
+    run(host='0.0.0.0', port=8080, server=AutoServer)
