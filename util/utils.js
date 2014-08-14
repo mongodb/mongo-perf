@@ -78,20 +78,20 @@ function runTest(test, thread, multidb, runSeconds, safe, w, j, writeCmd) {
     new_ops.forEach(function(z) {
         //  set safe mode to call GLE every op
         if ("safe" in z) {
-            z.safe = safe;
+            //z.safe = safe;
         }
         //  w write concern
         if ("w" in z) {
-            z.w = w;
+            //z.w = w;
         }
         //  j write concern (boolean)
         if ("j" in z) {
-            z.j = j;
+            //z.j = j;
         }
         //  use write command ILO legacy update, remove or insert op
         //  n.b. currently only one op will be in the array
         if ("writeCmd" in z) {
-            z.writeCmd = writeCmd;
+            //z.writeCmd = writeCmd;
         }
     });
 
