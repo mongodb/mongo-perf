@@ -28,10 +28,12 @@ from copy import copy
 
 
 MONGO_PERF_HOST = "mongo-perf-1.vpc1.build.10gen.cc"
+MONGO_PERF_HOST = "ec2-54-200-68-243.us-west-2.compute.amazonaws.com"
 MONGO_PERF_PORT = 27017
 MP_DB_NAME = "bench_results"
 db = pymongo.Connection(host=MONGO_PERF_HOST, 
                          port=MONGO_PERF_PORT)[MP_DB_NAME]
+bogus_date = datetime(2038, 12, 31, 23, 59, 59)
 
 
 @route('/static/:filename#.*#')
@@ -123,10 +125,9 @@ def process_cursor(cursor, multidb):
                                version=entry['version'],
                                label=entry['label'])
 
-                    if 'commit_date' in entry.keys():
-                        row['date'] = entry['commit_date'].strftime("%b %d %I:%M%p"),
-                    else:
-                        row['date'] = 'pending'
+                    if not 'commit_date' in entry.keys():
+                        entry['commit_date'] = bogus_date
+                    row['date'] = entry['commit_date'].strftime("%b %d %I:%M%p"),
 
                     for (n, res) in result['results'].iteritems():
                         row[n] = res
@@ -263,6 +264,8 @@ def get_rows(commit_regex, start_date, end_date, label_regex, version_regex):
     csr = gen_query(label_regex, None, version_regex, start_date, end_date, None, None, commit_regex)
     rows = []
     for record in csr:
+        if not 'commit_date' in record.keys():
+            record['commit_date'] = bogus_date
         tmpdoc = {"commit": record["commit"],
                   "label": record["label"],
                   "version": record["version"],
