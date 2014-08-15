@@ -3,18 +3,25 @@
 #Find us if you have any questions, future user!
 set -x
 #Defaults
-MPERFPATH=/home/mongo-perf/mongo-perf
-BUILD_DIR=/home/mongo-perf/mongo
-DBPATH=/home/mongo-perf/db
-SHELLPATH=$BUILD_DIR/mongo
+RUNUSER=mongo-perf
+MPERFPATH=/home/${RUNUSER}/mongo-perf
+BUILD_DIR=/home/${RUNUSER}/mongo
+DBPATH=/home/${RUNUSER}/db
+SHELLPATH=${BUILD_DIR}/mongo
 BRANCH=master
 NUM_CPUS=$(grep ^processor /proc/cpuinfo | wc -l)
 RHOST="mongo-perf-1.vpc1.build.10gen.cc"
 RPORT=27017
-BREAK_PATH=/home/mongo-perf/build-perf
-TEST_DIR=$MPERFPATH/testcases
+BREAK_PATH=/home/${RUNUSER}/build-perf
+TEST_DIR=${MPERFPATH}/testcases
 SLEEPTIME=60
 THIS_PLATFORM=`uname -s || echo unknown`
+
+# allow a branch or tag to be passed as the first argument
+if [ $# == 1 ]
+then
+    BRANCH=$1
+fi
 
 function do_git_tasks() {
     cd $BUILD_DIR
@@ -45,6 +52,7 @@ function run_build() {
 
 function run_mongo-perf() {
     # Kick off a mongod process.
+    rm -rf $DBPATH/*
     cd $BUILD_DIR
     ./mongod --dbpath "${DBPATH}" --smallfiles --fork --logpath mongoperf.log
     # TODO: doesn't get set properly with --fork ?
@@ -104,10 +112,6 @@ echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governo
 # main loop
 while [ true ]
 do
-    if [ -e $BREAK_PATH ]
-    then
-        break
-    fi
     do_git_tasks
     if [ $? == 0 ]
     then
@@ -119,5 +123,9 @@ do
         then
             run_mongo-perf
         fi
+    fi
+    if [ -e $BREAK_PATH ]
+    then
+        break
     fi
 done
