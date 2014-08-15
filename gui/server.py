@@ -121,8 +121,13 @@ def process_cursor(cursor, multidb):
                     row = dict(commit=entry['commit'],
                                platform=entry['platform'],
                                version=entry['version'],
-                               date=entry['commit_date'].strftime("%b %d  %I:%M%p"),
                                label=entry['label'])
+
+                    if 'commit_date' in entry.keys():
+                        row['date'] = entry['commit_date'].strftime("%b %d %I:%M%p"),
+                    else:
+                        row['date'] = 'pending'
+
                     for (n, res) in result['results'].iteritems():
                         row[n] = res
                     aggregate[result['name']].append(row)
