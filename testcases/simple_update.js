@@ -268,7 +268,8 @@ tests.push( { name: "Update.MmsIncDeep1",
 tests.push( { name: "Update.MmsIncDeepSharedPath2",
               pre: setupMMS,
               ops: [
-                  { writeCmd: true, op:  "update",
+                  { op:  "update",
+                    safe: false, w: 0, j: false, writeCmd: false, 
                     query: { _id: 0 },
                     update: { $inc: { "h.23.59.n": 1,
                                       "h.23.59.t": 1 } }
