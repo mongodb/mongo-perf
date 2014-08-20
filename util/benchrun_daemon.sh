@@ -7,15 +7,29 @@ RUNUSER=mongo-perf
 MPERFPATH=/home/${RUNUSER}/mongo-perf
 BUILD_DIR=/home/${RUNUSER}/mongo
 DBPATH=/home/${RUNUSER}/db
-SHELLPATH=${BUILD_DIR}/mongo
+SCONSPATH=scons
+MONGOD=mongod
+MONGO=mongo
+SHELLPATH=${BUILD_DIR}/${MONGO}
 BRANCH=master
 NUM_CPUS=$(grep ^processor /proc/cpuinfo | wc -l)
 RHOST="mongo-perf-1.vpc1.build.10gen.cc"
 RPORT=27017
 BREAK_PATH=/home/${RUNUSER}/build-perf
+SUDO=sudo
 TEST_DIR=${MPERFPATH}/testcases
 SLEEPTIME=60
 THIS_PLATFORM=`uname -s || echo unknown`
+if [ $THIS_PLATFORM == 'CYGWIN_NT-6.1' ]
+then
+    THIS_PLATFORM='Windows'
+    SCONSPATH=scons.bat
+	SHELLPATH=`cygpath -w ${SHELLPATH}.exe`
+	MONGOD=mongod.exe
+	MONGO=mongo.exe
+	DBPATH=`cygpath -w ${DBPATH}`
+	SUDO=''
+fi
 
 # allow a branch or tag to be passed as the first argument
 if [ $# == 1 ]
@@ -47,14 +61,20 @@ function do_git_tasks() {
 
 function run_build() {
     cd $BUILD_DIR
-    scons -j $NUM_CPUS --64 --release mongod mongo
+    ${SCONSPATH} -j $NUM_CPUS --64 --release ${MONGOD} ${MONGO}
 }
 
 function run_mongo-perf() {
     # Kick off a mongod process.
-    rm -rf $DBPATH/*
     cd $BUILD_DIR
-    ./mongod --dbpath "${DBPATH}" --smallfiles --fork --logpath mongoperf.log
+	if [ $THIS_PLATFORM == 'Windows' ]
+	then
+        rm -rf `cygpath -u $DBPATH`/*
+        (./${MONGOD} --dbpath "${DBPATH}" --smallfiles --logpath mongoperf.log &)
+	else
+        rm -rf $DBPATH/*
+        ./${MONGOD} --dbpath "${DBPATH}" --smallfiles --fork --logpath mongoperf.log
+	fi
     # TODO: doesn't get set properly with --fork ?
     MONGOD_PID=$!
 
@@ -71,21 +91,31 @@ function run_mongo-perf() {
     THREAD_COUNTS="16 8 4 2 1"
 
     # drop linux caches
-    sudo bash -c "echo 3 > /proc/sys/vm/drop_caches"
+    ${SUDO} bash -c "echo 3 > /proc/sys/vm/drop_caches"
 
     # Run with single DB.
-    python benchrun.py -l "${TIME}_${THIS_PLATFORM}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 8 --mongo-repo-path ${BUILD_DIR} --safe false -w 0 -j false --writeCmd false
+	if [ $THIS_PLATFORM == 'Windows' ]
+	then
+        cmd.exe /c python benchrun.py -l "${TIME}_${THIS_PLATFORM}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 7 --mongo-repo-path `cygpath -w ${BUILD_DIR}` --safe false -w 0 -j false --writeCmd false
+	else
+        python benchrun.py -l "${TIME}_${THIS_PLATFORM}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 7 --mongo-repo-path ${BUILD_DIR} --safe false -w 0 -j false --writeCmd false
+	fi
 
     # drop linux caches
-    sudo bash -c "echo 3 > /proc/sys/vm/drop_caches"
+    ${SUDO} bash -c "echo 3 > /proc/sys/vm/drop_caches"
 
     # Run with multi-DB (4 DBs.)
-    python benchrun.py -l "${TIME}_${THIS_PLATFORM}-multi" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 8 --mongo-repo-path ${BUILD_DIR} --safe false -w 0 -j false --writeCmd false
+	if [ $THIS_PLATFORM == 'Windows' ]
+	then
+        python benchrun.py -l "${TIME}_${THIS_PLATFORM}-multi" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 7 --mongo-repo-path `cygpath -w ${BUILD_DIR}` --safe false -w 0 -j false --writeCmd false
+	else
+        python benchrun.py -l "${TIME}_${THIS_PLATFORM}-multi" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 7 --mongo-repo-path ${BUILD_DIR} --safe false -w 0 -j false --writeCmd false
+	fi
 
     # Kill the mongod process and perform cleanup.
     kill -n 9 ${MONGOD_PID}
-    pkill -9 mongod         # kills all mongod processes -- assumes no other use for host
-    rm -rf $DBPATH/*
+    pkill -9 ${MONGOD}         # kills all mongod processes -- assumes no other use for host
+    rm -rf ${DBPATH}/*
 
 }
 
@@ -97,16 +127,22 @@ numapath=$(which numactl)
 if [[ -x "$numapath" ]]
 then
     echo "turning off numa zone reclaims"
-    sudo numactl --interleave=all
+    ${SUDO} numactl --interleave=all
 else
     echo "numactl not found on this machine"
 fi
 
 # disable transparent huge pages
-echo never | sudo tee /sys/kernel/mm/transparent_hugepage/enabled /sys/kernel/mm/transparent_hugepage/defrag
+if [ -e /sys/kernel/mm/transparent_hugepage/enabled ]
+then
+    echo never | ${SUDO} tee /sys/kernel/mm/transparent_hugepage/enabled /sys/kernel/mm/transparent_hugepage/defrag
+fi
 
 # if cpufreq scaling governor is present, ensure we aren't in power save (speed step) mode
-echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+if [ -e /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor ]
+then
+    echo performance | ${SUDO} tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+fi
 
 
 # main loop
