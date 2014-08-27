@@ -218,6 +218,8 @@ def results_page():
         for outer_result in results:
             out = []
             for i, result in enumerate(outer_result['results']):
+                if not isinstance(result['date'], str):
+                    result['date'] = result['date'][0]
                 out.append({'label': ' / '.join((result['label'], result['version'],
                                                  result['date'])),
                             'data': sorted([int(k), [v['ops_per_sec'], v['standardDeviation']]] 
