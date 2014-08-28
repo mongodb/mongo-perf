@@ -124,7 +124,7 @@ def process_cursor(cursor, multidb):
                                label=entry['label'])
 
                     if 'commit_date' in entry.keys():
-                        row['date'] = entry['commit_date'].strftime("%b %d %I:%M%p"),
+                        row['date'] = entry['commit_date'].strftime("%b %d %I:%M%p")
                     else:
                         row['date'] = 'pending'
 
