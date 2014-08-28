@@ -264,10 +264,15 @@ def get_rows(commit_regex, start_date, end_date, label_regex, version_regex):
     csr = gen_query(label_regex, None, version_regex, start_date, end_date, None, None, commit_regex)
     rows = []
     for record in csr:
+        if 'commit_date' in record.keys():
+            myDate = record["commit_date"].strftime("%b %d  %I:%M %p")
+        else:
+            myDate = 'legacy'
+
         tmpdoc = {"commit": record["commit"],
                   "label": record["label"],
                   "version": record["version"],
-                  "date": record["commit_date"].strftime("%b %d  %I:%M %p"),
+                  "date": myDate,
                   "_id": str(record["_id"])}
         rows.append(tmpdoc) 
     return rows
