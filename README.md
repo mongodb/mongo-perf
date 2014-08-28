@@ -8,16 +8,19 @@ This repo contains scripts to run benchmark tests for MongoDB.
 ### DEPENDENCIES:
 *General Benchmarking Dependencies*  
 Python >= 2.7.X < 3.0  
+git  
 mongo shell >= 2.7.0-pre- (at revision 56f3a5f0f10377b8dc13a22d59b7f90bd173411f or newer)  
 
 *Python Benchmarking Dependencies*  
 argparse  
 pymongo  
 subprocess  
+GitPython  
 
 *Python Reporting Dependencies*  
 bottle  
-boto (optional)
+GitPython  
+boto (optional)  
 
 ### HOW TO RUN:
 *To run a micro benchmarking test or tests:*  
@@ -29,6 +32,6 @@ For example, to run the `simple_insert.js` test case on 1, 2, and 4 threads, no 
 *To run the GUI interface to view results in a graph:*  
 ```
 cd gui  
-python server.py
+python server.py  
 ```
 Go to http://localhost:8080 to see the results.  
