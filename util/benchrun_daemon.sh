@@ -1,34 +1,55 @@
 #!/bin/bash
 #Rewritten as of April 9th, 2014 by Dave Storch & Amalia Hawkins
 #Find us if you have any questions, future user!
-set -x
-#Defaults
+
+# *nix user name
 RUNUSER=mongo-perf
+# mongo-perf working directory
 MPERFPATH=/home/${RUNUSER}/mongo-perf
+# build directory
 BUILD_DIR=/home/${RUNUSER}/mongo
+# test database
 DBPATH=/home/${RUNUSER}/db
+# executables
 SCONSPATH=scons
 MONGOD=mongod
 MONGO=mongo
+# path mongo shell
 SHELLPATH=${BUILD_DIR}/${MONGO}
+# branch to monitor for checkins
 BRANCH=master
 NUM_CPUS=$(grep ^processor /proc/cpuinfo | wc -l)
+# remote database to store results
 RHOST="mongo-perf-1.vpc1.build.10gen.cc"
 RPORT=27017
+# create this file to un-daemonize (exit the loop)
 BREAK_PATH=/home/${RUNUSER}/build-perf
+# trying to use sudo for cache flush, et al
 SUDO=sudo
+# test agenda from all .js files found here
 TEST_DIR=${MPERFPATH}/testcases
 SLEEPTIME=60
+
+# script should work on Linux, Solaris, MacOSX
+# for Windows, run under cygwin
 THIS_PLATFORM=`uname -s || echo unknown`
 if [ $THIS_PLATFORM == 'CYGWIN_NT-6.1' ]
 then
     THIS_PLATFORM='Windows'
+fi
+if [ $THIS_PLATFORM == 'CYGWIN_NT-6.3' ]
+then
+    THIS_PLATFORM='Windows'
+fi
+if [ $THIS_PLATFORM == 'Windows' ]
+then
+    THIS_PLATFORM='Windows'
     SCONSPATH=scons.bat
-	SHELLPATH=`cygpath -w ${SHELLPATH}.exe`
-	MONGOD=mongod.exe
-	MONGO=mongo.exe
-	DBPATH=`cygpath -w ${DBPATH}`
-	SUDO=''
+    SHELLPATH=`cygpath -w ${SHELLPATH}.exe`
+    MONGOD=mongod.exe
+    MONGO=mongo.exe
+    DBPATH=`cygpath -w ${DBPATH}`
+    SUDO=''
 fi
 
 # allow a branch or tag to be passed as the first argument
@@ -39,9 +60,16 @@ fi
 
 function do_git_tasks() {
     cd $BUILD_DIR
-    git checkout $BRANCH
-    git clean -fqdx
+    rm -rf build/*
+    # some extra gyration here to allow/automate a local patch
+    git checkout -- .
+    git checkout master
     git pull
+    git checkout $BRANCH
+    git pull
+    git clean -fqdx
+    # apply local patch here, if any
+    #patch -p 1 -F 3 < ${HOME}/pinValue.patch
 
     if [ -z "$LAST_HASH" ]
     then
@@ -61,20 +89,25 @@ function do_git_tasks() {
 
 function run_build() {
     cd $BUILD_DIR
-    ${SCONSPATH} -j $NUM_CPUS --64 --release ${MONGOD} ${MONGO}
+    if [ $THIS_PLATFORM == 'Windows' ]
+    then
+        ${SCONSPATH} -j $NUM_CPUS --64 --release --win2008plus ${MONGOD} ${MONGO}
+    else
+        ${SCONSPATH} -j $NUM_CPUS --64 --release ${MONGOD} ${MONGO}
+    fi
 }
 
 function run_mongo-perf() {
     # Kick off a mongod process.
     cd $BUILD_DIR
-	if [ $THIS_PLATFORM == 'Windows' ]
-	then
+    if [ $THIS_PLATFORM == 'Windows' ]
+    then
         rm -rf `cygpath -u $DBPATH`/*
         (./${MONGOD} --dbpath "${DBPATH}" --smallfiles --logpath mongoperf.log &)
-	else
+    else
         rm -rf $DBPATH/*
         ./${MONGOD} --dbpath "${DBPATH}" --smallfiles --fork --logpath mongoperf.log
-	fi
+    fi
     # TODO: doesn't get set properly with --fork ?
     MONGOD_PID=$!
 
@@ -96,7 +129,7 @@ function run_mongo-perf() {
     # Run with single DB.
 	if [ $THIS_PLATFORM == 'Windows' ]
 	then
-        cmd.exe /c python benchrun.py -l "${TIME}_${THIS_PLATFORM}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 7 --mongo-repo-path `cygpath -w ${BUILD_DIR}` --safe false -w 0 -j false --writeCmd false
+        python benchrun.py -l "${TIME}_${THIS_PLATFORM}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 7 --mongo-repo-path `cygpath -w ${BUILD_DIR}` --safe false -w 0 -j false --writeCmd false
 	else
         python benchrun.py -l "${TIME}_${THIS_PLATFORM}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 7 --mongo-repo-path ${BUILD_DIR} --safe false -w 0 -j false --writeCmd false
 	fi
@@ -105,16 +138,18 @@ function run_mongo-perf() {
     ${SUDO} bash -c "echo 3 > /proc/sys/vm/drop_caches"
 
     # Run with multi-DB (4 DBs.)
-	if [ $THIS_PLATFORM == 'Windows' ]
-	then
+    if [ $THIS_PLATFORM == 'Windows' ]
+    then
         python benchrun.py -l "${TIME}_${THIS_PLATFORM}-multi" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 7 --mongo-repo-path `cygpath -w ${BUILD_DIR}` --safe false -w 0 -j false --writeCmd false
-	else
+    else
         python benchrun.py -l "${TIME}_${THIS_PLATFORM}-multi" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 7 --mongo-repo-path ${BUILD_DIR} --safe false -w 0 -j false --writeCmd false
-	fi
+    fi
 
     # Kill the mongod process and perform cleanup.
     kill -n 9 ${MONGOD_PID}
     pkill -9 ${MONGOD}         # kills all mongod processes -- assumes no other use for host
+    pkill -9 mongod            # needed this for loitering mongod executable w/o .exe extension?
+    sleep 5
     rm -rf ${DBPATH}/*
 
 }
