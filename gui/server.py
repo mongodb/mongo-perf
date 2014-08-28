@@ -126,7 +126,8 @@ def process_cursor(cursor, multidb):
                     if 'commit_date' in entry.keys():
                         row['date'] = entry['commit_date'].strftime("%b %d %I:%M%p")
                     else:
-                        row['date'] = 'pending'
+                        # legacy data before we had commit_date in the schema
+                        row['date'] = 'legacy'
 
                     for (n, res) in result['results'].iteritems():
                         row[n] = res
