@@ -27,7 +27,7 @@ from collections import defaultdict
 from copy import copy
 
 
-MONGO_PERF_HOST = "mongo-perf-db-1.vpc3.10gen.cc"
+MONGO_PERF_HOST = "mongo-perf-1.vpc1.build.10gen.cc"
 MONGO_PERF_PORT = 27017
 MP_DB_NAME = "bench_results"
 db = pymongo.Connection(host=MONGO_PERF_HOST, 
