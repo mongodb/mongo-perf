@@ -20,7 +20,7 @@ SHELLPATH=${BUILD_DIR}/${MONGO}
 BRANCH=master
 NUM_CPUS=$(grep ^processor /proc/cpuinfo | wc -l)
 # remote database to store results
-RHOST="mongo-perf-1.vpc1.build.10gen.cc"
+RHOST="mongo-perf-db-1.vpc3.10gen.cc"
 RPORT=27017
 # create this file to un-daemonize (exit the loop)
 BREAK_PATH=/home/${RUNUSER}/build-perf
