@@ -28,7 +28,7 @@ from copy import copy
 
 # performance metrics are stored in mongod
 MONGO_PERF_HOST = "mongo-perf-1.vpc1.build.10gen.cc"
-MONGO_PERF_PORT = 37017
+MONGO_PERF_PORT = 27017
 # undefine if no replica set
 REPLICA_SET = "mongo-perf"
 # database name
