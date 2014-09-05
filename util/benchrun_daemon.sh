@@ -20,7 +20,9 @@ SHELLPATH=${BUILD_DIR}/${MONGO}
 BRANCH=master
 NUM_CPUS=$(grep ^processor /proc/cpuinfo | wc -l)
 # remote database to store results
-RHOST="mongo-perf-db-1.vpc3.10gen.cc"
+# in C++ driver ConnectionString / DBClientConnection format
+# this example assumes a two-member replica set
+RHOST="mongo-perf/mongo-perf-db-1.vpc3.10gen.cc,mongo-perf-db-2.vpc3.10gen.cc"
 RPORT=27017
 # create this file to un-daemonize (exit the loop)
 BREAK_PATH=/home/${RUNUSER}/build-perf
@@ -127,12 +129,12 @@ function run_mongo-perf() {
     ${SUDO} bash -c "echo 3 > /proc/sys/vm/drop_caches"
 
     # Run with single DB.
-	if [ $THIS_PLATFORM == 'Windows' ]
-	then
+    if [ $THIS_PLATFORM == 'Windows' ]
+    then
         python benchrun.py -l "${TIME}_${THIS_PLATFORM}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 7 --mongo-repo-path `cygpath -w ${BUILD_DIR}` --safe false -w 0 -j false --writeCmd false
-	else
+    else
         python benchrun.py -l "${TIME}_${THIS_PLATFORM}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 7 --mongo-repo-path ${BUILD_DIR} --safe false -w 0 -j false --writeCmd false
-	fi
+    fi
 
     # drop linux caches
     ${SUDO} bash -c "echo 3 > /proc/sys/vm/drop_caches"
