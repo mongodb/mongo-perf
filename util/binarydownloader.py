@@ -81,7 +81,7 @@ class BinaryDownloader:
             match += "-debugsymbols"
 
         if branch is not None:
-            match += "-v" + branch + "-latest"
+            match += "-" + branch + "-latest"
         elif version is not None:
             match += "-" + version
         else:
