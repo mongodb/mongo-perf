@@ -15,7 +15,8 @@ class BinaryDownloader:
     It currently only gets the x86_64 binaries and will only get the linux/mongodb-linux-x86_64-latest.tgz type files
 
     """
-    def __init__(self, ostype, download_dir):
+
+    def __init__(self, download_dir):
         """
         Inits the BinaryDownloader with the Operating system type to get the MongoDB binaries for.
         :param ostype: The os type to get,  can be win32, linux, osx, or sunos5
@@ -23,14 +24,13 @@ class BinaryDownloader:
         :return:
         """
         self.download_path = download_dir
-        self.ostype = ostype
 
         # download and last_download is a dict with the following structure
         # { link: <url>, timestamp: <unix timestamp>, path: <path to final tar file>
         self.download = None
         self.last_download = None
         # check file possibly holding the last_download info serialized
-        self.checkfile = os.path.join(self.download_path, '.last_download_' + ostype)
+        self.checkfile = os.path.join(self.download_path, '.last_downloaded_binaries')
 
 
     def __download_file(self):
@@ -57,7 +57,7 @@ class BinaryDownloader:
             pass
 
 
-    def __get_latest_remote(self):
+    def __get_remote_info(self, ostype, branch=None, version=None, platform=None, debug=False):
         """
         Populates the self.download information from the www.mogodb.org/dl site for the OS type passed into the class
         get the html for the downloads page and parse for the download link and the timestamp
@@ -72,12 +72,28 @@ class BinaryDownloader:
             <td></td>
         </tr>
         """
-        d = pq(url='http://www.mongodb.org/dl/' + self.ostype + '/x86_64')
+        # build up text to look for
+        match = ostype + "/mongodb-" + ostype + "-x86_64"
+        if platform is not None:
+            match += "-" + platform
+
+        if debug:
+            match += "-debugsymbols"
+
+        if branch is not None:
+            match += "-v" + branch + "-latest"
+        elif version is not None:
+            match += "-" + version
+        else:
+            match += "-latest"
+        match += ".tgz"
+
+        d = pq(url='http://www.mongodb.org/dl/' + ostype + '/x86_64')
         for tr in d.items('tr'):
             a = tr.find('td').eq(0).find('a')
             if a.attr.href is None:
                 continue
-            if a.text().rstrip('\n') != self.ostype + "/mongodb-" + self.ostype + "-x86_64-latest.tgz":
+            if a.text().rstrip('\n') != match:
                 continue
             ts_td = tr.find('td').eq(1)
             dt = time.mktime(datetime.strptime(ts_td.text().rstrip('\n'), '%Y-%m-%d %H:%M:%S').timetuple())
@@ -85,17 +101,25 @@ class BinaryDownloader:
                              "path": os.path.join(self.download_path, os.path.basename(a.attr.href))}
             break
 
-    def getLatest(self):
+
+    def getLatest(self, ostype, branch=None, version=None, platform=None, debug=False):
         """
-        Gets the latest set of binaries for the OS passed on the init.
-        This will either download the load the latest set of binaries from the MongoDB.org website or it will use the
-        set of binaries that have already been downloaded.  It stores the information about the last download in a
-        checkfile that has the url, timestamp, and path to the last downloaded set of files.
+        Gets the latest set of binaries for the OS passed..
+
+        This will download the latest binaries if only the OStype is passed.  If the branch is passed it will get the
+        latest branch version.  If a version is passed it will grab the release version of that os as well as possibly
+        the release version for the platform.  If debug is enabled it will grab the debugsymbols version.
 
         If there is no checkfile or the checkfile is there but no set of binaries it will refresh downloading the
-        current latest set of binaries
+        current latest set of binaries.  If its a different filename then last time it will remove the old file and
+        download the new file
 
-        :return:
+        :param ostype:
+        :param branch:
+        :param version:
+        :param platform:
+        :param debug:
+        :return: the path to the latest file downloaded or gotten
         """
         # get the checkfile file if its there
         if os.path.isfile(self.checkfile):
@@ -107,12 +131,20 @@ class BinaryDownloader:
             if not os.path.isfile(self.last_download['path']):
                 self.last_download = None
 
-        self.__get_latest_remote()
+        self.__get_remote_info(ostype, branch=branch, version=version, platform=platform, debug=debug)
 
-        # check to see if the download on the site is newer then the local copy
-        if self.last_download is not None and self.download is not None and self.last_download['timestamp'] >= \
-                self.download['timestamp']:
-            self.download = None
+        if self.download is None:
+            raise Exception("Unable to find requested binaries for download")
+
+        if self.last_download is not None:
+            # see if its a different file if not check the timestamp
+            if self.last_download['path'] != self.download['path'] and os.path.isfile(self.last_download['path']):
+                os.remove(self.last_download['path'])
+            else:
+                # check to see if the download on the site is newer then the local copy
+                if self.download is not None and self.last_download['timestamp'] >= self.download['timestamp']:
+                    self.download = None
+
 
         # do the download if we need to now
         if self.download is not None:
@@ -123,4 +155,4 @@ class BinaryDownloader:
             pickle.dump(self.download, output)
             output.close()
 
-
+        return self.download['path']

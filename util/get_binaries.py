@@ -1,8 +1,8 @@
 import os
 from binarydownloader import BinaryDownloader
 
-downloader = BinaryDownloader('sunos5', os.environ.get('BUILD_DIR', os.path.dirname(os.path.realpath(__file__))))
+downloader = BinaryDownloader(os.environ.get('BUILD_DIR', os.path.dirname(os.path.realpath(__file__))))
 try:
-    downloader.getLatest()
-except Exception:
-    pass
+    downloader.getLatest("linux", version="2.7.4")
+except Exception, e:
+    print e.message
