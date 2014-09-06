@@ -97,7 +97,12 @@ function do_git_tasks() {
 
         mkdir ${BUILD_DIR}/build || exit 1
         cd ${BUILD_DIR}/build || exit 1
-        python ${MPERFPATH}/util/get_binaries.py || exit 1
+        if [ $THIS_PLATFORM == 'Windows' ]
+        then
+            python `cygpath -w ${MPERFPATH}/util/get_binaries.py` || exit 1
+        else
+            python ${MPERFPATH}/util/get_binaries.py || exit 1
+        fi
         tar xzpf ${BUILD_DIR}/mongodb-*-latest.tgz || exit 1
         mv */bin/* ${BUILD_DIR} || exit 1
         BINHASH=$(${BUILD_DIR}/mongod --version | egrep git.version|perl -pe '$_="$1" if m/git.version:\s(\w+)/')
