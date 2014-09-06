@@ -18,6 +18,11 @@ try:
     #
     # gets the latest plain linux master
     downloader.getLatest("linux")
+    # gets the latest plain Darwin/MacOSX master
+    #downloader.getLatest("osx")
+    # gets the latest plain Windows master
+    #downloader.getLatest("win32")
+
 
 except Exception, e:
     print e.message
