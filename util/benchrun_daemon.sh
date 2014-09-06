@@ -2,14 +2,34 @@
 #Rewritten as of April 9th, 2014 by Dave Storch & Amalia Hawkins
 #Find us if you have any questions, future user!
 
+# script should work on Linux, Solaris, MacOSX
+# for Windows, run under cygwin
+THIS_PLATFORM=`uname -s || echo unknown`
+if [ $THIS_PLATFORM == 'CYGWIN_NT-6.1' ]
+then
+    THIS_PLATFORM='Windows'
+fi
+if [ $THIS_PLATFORM == 'CYGWIN_NT-6.3' ]
+then
+    THIS_PLATFORM='Windows'
+fi
+
 # *nix user name
 RUNUSER=mongo-perf
+# mongo-perf base directory
+if [ $THIS_PLATFORM == 'Darwin' ]
+then
+    MPERFBASE=/Users/${RUNUSER}
+else
+    MPERFBASE=/home/${RUNUSER}
+fi
 # mongo-perf working directory
-MPERFPATH=/home/${RUNUSER}/mongo-perf
+MPERFPATH=${MPERFBASE}/mongo-perf
 # build directory
-BUILD_DIR=/home/${RUNUSER}/mongo
+BUILD_DIR=${MPERFBASE}/mongo
+export BUILD_DIR
 # test database
-DBPATH=/home/${RUNUSER}/db
+DBPATH=${MPERFBASE}/db
 # executables
 SCONSPATH=scons
 MONGOD=mongod
@@ -25,24 +45,16 @@ NUM_CPUS=$(grep ^processor /proc/cpuinfo | wc -l)
 RHOST="mongo-perf/mongo-perf-db-1.vpc3.10gen.cc,mongo-perf-db-2.vpc3.10gen.cc"
 RPORT=27017
 # create this file to un-daemonize (exit the loop)
-BREAK_PATH=/home/${RUNUSER}/build-perf
+BREAK_PATH=${MPERFBASE}/build-perf
 # trying to use sudo for cache flush, et al
 SUDO=sudo
 # test agenda from all .js files found here
 TEST_DIR=${MPERFPATH}/testcases
+# seconds between polls
 SLEEPTIME=60
+# uncomment to fetch recently-built binaries from mongodb.org instead of compiling from source
+#FETCHMCI='TRUE'
 
-# script should work on Linux, Solaris, MacOSX
-# for Windows, run under cygwin
-THIS_PLATFORM=`uname -s || echo unknown`
-if [ $THIS_PLATFORM == 'CYGWIN_NT-6.1' ]
-then
-    THIS_PLATFORM='Windows'
-fi
-if [ $THIS_PLATFORM == 'CYGWIN_NT-6.3' ]
-then
-    THIS_PLATFORM='Windows'
-fi
 if [ $THIS_PLATFORM == 'Windows' ]
 then
     THIS_PLATFORM='Windows'
@@ -62,16 +74,42 @@ fi
 
 function do_git_tasks() {
     cd $BUILD_DIR
-    rm -rf build/*
-    # some extra gyration here to allow/automate a local patch
-    git checkout -- .
-    git checkout master
-    git pull
-    git checkout $BRANCH
-    git pull
-    git clean -fqdx
-    # apply local patch here, if any
-    #patch -p 1 -F 3 < ${HOME}/pinValue.patch
+    rm -rf build
+
+    if [ -z $FETCHMCI ]
+    then
+        # local compile
+        # some extra gyration here to allow/automate a local patch
+        git checkout -- .
+        git checkout master
+        git pull
+        git checkout $BRANCH
+        git pull
+        git clean -fqdx
+        # apply local patch here, if any
+        #patch -p 1 -F 3 < ${HOME}/pinValue.patch
+    else
+        # fetch latest binaries from MCI
+        git checkout -- .
+        git checkout master
+        git pull
+        git clean -fqdx
+
+        mkdir ${BUILD_DIR}/build || exit 1
+        cd ${BUILD_DIR}/build || exit 1
+        python ${MPERFPATH}/util/get_binaries.py || exit 1
+        tar xzpf ${BUILD_DIR}/mongodb-*-latest.tgz || exit 1
+        mv */bin/* ${BUILD_DIR} || exit 1
+        BINHASH=$(${BUILD_DIR}/mongod --version | egrep git.version|perl -pe '$_="$1" if m/git.version:\s(\w+)/')
+        if [ -z $BINHASH ]
+        then
+            echo "ERROR: could not determine git commit hash from downloaded binaries"
+        else
+            cd $BUILD_DIR
+            git checkout $BINHASH
+            git pull
+        fi
+    fi
 
     if [ -z "$LAST_HASH" ]
     then
@@ -91,11 +129,14 @@ function do_git_tasks() {
 
 function run_build() {
     cd $BUILD_DIR
-    if [ $THIS_PLATFORM == 'Windows' ]
+    if [ -z $FETCHMCI ]
     then
-        ${SCONSPATH} -j $NUM_CPUS --64 --release --win2008plus ${MONGOD} ${MONGO}
-    else
-        ${SCONSPATH} -j $NUM_CPUS --64 --release ${MONGOD} ${MONGO}
+        if [ $THIS_PLATFORM == 'Windows' ]
+        then
+            ${SCONSPATH} -j $NUM_CPUS --64 --release --win2008plus ${MONGOD} ${MONGO}
+        else
+            ${SCONSPATH} -j $NUM_CPUS --64 --release ${MONGOD} ${MONGO}
+        fi
     fi
 }
 
