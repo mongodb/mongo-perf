@@ -87,7 +87,7 @@ class BinaryDownloader:
         else:
             match += "-latest"
 
-        if ostype is "win32":
+        if ostype  == "win32":
             match += ".zip"
         else:
             match += ".tgz"
