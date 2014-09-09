@@ -80,7 +80,7 @@ class BinaryDownloader:
         if debug and ostype != "win32":
             match += "-debugsymbols"
 
-        if branch is not None:
+        if branch is not None and branch != "master":
             match += "-" + branch + "-latest"
         elif version is not None:
             match += "-" + version

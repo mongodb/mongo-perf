@@ -2,6 +2,7 @@ import os
 import platform
 from binarydownloader import BinaryDownloader
 import argparse
+import sys
 
 
 parser = argparse.ArgumentParser(description='Download MongoDB binaries')
@@ -29,23 +30,12 @@ if args.ostype is None:
     else:
         args.ostype = "sunos5"
 
+outpath = None
 downloader = BinaryDownloader(args.download_dir)
 try:
-    # sample calls
-    # gets linux/mongodb-linux-x86_64-v2.6-latest.tgz
-    # downloader.getBinaries("linux", branch="v2.6")
-    #
-    # gets linux/mongodb-linux-x86_64-ubuntu1204-debugsymbols-latest.tgz
-    # downloader.getBinaries("linux", platform="ubuntu1204", debug=True)
-    #
-    # gets linux/mongodb-linux-x86_64-suse11-2.7.4.tgz
-    # downloader.getBinaries("linux", version="2.7.4", platform="suse11")
-    #
-    # gets the latest master for suse 11 linux/mongodb-linux-x86_64-suse11-latest.tgz
-    # downloader.getBinaries("linux", platform="suse11")
-    #
-    # gets the latest plain linux master
-    downloader.getBinaries(args.ostype, branch=args.branch, version=args.revision, platform=args.platform)
-
+    outpath = downloader.getBinaries(args.ostype, branch=args.branch, version=args.revision, platform=args.platform)
+    sys.stdout.write(outpath)
 except Exception, e:
-    print e.message
+    sys.stderr.write(e.message)
+    sys.exit(1)
+sys.exit(0)
