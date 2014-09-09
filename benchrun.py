@@ -80,7 +80,9 @@ def main():
     buildinfo = client['test'].command("buildinfo")
     commithash = buildinfo['gitVersion']
     # Use hash to get commit_date
-    if platform.system() == 'Darwin' or platform.system() == 'Windows':
+    if platform.system() == 'Darwin' or \
+       platform.system() == 'Linux' or \
+       platform.system() == 'Windows':
       structTime = repo.commit(commithash).committed_date
       committed_date = datetime.datetime(*structTime[:6])
     else:
