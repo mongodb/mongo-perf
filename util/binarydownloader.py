@@ -83,7 +83,7 @@ class BinaryDownloader:
         if branch is not None and branch != "master":
             match += "-" + branch + "-latest"
         elif version is not None:
-            match += "-" + version
+            match += "-" + version.lstrip('r')
         else:
             match += "-latest"
 
