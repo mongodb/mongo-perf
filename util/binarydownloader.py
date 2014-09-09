@@ -77,7 +77,7 @@ class BinaryDownloader:
         if platform is not None:
             match += "-" + platform
 
-        if debug:
+        if debug and ostype != "win32":
             match += "-debugsymbols"
 
         if branch is not None:
@@ -86,7 +86,11 @@ class BinaryDownloader:
             match += "-" + version
         else:
             match += "-latest"
-        match += ".tgz"
+
+        if ostype  == "win32":
+            match += ".zip"
+        else:
+            match += ".tgz"
 
         d = pq(url='http://www.mongodb.org/dl/' + ostype + '/x86_64')
         for tr in d.items('tr'):
@@ -102,7 +106,7 @@ class BinaryDownloader:
             break
 
 
-    def getLatest(self, ostype, branch=None, version=None, platform=None, debug=False):
+    def getBinaries(self, ostype, branch=None, version=None, platform=None, debug=False):
         """
         Gets the latest set of binaries for the OS passed..
 
