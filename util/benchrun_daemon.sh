@@ -95,17 +95,19 @@ function do_git_tasks() {
         git pull
         git clean -fqdx
 
-        mkdir ${BUILD_DIR}/build || exit 1
-        cd ${BUILD_DIR}/build || exit 1
+        mkdir ${BUILD_DIR}/build
+        cd ${BUILD_DIR}/build
         if [ $THIS_PLATFORM == 'Windows' ]
         then
-            python `cygpath -w ${MPERFPATH}/util/get_binaries.py --dir "${BUILD_DIR}" --platform 2008plus` || exit 1
+            python `cygpath -w ${MPERFPATH}/util/get_binaries.py` --dir `cygpath -w "${BUILD_DIR}"` --platform 2008plus
+            unzip ${BUILD_DIR}/mongodb-*-latest.zip
+            chmod +x */bin/*.exe
         else
-            python ${MPERFPATH}/util/get_binaries.py --dir "${BUILD_DIR}" || exit 1
+            python ${MPERFPATH}/util/get_binaries.py --dir "${BUILD_DIR}"
+            tar xzpf ${BUILD_DIR}/mongodb-*-latest.tgz 
         fi
-        tar xzpf ${BUILD_DIR}/mongodb-*-latest.tgz || exit 1
-        mv */bin/* ${BUILD_DIR} || exit 1
-        BINHASH=$(${BUILD_DIR}/mongod --version | egrep git.version|perl -pe '$_="$1" if m/git.version:\s(\w+)/')
+        mv */bin/* ${BUILD_DIR}
+        BINHASH=$(${BUILD_DIR}/${MONGOD} --version | egrep git.version|perl -pe '$_="$1" if m/git.version:\s(\w+)/')
         if [ -z $BINHASH ]
         then
             echo "ERROR: could not determine git commit hash from downloaded binaries"
