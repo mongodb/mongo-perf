@@ -224,7 +224,7 @@ function runTests(threadCounts, multidb, shard, seconds, trials, reportLabel, re
             var threadCount = threadCounts[t];
             var results = []
             for (var j=0; j < trials; j++) {
-                results[j] = runTest(test, threadCount, multidb, seconds, safeGLE, writeConcernW, writeConcernJ, writeCmd);
+                results[j] = runTest(test, threadCount, multidb, shard, seconds, safeGLE, writeConcernW, writeConcernJ, writeCmd);
                 results[j]['run_end_time'] = new Date();
             }
             var values = []
