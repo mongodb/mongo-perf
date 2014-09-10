@@ -99,11 +99,11 @@ function do_git_tasks() {
         cd ${BUILD_DIR}/build
         if [ $THIS_PLATFORM == 'Windows' ]
         then
-            python `cygpath -w ${MPERFPATH}/util/get_binaries.py` --branch ${BRANCH} --dir `cygpath -w "${BUILD_DIR}"` --distribution 2008plus || exit 1
+            python `cygpath -w ${MPERFPATH}/util/get_binaries.py` --revision ${BRANCH} --dir `cygpath -w "${BUILD_DIR}"` --platform 2008plus || exit 1
             unzip ${BUILD_DIR}/mongodb-*-latest.zip || exit 1
             chmod +x */bin/*.exe
         else
-            python ${MPERFPATH}/util/get_binaries.py --branch ${BRANCH} --dir "${BUILD_DIR}" || exit 1
+            python ${MPERFPATH}/util/get_binaries.py --revision ${BRANCH} --dir "${BUILD_DIR}" || exit 1
             tar xzpf ${BUILD_DIR}/mongodb-*-latest.tgz || exit 1
         fi
         mv */bin/* ${BUILD_DIR}
