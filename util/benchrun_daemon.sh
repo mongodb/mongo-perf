@@ -95,18 +95,26 @@ function do_git_tasks() {
         git pull
         git clean -fqdx
 
-        mkdir ${BUILD_DIR}/build
-        cd ${BUILD_DIR}/build
+        cd ${BUILD_DIR}
         if [ $THIS_PLATFORM == 'Windows' ]
         then
-            python `cygpath -w ${MPERFPATH}/util/get_binaries.py` --revision ${BRANCH} --dir `cygpath -w "${BUILD_DIR}"` --distribution 2008plus || exit 1
-            unzip ${BUILD_DIR}/mongodb-*-latest.zip || exit 1
-            chmod +x */bin/*.exe
+            if [ $BRANCH == 'master' ]
+            then
+                python `cygpath -w ${MPERFPATH}/util/get_binaries.py` --dir `cygpath -w "${BUILD_DIR}/build"` --distribution 2008plus
+            else
+                python `cygpath -w ${MPERFPATH}/util/get_binaries.py` --revision ${BRANCH} --dir `cygpath -w "${BUILD_DIR}/build"` --distribution 2008plus
+            fi
         else
-            python ${MPERFPATH}/util/get_binaries.py --revision ${BRANCH} --dir "${BUILD_DIR}" || exit 1
-            tar xzpf ${BUILD_DIR}/mongodb-*-latest.tgz || exit 1
+            if [ $BRANCH == 'master' ]
+            then
+                python ${MPERFPATH}/util/get_binaries.py --dir "${BUILD_DIR}/build"
+            else
+                python ${MPERFPATH}/util/get_binaries.py --revision ${BRANCH} --dir "${BUILD_DIR}/build"
+            fi
         fi
-        mv */bin/* ${BUILD_DIR}
+        chmod +x ${BUILD_DIR}/build/${MONGOD}
+        mv ${BUILD_DIR}/build/${MONGOD} ${BUILD_DIR}
+        BINHASH=""
         BINHASH=$(${BUILD_DIR}/${MONGOD} --version | egrep git.version|perl -pe '$_="$1" if m/git.version:\s(\w+)/')
         if [ -z $BINHASH ]
         then
