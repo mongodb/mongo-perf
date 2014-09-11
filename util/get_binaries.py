@@ -144,6 +144,7 @@ def extract_tgz_binaries(archive):
     return (archive_binaries_dir, extract_dir)
 
 
+tempfile.tempdir = os.path.dirname(os.path.realpath(__file__))
 current_binaries = None
 try:
     # setup command line arguments
