@@ -149,6 +149,11 @@ function runTest(test, thread, multidb, shard, runSeconds, safe, w, j, writeCmd)
         }
     }
 
+    // the test is done, not we need drop all the collections we created
+    for (var i = 0; i < multidb; i++) {
+        collections[i].drop();
+    }
+
     return { ops_per_sec: total };
 }
 
