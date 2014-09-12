@@ -54,6 +54,7 @@ TEST_DIR=${MPERFPATH}/testcases
 SLEEPTIME=60
 # uncomment to fetch recently-built binaries from mongodb.org instead of compiling from source
 #FETCHMCI='TRUE'
+DLPATH="${MPERFPATH}/download"
 
 if [ $THIS_PLATFORM == 'Windows' ]
 then
@@ -95,27 +96,28 @@ function do_git_tasks() {
         git pull
         git clean -fqdx
 
-        cd ${BUILD_DIR}
+        cd ${MPERFPATH}
+        echo "downloading binary artifacts from MCI"
         if [ $THIS_PLATFORM == 'Windows' ]
         then
             if [ $BRANCH == 'master' ]
             then
-                python `cygpath -w ${MPERFPATH}/util/get_binaries.py` --dir `cygpath -w "${BUILD_DIR}/build"` --distribution 2008plus
+                python `cygpath -w ${MPERFPATH}/util/get_binaries.py` --dir `cygpath -w "${DLPATH}"` --distribution 2008plus
             else
-                python `cygpath -w ${MPERFPATH}/util/get_binaries.py` --revision ${BRANCH} --dir `cygpath -w "${BUILD_DIR}/build"` --distribution 2008plus
+                python `cygpath -w ${MPERFPATH}/util/get_binaries.py` --revision ${BRANCH} --dir `cygpath -w "${DLPATH}"` --distribution 2008plus
             fi
         else
             if [ $BRANCH == 'master' ]
             then
-                python ${MPERFPATH}/util/get_binaries.py --dir "${BUILD_DIR}/build"
+                python ${MPERFPATH}/util/get_binaries.py --dir "${DLPATH}"
             else
-                python ${MPERFPATH}/util/get_binaries.py --revision ${BRANCH} --dir "${BUILD_DIR}/build"
+                python ${MPERFPATH}/util/get_binaries.py --revision ${BRANCH} --dir "${DLPATH}"
             fi
         fi
-        chmod +x ${BUILD_DIR}/build/${MONGOD}
-        mv ${BUILD_DIR}/build/${MONGOD} ${BUILD_DIR}
+        chmod +x ${DLPATH}/${MONGOD}
+        cp -p ${DLPATH}/${MONGOD} ${BUILD_DIR}
         BINHASH=""
-        BINHASH=$(${BUILD_DIR}/${MONGOD} --version | egrep git.version|perl -pe '$_="$1" if m/git.version:\s(\w+)/')
+        BINHASH=$(${DLPATH}/${MONGOD} --version | egrep git.version|perl -pe '$_="$1" if m/git.version:\s(\w+)/')
         if [ -z $BINHASH ]
         then
             echo "ERROR: could not determine git commit hash from downloaded binaries"
