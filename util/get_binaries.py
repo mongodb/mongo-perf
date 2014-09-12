@@ -19,6 +19,10 @@ from pyquery import PyQuery as pq
 
 
 class CurrentBinaries:
+    """
+    CurrentBinaries class structure to get/save downloaded information
+    """
+
     def __init__(self, timestamp=None, branch=None, revision=None, os_type=None, distribution=None):
         self.timestamp = timestamp
         self.revision = revision
@@ -28,7 +32,11 @@ class CurrentBinaries:
 
 
 class BinaryDownload:
-    def __init__(self, link=None, timestamp=None, path=None, archive=None, archive_type=None):
+    """
+    BinaryDownload class to capture
+    """
+
+    def __init__(self, link=None, timestamp=None, archive=None, archive_type=None):
         self.link = link
         self.timestamp = timestamp
         self.archive = archive
@@ -36,6 +44,10 @@ class BinaryDownload:
 
 
 class BinariesNotAvailableError(Exception):
+    """
+    BinariesNotAvailableError Exception to be thrown when no Binary package is found
+    """
+
     def __init__(self, value):
         self.value = value
 
@@ -45,9 +57,9 @@ class BinariesNotAvailableError(Exception):
 
 def get_available(os_type, branch=None, version=None, distribution=None, debug=False):
     """
-    Populates the self.download information from the www.mogodb.org/dl site for the OS type passed into the class
-    get the html for the downloads page and parse for the download link and the timestamp
-    based on the pages structure of
+    Gets a BinaryDownload class with pulled from the www.mogodb.org/dl site matching the needed binaries package.
+    It gets the html for the downloads page and parse for the download link and the timestamp based on the pages
+    structure of
     <tr>
         <td><a href="http://downloads.mongodb.org/osx/mongodb-osx-x86_64-v2.4-latest.tgz">osx/mongodb-osx-x86_64-v2.4-latest.tgz</a></td>
         <td>2014-09-03 10:18:19</td>
@@ -57,6 +69,12 @@ def get_available(os_type, branch=None, version=None, distribution=None, debug=F
         <td></td>
         <td></td>
     </tr>
+    :param os_type: the os type to look for  should be osx, linux, win32, or sunos5
+    :param branch: the branch to get the latest for eg. v2.6, v2.4, master.  Overrides version.
+    :param version: the exact version to get the binaries for eg 2.6.4 or r2.4.6
+    :param distribution: the distribution to get eg. suse11, rhel70, rhel62, ubuntu1404, debian71, amazon, 2008plus
+    :param debug: binary if we should grab the debug symbols version
+    :return:
     """
     # build up text to look for
     match = os_type + "/mongodb-" + os_type + "-x86_64"
@@ -96,8 +114,8 @@ def get_available(os_type, branch=None, version=None, distribution=None, debug=F
 
 def get_binaries(download):
     """
-    :param download:
-    :return: the path to the latest file downloaded or gotten
+    :param download: a valid BinaryDownload class with the link needed to grab the binaries
+    :return: a BinaryDownload class with the archive path filled in to the valid downloaded archive
     """
     # do the download if we need to now
     if download is not None:
@@ -111,6 +129,11 @@ def get_binaries(download):
 
 
 def extract_zip_binaries(archive):
+    """
+    Extracts the binaries from a zip archive
+    :param archive: the path to the archive to extract
+    :return: a tuple with the path to the extracted archives bin dir  and a path to the top level dir where it was extracted to
+    """
     archive_binaries_dir = None
     zfile = zipfile.ZipFile(archive)
     extract_dir = tempfile.mkdtemp()
@@ -128,6 +151,11 @@ def extract_zip_binaries(archive):
 
 
 def extract_tgz_binaries(archive):
+    """
+    Extracts the binaries form a compressed tar archive
+    :param archive: the path to the archive to extract
+    :return: a tuple with the path to the extracted archives bin dir  and a path to the top level dir where it was extracted to
+    """
     archive_binaries_dir = None
     tfile = tarfile.open(archive)
     extract_dir = tempfile.mkdtemp()
@@ -143,7 +171,8 @@ def extract_tgz_binaries(archive):
     tfile.close()
     return (archive_binaries_dir, extract_dir)
 
-
+#### Main Section ####
+# set the temporary path to the local directory
 tempfile.tempdir = os.path.dirname(os.path.realpath(__file__))
 current_binaries = None
 try:
