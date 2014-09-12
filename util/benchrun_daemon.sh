@@ -116,6 +116,7 @@ function do_git_tasks() {
         fi
         chmod +x ${DLPATH}/${MONGOD}
         cp -p ${DLPATH}/${MONGOD} ${BUILD_DIR}
+        cp -p ${DLPATH}/${MONGO} ${BUILD_DIR}
         BINHASH=""
         BINHASH=$(${DLPATH}/${MONGOD} --version | egrep git.version|perl -pe '$_="$1" if m/git.version:\s(\w+)/')
         if [ -z $BINHASH ]
