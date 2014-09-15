@@ -4,8 +4,6 @@ from urllib2 import URLError, HTTPError
 import argparse
 import sys
 import pickle
-from datetime import datetime
-import time
 import os
 from os import listdir
 from urllib2 import urlopen
@@ -15,19 +13,18 @@ import tarfile
 import shutil
 from zipfile import BadZipfile
 
-from pyquery import PyQuery as pq
-
 
 class CurrentBinaries:
     """
     CurrentBinaries class structure to get/save downloaded information
     """
 
-    def __init__(self, timestamp=None, branch=None, revision=None, os_type=None, distribution=None):
-        self.timestamp = timestamp
+    def __init__(self, md5=None, branch=None, revision=None, os_type=None, distribution=None, cpu_arch=None):
+        self.md5 = md5
         self.revision = revision
         self.branch = branch
         self.os_type = os_type
+        self.cpu_arch = cpu_arch
         self.distribution = distribution
 
 
@@ -36,9 +33,9 @@ class BinaryDownload:
     BinaryDownload class to capture
     """
 
-    def __init__(self, link=None, timestamp=None, archive=None, archive_type=None):
+    def __init__(self, link=None, archive=None, archive_type=None, md5=None):
         self.link = link
-        self.timestamp = timestamp
+        self.md5 = md5
         self.archive = archive
         self.archive_type = archive_type
 
@@ -55,7 +52,7 @@ class BinariesNotAvailableError(Exception):
         return repr(self.value)
 
 
-def get_available(os_type, branch=None, version=None, distribution=None, debug=False):
+def get_available(os_type, branch=None, version=None, distribution=None, cpu_arch="x86_64", debug=False):
     """
     Gets a BinaryDownload class with pulled from the www.mogodb.org/dl site matching the needed binaries package.
     It gets the html for the downloads page and parse for the download link and the timestamp based on the pages
@@ -73,11 +70,13 @@ def get_available(os_type, branch=None, version=None, distribution=None, debug=F
     :param branch: the branch to get the latest for eg. v2.6, v2.4, master.  Overrides version.
     :param version: the exact version to get the binaries for eg 2.6.4 or r2.4.6
     :param distribution: the distribution to get eg. suse11, rhel70, rhel62, ubuntu1404, debian71, amazon, 2008plus
+    :param cpu_arch: the cpu_architecture to get (x86_64, i386, i686)
     :param debug: binary if we should grab the debug symbols version
     :return:
     """
     # build up text to look for
-    match = os_type + "/mongodb-" + os_type + "-x86_64"
+    available = None
+    match = "http://downloads.mongodb.org/" + os_type + "/mongodb-" + os_type + "-" + cpu_arch
     if distribution is not None:
         match += "-" + distribution
 
@@ -98,18 +97,14 @@ def get_available(os_type, branch=None, version=None, distribution=None, debug=F
         match += ".tgz"
         type = "tgz"
 
-    d = pq(url='http://www.mongodb.org/dl/' + os_type + '/x86_64')
-    for tr in d.items('tr'):
-        a = tr.find('td').eq(0).find('a')
-        if a.attr.href is None:
-            continue
-        if a.text().rstrip('\n') != match:
-            continue
-        ts_td = tr.find('td').eq(1)
-        dt = time.mktime(datetime.strptime(ts_td.text().rstrip('\n'), '%Y-%m-%d %H:%M:%S').timetuple())
-        available = BinaryDownload(link=a.attr.href, timestamp=dt, archive_type=type)
-        return available
-    raise BinariesNotAvailableError("Unable to find binaries matching %s" % match)
+    md5_match = match + ".md5"
+
+    try:
+        download_md5 = urlopen(md5_match).read()
+        available = BinaryDownload(link=match, md5=download_md5, archive_type=type)
+    except URLError as e:
+        raise BinariesNotAvailableError("Error downloading md5 form %s: error: %s" % (md5_match, e.message))
+    return available
 
 
 def get_binaries(download):
@@ -189,6 +184,10 @@ try:
                         help='the distribution to get the binaries for')
     parser.add_argument('--os', dest='os_type', action='store',
                         help='override the os to grab the binaries for (linux, osx, win32, sunos5)', default=None)
+    parser.add_argument('--cpu', dest='cpu_arch', action='store',
+                        help='grabs the CPU architecture (defaults to x86_64 can be i686', default="x86_64")
+    parser.add_argument('--debug', action='store_true', help='if true grab the debugsymbols version of the binaries')
+
     args = parser.parse_args()
 
     # determine OS type if not passed in
@@ -211,7 +210,8 @@ try:
         pkl_file.close()
 
     # get the available binaries
-    available = get_available(args.os_type, branch=args.branch, version=args.revision, distribution=args.distribution)
+    available = get_available(args.os_type, branch=args.branch, version=args.revision, distribution=args.distribution,
+                              cpu_arch=args.cpu_arch)
 
     # see if we need to actually do the download based on
     # the check file and the directory
@@ -221,7 +221,7 @@ try:
                 or current_binaries.branch != args.branch \
                 or current_binaries.distribution != args.distribution \
                 or current_binaries.os_type != args.os_type \
-                or current_binaries.timestamp < available.timestamp:
+                or current_binaries.md5 != available.md5:
             do_download = True
             shutil.rmtree(args.download_dir)
     elif current_binaries is None and os.path.isdir(args.download_dir):
@@ -253,7 +253,7 @@ try:
         os.remove(download.archive)
 
         # write the new binaries info to the checkfile
-        current_binaries = CurrentBinaries(timestamp=download.timestamp, revision=args.revision, branch=args.branch,
+        current_binaries = CurrentBinaries(md5=download.md5, revision=args.revision, branch=args.branch,
                                            distribution=args.distribution, os_type=args.os_type)
         output = open(current_binaries_file, 'wb+')
         pickle.dump(current_binaries, output)
