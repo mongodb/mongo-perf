@@ -5,13 +5,17 @@
 # script should work on Linux, Solaris, MacOSX
 # for Windows, run under cygwin
 THIS_PLATFORM=`uname -s || echo unknown`
+# environment details, within Windows or Linux
+PLATFORM_SUFFIX=""
 if [ $THIS_PLATFORM == 'CYGWIN_NT-6.1' ]
 then
     THIS_PLATFORM='Windows'
+    PLATFORM_SUFFIX="2K8"
 fi
 if [ $THIS_PLATFORM == 'CYGWIN_NT-6.3' ]
 then
     THIS_PLATFORM='Windows'
+    PLATFORM_SUFFIX="2K12"
 fi
 
 # *nix user name
@@ -27,7 +31,6 @@ fi
 MPERFPATH=${MPERFBASE}/mongo-perf
 # build directory
 BUILD_DIR=${MPERFBASE}/mongo
-export BUILD_DIR
 # test database
 DBPATH=${MPERFBASE}/db
 # executables
@@ -58,7 +61,6 @@ DLPATH="${MPERFPATH}/download"
 
 if [ $THIS_PLATFORM == 'Windows' ]
 then
-    THIS_PLATFORM='Windows'
     SCONSPATH=scons.bat
     SHELLPATH=`cygpath -w ${SHELLPATH}.exe`
     MONGOD=mongod.exe
@@ -190,9 +192,9 @@ function run_mongo-perf() {
     # Run with single DB.
     if [ $THIS_PLATFORM == 'Windows' ]
     then
-        python benchrun.py -l "${TIME}_${THIS_PLATFORM}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 7 --mongo-repo-path `cygpath -w ${BUILD_DIR}` --safe false -w 0 -j false --writeCmd false
+        python benchrun.py -l "${TIME}_${THIS_PLATFORM}${PLATFORM_SUFFIX}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 7 --mongo-repo-path `cygpath -w ${BUILD_DIR}` --safe false -w 0 -j false --writeCmd false
     else
-        python benchrun.py -l "${TIME}_${THIS_PLATFORM}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 7 --mongo-repo-path ${BUILD_DIR} --safe false -w 0 -j false --writeCmd false
+        python benchrun.py -l "${TIME}_${THIS_PLATFORM}${PLATFORM_SUFFIX}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 7 --mongo-repo-path ${BUILD_DIR} --safe false -w 0 -j false --writeCmd false
     fi
 
     # drop linux caches
@@ -201,9 +203,9 @@ function run_mongo-perf() {
     # Run with multi-DB (4 DBs.)
     if [ $THIS_PLATFORM == 'Windows' ]
     then
-        python benchrun.py -l "${TIME}_${THIS_PLATFORM}-multi" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 7 --mongo-repo-path `cygpath -w ${BUILD_DIR}` --safe false -w 0 -j false --writeCmd false
+        python benchrun.py -l "${TIME}_${THIS_PLATFORM}${PLATFORM_SUFFIX}-multi" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 7 --mongo-repo-path `cygpath -w ${BUILD_DIR}` --safe false -w 0 -j false --writeCmd false
     else
-        python benchrun.py -l "${TIME}_${THIS_PLATFORM}-multi" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 7 --mongo-repo-path ${BUILD_DIR} --safe false -w 0 -j false --writeCmd false
+        python benchrun.py -l "${TIME}_${THIS_PLATFORM}${PLATFORM_SUFFIX}-multi" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 7 --mongo-repo-path ${BUILD_DIR} --safe false -w 0 -j false --writeCmd false
     fi
 
     # Kill the mongod process and perform cleanup.
