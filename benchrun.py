@@ -73,19 +73,23 @@ def main():
           "print('db version: ' + db.version()); db.serverBuildInfo().gitVersion;"])
     print("")
 
-    # Get commit info
-    repo = git.Repo(args.repo_path)
-    # Get buildinfo in order to get commit hash
-    client = pymongo.MongoClient()
-    buildinfo = client['test'].command("buildinfo")
-    commithash = buildinfo['gitVersion']
-    # Use hash to get commit_date
     try:
-      structTime = repo.commit(commithash).committed_date
-      committed_date = datetime.datetime(*structTime[:6])
-    except:
-      scalarTime = repo.commit(commithash).committed_date
-      committed_date = datetime.datetime.fromtimestamp(scalarTime)
+    # Get commit info
+        repo = git.Repo(args.repo_path)
+        # Get buildinfo in order to get commit hash
+        client = pymongo.MongoClient()
+        buildinfo = client['test'].command("buildinfo")
+        commithash = buildinfo['gitVersion']
+        # Use hash to get commit_date
+        try:
+          structTime = repo.commit(commithash).committed_date
+          committed_date = datetime.datetime(*structTime[:6])
+        except:
+          scalarTime = repo.commit(commithash).committed_date
+          committed_date = datetime.datetime.fromtimestamp(scalarTime)
+    except Exception,e:
+        print(e)
+        committed_date = "none"
 
     # Open a mongo shell subprocess and load necessary files.
     mongo_proc = Popen([args.shellpath, "--norc"], stdin=PIPE, stdout=PIPE)
