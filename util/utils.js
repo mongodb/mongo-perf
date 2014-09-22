@@ -149,7 +149,7 @@ function runTest(test, thread, multidb, shard, runSeconds, safe, w, j, writeCmd)
         }
     }
 
-    // the test is done, not we need drop all the collections we created
+    // drop all the collections created by this case
     for (var i = 0; i < multidb; i++) {
         collections[i].drop();
     }
