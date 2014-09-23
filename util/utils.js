@@ -67,7 +67,9 @@ function runTest(test, thread, multidb, shard, runSeconds, safe, w, j, writeCmd)
         // For loop is INSIDE for-each loop so that duplicated instructions are adjacent.
         // (& should not be factored out for that reason.)
         for (var i = 0; i < multidb; i++) {
-            new_ops.push(prepOp(collections[i], z));
+            var op = Object.extend( {}, z, true );
+            op = prepOp(collections[i], op);
+            new_ops.push(op);
         }
     });
 
