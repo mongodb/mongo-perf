@@ -1,3 +1,15 @@
+/*
+    Due to the lacking of secondary operator support, such as RAND_INT
+    in sub-field, all the locations in the current Geo cases are hardcoded. 
+    Tests as the current form are proved to be useful to spot performance 
+    issue.
+
+    Once the secondary operators are supported, we shall re-evaluate how
+    to add random location into the tests. Please note that it has been 
+    observed that query from different central point may show big 
+    performance variance. 
+ */
+
 
 if ( typeof(tests) != "object" )
     tests = [];
