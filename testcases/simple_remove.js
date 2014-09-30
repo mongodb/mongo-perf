@@ -2,7 +2,7 @@ if ( typeof(tests) != "object" ) {
     tests = [];
 }
 
-tests.push( { name: "Remove.IntId",
+tests.push( { name: "Remove.v2.IntId",
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 1000; i++ ) {
@@ -10,15 +10,14 @@ tests.push( { name: "Remove.IntId",
                   }
               },
               ops: [
+                  { op: "let", target: "x", value: {"#RAND_INT_PLUS_THREAD": [0,1000]}},
                   { op:  "insert",
-                    safe: false, w: 0, j: false, writeCmd: false,
-                    doc: { _id : { "#RAND_INT" : [ 0, 1000 ] } } },
+                    doc: { _id : { "#VARIABLE" : "x" } } },
                   { op:  "remove",
-                    safe: false, w: 0, j: false, writeCmd: false,
-                    query: { _id : { "#RAND_INT" : [ 0, 1000 ] } } }
+                    query: { _id : { "#VARIABLE" : "x" } } },
               ] } );
 
-tests.push( { name: "Remove.IntNonIdNoIndex",
+tests.push( { name: "Remove.v2.IntNonIdNoIndex",
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 1000; i++ ) {
@@ -26,15 +25,14 @@ tests.push( { name: "Remove.IntNonIdNoIndex",
                   }
               },
               ops: [
+                  { op: "let", target: "x", value: {"#RAND_INT_PLUS_THREAD": [0,1000]}},
                   { op:  "insert",
-                    safe: false, w: 0, j: false, writeCmd: false,
-                    doc: { x : { "#RAND_INT" : [ 0, 1000 ] } } },
+                    doc: { x : { "#VARIABLE" : "x" } } },
                   { op:  "remove",
-                    safe: false, w: 0, j: false, writeCmd: false,
-                    query: { x : { "#RAND_INT" : [ 0, 1000 ] } } }
+                    query: { x : { "#VARIABLE" : "x" } } }
               ] } );
 
-tests.push( { name: "Remove.IntNonIdIndex",
+tests.push( { name: "Remove.v2.IntNonIdIndex",
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 1000; i++ ) {
@@ -43,10 +41,9 @@ tests.push( { name: "Remove.IntNonIdIndex",
                   collection.ensureIndex( { x : 1 } );
               },
               ops: [
+                  { op: "let", target: "x", value: {"#RAND_INT_PLUS_THREAD": [0,1000]}},
                   { op:  "insert",
-                    safe: false, w: 0, j: false, writeCmd: false,
-                    doc: { x : { "#RAND_INT" : [ 0, 1000 ] } } },
+                    doc: { x : { "#VARIABLE" : "x" } } },
                   { op:  "remove",
-                    safe: false, w: 0, j: false, writeCmd: false,
-                    query: { x : { "#RAND_INT" : [ 0, 1000 ] } } }
+                    query: { x : { "#VARIABLE" : "x" } } }
               ] } );

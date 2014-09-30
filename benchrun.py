@@ -26,6 +26,9 @@ def parse_arguments():
     parser.add_argument('--trialCount', dest='trials',
                         help='Specify how many trials to run',
                         type=int, default=1)
+    parser.add_argument('--shard', dest='shard',
+                        help='Specify shard cluster the test should use, 0 - no shard, 1 - shard with {_id: hashed}, 2 - shard with {_id:1}',
+                        type=int, default=0)
     parser.add_argument('-l', '--label', dest='reportlabel',
                         help='Specify the label for the report stats saved to bench_results db',
                         default='')
@@ -34,6 +37,9 @@ def parse_arguments():
                         default='localhost')
     parser.add_argument('--rport', '--reportport', dest='reportport',
                         help='Port of the mongod where the results will be saved',
+                        default='27017')
+    parser.add_argument('-p', '--port', dest='port',
+                        help='Port of the mongod/mongos under test',
                         default='27017')
     parser.add_argument('-s', '--shell', dest='shellpath',
                         help="Path to the mongo shell executable to use.",
@@ -68,27 +74,39 @@ def main():
         print("MultiDB option must be greater than zero. Will be set to 1.")
         args.multidb = 1
 
+    if args.shard < 0:
+        print("shard option must be [0, 2]. Will be set to 0.")
+        args.shard = 0
+    elif args.shard > 2:
+        print("shard option must be [0, 2] . Will be set to 2.")
+        args.shard = 2
+
     # Print version info.
-    call([args.shellpath, "--norc", "--eval",
+    call([args.shellpath, "--norc", "--port", args.port, "--eval",
           "print('db version: ' + db.version()); db.serverBuildInfo().gitVersion;"])
     print("")
 
-    # Get commit info
-    repo = git.Repo(args.repo_path)
-    # Get buildinfo in order to get commit hash
-    client = pymongo.MongoClient()
-    buildinfo = client['test'].command("buildinfo")
-    commithash = buildinfo['gitVersion']
-    # Use hash to get commit_date
     try:
-      structTime = repo.commit(commithash).committed_date
-      committed_date = datetime.datetime(*structTime[:6])
-    except:
-      scalarTime = repo.commit(commithash).committed_date
-      committed_date = datetime.datetime.fromtimestamp(scalarTime)
+        # Get commit info
+        repo = git.Repo(args.repo_path)
+        # Get buildinfo in order to get commit hash
+        client = pymongo.MongoClient()
+        buildinfo = client['test'].command("buildinfo")
+        commithash = buildinfo['gitVersion']
+        # Use hash to get commit_date
+        try:
+          structTime = repo.commit(commithash).committed_date
+          committed_date = datetime.datetime(*structTime[:6])
+        except:
+          scalarTime = repo.commit(commithash).committed_date
+          committed_date = datetime.datetime.fromtimestamp(scalarTime)
+    except Exception,e:
+        print(e)
+        committed_date = "none"
+
 
     # Open a mongo shell subprocess and load necessary files.
-    mongo_proc = Popen([args.shellpath, "--norc"], stdin=PIPE, stdout=PIPE)
+    mongo_proc = Popen([args.shellpath, "--norc", "--port", args.port], stdin=PIPE, stdout=PIPE)
     mongo_proc.stdin.write("load('util/utils.js')\n")
     print "load('util/utils.js')"
     for testfile in args.testfiles:
@@ -113,6 +131,7 @@ def main():
     cmdstr = ("runTests(" +
               str(args.threads) + ", " +
               str(args.multidb) + ", " +
+              str(args.shard) + ", " +
               str(args.seconds) + ", " +
               str(args.trials) + ", " +
               "'" + args.reportlabel + "', " +

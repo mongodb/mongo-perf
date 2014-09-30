@@ -50,7 +50,7 @@ function formatRunDate(now) {
             pad(now.getDate()));
 }
 
-function runTest(test, thread, multidb, runSeconds, safe, w, j, writeCmd) {
+function runTest(test, thread, multidb, shard, runSeconds, safe, w, j, writeCmd) {
     var collections = [];
 
     for (var i = 0; i < multidb; i++) {
@@ -67,7 +67,9 @@ function runTest(test, thread, multidb, runSeconds, safe, w, j, writeCmd) {
         // For loop is INSIDE for-each loop so that duplicated instructions are adjacent.
         // (& should not be factored out for that reason.)
         for (var i = 0; i < multidb; i++) {
-            new_ops.push(prepOp(collections[i], z));
+            var op = Object.extend( {}, z, true );
+            op = prepOp(collections[i], op);
+            new_ops.push(op);
         }
     });
 
@@ -109,6 +111,17 @@ function runTest(test, thread, multidb, runSeconds, safe, w, j, writeCmd) {
         // This will silently fail and with no side-effects if the collection
         // already exists.
         theDb.createCollection(collections[i].getName());
+
+        if ( shard == 1 ) {
+            // when shard is enabled, we want to enable shard
+            collections[i].ensureIndex( { _id: "hashed" } );
+
+            sh.enableSharding("test" + i);
+            var t = sh.shardCollection("test" + i + "." + collections[i].getName(), {_id: "hashed"});
+        } else if ( shard == 2) {
+            sh.enableSharding("test" + i);
+            var t = sh.shardCollection("test" + i + "." + collections[i].getName(), {_id: 1});
+        }
     }
 
     // build a json document with arguments.
@@ -138,6 +151,11 @@ function runTest(test, thread, multidb, runSeconds, safe, w, j, writeCmd) {
         }
     }
 
+    // drop all the collections created by this case
+    for (var i = 0; i < multidb; i++) {
+        collections[i].drop();
+    }
+
     return { ops_per_sec: total };
 }
 
@@ -162,7 +180,7 @@ function getMean( values ) {
     return sum / values.length;
 }
 
-function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHost, reportPort, commitDate, safeGLE, writeConcernW, writeConcernJ, writeCmd) {
+function runTests(threadCounts, multidb, shard, seconds, trials, reportLabel, reportHost, reportPort, commitDate, safeGLE, writeConcernW, writeConcernJ, writeCmd) {
     var testResults = {};
     // The following are only used when reportLabel is not None.
     var resultsCollection = db.getSiblingDB("bench_results").raw;
@@ -213,7 +231,7 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHos
             var threadCount = threadCounts[t];
             var results = []
             for (var j=0; j < trials; j++) {
-                results[j] = runTest(test, threadCount, multidb, seconds, safeGLE, writeConcernW, writeConcernJ, writeCmd);
+                results[j] = runTest(test, threadCount, multidb, shard, seconds, safeGLE, writeConcernW, writeConcernJ, writeCmd);
                 results[j]['run_end_time'] = new Date();
             }
             var values = []
