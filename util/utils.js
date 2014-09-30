@@ -50,8 +50,21 @@ function formatRunDate(now) {
             pad(now.getDate()));
 }
 
-function runTest(test, thread, multidb, shard, runSeconds, safe, w, j, writeCmd) {
+
+function runTest(test, thread, multidb, runSeconds) {
+    var writeOptions = {}
+    writeOptions.safeGLE = false;
+    writeOptions.writeConcernW = 0;
+    writeOptions.writeConcernJ = false;
+    writeOptions.writeCmd = false;
+    shard = 0;
+
+    return runTest2(test, thread, multidb, shard, runSeconds, writeOptions);
+}
+
+function runTest2(test, thread, multidb, shard, runSeconds, testBed, writeOptions) {
     var collections = [];
+
 
     for (var i = 0; i < multidb; i++) {
         var sibling_db = db.getSiblingDB('test' + i);
@@ -80,20 +93,20 @@ function runTest(test, thread, multidb, shard, runSeconds, safe, w, j, writeCmd)
     new_ops.forEach(function(z) {
         //  set safe mode to call GLE every op
         if ("safe" in z) {
-            //z.safe = safe;
+            //z.safe = writeOptions.safeGLE;
         }
         //  w write concern
         if ("w" in z) {
-            //z.w = w;
+            //z.w = writeOptions.writeConcernW;
         }
         //  j write concern (boolean)
         if ("j" in z) {
-            //z.j = j;
+            //z.j = writeOptions.writeConcernJ;
         }
         //  use write command ILO legacy update, remove or insert op
         //  n.b. currently only one op will be in the array
         if ("writeCmd" in z) {
-            //z.writeCmd = writeCmd;
+            //z.writeCmd = writeOptions.writeCmd;
         }
     });
 
@@ -180,7 +193,28 @@ function getMean( values ) {
     return sum / values.length;
 }
 
-function runTests(threadCounts, multidb, shard, seconds, trials, reportLabel, reportHost, reportPort, commitDate, safeGLE, writeConcernW, writeConcernJ, writeCmd) {
+function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHost, reportPort) {
+
+    var writeOptions = {}
+    // write concern, write command mode
+    writeOptions.safeGLE = false
+    writeOptions.writeConcernW = 0
+    writeOptions.writeConcernJ = false
+    writeOptions.writeCmdMode = false
+
+    var testBed = {}
+    // test harness, client and server info
+    testBed.harness = {}
+    testBed.harness.name = "mongo-perf"
+    testBed.harness.version = "unknown"
+    testBed.harness.git_hash = "unknown"
+    testBed.server_git_commit_date = new Date()
+
+    return runTests2(threadCounts, multidb, seconds, trials, reportLabel, reportHost, reportPort, testBed);
+}
+
+function runTests2(threadCounts, multidb, shard, seconds, trials, reportLabel, reportHost, reportPort, writeOptions, testBed) {
+
     var testResults = {};
     // The following are only used when reportLabel is not None.
     var resultsCollection = db.getSiblingDB("bench_results").raw;
@@ -199,15 +233,17 @@ function runTests(threadCounts, multidb, shard, seconds, trials, reportLabel, re
         var startTime = new Date();
         myId = new ObjectId();
         var bi = db.runCommand("buildInfo");
-        var basicFields = {
-            commit:      bi.gitVersion,
-            label:       reportLabel,
-            platform:    bi.sysInfo.split(" ")[0],
-            run_date:    formatRunDate(startTime),
-            run_time:    startTime,
-            commit_date: new Date(commitDate),
-            version:     bi.version
-        };
+
+        var basicFields = {}
+        basicFields = testBed // Map
+        basicFields.commit = bi.gitVersion
+        basicFields.label = reportLabel
+        basicFields.platform = bi.sysInfo.split(" ")[0]
+        basicFields.run_date = formatRunDate(startTime)
+        basicFields.run_time = startTime
+        basicFields.commit_date = new Date(testBed.server_git_commit_date)
+        basicFields.version = bi.version
+        basicFields.writeOptions = writeOptions // Map
 
         var oldDoc = resultsCollection.findOne({ label: reportLabel });
         if (oldDoc) {
@@ -231,8 +267,7 @@ function runTests(threadCounts, multidb, shard, seconds, trials, reportLabel, re
             var threadCount = threadCounts[t];
             var results = []
             for (var j=0; j < trials; j++) {
-                results[j] = runTest(test, threadCount, multidb, shard, seconds, safeGLE, writeConcernW, writeConcernJ, writeCmd);
-                results[j]['run_end_time'] = new Date();
+                results[j] = runTest2(test, threadCount, multidb, shard, seconds, testBed, writeOptions);
             }
             var values = []
             for (var j=0; j < trials; j++) {

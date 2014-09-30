@@ -276,9 +276,14 @@ def get_rows(commit_regex, start_date, end_date, label_regex, version_regex):
         else:
             myDate = 'legacy'
 
+        if 'version' in record.keys():
+            myVersion = record["version"]
+        else:
+            myVersion = 'pending'
+
         tmpdoc = {"commit": record["commit"],
                   "label": record["label"],
-                  "version": record["version"],
+                  "version": myVersion,
                   "date": myDate,
                   "_id": str(record["_id"])}
         rows.append(tmpdoc) 
