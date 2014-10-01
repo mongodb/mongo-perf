@@ -14,36 +14,62 @@
 
 """Web app for mongo-perf"""
 
-import sys
 import json
-import pymongo
-import re
-import bson
-from bottle import *
-import logging as logr
-import logging.handlers
-from datetime import datetime
 from collections import defaultdict
 from copy import copy
+from ConfigParser import SafeConfigParser
+
+import pymongo
+import bson
+from bottle import *
+import argparse
+
+
+default_options = {
+    'database_hostname': 'localhost',
+    'database_port': 27017,
+    'database_replica_set': 'none',
+    'database_name': 'bench_results',
+    'server_port': 8080,
+    'server_bindip': '0.0.0.0'
+}
+
+# setup command line arguments
+argument_parser = argparse.ArgumentParser(description='The mongo-perf web server.')
+argument_parser.add_argument('--mode', dest='mode', action='store', default='prod', choices=['prod','devel'], help='The mode to run the mongo-perf server in')
+args = argument_parser.parse_args()
+
+config = SafeConfigParser(defaults=default_options)
+if args.mode == 'prod':
+    config_files = ['mongo-perf-prod.ini']
+else:
+    config_files = ['mongo-perf-devel.ini']
+config.read(config_files)
+if not config.has_section("mongo-perf"):
+    config.add_section("mongo-perf")
 
 # performance metrics are stored in mongod
-MONGO_PERF_HOST = "mongo-perf-db-1.vpc3.10gen.cc"
-MONGO_PERF_PORT = 27017
-# undefine if no replica set
-REPLICA_SET = "mongo-perf"
-# database name
-MP_DB_NAME = "bench_results"
+# database info
+DATABASE_REPLICA_SET = config.get(section='mongo-perf', option='database_replica_set')
+DATABASE_HOST = config.get(section='mongo-perf', option='database_hostname')
+DATABASE_PORT = config.get(section='mongo-perf', option='database_port', raw=True)
+DATABASE_NAME = config.get(section='mongo-perf', option='database_name')
+
+# web server settings
+SERVER_BIND_IP = config.get(section='mongo-perf', option='server_bindip')
+SERVER_PORT = config.get(section='mongo-perf', option='server_port', raw=True)
 
 # connect to our standalone, or replica set database
-if not 'REPLICA_SET' in locals():
-    db = pymongo.Connection(host=MONGO_PERF_HOST, port=MONGO_PERF_PORT)[MP_DB_NAME]
+if DATABASE_REPLICA_SET == 'none':
+    db = pymongo.Connection(host=DATABASE_HOST, port=DATABASE_PORT)[DATABASE_NAME]
 else:
-    db = pymongo.Connection(host=MONGO_PERF_HOST, port=MONGO_PERF_PORT, replicaSet=REPLICA_SET)[MP_DB_NAME]
+    db = pymongo.Connection(host=DATABASE_HOST, port=DATABASE_PORT, replicaSet=DATABASE_REPLICA_SET)[DATABASE_NAME]
 
 
 @route('/static/:filename#.*#')
 def send_static(filename):
     return static_file(filename, root='./static')
+
 
 def gen_query(labels, dates, versions, start, end, limit, ids, commits, engines):
     if start:
@@ -65,7 +91,7 @@ def gen_query(labels, dates, versions, start, end, limit, ids, commits, engines)
     if dates:
         if dates.startswith('/') and dates.endswith('/'):
             date_query = {'run_date': {'$regex':
-                                       dates[1:-1], '$options': 'i'}}
+                                           dates[1:-1], '$options': 'i'}}
         else:
             date_query = {'run_date': {'$in': dates}}
     else:
@@ -74,7 +100,7 @@ def gen_query(labels, dates, versions, start, end, limit, ids, commits, engines)
     if labels:
         if labels.startswith('/') and labels.endswith('/'):
             label_query = {'label': {'$regex':
-                                     labels[1:-1], '$options': 'i'}}
+                                         labels[1:-1], '$options': 'i'}}
         else:
             label_query = {'label': {'$in': labels}}
     else:
@@ -83,7 +109,7 @@ def gen_query(labels, dates, versions, start, end, limit, ids, commits, engines)
     if versions:
         if versions.startswith('/') and versions.endswith('/'):
             version_query = {'version': {'$regex':
-                                         versions[1:-1], '$options': 'i'}}
+                                             versions[1:-1], '$options': 'i'}}
         else:
             version_query = {'version': {'$in': versions}}
     else:
@@ -92,7 +118,7 @@ def gen_query(labels, dates, versions, start, end, limit, ids, commits, engines)
     if engines:
         if engines.startswith('/') and engines.endswith('/'):
             engines_query = {'server_storage_engine': {'$regex':
-                                        engines[1:-1], '$options': 'i'}}
+                                                           engines[1:-1], '$options': 'i'}}
         else:
             engines_query = {'server_storage_engine': {'$in': engines}}
     else:
@@ -108,20 +134,21 @@ def gen_query(labels, dates, versions, start, end, limit, ids, commits, engines)
 
     if commits:
         if commits.startswith('/') and commits.endswith('/'):
-            commit_query = {'commit': { '$regex': commits[1:-1] }}
+            commit_query = {'commit': {'$regex': commits[1:-1]}}
     else:
         commit_query = {}
 
     query = {"$and": [label_query, date_query, version_query, start_query, end_query, id_query, commit_query,
                       engines_query]}
-    cursor = db.raw.find(query).sort([ ('commit_date', pymongo.DESCENDING),
-                                       ('platform', pymongo.ASCENDING),
-                                       ('label', pymongo.ASCENDING)])
+    cursor = db.raw.find(query).sort([('commit_date', pymongo.DESCENDING),
+                                      ('platform', pymongo.ASCENDING),
+                                      ('label', pymongo.ASCENDING)])
 
     if limit:
         cursor.limit(limit)
 
     return cursor
+
 
 def process_cursor(cursor, multidb):
     aggregate = defaultdict(list)
@@ -158,17 +185,20 @@ def process_cursor(cursor, multidb):
 
     return out
 
+
 def raw_data(labels, multidb, dates, start, end, limit, ids, commits, engines):
     cursor = gen_query(labels, dates, None, start, end, limit, ids, commits, engines)
     result = process_cursor(cursor, multidb)
     return result
 
+
 def getDefaultIDs():
     prere = re.compile('pre')
-    #most recent baseline id
-    baselineid = db['raw'].find({'version': { '$not': prere}}, {'_id': 1}).sort('commit_date', pymongo.DESCENDING).limit(1)
-    #6 newer ids
-    newids = db['raw'].find({},{'_id': 1}).sort('commit_date', pymongo.DESCENDING).limit(6);
+    # most recent baseline id
+    baselineid = db['raw'].find({'version': {'$not': prere}}, {'_id': 1}).sort('commit_date', pymongo.DESCENDING).limit(
+        1)
+    # 6 newer ids
+    newids = db['raw'].find({}, {'_id': 1}).sort('commit_date', pymongo.DESCENDING).limit(6);
     outlist = []
     if baselineid.count(True) > 0:
         outlist.append(str(baselineid[0]['_id']))
@@ -177,11 +207,12 @@ def getDefaultIDs():
 
     return outlist
 
+
 @route("/results")
 def results_page():
     """Handler for results page
     """
-    #_ids of tests we want to view
+    # _ids of tests we want to view
     ids = request.GET.getall("id")
     # single db or multi db
     multidb = request.GET.get('multidb', '0 1')
@@ -195,17 +226,17 @@ def results_page():
     results = raw_data(None, multidb, None,
                        None, None, None, ids, None, None)
 
-    #check to see if we want the x-axis as time
+    # check to see if we want the x-axis as time
     if xaxis == '0':
         new_results = []
         dates = set()
-        threads = [] 
+        threads = []
         for outer_result in results:
-            #goal here is to create "data" and "labels"
+            # goal here is to create "data" and "labels"
             dy_map = {}
             results_section = []
             for result in outer_result['results']:
-                #if we need to construct threads
+                # if we need to construct threads
                 if len(threads) == 0:
                     threadset = set()
                     for k in result.keys():
@@ -220,17 +251,17 @@ def results_page():
                 #here we have [<date>, ops1, ops2...]
                 results_section.append(result_entry)
 
-            #construct final object
+            # construct final object
             labels = ['Commit Date']
             labels.extend(threads)
-            new_results.append({ 'data': json.dumps(results_section),
-                                 'labels_json': json.dumps(labels),
-                                 'labels_list': labels})
+            new_results.append({'data': json.dumps(results_section),
+                                'labels_json': json.dumps(labels),
+                                'labels_list': labels})
         return template('results.tpl', results=results, request=request,
                         dygraph_results=new_results, threads=threads,
                         use_dates=True, spread_dates=spread_dates)
     elif xaxis == '1':
-        #xaxis is threads
+        # xaxis is threads
         threads = set()
         dygraph_results = []
         for outer_result in results:
@@ -238,7 +269,7 @@ def results_page():
             for i, result in enumerate(outer_result['results']):
                 out.append({'label': ' / '.join((result['label'], result['version'],
                                                  result['date'])),
-                            'data': sorted([int(k), [v['ops_per_sec'], v['standardDeviation']]] 
+                            'data': sorted([int(k), [v['ops_per_sec'], v['standardDeviation']]]
                                            for (k, v) in result.iteritems() if k.isdigit())})
                 threads.update(int(k) for k in result if k.isdigit())
             dygraph_data, dygraph_labels = to_dygraphs_data_format(out)
@@ -250,18 +281,17 @@ def results_page():
                         use_dates=False, spread_dates=False)
 
 
-
 def to_dygraphs_data_format(in_data):
     """returns js string containing the dygraphs data
     representation of the input and a js string containing
     dygraphs representation of labels
     """
-    #start by initializing our two new arrays
+    # start by initializing our two new arrays
     d = in_data[0]
     graph_data = copy(d['data'])
-    labels =["# of Threads", d['label']]
+    labels = ["# of Threads", d['label']]
 
-    #append data for each point
+    # append data for each point
     for series in in_data[1:]:
         data = series['data']
         for point in range(len(graph_data)):
@@ -269,6 +299,7 @@ def to_dygraphs_data_format(in_data):
         labels.append(series['label'])
 
     return graph_data, labels
+
 
 def get_rows(commit_regex, start_date, end_date, label_regex, version_regex, engine_regex):
     if commit_regex is not None:
@@ -279,7 +310,7 @@ def get_rows(commit_regex, start_date, end_date, label_regex, version_regex, eng
         version_regex = '/' + version_regex + '/'
     if engine_regex is not None:
         engine_regex = '/' + engine_regex + '/'
-    
+
     csr = gen_query(label_regex, None, version_regex, start_date, end_date, None, None, commit_regex, engine_regex)
     rows = []
     for record in csr:
@@ -302,8 +333,9 @@ def get_rows(commit_regex, start_date, end_date, label_regex, version_regex, eng
             tmpdoc["server_storage_engine"] = record["server_storage_engine"]
         else:
             tmpdoc["server_storage_engine"] = "mmapv0"
-        rows.append(tmpdoc) 
+        rows.append(tmpdoc)
     return rows
+
 
 @route("/")
 def new_main_page():
@@ -315,7 +347,7 @@ def new_main_page():
     nohtml = request.GET.get('nohtml')
     engine_regex = request.GET.get('engine')
 
-    #convert to appropriate type
+    # convert to appropriate type
     if start_date:
         start = datetime.strptime(start_date, '%m/%d/%Y')
     else:
@@ -330,10 +362,10 @@ def new_main_page():
     if nohtml:
         response.content_type = 'application/json'
         return json.dumps(rows)
-    else: 
+    else:
         return template('comp.tpl', allrows=rows)
 
 
 if __name__ == '__main__':
     do_reload = '--reload' in sys.argv
-    run(host='0.0.0.0', port=8080, server=AutoServer)
+    run(host=SERVER_BIND_IP, port=SERVER_PORT, server=AutoServer)
