@@ -38,6 +38,9 @@
             $('#commitfield').on('keyup change', function() {
                 table.column(4).search(this.value).draw();
             });
+            $('#enginefield').on('keyup change', function() {
+                table.column(5).search(this.value).draw();
+            });
 
         });
 
@@ -85,13 +88,15 @@
                 <th><input type="text" id="versionfield" placeholder="Version Filter" /></th>
                 <th><input type="text" id="datefield" placeholder="Date Filter" /></th>
                 <th><input type="text" id="commitfield" name="commit" placeholder="Commit Filter" /></th>
+                <th><input type="text" id="enginefield" name="engine" placeholder="Engine Filter" /></th>
               </tr>
               <tr>
                 <th style="width: 10%">Select</th>
                 <th style="width: 25%">Label</th>
                 <th style="width: 10%">Version</th>
                 <th style="width: 20%">Date</th>
-                <th style="width: 35%">Git Hash</th>
+                  <th style="width: 35%">Git Hash</th>
+                  <th style="width: 35%">Storage Engine</th>
               </tr>
           </thead>
           %for row in allrows:
@@ -101,6 +106,7 @@
             <td>{{row["version"]}}</td>
             <td>{{row["date"]}}</td>
             <td><a href="https://github.com/mongodb/mongo/commit/{{row['commit']}}">{{row['commit']}}</a></td>
+            <td>{{row["server_storage_engine"]}}</td>
           </tr>
           %end
         </table>

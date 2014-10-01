@@ -27,10 +27,10 @@ from collections import defaultdict
 from copy import copy
 
 # performance metrics are stored in mongod
-MONGO_PERF_HOST = "mongo-perf-db-1.vpc3.10gen.cc"
+MONGO_PERF_HOST = "localhost"
 MONGO_PERF_PORT = 27017
 # undefine if no replica set
-REPLICA_SET = "mongo-perf"
+#REPLICA_SET = "mongo-perf"
 # database name
 MP_DB_NAME = "bench_results"
 
@@ -45,7 +45,7 @@ else:
 def send_static(filename):
     return static_file(filename, root='./static')
 
-def gen_query(labels, dates, versions, start, end, limit, ids, commits):
+def gen_query(labels, dates, versions, start, end, limit, ids, commits, engines):
     if start:
         start_query = {'commit_date': {'$gte': start}}
     else:
@@ -89,6 +89,15 @@ def gen_query(labels, dates, versions, start, end, limit, ids, commits):
     else:
         version_query = {}
 
+    if engines:
+        if engines.startswith('/') and engines.endswith('/'):
+            engines_query = {'server_storage_engine': {'$regex':
+                                        engines[1:-1], '$options': 'i'}}
+        else:
+            engines_query = {'server_storage_engine': {'$in': engines}}
+    else:
+        engines_query = {}
+
     if ids:
         objids = []
         for id in ids:
@@ -103,7 +112,8 @@ def gen_query(labels, dates, versions, start, end, limit, ids, commits):
     else:
         commit_query = {}
 
-    query = {"$and": [label_query, date_query, version_query, start_query, end_query, id_query, commit_query]}
+    query = {"$and": [label_query, date_query, version_query, start_query, end_query, id_query, commit_query,
+                      engines_query]}
     cursor = db.raw.find(query).sort([ ('commit_date', pymongo.ASCENDING),
                                        ('platform', pymongo.DESCENDING),
                                        ('label', pymongo.ASCENDING)])
@@ -260,15 +270,17 @@ def to_dygraphs_data_format(in_data):
 
     return graph_data, labels
 
-def get_rows(commit_regex, start_date, end_date, label_regex, version_regex):
+def get_rows(commit_regex, start_date, end_date, label_regex, version_regex, engine_regex):
     if commit_regex is not None:
         commit_regex = '/' + commit_regex + '/'
     if label_regex is not None:
         label_regex = '/' + label_regex + '/'
     if version_regex is not None:
         version_regex = '/' + version_regex + '/'
+    if engine_regex is not None:
+        engine_regex = '/' + engine_regex + '/'
     
-    csr = gen_query(label_regex, None, version_regex, start_date, end_date, None, None, commit_regex)
+    csr = gen_query(label_regex, None, version_regex, start_date, end_date, None, None, commit_regex, engine_regex)
     rows = []
     for record in csr:
         if 'commit_date' in record.keys():
@@ -286,6 +298,10 @@ def get_rows(commit_regex, start_date, end_date, label_regex, version_regex):
                   "version": myVersion,
                   "date": myDate,
                   "_id": str(record["_id"])}
+        if "server_storage_engine" in record:
+            tmpdoc["server_storage_engine"] = record["server_storage_engine"]
+        else:
+            tmpdoc["server_storage_engine"] = "mmapv0"
         rows.append(tmpdoc) 
     return rows
 
@@ -297,6 +313,7 @@ def new_main_page():
     label_regex = request.GET.get('label')
     version_regex = request.GET.get('version')
     nohtml = request.GET.get('nohtml')
+    engine_regex = request.GET.get('engine')
 
     #convert to appropriate type
     if start_date:
@@ -308,7 +325,7 @@ def new_main_page():
     else:
         end = None
 
-    rows = get_rows(commit_regex, start, end, label_regex, version_regex)
+    rows = get_rows(commit_regex, start, end, label_regex, version_regex, engine_regex)
 
     if nohtml:
         response.content_type = 'application/json'

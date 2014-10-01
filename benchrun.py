@@ -186,7 +186,7 @@ def main():
 
 
     # Pipe commands to the mongo shell to kickoff the test.
-    cmdstr = ("runTests2(" +
+    cmdstr = ("runTests(" +
               str(args.threads) + ", " +
               str(args.multidb) + ", " +
               str(args.shard) + ", " +

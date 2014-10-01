@@ -1,6 +1,6 @@
 function prepOp(collection, op) {
 
-    function fixString( str ) {
+    function fixString(str) {
         if (str == "#B_COLL") {
             return collection.getName();
         }
@@ -24,6 +24,7 @@ function prepOp(collection, op) {
             }
         }
     }
+
     recurse(op);
 
     if (!op.ns) {
@@ -46,8 +47,8 @@ function formatRunDate(now) {
     }
 
     return (1900 + now.getYear() + "-" +
-            pad(now.getMonth() + 1) + "-" +
-            pad(now.getDate()));
+        pad(now.getMonth() + 1) + "-" +
+        pad(now.getDate()));
 }
 
 
@@ -76,11 +77,11 @@ function runTest2(test, thread, multidb, shard, runSeconds, testBed, writeOption
 
     var new_ops = [];
 
-    test.ops.forEach(function(z) {
+    test.ops.forEach(function (z) {
         // For loop is INSIDE for-each loop so that duplicated instructions are adjacent.
         // (& should not be factored out for that reason.)
         for (var i = 0; i < multidb; i++) {
-            var op = Object.extend( {}, z, true );
+            var op = Object.extend({}, z, true);
             op = prepOp(collections[i], op);
             new_ops.push(op);
         }
@@ -90,7 +91,7 @@ function runTest2(test, thread, multidb, shard, runSeconds, testBed, writeOption
     // this doesn't make sense for all tests so
     // test cases must be defined with default values
     // so this step can make the appropriate substitution
-    new_ops.forEach(function(z) {
+    new_ops.forEach(function (z) {
         //  set safe mode to call GLE every op
         if ("safe" in z) {
             //z.safe = writeOptions.safeGLE;
@@ -125,13 +126,13 @@ function runTest2(test, thread, multidb, shard, runSeconds, testBed, writeOption
         // already exists.
         theDb.createCollection(collections[i].getName());
 
-        if ( shard == 1 ) {
+        if (shard == 1) {
             // when shard is enabled, we want to enable shard
-            collections[i].ensureIndex( { _id: "hashed" } );
+            collections[i].ensureIndex({ _id: "hashed" });
 
             sh.enableSharding("test" + i);
             var t = sh.shardCollection("test" + i + "." + collections[i].getName(), {_id: "hashed"});
-        } else if ( shard == 2) {
+        } else if (shard == 2) {
             sh.enableSharding("test" + i);
             var t = sh.shardCollection("test" + i + "." + collections[i].getName(), {_id: 1});
         }
@@ -140,10 +141,10 @@ function runTest2(test, thread, multidb, shard, runSeconds, testBed, writeOption
     // build a json document with arguments.
     // these will become a BSONObj when we pass
     // control to the built-in mongo shell function, benchRun()
-    var benchArgs = { ops:      new_ops,
-                      seconds:  runSeconds,
-                      host:     db.getMongo().host,
-                      parallel: thread };
+    var benchArgs = { ops: new_ops,
+        seconds: runSeconds,
+        host: db.getMongo().host,
+        parallel: thread };
 
     // invoke the built-in mongo shell function
     var result = benchRun(benchArgs);
@@ -173,47 +174,68 @@ function runTest2(test, thread, multidb, shard, runSeconds, testBed, writeOption
 }
 
 
-function getVariance( numericArray ) {
-    var avg = getMean( numericArray );
+function getVariance(numericArray) {
+    var avg = getMean(numericArray);
     var i = numericArray.length;
     var x = 0;
- 
-    while( i-- ){
-        x += Math.pow( (numericArray[ i ] - avg), 2 );
+
+    while (i--) {
+        x += Math.pow((numericArray[ i ] - avg), 2);
     }
     x /= numericArray.length;
     return x;
 }
 
-function getMean( values ) {
+function getMean(values) {
     var sum = 0;
-    for (var j=0; j < values.length; j++) {
-         sum += values[j];
+    for (var j = 0; j < values.length; j++) {
+        sum += values[j];
     }
     return sum / values.length;
 }
 
-function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHost, reportPort) {
+/**
+ *
+ * @param threadCounts
+ * @param multidb
+ * @param seconds
+ * @param trials
+ * @param reportLabel
+ * @param reportHost
+ * @param reportPort
+ * @param writeOptions
+ * @param testBed
+ * @returns {{}}
+ */
+function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHost, reportPort, writeOptions, testBed) {
 
-    var writeOptions = {}
-    // write concern, write command mode
-    writeOptions.safeGLE = false
-    writeOptions.writeConcernW = 0
-    writeOptions.writeConcernJ = false
-    writeOptions.writeCmdMode = false
+    if (typeof writeOptions === "undefined") {
+        writeOptions = {};
+        // write concern, write command mode
+        writeOptions.safeGLE = false;
+        writeOptions.writeConcernW = 0;
+        writeOptions.writeConcernJ = false;
+        writeOptions.writeCmdMode = false;
+    }
 
-    var testBed = {}
-    // test harness, client and server info
-    testBed.harness = {}
-    testBed.harness.name = "mongo-perf"
-    testBed.harness.version = "unknown"
-    testBed.harness.git_hash = "unknown"
-    testBed.server_git_commit_date = new Date()
+    if (typeof testBed === "undefined") {
+        testBed = {};
+        // test harness, client and server info
+        testBed.harness = {};
+        testBed.harness.name = "mongo-perf";
+        testBed.harness.version = "unknown";
+        testBed.harness.git_hash = "unknown";
+        testBed.server_git_commit_date = new Date();
 
-    return runTests2(threadCounts, multidb, seconds, trials, reportLabel, reportHost, reportPort, testBed);
-}
-
-function runTests2(threadCounts, multidb, shard, seconds, trials, reportLabel, reportHost, reportPort, writeOptions, testBed) {
+        // get the server storageEnigine
+        var serverStatus = db.runCommand({serverStatus: 1});
+        if (serverStatus.storageEngine !== undefined && serverStatus.storageEngine.name !== undefined) {
+            testBed.server_storage_engine = serverStatus.storageEngine.name;
+        }
+        else {
+            testBed.server_storage_engine = "mmapv0";
+        }
+    }
 
     var testResults = {};
     // The following are only used when reportLabel is not None.
@@ -234,16 +256,16 @@ function runTests2(threadCounts, multidb, shard, seconds, trials, reportLabel, r
         myId = new ObjectId();
         var bi = db.runCommand("buildInfo");
 
-        var basicFields = {}
-        basicFields = testBed // Map
-        basicFields.commit = bi.gitVersion
-        basicFields.label = reportLabel
-        basicFields.platform = bi.sysInfo.split(" ")[0]
-        basicFields.run_date = formatRunDate(startTime)
-        basicFields.run_time = startTime
-        basicFields.commit_date = new Date(testBed.server_git_commit_date)
-        basicFields.version = bi.version
-        basicFields.writeOptions = writeOptions // Map
+        var basicFields = {};
+        basicFields = testBed; // Map
+        basicFields.commit = bi.gitVersion;
+        basicFields.label = reportLabel;
+        basicFields.platform = bi.sysInfo.split(" ")[0];
+        basicFields.run_date = formatRunDate(startTime);
+        basicFields.run_time = startTime;
+        basicFields.commit_date = new Date(testBed.server_git_commit_date);
+        basicFields.version = bi.version;
+        basicFields.writeOptions = writeOptions; // Map
 
         var oldDoc = resultsCollection.findOne({ label: reportLabel });
         if (oldDoc) {
@@ -265,17 +287,17 @@ function runTests2(threadCounts, multidb, shard, seconds, trials, reportLabel, r
         var threadResults = {};
         for (var t = 0; t < threadCounts.length; t++) {
             var threadCount = threadCounts[t];
-            var results = []
-            for (var j=0; j < trials; j++) {
+            var results = [];
+            for (var j = 0; j < trials; j++) {
                 results[j] = runTest2(test, threadCount, multidb, shard, seconds, testBed, writeOptions);
             }
-            var values = []
-            for (var j=0; j < trials; j++) {
+            var values = [];
+            for (var j = 0; j < trials; j++) {
                 values[j] = results[j].ops_per_sec
             }
             var mean = getMean(values);
             var variance = getVariance(values);
-            var newResults = {}
+            var newResults = {};
             // uncomment if one needs to save the trial values that comprise the mean
             //newResults.ops_per_sec_values = values;
             newResults.ops_per_sec = mean;
@@ -294,7 +316,7 @@ function runTests2(threadCounts, multidb, shard, seconds, trials, reportLabel, r
             if (resultsCollection.findOne(queryDoc)) {
                 var innerUpdateDoc = {};
                 innerUpdateDoc[resultsArr + ".$.results"] = threadResults;
-                resultsCollection.update(queryDoc, { $set: innerUpdateDoc } );
+                resultsCollection.update(queryDoc, { $set: innerUpdateDoc });
             } else {
                 var innerUpdateDoc = {};
                 innerUpdateDoc[resultsArr] = { name: test.name, results: threadResults };
