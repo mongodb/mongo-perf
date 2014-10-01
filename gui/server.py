@@ -114,8 +114,8 @@ def gen_query(labels, dates, versions, start, end, limit, ids, commits, engines)
 
     query = {"$and": [label_query, date_query, version_query, start_query, end_query, id_query, commit_query,
                       engines_query]}
-    cursor = db.raw.find(query).sort([ ('commit_date', pymongo.ASCENDING),
-                                       ('platform', pymongo.DESCENDING),
+    cursor = db.raw.find(query).sort([ ('commit_date', pymongo.DESCENDING),
+                                       ('platform', pymongo.ASCENDING),
                                        ('label', pymongo.ASCENDING)])
 
     if limit:
@@ -158,8 +158,8 @@ def process_cursor(cursor, multidb):
 
     return out
 
-def raw_data(labels, multidb, dates, start, end, limit, ids, commits):
-    cursor = gen_query(labels, dates, None, start, end, limit, ids, commits)
+def raw_data(labels, multidb, dates, start, end, limit, ids, commits, engines):
+    cursor = gen_query(labels, dates, None, start, end, limit, ids, commits, engines)
     result = process_cursor(cursor, multidb)
     return result
 
@@ -193,7 +193,7 @@ def results_page():
         ids = getDefaultIDs()
 
     results = raw_data(None, multidb, None,
-                       None, None, None, ids, None)
+                       None, None, None, ids, None, None)
 
     #check to see if we want the x-axis as time
     if xaxis == '0':

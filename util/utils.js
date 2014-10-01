@@ -52,20 +52,13 @@ function formatRunDate(now) {
 }
 
 
-function runTest(test, thread, multidb, runSeconds) {
-    var writeOptions = {}
-    writeOptions.safeGLE = false;
-    writeOptions.writeConcernW = 0;
-    writeOptions.writeConcernJ = false;
-    writeOptions.writeCmd = false;
-    shard = 0;
+function runTest(test, thread, multidb, runSeconds, shard, testBed, writeOptions) {
 
-    return runTest2(test, thread, multidb, shard, runSeconds, writeOptions);
-}
+    if (typeof writeOptions === "undefined") writeOptions = getDefaultWriteOptions();
+    if (typeof testBed === "undefined") testBed = getDefaultTestBed();
+    if (typeof shard === "undefined") shard = 0;
 
-function runTest2(test, thread, multidb, shard, runSeconds, testBed, writeOptions) {
     var collections = [];
-
 
     for (var i = 0; i < multidb; i++) {
         var sibling_db = db.getSiblingDB('test' + i);
@@ -194,6 +187,39 @@ function getMean(values) {
     return sum / values.length;
 }
 
+function getDefaultTestBed(commitDate) {
+    if (typeof commitDate === "undefined") commitDate = new Date();
+
+    var testBed = {};
+    // test harness, client and server info
+    testBed.harness = {};
+    testBed.harness.name = "unknown";
+    testBed.harness.version = "unknown";
+    testBed.harness.git_hash = "unknown";
+    testBed.server_git_commit_date = commitDate;
+
+    // get the server storageEnigine
+    var serverStatus = db.runCommand({serverStatus: 1});
+    if (serverStatus.storageEngine !== undefined && serverStatus.storageEngine.name !== undefined) {
+        testBed.server_storage_engine = serverStatus.storageEngine.name;
+    }
+    else {
+        testBed.server_storage_engine = "mmapv0";
+    }
+
+    return testBed;
+}
+
+function getDefaultWriteOptions() {
+    var writeOptions = {};
+    // write concern, write command mode
+    writeOptions.safeGLE = false;
+    writeOptions.writeConcernW = 0;
+    writeOptions.writeConcernJ = false;
+    writeOptions.writeCmdMode = false;
+    return writeOptions;
+}
+
 /**
  *
  * @param threadCounts
@@ -203,39 +229,20 @@ function getMean(values) {
  * @param reportLabel
  * @param reportHost
  * @param reportPort
+ * @param commitDate
+ * @param shard
  * @param writeOptions
  * @param testBed
  * @returns {{}}
  */
-function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHost, reportPort, writeOptions, testBed) {
+function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHost, reportPort, commitDate, shard, writeOptions, testBed) {
 
-    if (typeof writeOptions === "undefined") {
-        writeOptions = {};
-        // write concern, write command mode
-        writeOptions.safeGLE = false;
-        writeOptions.writeConcernW = 0;
-        writeOptions.writeConcernJ = false;
-        writeOptions.writeCmdMode = false;
-    }
-
-    if (typeof testBed === "undefined") {
-        testBed = {};
-        // test harness, client and server info
-        testBed.harness = {};
-        testBed.harness.name = "mongo-perf";
-        testBed.harness.version = "unknown";
-        testBed.harness.git_hash = "unknown";
-        testBed.server_git_commit_date = new Date();
-
-        // get the server storageEnigine
-        var serverStatus = db.runCommand({serverStatus: 1});
-        if (serverStatus.storageEngine !== undefined && serverStatus.storageEngine.name !== undefined) {
-            testBed.server_storage_engine = serverStatus.storageEngine.name;
-        }
-        else {
-            testBed.server_storage_engine = "mmapv0";
-        }
-    }
+    if (typeof reportHost === "undefined") reportHost = "localhost";
+    if (typeof reportPort === "undefined") reportPort = "27017";
+    if (typeof commitDate === "undefined") commitDate = new Date();
+    if (typeof shard === "undefined") shard = 0;
+    if (typeof writeOptions === "undefined") writeOptions = getDefaultWriteOptions();
+    if (typeof testBed === "undefined") testBed = getDefaultTestBed(commitDate);
 
     var testResults = {};
     // The following are only used when reportLabel is not None.
@@ -278,6 +285,7 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHos
     }
 
     print("@@@START@@@");
+    testResults['run_start_time'] = new Date();
 
     // Run all tests in the test file.
     for (var i = 0; i < tests.length; i++) {
@@ -285,11 +293,14 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHos
         print(test.name);
 
         var threadResults = {};
+        threadResults['run_start_time'] = new Date();
         for (var t = 0; t < threadCounts.length; t++) {
             var threadCount = threadCounts[t];
             var results = [];
+            var newResults = {};
+            newResults['run_start_time'] = new Date();
             for (var j = 0; j < trials; j++) {
-                results[j] = runTest2(test, threadCount, multidb, shard, seconds, testBed, writeOptions);
+                results[j] = runTest(test, threadCount, multidb, seconds, shard, testBed, writeOptions);
             }
             var values = [];
             for (var j = 0; j < trials; j++) {
@@ -297,7 +308,6 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHos
             }
             var mean = getMean(values);
             var variance = getVariance(values);
-            var newResults = {};
             // uncomment if one needs to save the trial values that comprise the mean
             //newResults.ops_per_sec_values = values;
             newResults.ops_per_sec = mean;
@@ -306,21 +316,24 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHos
             threadResults[threadCount] = newResults;
         }
         testResults[test] = threadResults;
+        threadResults['run_end_time'] = new Date();
 
         if (reportLabel) {
             var resultsArr = (multidb > 1) ? "multidb" : "singledb";
 
             var queryDoc = { _id: myId };
             queryDoc[resultsArr + ".name"] = test.name;
+            var end_time = new Date();
 
             if (resultsCollection.findOne(queryDoc)) {
                 var innerUpdateDoc = {};
                 innerUpdateDoc[resultsArr + ".$.results"] = threadResults;
+                innerUpdateDoc['end_time'] = end_time;
                 resultsCollection.update(queryDoc, { $set: innerUpdateDoc });
             } else {
                 var innerUpdateDoc = {};
                 innerUpdateDoc[resultsArr] = { name: test.name, results: threadResults };
-                resultsCollection.update({ _id: myId }, { $push: innerUpdateDoc });
+                resultsCollection.update({ _id: myId }, { $push: innerUpdateDoc, $set: {end_time: end_time } });
             }
         }
     }
