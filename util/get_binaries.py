@@ -54,18 +54,8 @@ class BinariesNotAvailableError(Exception):
 
 def get_available(os_type, branch=None, version=None, distribution=None, cpu_arch="x86_64", debug=False):
     """
-    Gets a BinaryDownload class with pulled from the www.mogodb.org/dl site matching the needed binaries package.
-    It gets the html for the downloads page and parse for the download link and the timestamp based on the pages
-    structure of
-    <tr>
-        <td><a href="http://downloads.mongodb.org/osx/mongodb-osx-x86_64-v2.4-latest.tgz">osx/mongodb-osx-x86_64-v2.4-latest.tgz</a></td>
-        <td>2014-09-03 10:18:19</td>
-        <td>87899836</td>
-        <td><a href="http://downloads.mongodb.org/osx/mongodb-osx-x86_64-v2.4-latest.tgz.md5">md5</a></td>
-        <td></td>
-        <td></td>
-        <td></td>
-    </tr>
+    Gets a BinaryDownload class with pulled from the www.mogodb.org/dl getting the current md5 sum of the
+    binaries package.
     :param os_type: the os type to look for  should be osx, linux, win32, or sunos5
     :param branch: the branch to get the latest for eg. v2.6, v2.4, master.  Overrides version.
     :param version: the exact version to get the binaries for eg 2.6.4 or r2.4.6

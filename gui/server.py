@@ -27,10 +27,10 @@ from collections import defaultdict
 from copy import copy
 
 # performance metrics are stored in mongod
-MONGO_PERF_HOST = "localhost"
+MONGO_PERF_HOST = "mongo-perf-db-1.vpc3.10gen.cc"
 MONGO_PERF_PORT = 27017
 # undefine if no replica set
-#REPLICA_SET = "mongo-perf"
+REPLICA_SET = "mongo-perf"
 # database name
 MP_DB_NAME = "bench_results"
 
