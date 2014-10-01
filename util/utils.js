@@ -220,6 +220,7 @@ function runTests(threadCounts, multidb, shard, seconds, trials, reportLabel, re
     }
 
     print("@@@START@@@");
+    testResults['run_start_time'] = new Date();
 
     // Run all tests in the test file.
     for (var i = 0; i < tests.length; i++) {
@@ -227,12 +228,14 @@ function runTests(threadCounts, multidb, shard, seconds, trials, reportLabel, re
         print(test.name);
 
         var threadResults = {};
+        threadResults['run_start_time'] = new Date();
         for (var t = 0; t < threadCounts.length; t++) {
             var threadCount = threadCounts[t];
             var results = []
+            var newResults = {}
+            newResults['run_start_time'] = new Date();
             for (var j=0; j < trials; j++) {
                 results[j] = runTest(test, threadCount, multidb, shard, seconds, safeGLE, writeConcernW, writeConcernJ, writeCmd);
-                results[j]['run_end_time'] = new Date();
             }
             var values = []
             for (var j=0; j < trials; j++) {
@@ -240,30 +243,32 @@ function runTests(threadCounts, multidb, shard, seconds, trials, reportLabel, re
             }
             var mean = getMean(values);
             var variance = getVariance(values);
-            var newResults = {}
             // uncomment if one needs to save the trial values that comprise the mean
             //newResults.ops_per_sec_values = values;
-            newResults.ops_per_sec = mean;
-            newResults.standardDeviation = Math.sqrt(variance);
-            newResults.run_end_time = new Date();
+            newResults['ops_per_sec'] = mean;
+            newResults['standardDeviation'] = Math.sqrt(variance);
+            newResults['run_end_time'] = new Date();
             threadResults[threadCount] = newResults;
         }
         testResults[test] = threadResults;
+        threadResults['run_end_time'] = new Date();
 
         if (reportLabel) {
             var resultsArr = (multidb > 1) ? "multidb" : "singledb";
 
             var queryDoc = { _id: myId };
             queryDoc[resultsArr + ".name"] = test.name;
+            var end_time = new Date();
 
             if (resultsCollection.findOne(queryDoc)) {
                 var innerUpdateDoc = {};
                 innerUpdateDoc[resultsArr + ".$.results"] = threadResults;
+                innerUpdateDoc['end_time'] = end_time;
                 resultsCollection.update(queryDoc, { $set: innerUpdateDoc } );
             } else {
                 var innerUpdateDoc = {};
                 innerUpdateDoc[resultsArr] = { name: test.name, results: threadResults };
-                resultsCollection.update({ _id: myId }, { $push: innerUpdateDoc });
+                resultsCollection.update({ _id: myId }, { $push: innerUpdateDoc, $set: {end_time: end_time } } );
             }
         }
     }
