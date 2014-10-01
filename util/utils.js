@@ -221,19 +221,20 @@ function getDefaultWriteOptions() {
 }
 
 /**
+ * Run tests defined in a tests array (outside of the function)
  *
- * @param threadCounts
- * @param multidb
- * @param seconds
- * @param trials
- * @param reportLabel
- * @param reportHost
- * @param reportPort
- * @param commitDate
- * @param shard
- * @param writeOptions
- * @param testBed
- * @returns {{}}
+ * @param threadCounts - array of threads to use
+ * @param multidb - multidb 1 or 0
+ * @param seconds - the time to run each performance test for
+ * @param trials - the number of trials to run
+ * @param reportLabel - the label for the test run
+ * @param reportHost - the hostname for the database to send the reported data to (defaults to localhost)
+ * @param reportPort - the port number for the database to send the reported data to (defaults to 27017)
+ * @param commitDate - the commit date/time to report (defaults to the current time/date)
+ * @param shard - the number of shards the test is run for (defaults to 0)
+ * @param writeOptions - the writeOptions to be used with the test (defaults to {safeGLE:false, writeConcernW:0, writeConcernJ:false, writeCmdMode: false}
+ * @param testBed - testbed information such as server_storage_engine, harness, server_git_commit_date
+ * @returns {{}} the results of a run set of tests
  */
 function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHost, reportPort, commitDate, shard, writeOptions, testBed) {
 
