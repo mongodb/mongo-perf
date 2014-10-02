@@ -1,10 +1,11 @@
 from argparse import ArgumentParser
 from subprocess import Popen, PIPE, call
-import git
 import datetime
-import platform
-import pymongo
 import sys
+import json
+
+import git
+import pymongo
 
 
 def parse_arguments():
@@ -63,6 +64,37 @@ def parse_arguments():
     return parser.parse_known_args()
 
 
+def get_shell_info(shell_path):
+    """
+    Get the mongo shells building information
+    :param shell_path:
+    :return: dictionary of the shells getBuildInfo command
+    """
+    cmdStr = 'printjson(getBuildInfo())'
+    mongo_proc = Popen([shell_path, "--norc", "--quiet", "--eval", cmdStr], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    out, err = mongo_proc.communicate()
+    return json.loads(out)
+
+
+def get_server_info(hostname="localhost", port="27017", replica_set="none"):
+    """
+    Get the mongod server build info and server status from the target mongod server
+    :param hostname: the hostname the target database is running on (defaults to localhost)
+    :param port: the port the target database is running on (defaults to 27017)
+    :param replica_set: the replica set name the target database is using (defaults to none)
+    :return: a tuple of the buildinfo and the server status
+    """
+    if replica_set == 'none':
+        client = pymongo.MongoClient("mongodb://%s:%s/test" % (hostname, port))
+    else:
+        client = pymongo.MongoReplicaSetClient("mongodb://%s:%s/test?replicaSet=%s" % (hostname, port, replica_set))
+    db = client.test
+    server_build_info = db.command("buildinfo")
+    server_status = db.command("serverStatus")
+    client.close()
+    return server_build_info, server_status
+
+
 def main():
     args, extra_args = parse_arguments()
 
@@ -90,68 +122,47 @@ def main():
     repo = git.Repo(args.repo_path)
     # Get buildinfo in order to get commit hash
     client = pymongo.MongoClient()
-    buildinfo = client['test'].command("buildinfo")
-    commithash = buildinfo['gitVersion']
+    build_info = client['test'].command("buildinfo")
+    commit_hash = build_info['gitVersion']
     # Use hash to get commit_date
     try:
         try:
-          structTime = repo.commit(commithash).committed_date
-          committed_date = datetime.datetime(*structTime[:6])
+            structTime = repo.commit(commit_hash).committed_date
+            committed_date = datetime.datetime(*structTime[:6])
         except:
-          scalarTime = repo.commit(commithash).committed_date
-          committed_date = datetime.datetime.fromtimestamp(scalarTime)
+            scalarTime = repo.commit(commit_hash).committed_date
+            committed_date = datetime.datetime.fromtimestamp(scalarTime)
     except:
-        print "WARNING: could not find Git commit", commithash, "in", args.repo_path
+        print "WARNING: could not find Git commit", commit_hash, "in", args.repo_path
         print "         substituting current date / time"
         committed_date = datetime.datetime.now()
 
     # universal schema Test Bed JSON
-    testBed = {}
-    testBed["harness"] = {}
-    testBed["harness"]["client"] = {}
-    testBed["harness"]["client"]["name"] = "mongo shell"
-    testBed["harness"]["name"] = "mongo-perf"
-    testBed["harness"]["version"] = "unknown"
-    testBed["harness"]["git_hash"] = "unknown"
-    testBed["server_git_commit_date"] = str(committed_date)
-
-    # TODO: see if we can get some of these with PyMongo instead of running the mongo shell
+    test_bed = {}
+    test_bed["harness"] = {}
+    test_bed["harness"]["client"] = {}
+    test_bed["harness"]["client"]["name"] = "mongo shell"
+    test_bed["harness"]["name"] = "mongo-perf"
+    test_bed["harness"]["version"] = "unknown"
+    test_bed["harness"]["git_hash"] = "unknown"
+    test_bed["server_git_commit_date"] = str(committed_date)
 
     # determine mongo shell version in use
-    cmdStr = 'getBuildInfo()["version"]'
-    mongo_proc = Popen([args.shellpath, "--norc", "--quiet", "--eval", cmdStr ], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    line = mongo_proc.stdout.readline()
-    testBed["harness"]["client"]["version"] = line.strip()
-    mongo_proc.terminate()
+    shell_build_info = get_shell_info(args.shellpath)
+    test_bed["harness"]["client"]["version"] = shell_build_info['version']
+    test_bed["harness"]["client"]["git_hash"] = shell_build_info['gitVersion']
 
-    # determine mongo shell git hash in use
-    cmdStr = 'getBuildInfo()["gitVersion"]'
-    mongo_proc = Popen([args.shellpath, "--norc", "--quiet", "--eval", cmdStr ], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    line = mongo_proc.stdout.readline()
-    testBed["harness"]["client"]["git_hash"] = line.strip()
-    mongo_proc.terminate()
-
+    # get the server info and status
+    (server_build_info, server_status) = get_server_info()
     # determine mongod version in use
-    cmdStr = 'db.serverBuildInfo()["version"]'
-    mongo_proc = Popen([args.shellpath, "--norc", "--quiet", "--eval", cmdStr ], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    line = mongo_proc.stdout.readline()
-    testBed["server_version"] = line.strip()
-    mongo_proc.terminate()
-
+    test_bed["server_version"] = server_build_info['version']
     # determine mongod git hash in use
-    cmdStr = 'db.serverBuildInfo()["gitVersion"]'
-    mongo_proc = Popen([args.shellpath, "--norc", "--quiet", "--eval", cmdStr ], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    line = mongo_proc.stdout.readline()
-    testBed["server_git_hash"] = line.strip()
-    mongo_proc.terminate()
-
-    # determine mongod storage engine in use
-    cmdStr = 'db.runCommand({serverStatus: 1})["storageEngine"]["name"]'
-    mongo_proc = Popen([args.shellpath, "--norc", "--quiet", "--eval", cmdStr ], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    line = mongo_proc.stdout.readline()
-    testBed["server_storage_engine"] = line.strip()
-    mongo_proc.terminate()
-
+    test_bed["server_git_hash"] = server_build_info['gitVersion']
+    # get the storage engine
+    if 'storageEngine' in server_status:
+        test_bed["server_storage_engine"] = server_status['storageEngine']['name']
+    else:
+        test_bed["server_storage_engine"] = 'mmapv0'
 
     # Open a mongo shell subprocess and load necessary files.
     mongo_proc = Popen([args.shellpath, "--norc", "--port", args.port], stdin=PIPE, stdout=PIPE)
@@ -162,26 +173,26 @@ def main():
         print "load('" + testfile + "')"
 
     # put all write options in a Map
-    writeOptions = {}
+    write_options = {}
     if args.safeMode:
-        writeOptions["safeGLE"] = 'true'
+        write_options["safeGLE"] = 'true'
     else:
-        writeOptions["safeGLE"] = 'false'
+        write_options["safeGLE"] = 'false'
 
     if args.j:
-        writeOptions["writeConcernJ"] = 'true'
+        write_options["writeConcernJ"] = 'true'
     else:
-        writeOptions["writeConcernJ"] = 'false'
+        write_options["writeConcernJ"] = 'false'
 
     if args.w:
-        writeOptions["writeConcernW"] = args.w
+        write_options["writeConcernW"] = args.w
     else:
-        writeOptions["writeConcernW"] = 0
+        write_options["writeConcernW"] = 0
 
     if args.writeCmd:
-        writeOptions["writeCmdMode"] = 'true'
+        write_options["writeCmdMode"] = 'true'
     else:
-        writeOptions["writeCmdMode"] = 'false'
+        write_options["writeCmdMode"] = 'false'
 
 
 
@@ -189,14 +200,16 @@ def main():
     cmdstr = ("runTests(" +
               str(args.threads) + ", " +
               str(args.multidb) + ", " +
-              str(args.shard) + ", " +
+
               str(args.seconds) + ", " +
               str(args.trials) + ", " +
               "'" + args.reportlabel + "', " +
               "'" + args.reporthost + "', " +
               "'" + args.reportport + "', " +
-              str(writeOptions) + ", " +
-              str(testBed) +
+              "'" + str(datetime.datetime.now()) + "', " +
+              str(args.shard) + ", " +
+              str(json.dumps(write_options)) + ", " +
+              str(json.dumps(test_bed)) +
               ");\n")
     mongo_proc.stdin.write(cmdstr)
     print cmdstr
