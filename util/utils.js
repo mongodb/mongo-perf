@@ -190,10 +190,16 @@ function getMean(values) {
 function getDefaultTestBed(commitDate) {
     if (typeof commitDate === "undefined") commitDate = new Date();
 
+    var shell_build_info = db.runCommand("buildInfo");
+
     var testBed = {};
     // test harness, client and server info
+    testBed.client = {};
+    testBed.client.name = "mongo shell";
+    testBed.client.version = shell_build_info.version;
+    testBed.client.git_hash = shell_build_info.gitVersion;
     testBed.harness = {};
-    testBed.harness.name = "unknown";
+    testBed.harness.name = "manual";
     testBed.harness.version = "unknown";
     testBed.harness.git_hash = "unknown";
     testBed.server_git_commit_date = commitDate;
