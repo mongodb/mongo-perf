@@ -58,8 +58,8 @@ def parse_arguments():
                         help='j write concern',
                         type=bool, default=False)
     parser.add_argument('--writeCmd', dest='writeCmd',
-                        help='use write command ILO legacy op',
-                        type=bool, default=False)
+                        help='use write command instead of legacy write operations',
+                        type=bool, default=True)
 
     return parser.parse_known_args()
 

@@ -52,7 +52,7 @@ function formatRunDate(now) {
 }
 
 
-function runTest(test, thread, multidb, runSeconds, shard, testBed, writeOptions) {
+function runTest(test, thread, multidb, runSeconds, shard, writeOptions, testBed) {
 
     if (typeof writeOptions === "undefined") writeOptions = getDefaultWriteOptions();
     if (typeof testBed === "undefined") testBed = getDefaultTestBed();
@@ -85,23 +85,15 @@ function runTest(test, thread, multidb, runSeconds, shard, testBed, writeOptions
     // test cases must be defined with default values
     // so this step can make the appropriate substitution
     new_ops.forEach(function (z) {
-        //  set safe mode to call GLE every op
-        if ("safe" in z) {
-            //z.safe = writeOptions.safeGLE;
-        }
-        //  w write concern
-        if ("w" in z) {
-            //z.w = writeOptions.writeConcernW;
-        }
+        //  when true, safe mode calls GLE after every op
+        z.safe = (writeOptions.safeGLE.toLowerCase() == 'true' ? true : false)
+        //  w write concern (integer)
+        z.w = writeOptions.writeConcernW
         //  j write concern (boolean)
-        if ("j" in z) {
-            //z.j = writeOptions.writeConcernJ;
-        }
-        //  use write command ILO legacy update, remove or insert op
-        //  n.b. currently only one op will be in the array
-        if ("writeCmd" in z) {
-            //z.writeCmd = writeOptions.writeCmd;
-        }
+        z.j = (writeOptions.writeConcernJ.toLowerCase() == 'true' ? true : false)
+        //  use write command in lieu of legacy update, remove or insert op
+        //  note: only one op will be in the array
+        z.writeCmd = (writeOptions.writeCmdMode.toLowerCase() == 'true' ? true : false)
     });
 
     if ("pre" in test) {
@@ -204,7 +196,7 @@ function getDefaultTestBed(commitDate) {
     testBed.harness.git_hash = "unknown";
     testBed.server_git_commit_date = commitDate;
 
-    // get the server storageEnigine
+    // get the server storageEngine
     var serverStatus = db.runCommand({serverStatus: 1});
     if (serverStatus.storageEngine !== undefined && serverStatus.storageEngine.name !== undefined) {
         testBed.server_storage_engine = serverStatus.storageEngine.name;
@@ -307,7 +299,7 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHos
             var newResults = {};
             newResults['run_start_time'] = new Date();
             for (var j = 0; j < trials; j++) {
-                results[j] = runTest(test, threadCount, multidb, seconds, shard, testBed, writeOptions);
+                results[j] = runTest(test, threadCount, multidb, seconds, shard, writeOptions, testBed);
             }
             var values = [];
             for (var j = 0; j < trials; j++) {
