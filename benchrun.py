@@ -9,8 +9,8 @@ import pymongo
 
 
 def parse_arguments():
-    usage = "python benchrun.py -f <list of test files> -t <list of thread configurations>"
-    parser = ArgumentParser(description="Performance testing script framework thing.", usage=usage)
+    usage = "python benchrun.py -f <list of test files> -t <list of thread counts>\n       run with --help for argument descriptions"
+    parser = ArgumentParser(description="mongo-perf micro-benchmark utility", usage=usage)
 
     parser.add_argument('-f', '--testfiles', dest='testfiles', nargs="+",
                         help='Provide a list of js test files to run',
@@ -28,8 +28,8 @@ def parse_arguments():
                         help='Specify how many trials to run',
                         type=int, default=1)
     parser.add_argument('--shard', dest='shard',
-                        help='Specify shard cluster the test should use, 0 - no shard, 1 - shard with {_id: hashed}, 2 - shard with {_id:1}',
-                        type=int, default=0)
+                        help='Specify shard cluster the test should use, 0 - no shard, 1 - shard with {_id: hashed}, 2 - shard with {_id: 1}',
+                        type=int, default=0, choices=[0, 1, 2])
     parser.add_argument('-l', '--label', dest='reportlabel',
                         help='Specify the label for the report stats saved to bench_results db',
                         default='')
@@ -49,19 +49,22 @@ def parse_arguments():
                         help='Path to a mongo repo to collect commit information',
                         default='/home/mongo-perf/mongo')
     parser.add_argument('--safe', dest='safeMode',
-                        help='Call GLE after every op instead of every 100 ops',
-                        type=bool, default=False)
+                        nargs='?', const='true', choices=['true', 'false'],
+                        help='this option enables a call to GLE after every op instead of every 100 ops',
+                        default='false')
     parser.add_argument('-w', dest='w',
                         help='w write concern',
                         type=int, default=0)
     parser.add_argument('-j', dest='j',
-                        help='j write concern',
-                        type=bool, default=False)
+                        nargs='?', const='true', choices=['true', 'false'],
+                        help='this option turns on the j write concern',
+                        default='false')
     parser.add_argument('--writeCmd', dest='writeCmd',
-                        help='use write command instead of legacy write operations',
-                        type=bool, default=True)
+                        nargs='?', const='true', choices=['true', 'false'],
+                        help='this option turns on use of the write command instead of legacy write operations',
+                        default='true')
 
-    return parser.parse_known_args()
+    return parser
 
 
 def get_shell_info(shell_path):
@@ -96,7 +99,8 @@ def get_server_info(hostname="localhost", port="27017", replica_set="none"):
 
 
 def main():
-    args, extra_args = parse_arguments()
+    parser = parse_arguments()
+    args = parser.parse_args()
 
     if not args.testfiles:
         print("Must provide at least one test file. Run with --help for details.")
@@ -174,27 +178,10 @@ def main():
 
     # put all write options in a Map
     write_options = {}
-    if args.safeMode:
-        write_options["safeGLE"] = 'true'
-    else:
-        write_options["safeGLE"] = 'false'
-
-    if args.j:
-        write_options["writeConcernJ"] = 'true'
-    else:
-        write_options["writeConcernJ"] = 'false'
-
-    if args.w:
-        write_options["writeConcernW"] = args.w
-    else:
-        write_options["writeConcernW"] = 0
-
-    if args.writeCmd:
-        write_options["writeCmdMode"] = 'true'
-    else:
-        write_options["writeCmdMode"] = 'false'
-
-
+    write_options["safeGLE"] = args.safeMode
+    write_options["writeConcernJ"] = args.j
+    write_options["writeConcernW"] = args.w
+    write_options["writeCmdMode"] = args.writeCmd
 
     # Pipe commands to the mongo shell to kickoff the test.
     cmdstr = ("runTests(" +
