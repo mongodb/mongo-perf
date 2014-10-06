@@ -158,6 +158,34 @@ function runTest(test, thread, multidb, runSeconds, shard, writeOptions, testBed
     return { ops_per_sec: total };
 }
 
+function medianCompare(x, y) {
+  return x - y;
+}
+function getMedian(sortableNumbers) {
+    var rval;
+    if (sortableNumbers.length == 0)
+        rval = undefined;
+    else if (sortableNumbers.length == 1)
+        rval = sortableNumbers[0];
+    else {
+        sortableNumbers.sort(medianCompare);
+        print(sortableNumbers);
+        var candidateIndex = Math.floor(sortableNumbers.length / 2);
+        if (sortableNumbers.length % 2 != 0) {
+            // we have an odd number of values.
+            // select the middle value in the sorted list
+            print("odd candidate: ", candidateIndex);
+            rval = sortableNumbers[candidateIndex];
+        }
+        else {
+            // we have an even number of values
+            // interpolate between the two values in the middle of the sorted list
+            print("even candidates: ", candidateIndex-1, candidateIndex);
+            rval = (sortableNumbers[candidateIndex - 1] + sortableNumbers[candidateIndex] ) / 2;
+        }
+    }
+    return rval;
+}
 
 function getVariance(numericArray) {
     var avg = getMean(numericArray);
@@ -305,12 +333,11 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHos
             for (var j = 0; j < trials; j++) {
                 values[j] = results[j].ops_per_sec
             }
-            var mean = getMean(values);
-            var variance = getVariance(values);
             // uncomment if one needs to save the trial values that comprise the mean
             //newResults.ops_per_sec_values = values;
-            newResults.ops_per_sec = mean;
-            newResults.standardDeviation = Math.sqrt(variance);
+            newResults.ops_per_sec = getMean(values);
+            newResults.median = getMedian(values);
+            newResults.standardDeviation = Math.sqrt(getVariance(values));
             newResults.run_end_time = new Date();
             threadResults[threadCount] = newResults;
         }
