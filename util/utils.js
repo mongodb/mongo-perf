@@ -241,7 +241,7 @@ function getDefaultWriteOptions() {
     writeOptions.safeGLE = 'false';
     writeOptions.writeConcernW = 0;
     writeOptions.writeConcernJ = 'false';
-    writeOptions.writeCmdMode = 'false';
+    writeOptions.writeCmdMode = 'true';
     return writeOptions;
 }
 
