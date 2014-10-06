@@ -81,9 +81,6 @@ function runTest(test, thread, multidb, runSeconds, shard, writeOptions, testBed
     });
 
     // set write concern and write command modes
-    // this doesn't make sense for all tests so
-    // test cases must be defined with default values
-    // so this step can make the appropriate substitution
     new_ops.forEach(function (z) {
         //  when true, safe mode calls GLE after every op
         z.safe = (writeOptions.safeGLE.toLowerCase() == 'true' ? true : false)
@@ -236,10 +233,10 @@ function getDefaultTestBed(commitDate) {
 function getDefaultWriteOptions() {
     var writeOptions = {};
     // write concern, write command mode
-    writeOptions.safeGLE = false;
+    writeOptions.safeGLE = 'false';
     writeOptions.writeConcernW = 0;
-    writeOptions.writeConcernJ = false;
-    writeOptions.writeCmdMode = false;
+    writeOptions.writeConcernJ = 'false';
+    writeOptions.writeCmdMode = 'false';
     return writeOptions;
 }
 
