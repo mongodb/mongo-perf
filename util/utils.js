@@ -169,18 +169,15 @@ function getMedian(sortableNumbers) {
         rval = sortableNumbers[0];
     else {
         sortableNumbers.sort(medianCompare);
-        print(sortableNumbers);
         var candidateIndex = Math.floor(sortableNumbers.length / 2);
         if (sortableNumbers.length % 2 != 0) {
             // we have an odd number of values.
             // select the middle value in the sorted list
-            print("odd candidate: ", candidateIndex);
             rval = sortableNumbers[candidateIndex];
         }
         else {
             // we have an even number of values
             // interpolate between the two values in the middle of the sorted list
-            print("even candidates: ", candidateIndex-1, candidateIndex);
             rval = (sortableNumbers[candidateIndex - 1] + sortableNumbers[candidateIndex] ) / 2;
         }
     }
@@ -339,6 +336,8 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHos
             newResults.median = getMedian(values);
             newResults.standardDeviation = Math.sqrt(getVariance(values));
             newResults.run_end_time = new Date();
+            newResults.n = trials;
+            newResults.elapsed_secs = seconds;  // TODO: update mongo shell to return actual elapsed time
             threadResults[threadCount] = newResults;
         }
         testResults[test] = threadResults;
