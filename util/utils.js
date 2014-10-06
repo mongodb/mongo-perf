@@ -96,9 +96,14 @@ function runTest(test, thread, multidb, runSeconds, shard, writeOptions, testBed
         z.writeCmd = (writeOptions.writeCmdMode.toLowerCase() == 'true' ? true : false)
     });
 
+    // setup an environment to pass to the pre and post
+    var env = {
+        threads: thread
+    };
+
     if ("pre" in test) {
         for (var i = 0; i < multidb; i++) {
-            test.pre(collections[i]);
+            test.pre(collections[i], env);
         }
     }
 
@@ -146,7 +151,7 @@ function runTest(test, thread, multidb, runSeconds, shard, writeOptions, testBed
 
     if ("post" in test) {
         for (var i = 0; i < multidb; i++) {
-            test.post(collections[i]);
+            test.post(collections[i], env);
         }
     }
 
