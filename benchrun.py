@@ -85,7 +85,7 @@ def get_shell_info(shell_path):
     return json.loads(out)
 
 
-def get_server_info(hostname="localhost", port="27017", replica_set=None):
+def get_server_info(hostname="localhost", port="27017", replica_set="none"):
     """
     Get the mongod server build info and server status from the target mongod server
     :param hostname: the hostname the target database is running on (defaults to localhost)
@@ -93,7 +93,7 @@ def get_server_info(hostname="localhost", port="27017", replica_set=None):
     :param replica_set: the replica set name the target database is using (defaults to none)
     :return: a tuple of the buildinfo and the server status
     """
-    if replica_set is None:
+    if replica_set == 'none':
         client = pymongo.MongoClient("mongodb://%s:%s/test" % (hostname, port))
     else:
         client = pymongo.MongoReplicaSetClient("mongodb://%s:%s/test?replicaSet=%s" % (hostname, port, replica_set))
