@@ -39,13 +39,13 @@ def parse_arguments():
     parser.add_argument('--rport', '--reportport', dest='reportport',
                         help='Port of the mongod where the results will be saved',
                         default='27017')
-    parser.add_argument('-h', '--host', dest='hostname',
+    parser.add_argument('--host', dest='hostname',
                         help='hostname of the mongod/mongos under test',
                         default='localhost')
     parser.add_argument('-p', '--port', dest='port',
                         help='Port of the mongod/mongos under test',
                         default='27017')
-    parser.add_argument('--replset', dest='replset',
+    parser.add_argument('--replset', dest='replica_set',
                         help='replica set name of the mongod/mongos under test',
                         default=None)
     parser.add_argument('-s', '--shell', dest='shellpath',
@@ -80,7 +80,7 @@ def get_shell_info(shell_path):
     :return: dictionary of the shells getBuildInfo command
     """
     cmdStr = 'printjson(getBuildInfo())'
-    mongo_proc = Popen([shell_path, "--norc", "--quiet", "--eval", cmdStr], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    mongo_proc = Popen([shell_path, "--norc", "--quiet", "--nodb", "--eval", cmdStr], stdin=PIPE, stdout=PIPE, stderr=PIPE)
     out, err = mongo_proc.communicate()
     return json.loads(out)
 
