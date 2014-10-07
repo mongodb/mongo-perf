@@ -39,13 +39,13 @@ def parse_arguments():
     parser.add_argument('--rport', '--reportport', dest='reportport',
                         help='Port of the mongod where the results will be saved',
                         default='27017')
-    parser.add_argument('--host', dest='hostname',
+    parser.add_argument('-h', '--host', dest='hostname',
                         help='hostname of the mongod/mongos under test',
                         default='localhost')
     parser.add_argument('-p', '--port', dest='port',
                         help='Port of the mongod/mongos under test',
                         default='27017')
-    parser.add_argument('--replset', dest='port',
+    parser.add_argument('--replset', dest='replset',
                         help='replica set name of the mongod/mongos under test',
                         default=None)
     parser.add_argument('-s', '--shell', dest='shellpath',
@@ -129,21 +129,23 @@ def main():
     print("")
 
     # Get commit info
+    # TODO: put in path exists check
     repo = git.Repo(args.repo_path)
-    # Get buildinfo in order to get commit hash
-    client = pymongo.MongoClient()  # TODO: pass endpoint details -- i.e. hostname=args.hostname, port=args.port, replica_set=args.replica_set
-    build_info = client['test'].command("buildinfo")
-    commit_hash = build_info['gitVersion']
+
+    # get the server info and status
+    (server_build_info, server_status) = get_server_info(hostname=args.hostname, port=args.port,
+                                                         replica_set=args.replica_set)
+
     # Use hash to get commit_date
     try:
         try:
-            structTime = repo.commit(commit_hash).committed_date
+            structTime = repo.commit(server_build_info['gitVersion']).committed_date
             committed_date = datetime.datetime(*structTime[:6])
         except:
-            scalarTime = repo.commit(commit_hash).committed_date
+            scalarTime = repo.commit(server_build_info['gitVersion']).committed_date
             committed_date = datetime.datetime.fromtimestamp(scalarTime)
     except:
-        print "WARNING: could not find Git commit", commit_hash, "in", args.repo_path
+        print "WARNING: could not find Git commit", server_build_info['gitVersion'], "in", args.repo_path
         print "         substituting current date / time"
         committed_date = datetime.datetime.now()
 
@@ -162,8 +164,6 @@ def main():
     test_bed["harness"]["client"]["version"] = shell_build_info['version']
     test_bed["harness"]["client"]["git_hash"] = shell_build_info['gitVersion']
 
-    # get the server info and status
-    (server_build_info, server_status) = get_server_info(hostname=args.hostname, port=args.port, replica_set=args.replica_set)
     # determine mongod version in use
     test_bed["server_version"] = server_build_info['version']
     # determine mongod git hash in use
