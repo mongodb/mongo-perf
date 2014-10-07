@@ -18,11 +18,11 @@ import json
 from collections import defaultdict
 from copy import copy
 from ConfigParser import SafeConfigParser
+import argparse
 
 import pymongo
 import bson
 from bottle import *
-import argparse
 
 
 default_options = {
@@ -36,7 +36,8 @@ default_options = {
 
 # setup command line arguments
 argument_parser = argparse.ArgumentParser(description='The mongo-perf web server.')
-argument_parser.add_argument('--mode', dest='mode', action='store', default='prod', choices=['prod','devel'], help='The mode to run the mongo-perf server in')
+argument_parser.add_argument('--mode', dest='mode', action='store', default='prod', choices=['prod', 'devel'],
+                             help='The mode to run the mongo-perf server in')
 args = argument_parser.parse_args()
 
 config = SafeConfigParser(defaults=default_options)
@@ -248,7 +249,7 @@ def results_page():
                 result_entry.append(result['date'])
                 for thread in threads:
                     result_entry.append([result[thread]['ops_per_sec'], result[thread]['standardDeviation']])
-                #here we have [<date>, ops1, ops2...]
+                # here we have [<date>, ops1, ops2...]
                 results_section.append(result_entry)
 
             # construct final object
