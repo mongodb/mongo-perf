@@ -15,9 +15,9 @@ var setupMMS = function( collection ) {
         base.h[i] = {};
         for (var j = 0; j < 60; j++) {
             base.h[i][j] = { n: 0, t: 0, v: 0 };
-		collection.insert(base);
         }
     }
+    collection.insert(base);
 };
 
 // Increment one shallow (top-level) field.
