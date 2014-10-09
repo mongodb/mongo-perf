@@ -141,7 +141,7 @@
         %import urllib
         %for k, (outer_result, dygraph_data) in enumerate(zip(results, dygraph_results)):
         <div class="test-entry">
-        <h2 id="{{outer_result['name']}}">{{outer_result['name']}}</h2>
+        <h2 id="{{outer_result['name']}}"><a href="https://github.com/search?q={{outer_result['name'][outer_result['name'].rfind(":") + 1:]}}+repo%3Amongodb%2Fmongo-perf&amp;type=Code&amp;ref=searchresults" target="_blank">{{outer_result['name']}}</a></h2>
         <button id='table{{k}}button' onclick='showTableByIDClicked("{{k}}")'>Show Table</button>
         <table class="table table-striped" id="table-{{k}}">
             <thead>
