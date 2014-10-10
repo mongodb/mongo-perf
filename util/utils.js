@@ -52,10 +52,9 @@ function formatRunDate(now) {
 }
 
 
-function runTest(test, thread, multidb, runSeconds, shard, writeOptions, testBed) {
+function runTest(test, thread, multidb, runSeconds, shard, writeOptions) {
 
     if (typeof writeOptions === "undefined") writeOptions = getDefaultWriteOptions();
-    if (typeof testBed === "undefined") testBed = getDefaultTestBed();
     if (typeof shard === "undefined") shard = 0;
 
     var collections = [];
@@ -271,6 +270,7 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHos
     if (typeof testBed === "undefined") testBed = getDefaultTestBed(commitDate);
 
     var testResults = {};
+    testResults.results=[];
     // The following are only used when reportLabel is not None.
     var resultsCollection = db.getSiblingDB("bench_results").raw;
     var myId = 0;
@@ -326,7 +326,7 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHos
             var newResults = {};
             newResults['run_start_time'] = new Date();
             for (var j = 0; j < trials; j++) {
-                results[j] = runTest(test, threadCount, multidb, seconds, shard, writeOptions, testBed);
+                results[j] = runTest(test, threadCount, multidb, seconds, shard, writeOptions);
             }
             var values = [];
             for (var j = 0; j < trials; j++) {
@@ -342,8 +342,11 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHos
             newResults.elapsed_secs = seconds;  // TODO: update mongo shell to return actual elapsed time
             threadResults[threadCount] = newResults;
         }
-        testResults[test] = threadResults;
         threadResults['run_end_time'] = new Date();
+        testResults['results'].push({
+            name: test.name,
+            results: threadResults
+        });
 
         if (reportLabel) {
             var resultsArr = (multidb > 1) ? "multidb" : "singledb";
@@ -364,9 +367,33 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHos
             }
         }
     }
+    testResults['run_end_time'] = new Date();
 
     // End delimiter for the useful output to be displayed.
     print("@@@END@@@");
 
     return testResults;
+}
+
+/**
+ * Run tests defined in a tests array (outside of the function)
+ *
+ * @param threadCounts - array of threads to use
+ * @param multidb - multidb 1 or 0
+ * @param seconds - the time to run each performance test for
+ * @param trials - the number of trials to run
+ * @param reportLabel - the label for the test run
+ * @param reportHost - the hostname for the database to send the reported data to (defaults to localhost)
+ * @param reportPort - the port number for the database to send the reported data to (defaults to 27017)
+ * @param commitDate - the commit date/time to report (defaults to the current time/date)
+ * @param shard - the number of shards the test is run for (defaults to 0)
+ * @param writeOptions - the writeOptions to be used with the test (defaults to {safeGLE:false, writeConcernW:0, writeConcernJ:false, writeCmdMode: false}
+ * @param testBed - testbed information such as server_storage_engine, harness, server_git_commit_date
+ * @returns {{}} the results of a run set of tests
+ */
+function mongoPerfRunTests(threadCounts, multidb, seconds, trials, reportLabel, reportHost, reportPort, commitDate, shard, writeOptions, testBed) {
+    testResults = runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHost, reportPort, commitDate, shard, writeOptions, testBed);
+    print("@@@RESULTS_START@@@");
+    print(JSON.stringify(testResults));
+    print("@@@RESULTS_END@@@");
 }

@@ -3,9 +3,14 @@ from subprocess import Popen, PIPE, call
 import datetime
 import sys
 import json
+import urllib2
 
+from bson import json_util as json_extended_util
 import git
 import pymongo
+
+
+dyno_url = "http://dyno.mongodb.parts/api/v1/results"
 
 
 def parse_arguments():
@@ -69,6 +74,7 @@ def parse_arguments():
                         nargs='?', const='true', choices=['true', 'false'],
                         help='this option turns on use of the write command instead of legacy write operations',
                         default='true')
+    parser.add_argument('--nodyno', dest='nodyno', action='store_true', help='dont submit test results to dyno')
 
     return parser
 
@@ -80,12 +86,13 @@ def get_shell_info(shell_path):
     :return: dictionary of the shells getBuildInfo command
     """
     cmdStr = 'printjson(getBuildInfo())'
-    mongo_proc = Popen([shell_path, "--norc", "--quiet", "--nodb", "--eval", cmdStr], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    mongo_proc = Popen([shell_path, "--norc", "--quiet", "--nodb", "--eval", cmdStr], stdin=PIPE, stdout=PIPE,
+                       stderr=PIPE)
     out, err = mongo_proc.communicate()
     return json.loads(out)
 
 
-def get_server_info(hostname="localhost", port="27017", replica_set="none"):
+def get_server_info(hostname="localhost", port="27017", replica_set=None):
     """
     Get the mongod server build info and server status from the target mongod server
     :param hostname: the hostname the target database is running on (defaults to localhost)
@@ -93,7 +100,7 @@ def get_server_info(hostname="localhost", port="27017", replica_set="none"):
     :param replica_set: the replica set name the target database is using (defaults to none)
     :return: a tuple of the buildinfo and the server status
     """
-    if replica_set == 'none':
+    if replica_set is None:
         client = pymongo.MongoClient("mongodb://%s:%s/test" % (hostname, port))
     else:
         client = pymongo.MongoReplicaSetClient("mongodb://%s:%s/test?replicaSet=%s" % (hostname, port, replica_set))
@@ -102,6 +109,100 @@ def get_server_info(hostname="localhost", port="27017", replica_set="none"):
     server_status = db.command("serverStatus")
     client.close()
     return server_build_info, server_status
+
+
+def to_json_date(string_datetime):
+    dt = datetime.datetime.strptime(string_datetime.replace('Z', 'GMT'), '%Y-%m-%dT%H:%M:%S.%f%Z')
+    epoch = datetime.datetime.utcfromtimestamp(0)
+    delta = dt - epoch
+    return {"$date": int(delta.total_seconds() * 1000)}
+
+
+
+def cleanup_result_dates(results):
+    if 'run_start_time' in results:
+        results['run_start_time'] = to_json_date(results['run_start_time'])
+    if 'run_end_time' in results:
+        results['run_end_time'] = to_json_date(results['run_end_time'])
+        # convert date/time stamps to $date
+    for test in results['results']:
+        if 'run_start_time' in test['results']:
+            test['results']['run_start_time'] = to_json_date(test['results']['run_start_time'])
+        if 'run_end_time' in test['results']:
+            test['results']['run_end_time'] = to_json_date(test['results']['run_end_time'])
+        for threadrun in test['results']:
+            if 'run_start_time' in test['results'][threadrun]:
+                test['results'][threadrun]['run_start_time'] = to_json_date(
+                    test['results'][threadrun]['run_start_time'])
+            if 'run_end_time' in test['results'][threadrun]:
+                test['results'][threadrun]['run_end_time'] = to_json_date(test['results'][threadrun]['run_end_time'])
+    return results
+
+
+def send_results_to_dyno(results, label, write_options, test_bed, cmdstr, server_status, server_build_info,
+                         shell_build_info, args):
+    for test in results['results']:
+        for threadrun in test['results']:
+            if threadrun.isdigit():
+                result = {
+                    "harness": "mongo-perf",
+                    "workload": test['name'],
+                    "server_git_hash": test_bed["server_git_hash"],
+                    "server_stats": None,
+                    "server_version": test_bed["server_version"],
+                    "attributes": {
+                        "nThread": int(threadrun),
+                        "trialTime": args.seconds,
+                        "multidb": args.multidb,
+                        "shard": args.shard,
+                        "label": label,
+                        "testfiles": args.testfiles,
+                        "standardDeviation": test['results'][threadrun]['standardDeviation'],
+                        "writeOptions": write_options
+                    },
+                    "start_time": results['run_start_time'],
+                    "end_time": results['run_end_time'],
+                    "summary": {
+                        "all_nodes": {
+                            "op_median": test['results'][threadrun]['median'],
+                            "op_throughput": test['results'][threadrun]['ops_per_sec']
+                        },
+                        "nodes": None
+                    },
+                    "test_driver": {
+                        "build_date": "",
+                        "git_hash": test_bed["harness"]["client"]["git_hash"],
+                        "version": test_bed["harness"]["client"]["version"]
+                    },
+                    "test_run_time": test['results'][threadrun]['elapsed_secs'],
+                    "testbed": {
+                        "servers": {
+                            "mongod": [
+                                {
+                                    "hostinfo": {
+                                        "extra": {},
+                                        "os": {
+                                            "type": server_build_info['sysInfo'].partition(' ')[0],
+                                        },
+                                        "system": {
+                                            "hostname": server_status['host'],
+                                        }
+                                    },
+                                    "serverinfo": server_build_info,
+                                    "storageengine": {
+                                        "name": test_bed["server_storage_engine"]
+                                    }
+                                }
+                            ]
+                        },
+                        "type": "standalone"
+                    },
+
+                }
+                req = urllib2.Request(dyno_url)
+                req.add_header('Content-Type', 'application/json')
+                urllib2.urlopen(req, json.dumps(result, default=json_extended_util.default))
+    return
 
 
 def main():
@@ -175,7 +276,7 @@ def main():
         test_bed["server_storage_engine"] = 'mmapv0'
 
     # Open a mongo shell subprocess and load necessary files.
-    mongo_proc = Popen([args.shellpath, "--norc", "--port", args.port], stdin=PIPE, stdout=PIPE)
+    mongo_proc = Popen([args.shellpath, "--norc", "--quiet", "--port", args.port], stdin=PIPE, stdout=PIPE)
     mongo_proc.stdin.write("load('util/utils.js')\n")
     print "load('util/utils.js')"
     for testfile in args.testfiles:
@@ -190,7 +291,7 @@ def main():
     write_options["writeCmdMode"] = args.writeCmd
 
     # Pipe commands to the mongo shell to kickoff the test.
-    cmdstr = ("runTests(" +
+    cmdstr = ("mongoPerfRunTests(" +
               str(args.threads) + ", " +
               str(args.multidb) + ", " +
 
@@ -210,14 +311,34 @@ def main():
 
     # Read test output.
     readout = False
+    getting_results = False
+    got_results = False
+    line_results = ""
     for line in iter(mongo_proc.stdout.readline, ''):
         line = line.strip()
         if line == "@@@START@@@":
             readout = True
+            getting_results = False
         elif line == "@@@END@@@":
             readout = False
+            getting_results = False
+        elif line == "@@@RESULTS_START@@@":
+            readout = False
+            getting_results = True
+        elif line == "@@@RESULTS_END@@@":
+            readout = False
+            got_results = True
+            getting_results = False
         elif readout:
             print line
+        elif not got_results and getting_results:
+            line_results += line
+            # Encode as mongodb-extended-json
+    results = cleanup_result_dates(json.loads(line_results))
+    if not args.nodyno:
+        # send results to dyno
+        send_results_to_dyno(results, args.reportlabel, write_options, test_bed, cmdstr, server_status,
+                             server_build_info, shell_build_info, args)
 
     print("Finished Testing.")
 
