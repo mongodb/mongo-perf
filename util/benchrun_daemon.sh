@@ -76,7 +76,7 @@ then
 fi
 
 function do_git_tasks() {
-    cd $BUILD_DIR
+    cd $BUILD_DIR || exit 1
     rm -rf build
 
     if [ -z $FETCHMCI ]
@@ -98,7 +98,7 @@ function do_git_tasks() {
         git pull
         git clean -fqdx
 
-        cd ${MPERFPATH}
+        cd ${MPERFPATH} || exit 1
         echo "downloading binary artifacts from MCI"
         if [ $THIS_PLATFORM == 'Windows' ]
         then
