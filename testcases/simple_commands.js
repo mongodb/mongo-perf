@@ -7,20 +7,20 @@ tests.push( { name: "Commands.isMaster",
                   { op: "command", ns : "#B_DB", command : { "isMaster" : 1 } }
               ] } );
 
-tests.push( { name: "Commands.buildInfo",
-              ops: [
-                  { op: "command", ns : "#B_DB", command : { "buildInfo" : 1 } }
-              ] } );
+//tests.push( { name: "Commands.buildInfo",
+//              ops: [
+//                  { op: "command", ns : "#B_DB", command : { "buildInfo" : 1 } }
+//              ] } );
 
-tests.push( { name: "Commands.illegalOp",
-              ops: [
-                  { op: "command", ns : "#B_DB", command : { "notExist" : 1 } }
-              ] } );
+//tests.push( { name: "Commands.illegalOp",
+//              ops: [
+//                  { op: "command", ns : "#B_DB", command : { "notExist" : 1 } }
+//              ] } );
 
-tests.push( { name: "Commands.nop",
-              ops: [
-                  { op: "nop" }
-              ] } );
+//tests.push( { name: "Commands.nop",
+//              ops: [
+//                  { op: "nop" }
+//              ] } );
 
 tests.push( { name: "Commands.CountsFullCollection",
               pre: function( collection ) {
