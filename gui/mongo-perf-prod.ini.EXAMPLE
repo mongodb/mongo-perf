@@ -1,4 +1,5 @@
 [mongo-perf]
 database_hostname=mongo-perf-db-1.vpc3.10gen.cc
 database_replica_set=mongo-perf
+database_port=27017
 server_port=80

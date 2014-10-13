@@ -53,12 +53,12 @@ if not config.has_section("mongo-perf"):
 # database info
 DATABASE_REPLICA_SET = config.get(section='mongo-perf', option='database_replica_set')
 DATABASE_HOST = config.get(section='mongo-perf', option='database_hostname')
-DATABASE_PORT = config.get(section='mongo-perf', option='database_port', raw=True)
+DATABASE_PORT = config.getint(section='mongo-perf', option='database_port')
 DATABASE_NAME = config.get(section='mongo-perf', option='database_name')
 
 # web server settings
 SERVER_BIND_IP = config.get(section='mongo-perf', option='server_bindip')
-SERVER_PORT = config.get(section='mongo-perf', option='server_port', raw=True)
+SERVER_PORT = config.getint(section='mongo-perf', option='server_port')
 
 # connect to our standalone, or replica set database
 if DATABASE_REPLICA_SET == 'none':
