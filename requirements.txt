@@ -1,4 +1,4 @@
 pymongo==2.4.2
 boto==2.8.0
 bottle==0.11.6
-argparse=1.2.1
+argparse==1.2.1
