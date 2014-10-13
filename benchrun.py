@@ -44,7 +44,7 @@ def parse_arguments():
     parser.add_argument('--rport', '--reportport', dest='reportport',
                         help='Port of the mongod where the results will be saved',
                         default='27017')
-    parser.add_argument('-h', '--host', dest='hostname',
+    parser.add_argument('--host', dest='hostname',
                         help='hostname of the mongod/mongos under test',
                         default='localhost')
     parser.add_argument('-p', '--port', dest='port',
