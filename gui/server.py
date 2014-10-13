@@ -59,7 +59,7 @@ DATABASE_NAME = mconfig.get('database_name')
 
 # web server settings
 SERVER_BIND_IP = mconfig.get('server_bindip')
-SERVER_PORT = mconfig.get('server_port')
+SERVER_PORT = int(mconfig.get('server_port'))
 
 # connect to our standalone, or replica set database
 if DATABASE_REPLICA_SET == None:
