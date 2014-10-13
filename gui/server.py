@@ -28,7 +28,7 @@ from bottle import *
 default_options = {
     'database_hostname': 'localhost',
     'database_port': 27017,
-    'database_replica_set': 'none',
+    'database_replica_set': None,
     'database_name': 'bench_results',
     'server_port': 8080,
     'server_bindip': '0.0.0.0'
@@ -48,20 +48,21 @@ else:
 config.read(config_files)
 if not config.has_section("mongo-perf"):
     config.add_section("mongo-perf")
+mconfig = { k:v for k,v in config.items(section='mongo-perf', raw=True) }
 
 # performance metrics are stored in mongod
 # database info
-DATABASE_REPLICA_SET = config.get(section='mongo-perf', option='database_replica_set')
-DATABASE_HOST = config.get(section='mongo-perf', option='database_hostname')
-DATABASE_PORT = config.getint(section='mongo-perf', option='database_port')
-DATABASE_NAME = config.get(section='mongo-perf', option='database_name')
+DATABASE_REPLICA_SET = mconfig.get('database_replica_set')
+DATABASE_HOST = mconfig.get('database_hostname')
+DATABASE_PORT = int(mconfig.get('database_port'))
+DATABASE_NAME = mconfig.get('database_name')
 
 # web server settings
-SERVER_BIND_IP = config.get(section='mongo-perf', option='server_bindip')
-SERVER_PORT = config.getint(section='mongo-perf', option='server_port')
+SERVER_BIND_IP = mconfig.get('server_bindip')
+SERVER_PORT = mconfig.get('server_port')
 
 # connect to our standalone, or replica set database
-if DATABASE_REPLICA_SET == 'none':
+if DATABASE_REPLICA_SET == None:
     db = pymongo.Connection(host=DATABASE_HOST, port=DATABASE_PORT)[DATABASE_NAME]
 else:
     db = pymongo.Connection(host=DATABASE_HOST, port=DATABASE_PORT, replicaSet=DATABASE_REPLICA_SET)[DATABASE_NAME]
