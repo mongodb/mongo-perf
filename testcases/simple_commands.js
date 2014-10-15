@@ -3,6 +3,7 @@ if ( typeof(tests) != "object" ) {
 }
 
 tests.push( { name: "Commands.isMaster",
+              tags: ['isMaster','commands','sanity','daily','weekly','monthly'],
               ops: [
                   { op: "command", ns : "#B_DB", command : { "isMaster" : 1 } }
               ] } );
@@ -23,6 +24,7 @@ tests.push( { name: "Commands.isMaster",
 //              ] } );
 
 tests.push( { name: "Commands.CountsFullCollection",
+              tags: ['count','commands','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 1000; i++ ) {
@@ -36,6 +38,7 @@ tests.push( { name: "Commands.CountsFullCollection",
 
 
 tests.push( { name: "Commands.CountsIntIDRange",
+              tags: ['count','commands','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 1000; i++ ) {
@@ -53,6 +56,7 @@ tests.push( { name: "Commands.CountsIntIDRange",
 
 
 tests.push( { name: "Commands.v2.FindAndModifyInserts",
+              tags: ['findAndModify','command','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
               },
@@ -67,7 +71,9 @@ tests.push( { name: "Commands.v2.FindAndModifyInserts",
               ] } );
 
 function genDistinctTest( name, index, query ) {
-    var doc = { name : name };
+    var doc = { name : name,
+                tags: ['distinct','command','sanity','daily','weekly','monthly']
+              };
     if ( index ) {
         doc.pre = function( collection ) {
             collection.drop();
@@ -92,6 +98,7 @@ function genDistinctTest( name, index, query ) {
     }
 
     var op = { op: "command",
+               tags: ['distinct','command','sanity','daily','weekly','monthly'],
                ns : "#B_DB",
                command : { distinct : "#B_COLL",
                            key : "x" } };

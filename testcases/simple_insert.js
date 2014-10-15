@@ -3,6 +3,7 @@ if ( typeof(tests) != "object" )
     tests = [];
 
 tests.push( { name: "Insert.Empty",
+              tags: ['insert','sanity','daily','weekly','monthly'],
               pre: function( collection ) { collection.drop(); },
               ops: [
                   { op:  "insert",
@@ -10,6 +11,7 @@ tests.push( { name: "Insert.Empty",
               ] } );
 
 tests.push( { name: "Insert.EmptyCapped",
+              tags: ['insert','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.runCommand( "create", { capped : true,
@@ -21,6 +23,7 @@ tests.push( { name: "Insert.EmptyCapped",
               ] } );
 
 tests.push( { name: "Insert.JustID",
+              tags: ['insert','sanity','daily','weekly','monthly'],
               pre: function( collection ) { collection.drop(); },
               ops: [
                   { op:  "insert", 
@@ -28,6 +31,7 @@ tests.push( { name: "Insert.JustID",
               ] } );
 
 tests.push( { name: "Insert.IntID",
+              tags: ['insert','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({a: 1});
@@ -40,6 +44,7 @@ tests.push( { name: "Insert.IntID",
               ] } );
 
 tests.push( { name: "Insert.IntIDUpsert",
+              tags: ['insert','sanity','daily','weekly','monthly'],
               pre: function( collection ) { collection.drop(); },
               ops: [
                   { op:  "update",
@@ -51,6 +56,7 @@ tests.push( { name: "Insert.IntIDUpsert",
               ] } );
 
 tests.push( { name: "Insert.JustNum",
+              tags: ['insert','sanity','daily','weekly','monthly'],
               pre: function( collection ) { collection.drop(); },
               ops: [
                   { op:  "insert",
@@ -60,6 +66,7 @@ tests.push( { name: "Insert.JustNum",
               ] } );
 
 tests.push( { name: "Insert.JustNumIndexedBefore",
+              tags: ['insert','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({x: 1});
@@ -72,6 +79,7 @@ tests.push( { name: "Insert.JustNumIndexedBefore",
               ] } );
 
 tests.push( { name: "Insert.NumAndID",
+              tags: ['insert','sanity','daily','weekly','monthly'],
               pre: function( collection ) { collection.drop(); },
               ops: [
                   { op: "insert",

@@ -3,6 +3,7 @@ if ( typeof(tests) != "object" ) {
 }
 
 tests.push( { name: "Insert.v0.SingleIndex.Seq",
+              tags: ['insert','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({x: 1});
@@ -15,6 +16,7 @@ tests.push( { name: "Insert.v0.SingleIndex.Seq",
               ] } );
               
 tests.push( { name: "Insert.v0.SingleIndex.Uncontested.Rnd",
+              tags: ['insert','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({x: 1});
@@ -27,6 +29,7 @@ tests.push( { name: "Insert.v0.SingleIndex.Uncontested.Rnd",
               ] } );
 
 tests.push( { name: "Insert.v0.SingleIndex.Contested.Rnd",
+              tags: ['insert','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({x: 1});
@@ -39,6 +42,7 @@ tests.push( { name: "Insert.v0.SingleIndex.Contested.Rnd",
               ] } );
 
 tests.push( { name: "Insert.v0.MultiIndex.Uncontested.Rnd",
+              tags: ['insert','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({x: 1});
@@ -56,6 +60,7 @@ tests.push( { name: "Insert.v0.MultiIndex.Uncontested.Rnd",
               ] } );
 
 tests.push( { name: "Insert.v0.MultiIndex.Contested.Rnd",
+              tags: ['insert','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({x: 1});
@@ -73,6 +78,7 @@ tests.push( { name: "Insert.v0.MultiIndex.Contested.Rnd",
               ] } );
 
 tests.push( { name: "Insert.v0.MultiKeyIndex.Uncontested.Rnd",
+              tags: ['insert','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({x: 1});
@@ -90,6 +96,7 @@ tests.push( { name: "Insert.v0.MultiKeyIndex.Uncontested.Rnd",
               ] } );
 
 tests.push( { name: "Insert.v0.MultiKeyIndex.Contested.Rnd",
+              tags: ['insert','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({x: 1});

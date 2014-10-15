@@ -19,7 +19,7 @@ var testBigAllDocs = [
 ]
 
 tests.push( { name: "MultiUpdate.v0.BigAllDocs.NoIndex",
-              tags: ['slow','update','weekly'],
+              tags: ['update','slow','weekly'],
               pre: function( collection ) {
                   setupTestBigAllDocs( collection );                                
               },
@@ -27,7 +27,7 @@ tests.push( { name: "MultiUpdate.v0.BigAllDocs.NoIndex",
             } );       
               
 tests.push( { name: "MultiUpdate.v0.BigAllDocs.Indexed",
-              tags: ['slow','update','weekly'],
+              tags: ['update','slow','weekly'],
               pre: function( collection ) {
                   setupTestBigAllDocs( collection );
                   collection.ensureIndex( { x : 1 } );                                    
@@ -52,7 +52,7 @@ var testBigAllDocsMultiChange = [
 ]
 
 tests.push( { name: "MultiUpdate.v0.BigAllDocsMultiChange.NoIndex",
-              tags: ['slow','update','weekly'],
+              tags: ['update','slow','weekly'],
               pre: function( collection ) {
                   setupTestBigAllDocsMultiChange( collection );                                
               },
@@ -60,7 +60,7 @@ tests.push( { name: "MultiUpdate.v0.BigAllDocsMultiChange.NoIndex",
             } );       
               
 tests.push( { name: "MultiUpdate.v0.BigAllDocsMultiChange.Indexed",
-              tags: ['slow','update','weekly'],
+              tags: ['update','slow','weekly'],
               pre: function( collection ) {
                   setupTestBigAllDocsMultiChange( collection );
                   collection.ensureIndex( { x : 1 } );                                    
@@ -86,7 +86,7 @@ var testContendedAllDocs = [
 ]
               
 tests.push( { name: "MultiUpdate.v0.Contended.AllDocs.NoIndex",
-              tags: ['slow','update','weekly'],
+              tags: ['update','slow','weekly'],
               pre: function( collection ) {
                   setupTestContendedAllDocs( collection )
               },
@@ -94,7 +94,7 @@ tests.push( { name: "MultiUpdate.v0.Contended.AllDocs.NoIndex",
             } );   
               
 tests.push( { name: "MultiUpdate.v0.Contended.AllDocs.Indexed",
-              tags: ['slow','update','weekly'],
+              tags: ['update','slow','weekly'],
               pre: function( collection ) {
                   setupTestContendedAllDocs( collection );
                   collection.ensureIndex( { x : 1 } );                                    

@@ -21,6 +21,7 @@ function generateGridMapGeoJSON(collection, x1, y1, x2, y2) {
 
 // geoWithin
 tests.push( { name: "Geo.within.2dsphere.polygon",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({loc: "2dsphere"});
@@ -31,6 +32,7 @@ tests.push( { name: "Geo.within.2dsphere.polygon",
               ] } );
 
 tests.push( { name: "Geo.within.2dsphere.polygon.offcenter",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({loc: "2dsphere"});
@@ -41,6 +43,7 @@ tests.push( { name: "Geo.within.2dsphere.polygon.offcenter",
               ] } );
 
 tests.push( { name: "Geo.geoJSON.within.2dsphere.polygon",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({loc: "2dsphere"});
@@ -51,6 +54,7 @@ tests.push( { name: "Geo.geoJSON.within.2dsphere.polygon",
               ] } );
 
 tests.push( { name: "Geo.geoJSON.within.2dsphere.polygon.offcenter",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({loc: "2dsphere"});
@@ -61,6 +65,7 @@ tests.push( { name: "Geo.geoJSON.within.2dsphere.polygon.offcenter",
               ] } );
 
 tests.push( { name: "Geo.within.2dsphere.centersphere",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) { 
                     collection.drop(); 
                   collection.ensureIndex({loc: "2dsphere"});
@@ -71,6 +76,7 @@ tests.push( { name: "Geo.within.2dsphere.centersphere",
               ] } );
 
 tests.push( { name: "Geo.within.2dsphere.centersphere.offcenter",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) { 
                     collection.drop(); 
                   collection.ensureIndex({loc: "2dsphere"});
@@ -81,6 +87,7 @@ tests.push( { name: "Geo.within.2dsphere.centersphere.offcenter",
               ] } );
 
 tests.push( { name: "Geo.geoJSON.within.2dsphere.centersphere",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) { 
                     collection.drop(); 
                   collection.ensureIndex({loc: "2dsphere"});
@@ -91,6 +98,7 @@ tests.push( { name: "Geo.geoJSON.within.2dsphere.centersphere",
               ] } );
 
 tests.push( { name: "Geo.geoJSON.within.2dsphere.centersphere.offcenter",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) { 
                     collection.drop(); 
                   collection.ensureIndex({loc: "2dsphere"});
@@ -101,6 +109,7 @@ tests.push( { name: "Geo.geoJSON.within.2dsphere.centersphere.offcenter",
               ] } );
 // findOne
 tests.push( { name: "Geo.within.2dsphere.polygon.findOne",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({loc: "2dsphere"});
@@ -111,6 +120,7 @@ tests.push( { name: "Geo.within.2dsphere.polygon.findOne",
               ] } );
 
 tests.push( { name: "Geo.within.2dsphere.polygon.findOne.offcenter",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({loc: "2dsphere"});
@@ -121,6 +131,7 @@ tests.push( { name: "Geo.within.2dsphere.polygon.findOne.offcenter",
               ] } );
 
 tests.push( { name: "Geo.geoJSON.within.2dsphere.polygon.findOne",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({loc: "2dsphere"});
@@ -131,6 +142,7 @@ tests.push( { name: "Geo.geoJSON.within.2dsphere.polygon.findOne",
               ] } );
 
 tests.push( { name: "Geo.geoJSON.within.2dsphere.polygon.findOne.offcenter",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({loc: "2dsphere"});
@@ -142,6 +154,7 @@ tests.push( { name: "Geo.geoJSON.within.2dsphere.polygon.findOne.offcenter",
 
 
 tests.push( { name: "Geo.within.2dsphere.centerSphere.findOne",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) { 
                     collection.drop(); 
                   collection.ensureIndex({loc: "2dsphere"});
@@ -152,6 +165,7 @@ tests.push( { name: "Geo.within.2dsphere.centerSphere.findOne",
               ] } );
 
 tests.push( { name: "Geo.within.2dsphere.centerSphere.findOne.offcenter",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) { 
                     collection.drop(); 
                   collection.ensureIndex({loc: "2dsphere"});
@@ -162,6 +176,7 @@ tests.push( { name: "Geo.within.2dsphere.centerSphere.findOne.offcenter",
               ] } );
 
 tests.push( { name: "Geo.geoJSON.within.2dsphere.centerSphere.findOne",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) { 
                     collection.drop(); 
                   collection.ensureIndex({loc: "2dsphere"});
@@ -172,6 +187,7 @@ tests.push( { name: "Geo.geoJSON.within.2dsphere.centerSphere.findOne",
               ] } );
 
 tests.push( { name: "Geo.geoJSON.within.2dsphere.centerSphere.findOne.offcenter",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) { 
                     collection.drop(); 
                   collection.ensureIndex({loc: "2dsphere"});
@@ -185,6 +201,7 @@ tests.push( { name: "Geo.geoJSON.within.2dsphere.centerSphere.findOne.offcenter"
 
 // geoNear
 tests.push( { name: "Geo.near.2dSphere.findOne.center",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({loc: "2dsphere"});
@@ -195,6 +212,7 @@ tests.push( { name: "Geo.near.2dSphere.findOne.center",
               ] } );
 
 tests.push( { name: "Geo.near.2dSphere.findOne.offcenter",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({loc: "2dsphere"});
@@ -205,6 +223,7 @@ tests.push( { name: "Geo.near.2dSphere.findOne.offcenter",
               ] } );
 
 tests.push( { name: "Geo.near.2dSphere.find100.center",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({loc: "2dsphere"});
@@ -216,6 +235,7 @@ tests.push( { name: "Geo.near.2dSphere.find100.center",
 
 
 tests.push( { name: "Geo.near.2dSphere.find100.offcenter",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({loc: "2dsphere"});
@@ -228,6 +248,7 @@ tests.push( { name: "Geo.near.2dSphere.find100.offcenter",
 
 // geoNear with GeoJSON as location
 tests.push( { name: "Geo.geoJSON.near.2dSphere.findOne.center",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({loc: "2dsphere"});
@@ -238,6 +259,7 @@ tests.push( { name: "Geo.geoJSON.near.2dSphere.findOne.center",
               ] } );
 
 tests.push( { name: "Geo.geoJSON.near.2dSphere.findOne.offcenter",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({loc: "2dsphere"});
@@ -248,6 +270,7 @@ tests.push( { name: "Geo.geoJSON.near.2dSphere.findOne.offcenter",
               ] } );
 
 tests.push( { name: "Geo.geoJSON.near.2dSphere.find100.center",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({loc: "2dsphere"});
@@ -259,6 +282,7 @@ tests.push( { name: "Geo.geoJSON.near.2dSphere.find100.center",
 
 
 tests.push( { name: "Geo.geoJSON.near.2dSphere.find100.offcenter",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({loc: "2dsphere"});
@@ -271,6 +295,7 @@ tests.push( { name: "Geo.geoJSON.near.2dSphere.find100.offcenter",
 
 // geoNearSphere
 tests.push( { name: "Geo.geoJSON.nearSphere.2dsphere.findOne.center",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) { 
                     collection.drop(); 
                   collection.ensureIndex({loc: "2dsphere"});
@@ -281,6 +306,7 @@ tests.push( { name: "Geo.geoJSON.nearSphere.2dsphere.findOne.center",
               ] } );
 
 tests.push( { name: "Geo.geoJSON.nearSphere.2dsphere.findOne.offcenter",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) { 
                     collection.drop(); 
                   collection.ensureIndex({loc: "2dsphere"});
@@ -291,6 +317,7 @@ tests.push( { name: "Geo.geoJSON.nearSphere.2dsphere.findOne.offcenter",
               ] } );
 
 tests.push( { name: "Geo.geoJSON.nearSphere.2dsphere.find.center",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) { 
                     collection.drop(); 
                   collection.ensureIndex({loc: "2dsphere"});
@@ -301,6 +328,7 @@ tests.push( { name: "Geo.geoJSON.nearSphere.2dsphere.find.center",
               ] } );
 
 tests.push( { name: "Geo.geoJSON.nearSphere.2dsphere.find.offcenter",
+              tags: ['geo','daily','weekly','monthly'],
               pre: function( collection ) { 
                     collection.drop(); 
                   collection.ensureIndex({loc: "2dsphere"});

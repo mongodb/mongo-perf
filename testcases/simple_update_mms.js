@@ -22,6 +22,7 @@ var setupMMS = function( collection ) {
 
 // Increment one shallow (top-level) field.
 tests.push( { name: "Update.MmsIncShallow1",
+              tags: ['update','sanity','mms','update','weekly','monthly'],
               pre: setupMMS,
               ops: [
                   { op:  "update",
@@ -32,6 +33,7 @@ tests.push( { name: "Update.MmsIncShallow1",
 
 // Increment two shallow (top-level) fields.
 tests.push( { name: "Update.MmsIncShallow2",
+              tags: ['update','sanity','mms','update','weekly','monthly'],
               pre: setupMMS,
               ops: [
                   { op:  "update",
@@ -42,6 +44,7 @@ tests.push( { name: "Update.MmsIncShallow2",
 
 // Increment one deep field. The selected field is far to the right in each subtree.
 tests.push( { name: "Update.MmsIncDeep1",
+              tags: ['update','sanity','mms','update','weekly','monthly'],
               pre: setupMMS,
               ops: [
                   { op:  "update",
@@ -53,6 +56,7 @@ tests.push( { name: "Update.MmsIncDeep1",
 // Increment two deep fields. The selected fields are far to the right in each subtree,
 // and share a common prefix.
 tests.push( { name: "Update.MmsIncDeepSharedPath2",
+              tags: ['update','sanity','mms','update','weekly','monthly'],
               pre: setupMMS,
               ops: [
                   { op:  "update",
@@ -65,6 +69,7 @@ tests.push( { name: "Update.MmsIncDeepSharedPath2",
 // Increment three deep fields. The selected fields are far to the right in each subtree,
 // and share a common prefix.
 tests.push( { name: "Update.MmsIncDeepSharedPath3",
+              tags: ['update','sanity','mms','update','weekly','monthly'],
               pre: setupMMS,
               ops: [
                   { op:  "update",
@@ -78,6 +83,7 @@ tests.push( { name: "Update.MmsIncDeepSharedPath3",
 // Increment two deep fields. The selected fields are far to the right in each subtree,
 // but do not share a common prefix.
 tests.push( { name: "Update.MmsIncDeepDistinctPath2",
+              tags: ['update','sanity','mms','update','weekly','monthly'],
               pre: setupMMS,
               ops: [
                   { op:  "update",
@@ -90,6 +96,7 @@ tests.push( { name: "Update.MmsIncDeepDistinctPath2",
 // Increment three deep fields. The selected fields are far to the right in each subtree,
 // but do not share a common prefix.
 tests.push( { name: "Update.MmsIncDeepDistinctPath3",
+              tags: ['update','sanity','mms','update','weekly','monthly'],
               pre: setupMMS,
               ops: [
                   { op:  "update",

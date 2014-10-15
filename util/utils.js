@@ -51,11 +51,11 @@ function formatRunDate(now) {
         pad(now.getDate()));
 }
 
-
 function runTest(test, thread, multidb, runSeconds, shard, writeOptions) {
 
     if (typeof writeOptions === "undefined") writeOptions = getDefaultWriteOptions();
     if (typeof shard === "undefined") shard = 0;
+    if (typeof suite === "undefined") suite = "sanity";
 
     var collections = [];
 
@@ -244,6 +244,34 @@ function getDefaultWriteOptions() {
     return writeOptions;
 }
 
+function doExecute(test, suite) {
+    // Use % to indicate all tests
+    if ( !Array.isArray(suite) ) {
+        if ( suite == "%" ) {
+            return true;
+        }
+    }
+    
+    var tags = test.tags;
+    if ( Array.isArray(tags) ) {
+        for (var i=0; i < tags.length; i++) {
+            if ( Array.isArray(suite) ) {
+                for (var j=0; j < suite.length; j++) {
+                    if ( tags[i] == suite[j] ) {
+                        return true;
+                    }
+                }
+            }
+            else {
+                if ( tags[i] == suite ) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
 /**
  * Run tests defined in a tests array (outside of the function)
  *
@@ -252,6 +280,7 @@ function getDefaultWriteOptions() {
  * @param seconds - the time to run each performance test for
  * @param trials - the number of trials to run
  * @param reportLabel - the label for the test run
+ * @param suite - suite to run, default "sanity"
  * @param reportHost - the hostname for the database to send the reported data to (defaults to localhost)
  * @param reportPort - the port number for the database to send the reported data to (defaults to 27017)
  * @param commitDate - the commit date/time to report (defaults to the current time/date)
@@ -260,7 +289,7 @@ function getDefaultWriteOptions() {
  * @param testBed - testbed information such as server_storage_engine, harness, server_git_commit_date
  * @returns {{}} the results of a run set of tests
  */
-function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHost, reportPort, commitDate, shard, writeOptions, testBed) {
+function runTests(threadCounts, multidb, seconds, trials, reportLabel, suite, reportHost, reportPort, commitDate, shard, writeOptions, testBed) {
 
     if (typeof reportHost === "undefined") reportHost = "localhost";
     if (typeof reportPort === "undefined") reportPort = "27017";
@@ -268,7 +297,8 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHos
     if (typeof shard === "undefined") shard = 0;
     if (typeof writeOptions === "undefined") writeOptions = getDefaultWriteOptions();
     if (typeof testBed === "undefined") testBed = getDefaultTestBed(commitDate);
-
+    if (typeof suite === "undefined") suite = "sanity";
+    
     var testResults = {};
     testResults.results=[];
     // The following are only used when reportLabel is not None.
@@ -316,54 +346,58 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHos
     // Run all tests in the test file.
     for (var i = 0; i < tests.length; i++) {
         var test = tests[i];
-        print(test.name);
+        
+        // Execute if it has a matching tag to the suite that was passed in
+        if ( doExecute(test, suite) ) {
+            print(test.name);
 
-        var threadResults = {};
-        threadResults['run_start_time'] = new Date();
-        for (var t = 0; t < threadCounts.length; t++) {
-            var threadCount = threadCounts[t];
-            var results = [];
-            var newResults = {};
-            newResults['run_start_time'] = new Date();
-            for (var j = 0; j < trials; j++) {
-                results[j] = runTest(test, threadCount, multidb, seconds, shard, writeOptions);
+            var threadResults = {};
+            threadResults['run_start_time'] = new Date();
+            for (var t = 0; t < threadCounts.length; t++) {
+                var threadCount = threadCounts[t];
+                var results = [];
+                var newResults = {};
+                newResults['run_start_time'] = new Date();
+                for (var j = 0; j < trials; j++) {
+                    results[j] = runTest(test, threadCount, multidb, seconds, shard, writeOptions);
+                }
+                var values = [];
+                for (var j = 0; j < trials; j++) {
+                    values[j] = results[j].ops_per_sec
+                }
+                // uncomment if one needs to save the trial values that comprise the mean
+                //newResults.ops_per_sec_values = values;
+                newResults.ops_per_sec = getMean(values);
+                newResults.median = getMedian(values);
+                newResults.standardDeviation = Math.sqrt(getVariance(values));
+                newResults.run_end_time = new Date();
+                newResults.n = trials;
+                newResults.elapsed_secs = seconds;  // TODO: update mongo shell to return actual elapsed time
+                threadResults[threadCount] = newResults;
             }
-            var values = [];
-            for (var j = 0; j < trials; j++) {
-                values[j] = results[j].ops_per_sec
-            }
-            // uncomment if one needs to save the trial values that comprise the mean
-            //newResults.ops_per_sec_values = values;
-            newResults.ops_per_sec = getMean(values);
-            newResults.median = getMedian(values);
-            newResults.standardDeviation = Math.sqrt(getVariance(values));
-            newResults.run_end_time = new Date();
-            newResults.n = trials;
-            newResults.elapsed_secs = seconds;  // TODO: update mongo shell to return actual elapsed time
-            threadResults[threadCount] = newResults;
-        }
-        threadResults['run_end_time'] = new Date();
-        testResults['results'].push({
-            name: test.name,
-            results: threadResults
-        });
+            threadResults['run_end_time'] = new Date();
+            testResults['results'].push({
+                name: test.name,
+                results: threadResults
+            });
 
-        if (reportLabel) {
-            var resultsArr = (multidb > 1) ? "multidb" : "singledb";
+            if (reportLabel) {
+                var resultsArr = (multidb > 1) ? "multidb" : "singledb";
 
-            var queryDoc = { _id: myId };
-            queryDoc[resultsArr + ".name"] = test.name;
-            var end_time = new Date();
+                var queryDoc = { _id: myId };
+                queryDoc[resultsArr + ".name"] = test.name;
+                var end_time = new Date();
 
-            if (resultsCollection.findOne(queryDoc)) {
-                var innerUpdateDoc = {};
-                innerUpdateDoc[resultsArr + ".$.results"] = threadResults;
-                innerUpdateDoc['end_time'] = end_time;
-                resultsCollection.update(queryDoc, { $set: innerUpdateDoc });
-            } else {
-                var innerUpdateDoc = {};
-                innerUpdateDoc[resultsArr] = { name: test.name, results: threadResults };
-                resultsCollection.update({ _id: myId }, { $push: innerUpdateDoc, $set: {end_time: end_time } });
+                if (resultsCollection.findOne(queryDoc)) {
+                    var innerUpdateDoc = {};
+                    innerUpdateDoc[resultsArr + ".$.results"] = threadResults;
+                    innerUpdateDoc['end_time'] = end_time;
+                    resultsCollection.update(queryDoc, { $set: innerUpdateDoc });
+                } else {
+                    var innerUpdateDoc = {};
+                    innerUpdateDoc[resultsArr] = { name: test.name, results: threadResults };
+                    resultsCollection.update({ _id: myId }, { $push: innerUpdateDoc, $set: {end_time: end_time } });
+                }
             }
         }
     }
@@ -383,6 +417,7 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHos
  * @param seconds - the time to run each performance test for
  * @param trials - the number of trials to run
  * @param reportLabel - the label for the test run
+ * @param suite - suite to run, default "sanity"
  * @param reportHost - the hostname for the database to send the reported data to (defaults to localhost)
  * @param reportPort - the port number for the database to send the reported data to (defaults to 27017)
  * @param commitDate - the commit date/time to report (defaults to the current time/date)
@@ -391,8 +426,8 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHos
  * @param testBed - testbed information such as server_storage_engine, harness, server_git_commit_date
  * @returns {{}} the results of a run set of tests
  */
-function mongoPerfRunTests(threadCounts, multidb, seconds, trials, reportLabel, reportHost, reportPort, commitDate, shard, writeOptions, testBed) {
-    testResults = runTests(threadCounts, multidb, seconds, trials, reportLabel, reportHost, reportPort, commitDate, shard, writeOptions, testBed);
+function mongoPerfRunTests(threadCounts, multidb, seconds, trials, reportLabel, suite, reportHost, reportPort, commitDate, shard, writeOptions, testBed) {
+    testResults = runTests(threadCounts, multidb, seconds, trials, reportLabel, suite, reportHost, reportPort, commitDate, shard, writeOptions, testBed);
     print("@@@RESULTS_START@@@");
     print(JSON.stringify(testResults));
     print("@@@RESULTS_END@@@");

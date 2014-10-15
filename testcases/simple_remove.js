@@ -3,6 +3,7 @@ if ( typeof(tests) != "object" ) {
 }
 
 tests.push( { name: "Remove.v2.IntId",
+              tags: ['remove','sanity','update','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 1000; i++ ) {
@@ -18,6 +19,7 @@ tests.push( { name: "Remove.v2.IntId",
               ] } );
 
 tests.push( { name: "Remove.v2.IntNonIdNoIndex",
+              tags: ['remove','sanity','update','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 1000; i++ ) {
@@ -33,6 +35,7 @@ tests.push( { name: "Remove.v2.IntNonIdNoIndex",
               ] } );
 
 tests.push( { name: "Remove.v2.IntNonIdIndex",
+              tags: ['remove','sanity','update','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 1000; i++ ) {

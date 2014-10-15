@@ -19,7 +19,7 @@ var testUncontendedSingleDoc = [
 ]
 
 tests.push( { name: "MultiUpdate.v0.Uncontended.SingleDoc.NoIndex",
-              tags: ['sanity','update','weekly'],
+              tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestUncontendedSingleDoc( collection );
               },
@@ -27,7 +27,7 @@ tests.push( { name: "MultiUpdate.v0.Uncontended.SingleDoc.NoIndex",
             } );
               
 tests.push( { name: "MultiUpdate.v0.Uncontended.SingleDoc.Indexed",
-              tags: ['sanity','update','weekly'],
+              tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestUncontendedSingleDoc( collection );
                   collection.ensureIndex( { x : 1 } );
@@ -52,7 +52,7 @@ var testUncontendedTwoDocs = [
 ];
 
 tests.push( { name: "MultiUpdate.v0.Uncontended.TwoDocs.NoIndex",
-              tags: ['sanity','update','weekly'],
+              tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestUncontendedTwoDocs( collection );
               },
@@ -60,7 +60,7 @@ tests.push( { name: "MultiUpdate.v0.Uncontended.TwoDocs.NoIndex",
             } );
 
 tests.push( { name: "MultiUpdate.v0.Uncontended.TwoDocs.Indexed",
-              tags: ['sanity','update','weekly'],
+              tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestUncontendedTwoDocs( collection );
                   collection.ensureIndex( { x : 1 } );                  
@@ -85,7 +85,7 @@ var testContendedLow = [
 ];
 
 tests.push( { name: "MultiUpdate.v0.Contended.Low.NoIndex",
-              tags: ['sanity','update','weekly'],
+              tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                  setupTestContendedLow( collection );                               
               },
@@ -93,7 +93,7 @@ tests.push( { name: "MultiUpdate.v0.Contended.Low.NoIndex",
             } );   
                             
 tests.push( { name: "MultiUpdate.v0.Contended.Low.Indexed",
-              tags: ['sanity','update','weekly'],
+              tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                  setupTestContendedLow( collection );
                  collection.ensureIndex( { x : 1 } );                                    
@@ -118,7 +118,7 @@ var testContendedMedium = [
 ]
 
 tests.push( { name: "MultiUpdate.v0.Contended.Medium.NoIndex",
-              tags: ['sanity','update','weekly'],
+              tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedMedium( collection );
               },
@@ -126,7 +126,7 @@ tests.push( { name: "MultiUpdate.v0.Contended.Medium.NoIndex",
             } );   
                             
 tests.push( { name: "MultiUpdate.v0.Contended.Medium.Indexed",
-              tags: ['sanity','update','weekly'],
+              tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedMedium( collection );
                   collection.ensureIndex( { x : 1 } );                                    
@@ -151,7 +151,7 @@ var testContendedHot = [
 ]
 
 tests.push( { name: "MultiUpdate.v0.Contended.Hot.NoIndex",
-              tags: ['sanity','update','weekly'],
+              tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedHot( collection );
               },
@@ -159,7 +159,7 @@ tests.push( { name: "MultiUpdate.v0.Contended.Hot.NoIndex",
             } );   
                             
 tests.push( { name: "MultiUpdate.v0.Contended.Hot.Indexed",
-              tags: ['sanity','update','weekly'],
+              tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedHot( collection );
                   collection.ensureIndex( { x : 1 } );                                    
@@ -184,7 +184,7 @@ var testContendedSeqDoc = [
 ]
 
 tests.push( { name: "MultiUpdate.v0.Contended.Doc.Seq.NoIndex",
-              tags: ['sanity','update','weekly'],
+              tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedSeqDoc( collection );
               },
@@ -192,7 +192,7 @@ tests.push( { name: "MultiUpdate.v0.Contended.Doc.Seq.NoIndex",
             } );   
                             
 tests.push( { name: "MultiUpdate.v0.Contended.Doc.Seq.Indexed",
-              tags: ['sanity','update','weekly'],
+              tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedSeqDoc( collection );
                   collection.ensureIndex( { x : 1 } );                                    
@@ -217,7 +217,7 @@ var testContendedRndDoc = [
 ]
 
 tests.push( { name: "MultiUpdate.v0.Contended.Doc.Rnd.NoIndex",
-              tags: ['sanity','update','weekly'],
+              tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedRndDoc( collection );
               },
@@ -225,7 +225,7 @@ tests.push( { name: "MultiUpdate.v0.Contended.Doc.Rnd.NoIndex",
             } );   
                             
 tests.push( { name: "MultiUpdate.v0.Contended.Doc.Rnd.Indexed",
-              tags: ['sanity','update','weekly'],
+              tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedRndDoc( collection );
                   collection.ensureIndex( { x : 1 } );                                    
