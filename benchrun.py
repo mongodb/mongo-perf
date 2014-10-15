@@ -77,7 +77,7 @@ def parse_arguments():
     parser.add_argument('--nodyno', dest='nodyno', action='store_true', help='dont submit test results to dyno')
     parser.add_argument('--suite', dest='suite',
                         help='run just the specified suite e.g. --suite "[\'insert\',\'remove\']"',
-                        default='sanity')
+                        default='\'sanity\'')
 
     return parser
 
