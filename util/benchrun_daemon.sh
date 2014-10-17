@@ -5,6 +5,7 @@
 # script should work on Linux, Solaris, MacOSX
 # for Windows, run under cygwin
 THIS_PLATFORM=`uname -s || echo unknown`
+THIS_HOST=$HOSTNAME
 # environment details, within Windows or Linux
 PLATFORM_SUFFIX=""
 if [ $THIS_PLATFORM == 'CYGWIN_NT-6.1' ]
@@ -19,7 +20,16 @@ then
 fi
 
 # *nix user name
-RUNUSER=mongo-perf
+RUNUSER=$(whoami)
+if [ $THIS_PLATFORM == 'Linux' ]
+then
+    NUM_CPUS=$(grep ^processor /proc/cpuinfo | wc -l)
+    NUM_SOCKETS=$(grep ^physical\ id /proc/cpuinfo | sort | uniq | wc -l)
+else
+    NUM_CPUS=4
+    NUM_SOCKETS=1
+fi
+
 # mongo-perf base directory
 if [ $THIS_PLATFORM == 'Darwin' ]
 then
@@ -41,9 +51,7 @@ MONGO=mongo
 SHELLPATH=${BUILD_DIR}/${MONGO}
 # branch to monitor for checkins
 BRANCH=master
-NUM_CPUS=$(grep ^processor /proc/cpuinfo | wc -l)
 # remote database to store results
-# in C++ driver ConnectionString / DBClientConnection format
 # this example assumes a two-member replica set
 RHOST="mongo-perf/mongo-perf-db-1.vpc3.10gen.cc,mongo-perf-db-2.vpc3.10gen.cc"
 RPORT=27017
@@ -147,101 +155,181 @@ function do_git_tasks() {
     fi
 }
 
+function determine_build_args() {
+    BUILD_ARGS="--64 --release"
+    if [ ! -z "$WT_INSTALL" ]
+    then
+      BUILD_ARGS=$BUILD_ARGS" --wiredtiger --cpppath=$WT_INSTALL/include --libpath=$WT_INSTALL/lib"
+    fi
+}
+
 function run_build() {
     cd $BUILD_DIR
+    determine_build_args
     if [ -z $FETCHMCI ]
     then
         if [ $THIS_PLATFORM == 'Windows' ]
         then
-            ${SCONSPATH} -j $NUM_CPUS --64 --release --win2008plus ${MONGOD} ${MONGO}
+            ${SCONSPATH} -j ${NUM_CPUS} ${BUILD_ARGS} --win2008plus ${MONGOD} ${MONGO}
         else
-            ${SCONSPATH} -j $NUM_CPUS --64 --release ${MONGOD} ${MONGO}
+            ${SCONSPATH} -j ${NUM_CPUS} ${BUILD_ARGS} ${MONGOD} ${MONGO}
         fi
     fi
 }
 
-function run_mongo-perf() {
-    # Kick off a mongod process.
-    cd $BUILD_DIR
-    if [ $THIS_PLATFORM == 'Windows' ]
+function determine_cpu_masks() {
+    BENCHRUN_MASK=""
+    MONGOD_MASK=""
+
+    if [ $THIS_PLATFORM == 'Linux' ]
     then
-        rm -rf `cygpath -u $DBPATH`/*
-        (./${MONGOD} --dbpath "${DBPATH}" --smallfiles --logpath mongoperf.log &)
-    else
-        rm -rf $DBPATH/*
-        ./${MONGOD} --dbpath "${DBPATH}" --smallfiles --fork --logpath mongoperf.log
+        # how many cores to use for benchrun (i.e. NUM_CPUS * (1 / FACTOR))
+        FACTOR=4
+
+        # If multi socket, then use the first socket for benchrun and the rest for mongod, otherwise take a percentage of cores
+        # to run benchrun and mongod
+        if [ "$NUM_SOCKETS" == 1 ]
+            then
+            BENCHRUN_MASK=0-$(bc <<< "($NUM_CPUS / $FACTOR ) -1")
+            MONGOD_MASK=$(bc <<< "($NUM_CPUS / $FACTOR )")-$(bc <<< "($NUM_CPUS -1 )")
+        else
+            BENCHRUN_MASK=`numactl --hardware | grep ^node\ 0\ cpus: | sed -r 's/node 0 cpus: //' | sed -r 's/ /,/g'`
+            for i in `seq 1 $NUM_SOCKETS`
+            do
+                MONGOD_MASK=$MONGOD_MASK","`numactl --hardware | grep ^node\ $i\ cpus: | sed -r 's/node '"$i"' cpus: //' | sed -r 's/ /,/g'`
+            done
+            MONGOD_MASK=`echo $MONGOD_MASK | sed -r 's/,//' | sed 's/,*$//'`
+        fi
     fi
-    # TODO: doesn't get set properly with --fork ?
-    MONGOD_PID=$!
+}
 
-    sleep 30
-
-    cd $MPERFPATH
-    TIME="$(date "+%m%d%Y_%H:%M")"
-
-    # list of testcase definitions
-    TESTCASES=$(find testcases/ -name *.js)
-
-
-    # list of thread counts to run (high counts first to minimize impact of first trial)
-    THREAD_COUNTS="16 8 4 2 1"
-
-    # drop linux caches
-    ${SUDO} bash -c "echo 3 > /proc/sys/vm/drop_caches"
-
-    # Run with single DB.
-    if [ $THIS_PLATFORM == 'Windows' ]
+function determine_process_invocation() {
+    MONGOD_START=""
+    BR_START=""
+    if [ $THIS_PLATFORM == 'Linux' ]
     then
-        python benchrun.py -l "${TIME}_${THIS_PLATFORM}${PLATFORM_SUFFIX}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 7 --mongo-repo-path `cygpath -w ${BUILD_DIR}` --safe false -w 0 -j false --writeCmd true
-    else
-        python benchrun.py -l "${TIME}_${THIS_PLATFORM}${PLATFORM_SUFFIX}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 7 --mongo-repo-path ${BUILD_DIR} --safe false -w 0 -j false --writeCmd true
+        # ensure numa zone reclaims are off
+        if [ -x `which numactl` ]
+        then
+            MONGOD_START="numactl --physcpubind="$MONGOD_MASK" --interleave=all "
+            BR_START="taskset -c "$BENCHRUN_MASK" "
+        elif [-x `which taskset` ]
+        then
+            MONGOD_START="taskset -c "$MONGOD_MASK" "
+            BR_START="taskset -c "$BENCHRUN_MASK" "
+        else
+            MONDOD_START=""
+            BR_START=""
+        fi
     fi
+}
 
-    # drop linux caches
-    ${SUDO} bash -c "echo 3 > /proc/sys/vm/drop_caches"
+function determine_bench_threads() {
+    # want to measure more threads than cores
+    THREAD_COUNTS="1 2 4 6"
+    TOTAL_THREADS=$(bc <<< "($NUM_CPUS * 1.5 )")
+    for i in `seq 8 4 $TOTAL_THREADS`
+    do
+        THREAD_COUNTS=$THREAD_COUNTS" "$i
+    done
+}
 
-    # Run with multi-DB (4 DBs.)
-    if [ $THIS_PLATFORM == 'Windows' ]
+function determine_storage_engines() {
+    SE_MMAP="mmapv1"
+    if [ ! -z "$WT_INSTALL" ]
     then
-        python benchrun.py -l "${TIME}_${THIS_PLATFORM}${PLATFORM_SUFFIX}-multi" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 7 --mongo-repo-path `cygpath -w ${BUILD_DIR}` --safe false -w 0 -j false --writeCmd true
-    else
-        python benchrun.py -l "${TIME}_${THIS_PLATFORM}${PLATFORM_SUFFIX}-multi" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 7 --mongo-repo-path ${BUILD_DIR} --safe false -w 0 -j false --writeCmd true
+        SE_WT="wiredtiger"
     fi
+}
 
-    # Kill the mongod process and perform cleanup.
-    kill -n 9 ${MONGOD_PID}
-    pkill -9 ${MONGOD}         # kills all mongod processes -- assumes no other use for host
-    pkill -9 mongod            # needed this for loitering mongod executable w/o .exe extension?
-    sleep 5
-    rm -rf ${DBPATH}/*
+function run_mongo_perf() {
+    # Setup
+    determine_cpu_masks
+    determine_storage_engines
+    determine_process_invocation
 
+    # Run for mulltiple storage engines
+    for STORAGE_ENGINE in $SE_WT $SE_MMAP
+    do
+
+        # Kick off a mongod process.
+        cd $BUILD_DIR
+        if [ $THIS_PLATFORM == 'Windows' ]
+        then
+            rm -rf `cygpath -u $DBPATH`/*
+            (./${MONGOD} --dbpath "${DBPATH}" --smallfiles --nojournal --syncdelay 43200 --storageEngine=$STORAGE_ENGINE --logpath mongoperf.log &)
+        else
+            rm -rf $DBPATH/*
+            ${MONGOD_START} ./${MONGOD} --dbpath "${DBPATH}" --smallfiles --nojournal --syncdelay 43200 --storageEngine=$STORAGE_ENGINE --fork --logpath mongoperf.log
+        fi
+        # TODO: doesn't get set properly with --fork ?
+        MONGOD_PID=$!
+
+        sleep 30
+
+        cd $MPERFPATH
+        TIME="$(date "+%Y%m%d_%H:%M")"
+
+        # list of testcase definitions
+        TESTCASES=$(find $TEST_DIR -name "simple*.js")
+
+        # list of thread counts to run (high counts first to minimize impact of first trial)
+        determine_bench_threads
+
+        # drop linux caches
+        if [ $THIS_PLATFORM == 'Linux' ]
+        then
+            ${SUDO} bash -c "echo 3 > /proc/sys/vm/drop_caches"
+        fi
+
+        # Run with single DB.
+        if [ $THIS_PLATFORM == 'Windows' ]
+        then
+            python benchrun.py -l "${THIS_PLATFORM}-${THIS_HOST}-${PLATFORM_SUFFIX}-${LAST_HASH}-${STORAGE_ENGINE}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 1 --mongo-repo-path `cygpath -w ${BUILD_DIR}` --writeCmd true
+        else
+            ${BR_START} python benchrun.py -l "${THIS_PLATFORM}-${THIS_HOST}-${PLATFORM_SUFFIX}-${LAST_HASH}-${STORAGE_ENGINE}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 1 --mongo-repo-path ${BUILD_DIR} --writeCmd true
+        fi
+
+        # drop linux caches
+        ${SUDO} bash -c "echo 3 > /proc/sys/vm/drop_caches"
+
+        # Run with multi-DB (4 DBs.)
+        if [ ! -z "$MPERF_MULTI_DB" ]
+        then
+            if [ $THIS_PLATFORM == 'Windows' ]
+            then
+                python benchrun.py -l "${THIS_PLATFORM}-${THIS_HOST}-${PLATFORM_SUFFIX}-${LAST_HASH}-${STORAGE_ENGINE}-multi" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 1 --mongo-repo-path `cygpath -w ${BUILD_DIR}` --writeCmd true
+            else
+                ${BR_START} python benchrun.py -l "${THIS_PLATFORM}-${THIS_HOST}-${PLATFORM_SUFFIX}-${LAST_HASH}-${STORAGE_ENGINE}-multi" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 1 --mongo-repo-path ${BUILD_DIR} --writeCmd true
+            fi
+        fi
+
+        # Kill the mongod process and perform cleanup.
+        kill -n 9 ${MONGOD_PID}
+        pkill -9 ${MONGOD}         # kills all mongod processes -- assumes no other use for host
+        pkill -9 mongod            # needed this for loitering mongod executable w/o .exe extension?
+        sleep 5
+        rm -rf ${DBPATH}/*
+    done
 }
 
 
 # housekeeping
 
-# ensure numa zone reclaims are off
-numapath=$(which numactl)
-if [[ -x "$numapath" ]]
+if [ $THIS_PLATFORM == 'Linux' ]
 then
-    echo "turning off numa zone reclaims"
-    ${SUDO} numactl --interleave=all
-else
-    echo "numactl not found on this machine"
-fi
+    # disable transparent huge pages
+    if [ -e /sys/kernel/mm/transparent_hugepage/enabled ]
+    then
+        echo never | ${SUDO} tee /sys/kernel/mm/transparent_hugepage/enabled /sys/kernel/mm/transparent_hugepage/defrag
+    fi
 
-# disable transparent huge pages
-if [ -e /sys/kernel/mm/transparent_hugepage/enabled ]
-then
-    echo never | ${SUDO} tee /sys/kernel/mm/transparent_hugepage/enabled /sys/kernel/mm/transparent_hugepage/defrag
+    # if cpufreq scaling governor is present, ensure we aren't in power save (speed step) mode
+    if [ -e /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor ]
+    then
+        echo performance | ${SUDO} tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+    fi
 fi
-
-# if cpufreq scaling governor is present, ensure we aren't in power save (speed step) mode
-if [ -e /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor ]
-then
-    echo performance | ${SUDO} tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
-fi
-
 
 # main loop
 while [ true ]
@@ -255,7 +343,7 @@ do
         run_build
         if [ $? == 0 ]
         then
-            run_mongo-perf
+            run_mongo_perf
         fi
     fi
     if [ -e $BREAK_PATH ]
