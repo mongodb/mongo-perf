@@ -143,7 +143,8 @@ def gen_query(labels, dates, versions, start, end, limit, ids, commits, engines)
                       engines_query]}
     cursor = db.raw.find(query).sort([('commit_date', pymongo.DESCENDING),
                                       ('platform', pymongo.ASCENDING),
-                                      ('label', pymongo.ASCENDING)])
+                                      ('label', pymongo.ASCENDING),
+                                      ('server_storage_engine', pymongo.ASCENDING)])
 
     if limit:
         cursor.limit(limit)
@@ -166,7 +167,8 @@ def process_cursor(cursor, multidb):
                     row = dict(commit=entry['commit'],
                                platform=entry['platform'],
                                version=entry['version'],
-                               label=entry['label'])
+                               label=entry['label'],
+                               server_storage_engine=entry['server_storage_engine'])
 
                     if 'commit_date' in entry.keys():
                         row['date'] = entry['commit_date'].strftime("%b %d %I:%M%p")
@@ -269,7 +271,7 @@ def results_page():
             out = []
             for i, result in enumerate(outer_result['results']):
                 out.append({'label': ' / '.join((result['label'], result['version'],
-                                                 result['date'])),
+                                                 result['date'], result['server_storage_engine'])),
                             'data': sorted([int(k), [v['ops_per_sec'], v['standardDeviation']]]
                                            for (k, v) in result.iteritems() if k.isdigit())})
                 threads.update(int(k) for k in result if k.isdigit())
