@@ -11,8 +11,9 @@
  */
 
 
-if ( typeof(tests) != "object" )
+if ( typeof(tests) != "object" ) {
     tests = [];
+}
 
 // generate a grid map from (x1, y1) to (x2, y2)`
 function generateGridMap(collection, x1, y1, x2, y2) {

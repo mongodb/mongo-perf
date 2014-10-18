@@ -1,6 +1,6 @@
-
-if ( typeof(tests) != "object" )
+if ( typeof(tests) != "object" ) {
     tests = [];
+}
 
 tests.push( { name: "Insert.Empty",
               tags: ['insert','sanity','daily','weekly','monthly'],

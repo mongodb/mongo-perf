@@ -55,7 +55,7 @@ function runTest(test, thread, multidb, runSeconds, shard, writeOptions) {
 
     if (typeof writeOptions === "undefined") writeOptions = getDefaultWriteOptions();
     if (typeof shard === "undefined") shard = 0;
-    if (typeof suite === "undefined") suite = "sanity";
+    if (typeof testFilter === "undefined") testFilter = "sanity";
 
     var collections = [];
 
@@ -244,30 +244,66 @@ function getDefaultWriteOptions() {
     return writeOptions;
 }
 
-function doExecute(test, suite) {
+function doCompare(test, compareTo) {
+    var tags = test.tags;
+    
+    if ( Array.isArray(compareTo) ) {
+        for (var i=0; i < compareTo.length; i++) {
+            if ( tags.indexOf(compareTo[i]) > -1 || test.name == compareTo[i]) {
+                return true;
+            }
+        }
+    }
+    else {
+        if ( tags.indexOf(compareTo) > -1 || test.name == compareTo) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function doExecute(test, testFilter) {
+
     // Use % to indicate all tests
-    if ( !Array.isArray(suite) ) {
-        if ( suite == "%" ) {
+    if ( !Array.isArray(testFilter) ) {
+        if ( testFilter == "%" ) {
             return true;
         }
     }
     
-    var tags = test.tags;
-    if ( Array.isArray(tags) ) {
-        for (var i=0; i < tags.length; i++) {
-            if ( Array.isArray(suite) ) {
-                for (var j=0; j < suite.length; j++) {
-                    if ( tags[i] == suite[j] ) {
-                        return true;
-                    }
-                }
+    // If we have a textFilter but no tags, then bail
+    if ( !Array.isArray(test.tags) ) {
+        return false;
+    }
+
+    if ( Array.isArray(testFilter) ) {
+        // have the form : ['suitea', 'suiteb', 'Insert.foo' ]
+        return doCompare(test, testFilter);
+    }
+    else if ( typeof testFilter == "object" ) {
+        // Have the form { include: ['suitea'], exclude: ['suiteb', 'Insert.foo'] }
+        var include = testFilter.include;
+        var exclude = testFilter.exclude;
+        
+        if ( Array.isArray(exclude) && Array.isArray(include) ) {
+            if ( !doCompare(test, exclude) && doCompare(test, include) ) {
+                return true;
             }
             else {
-                if ( tags[i] == suite ) {
-                    return true;
-                }
+                return false;
             }
         }
+
+        if ( Array.isArray(exclude) ) {
+            return !doCompare(test, exclude);
+        }
+        if ( Array.isArray(include) ) {
+            return doCompare(test, include);
+        }
+    }
+    else {
+        // Have the form 'suitea'
+        return doCompare(test, testFilter);
     }
     return false;
 }
@@ -280,7 +316,7 @@ function doExecute(test, suite) {
  * @param seconds - the time to run each performance test for
  * @param trials - the number of trials to run
  * @param reportLabel - the label for the test run
- * @param suite - suite to run, default "sanity"
+ * @param testFilter - tests/suites to run, default "sanity"
  * @param reportHost - the hostname for the database to send the reported data to (defaults to localhost)
  * @param reportPort - the port number for the database to send the reported data to (defaults to 27017)
  * @param commitDate - the commit date/time to report (defaults to the current time/date)
@@ -289,7 +325,7 @@ function doExecute(test, suite) {
  * @param testBed - testbed information such as server_storage_engine, harness, server_git_commit_date
  * @returns {{}} the results of a run set of tests
  */
-function runTests(threadCounts, multidb, seconds, trials, reportLabel, suite, reportHost, reportPort, commitDate, shard, writeOptions, testBed) {
+function runTests(threadCounts, multidb, seconds, trials, reportLabel, testFilter, reportHost, reportPort, commitDate, shard, writeOptions, testBed) {
 
     if (typeof reportHost === "undefined") reportHost = "localhost";
     if (typeof reportPort === "undefined") reportPort = "27017";
@@ -297,7 +333,7 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, suite, re
     if (typeof shard === "undefined") shard = 0;
     if (typeof writeOptions === "undefined") writeOptions = getDefaultWriteOptions();
     if (typeof testBed === "undefined") testBed = getDefaultTestBed(commitDate);
-    if (typeof suite === "undefined") suite = "sanity";
+    if (typeof testFilter === "undefined") testFilter = "sanity";
     
     var testResults = {};
     testResults.results=[];
@@ -348,7 +384,7 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, suite, re
         var test = tests[i];
         
         // Execute if it has a matching tag to the suite that was passed in
-        if ( doExecute(test, suite) ) {
+        if ( doExecute(test, testFilter) ) {
             print(test.name);
 
             var threadResults = {};
@@ -417,7 +453,7 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, suite, re
  * @param seconds - the time to run each performance test for
  * @param trials - the number of trials to run
  * @param reportLabel - the label for the test run
- * @param suite - suite to run, default "sanity"
+ * @param testFilter - tests / suites to run, default "sanity"
  * @param reportHost - the hostname for the database to send the reported data to (defaults to localhost)
  * @param reportPort - the port number for the database to send the reported data to (defaults to 27017)
  * @param commitDate - the commit date/time to report (defaults to the current time/date)
@@ -426,8 +462,8 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, suite, re
  * @param testBed - testbed information such as server_storage_engine, harness, server_git_commit_date
  * @returns {{}} the results of a run set of tests
  */
-function mongoPerfRunTests(threadCounts, multidb, seconds, trials, reportLabel, suite, reportHost, reportPort, commitDate, shard, writeOptions, testBed) {
-    testResults = runTests(threadCounts, multidb, seconds, trials, reportLabel, suite, reportHost, reportPort, commitDate, shard, writeOptions, testBed);
+function mongoPerfRunTests(threadCounts, multidb, seconds, trials, reportLabel, testFilter, reportHost, reportPort, commitDate, shard, writeOptions, testBed) {
+    testResults = runTests(threadCounts, multidb, seconds, trials, reportLabel, testFilter, reportHost, reportPort, commitDate, shard, writeOptions, testBed);
     print("@@@RESULTS_START@@@");
     print(JSON.stringify(testResults));
     print("@@@RESULTS_END@@@");

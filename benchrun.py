@@ -75,8 +75,8 @@ def parse_arguments():
                         help='this option turns on use of the write command instead of legacy write operations',
                         default='true')
     parser.add_argument('--nodyno', dest='nodyno', action='store_true', help='dont submit test results to dyno')
-    parser.add_argument('--suite', dest='suite',
-                        help='run just the specified suite e.g. --suite "[\'insert\',\'remove\']"',
+    parser.add_argument('--testFilter', dest='testFilter',
+                        help='run just the specified tests/suites e.g. --testFilter "[\'insert\',\'remove\']" or "%%" for the kitchen sink',
                         default='\'sanity\'')
 
     return parser
@@ -300,7 +300,7 @@ def main():
               str(args.seconds) + ", " +
               str(args.trials) + ", " +
               "'" + args.reportlabel + "', " +
-              str(args.suite) + ", " +
+              str(args.testFilter) + ", " +
               "'" + args.reporthost + "', " +
               "'" + args.reportport + "', " +
               "'" + str(datetime.datetime.now()) + "', " +

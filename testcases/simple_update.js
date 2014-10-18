@@ -3,7 +3,7 @@ if ( typeof(tests) != "object" ) {
 }
 
 tests.push( { name: "Update.v2.IncNoIndex",
-              tags: ['update','sanity','update','weekly','monthly'],
+              tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 3200; i++ ) {
@@ -18,7 +18,7 @@ tests.push( { name: "Update.v2.IncNoIndex",
               ] } );
 
 tests.push( { name: "Update.v2.IncWithIndex",
-              tags: ['update','sanity','update','weekly','monthly'],
+              tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 3200; i++ ) {
@@ -34,7 +34,7 @@ tests.push( { name: "Update.v2.IncWithIndex",
               ] } );
 
 tests.push( { name: "Update.v2.IncNoIndexUpsert",
-              tags: ['update','sanity','update','weekly','monthly'],
+              tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
               },
@@ -46,7 +46,7 @@ tests.push( { name: "Update.v2.IncNoIndexUpsert",
               ] } );
 
 tests.push( { name: "Update.v2.IncWithIndexUpsert",
-              tags: ['update','sanity','update','weekly','monthly'],
+              tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex( { x : 1 } );
@@ -66,7 +66,7 @@ var shortFieldNames =
    "xm", "ym", "zm", "an", "bn", "cn", "dn", "en", "fn", "gn"];
 
 tests.push( { name: "Update.IncFewSmallDoc",
-              tags: ['update','sanity','update','weekly','monthly'],
+              tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
 
@@ -92,7 +92,7 @@ tests.push( { name: "Update.IncFewSmallDoc",
               ] } );
 
 tests.push( { name: "Update.IncFewLargeDoc",
-              tags: ['update','sanity','update','weekly','monthly'],
+              tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
 
@@ -129,7 +129,7 @@ var longFieldNames =
      "ocrpwmeqyb", "tcrrliflby"];
 
 tests.push( { name: "Update.IncFewSmallDocLongFields",
-              tags: ['update','sanity','update','weekly','monthly'],
+              tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
 
@@ -155,7 +155,7 @@ tests.push( { name: "Update.IncFewSmallDocLongFields",
               ] } );
 
 tests.push( { name: "Update.IncFewLargeDocLongFields",
-              tags: ['update','sanity','update','weekly','monthly'],
+              tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
 
@@ -181,7 +181,7 @@ tests.push( { name: "Update.IncFewLargeDocLongFields",
               ] } );
 
 tests.push( { name: "Update.v2.SingleDocFieldAtOffset",
-              tags: ['update','sanity','update','weekly','monthly'],
+              tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
 
@@ -214,7 +214,7 @@ tests.push( { name: "Update.v2.SingleDocFieldAtOffset",
               ] } );
 
 tests.push( { name: "Update.FieldAtOffset",
-              tags: ['update','sanity','update','weekly','monthly'],
+              tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
 
