@@ -4,6 +4,7 @@ import datetime
 import sys
 import json
 import urllib2
+import os
 
 from bson import json_util as json_extended_util
 import git
@@ -11,6 +12,11 @@ import pymongo
 
 
 dyno_url = "http://dyno.mongodb.parts/api/v1/results"
+
+
+class MongoShellCommandError(Exception):
+    """ Raised with the mongo shell comes back with an unexpected error
+    """
 
 
 def parse_arguments():
@@ -121,7 +127,6 @@ def to_json_date(string_datetime):
     return {"$date": int(delta.total_seconds() * 1000)}
 
 
-
 def cleanup_result_dates(results):
     if 'run_start_time' in results:
         results['run_start_time'] = to_json_date(results['run_start_time'])
@@ -200,13 +205,22 @@ def send_results_to_dyno(results, label, write_options, test_bed, cmdstr, server
                         },
                         "type": "standalone"
                     },
-
+                    "errors": results['errors']
                 }
                 req = urllib2.Request(dyno_url)
                 req.add_header('Content-Type', 'application/json')
                 urllib2.urlopen(req, json.dumps(result, default=json_extended_util.default))
     return
 
+
+def load_file_in_shell(subproc, file, echo=True):
+    cmd = "load('%s')\n" % file
+    if echo:
+        print(cmd)
+    subproc.stdin.write(cmd)
+    line = subproc.stdout.readline().strip()
+    if line != "true":
+        raise MongoShellCommandError("unable to load file %s message was %s" % (file, line))
 
 def main():
     parser = parse_arguments()
@@ -215,6 +229,11 @@ def main():
     if not args.testfiles:
         print("Must provide at least one test file. Run with --help for details.")
         sys.exit(1)
+
+    for testfile in args.testfiles:
+        if not os.path.exists(testfile):
+            print("A test file that was passed in does not exist: %s" % testfile)
+            sys.exit(1)
 
     if args.multidb < 1:
         print("MultiDB option must be greater than zero. Will be set to 1.")
@@ -280,11 +299,11 @@ def main():
 
     # Open a mongo shell subprocess and load necessary files.
     mongo_proc = Popen([args.shellpath, "--norc", "--quiet", "--port", args.port], stdin=PIPE, stdout=PIPE)
-    mongo_proc.stdin.write("load('util/utils.js')\n")
-    print "load('util/utils.js')"
+
+    # load test files
+    load_file_in_shell(mongo_proc, 'util/utils.js')
     for testfile in args.testfiles:
-        mongo_proc.stdin.write("load('" + testfile + "')\n")
-        print "load('" + testfile + "')"
+        load_file_in_shell(mongo_proc, testfile)
 
     # put all write options in a Map
     write_options = {}
@@ -336,15 +355,21 @@ def main():
             print line
         elif not got_results and getting_results:
             line_results += line
-            # Encode as mongodb-extended-json
-    results = cleanup_result_dates(json.loads(line_results))
-    if not args.nodyno:
+
+    if got_results and not args.nodyno:
+        # Encode as mongodb-extended-json
+        results = cleanup_result_dates(json.loads(line_results))
         # send results to dyno
         send_results_to_dyno(results, args.reportlabel, write_options, test_bed, cmdstr, server_status,
                              server_build_info, shell_build_info, args)
-
     print("Finished Testing.")
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception as e:
+        sys.stderr.write(e.message)
+        sys.exit(1)
+    sys.exit(0)
+

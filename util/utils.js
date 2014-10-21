@@ -382,7 +382,7 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, testFilte
     // Run all tests in the test file.
     for (var i = 0; i < tests.length; i++) {
         var test = tests[i];
-        
+        var errors = [];
         // Execute if it has a matching tag to the suite that was passed in
         if ( doExecute(test, testFilter) ) {
             print(test.name);
@@ -395,7 +395,15 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, testFilte
                 var newResults = {};
                 newResults['run_start_time'] = new Date();
                 for (var j = 0; j < trials; j++) {
-                    results[j] = runTest(test, threadCount, multidb, seconds, shard, writeOptions);
+                    try {
+                        results[j] = runTest(test, threadCount, multidb, seconds, shard, writeOptions);
+                    }
+                    catch(err) {
+                        // Error handling to catch exceptions thrown in/by js for error
+                        // Not all errors from the mongo shell are put up as js exceptions
+                        print("Error running test " + test + ": " + err.message);
+                        errors.push({test: test, trial: j, threadCount: threadCount, multidb: multidb, shard: shard, writeOptions: writeOptions, error: {message: err.message, code: err.code}})
+                    }
                 }
                 var values = [];
                 for (var j = 0; j < trials; j++) {
@@ -438,7 +446,7 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, testFilte
         }
     }
     testResults['run_end_time'] = new Date();
-
+    testResults['errors'] =  errors;
     // End delimiter for the useful output to be displayed.
     print("@@@END@@@");
 
