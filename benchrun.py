@@ -121,10 +121,7 @@ def get_server_info(hostname="localhost", port="27017", replica_set=None):
 
 
 def to_json_date(string_datetime):
-    dt = datetime.datetime.strptime(string_datetime.replace('Z', 'GMT'), '%Y-%m-%dT%H:%M:%S.%f%Z')
-    epoch = datetime.datetime.utcfromtimestamp(0)
-    delta = dt - epoch
-    return {"$date": int(delta.total_seconds() * 1000)}
+    return {"$date": string_datetime}
 
 
 def cleanup_result_dates(results):
