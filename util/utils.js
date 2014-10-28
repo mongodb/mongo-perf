@@ -51,7 +51,7 @@ function formatRunDate(now) {
         pad(now.getDate()));
 }
 
-function runTest(test, thread, multidb, runSeconds, shard, writeOptions) {
+function runTest(test, thread, multidb, multicoll, runSeconds, shard, writeOptions) {
 
     if (typeof writeOptions === "undefined") writeOptions = getDefaultWriteOptions();
     if (typeof shard === "undefined") shard = 0;
@@ -62,9 +62,11 @@ function runTest(test, thread, multidb, runSeconds, shard, writeOptions) {
     for (var i = 0; i < multidb; i++) {
         var sibling_db = db.getSiblingDB('test' + i);
         var foo = test.name.replace(".", "_");
-        var coll = sibling_db.getCollection(foo);
-        collections.push(coll);
-        coll.drop();
+        for (var j = 0; j < multicoll; j++) {
+            var coll = sibling_db.getCollection(foo + j);
+            collections.push(coll);
+            coll.drop();
+        }
     }
 
     var new_ops = [];
@@ -72,7 +74,7 @@ function runTest(test, thread, multidb, runSeconds, shard, writeOptions) {
     test.ops.forEach(function (z) {
         // For loop is INSIDE for-each loop so that duplicated instructions are adjacent.
         // (& should not be factored out for that reason.)
-        for (var i = 0; i < multidb; i++) {
+        for (var i = 0; i < (multidb * multicoll); i++) {
             var op = Object.extend({}, z, true);
             op = prepOp(collections[i], op);
             new_ops.push(op);
@@ -98,7 +100,7 @@ function runTest(test, thread, multidb, runSeconds, shard, writeOptions) {
     };
 
     if ("pre" in test) {
-        for (var i = 0; i < multidb; i++) {
+        for (var i = 0; i < (multidb * multicoll); i++) {
             test.pre(collections[i], env);
         }
     }
@@ -110,17 +112,28 @@ function runTest(test, thread, multidb, runSeconds, shard, writeOptions) {
         var theDb = db.getSiblingDB('test' + i);
         // This will silently fail and with no side-effects if the collection
         // already exists.
-        theDb.createCollection(collections[i].getName());
+        for (var j = 0; j < multicoll; j++) {
+            theDb.createCollection(collections[(multicoll * i) + j].getName());
+        }
 
         if (shard == 1) {
-            // when shard is enabled, we want to enable shard
-            collections[i].ensureIndex({ _id: "hashed" });
+            for (var j = 0; j < multicoll; j++) {
+                // when shard is enabled, we want to enable shard
+                collections[(multicoll * i) + j].ensureIndex({ _id: "hashed" });
+            }
 
             sh.enableSharding("test" + i);
-            var t = sh.shardCollection("test" + i + "." + collections[i].getName(), {_id: "hashed"});
+            for (var j = 0; j < multicoll; j++) {
+                var t = sh.shardCollection("test" + i + "." +
+                    collections[(multicoll * i) + j].getName(), {_id: "hashed"});
+            }
+
         } else if (shard == 2) {
             sh.enableSharding("test" + i);
-            var t = sh.shardCollection("test" + i + "." + collections[i].getName(), {_id: 1});
+            for (var j = 0; j < multicoll; j++) {
+                var t = sh.shardCollection("test" + i + "." +
+                    collections[(multicoll * i) + j].getName(), {_id: 1});
+                }
         }
     }
 
@@ -147,13 +160,17 @@ function runTest(test, thread, multidb, runSeconds, shard, writeOptions) {
 
     if ("post" in test) {
         for (var i = 0; i < multidb; i++) {
-            test.post(collections[i], env);
+            for (var j = 0; j < multicoll; j++) {
+                test.post(collections[(multicoll * i) + j], env);
+            }
         }
     }
 
     // drop all the collections created by this case
     for (var i = 0; i < multidb; i++) {
-        collections[i].drop();
+        for (var j = 0; j < multicoll; j++) {
+            collections[(multicoll * i) + j].drop();
+        }
     }
 
     return { ops_per_sec: total };
@@ -312,7 +329,8 @@ function doExecute(test, testFilter) {
  * Run tests defined in a tests array (outside of the function)
  *
  * @param threadCounts - array of threads to use
- * @param multidb - multidb 1 or 0
+ * @param multidb - multidb (number of dbs)
+ * @param multicoll - multicollection (number of collections)
  * @param seconds - the time to run each performance test for
  * @param trials - the number of trials to run
  * @param reportLabel - the label for the test run
@@ -325,7 +343,7 @@ function doExecute(test, testFilter) {
  * @param testBed - testbed information such as server_storage_engine, harness, server_git_commit_date
  * @returns {{}} the results of a run set of tests
  */
-function runTests(threadCounts, multidb, seconds, trials, reportLabel, testFilter, reportHost, reportPort, commitDate, shard, writeOptions, testBed) {
+function runTests(threadCounts, multidb, multicoll, seconds, trials, reportLabel, testFilter, reportHost, reportPort, commitDate, shard, writeOptions, testBed) {
 
     if (typeof reportHost === "undefined") reportHost = "localhost";
     if (typeof reportPort === "undefined") reportPort = "27017";
@@ -396,13 +414,13 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, testFilte
                 newResults['run_start_time'] = new Date();
                 for (var j = 0; j < trials; j++) {
                     try {
-                        results[j] = runTest(test, threadCount, multidb, seconds, shard, writeOptions);
+                        results[j] = runTest(test, threadCount, multidb, multicoll, seconds, shard, writeOptions);
                     }
                     catch(err) {
                         // Error handling to catch exceptions thrown in/by js for error
                         // Not all errors from the mongo shell are put up as js exceptions
                         print("Error running test " + test + ": " + err.message);
-                        errors.push({test: test, trial: j, threadCount: threadCount, multidb: multidb, shard: shard, writeOptions: writeOptions, error: {message: err.message, code: err.code}})
+                        errors.push({test: test, trial: j, threadCount: threadCount, multidb: multidb, multicoll: multicoll, shard: shard, writeOptions: writeOptions, error: {message: err.message, code: err.code}})
                     }
                 }
                 var values = [];
@@ -427,6 +445,8 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, testFilte
 
             if (reportLabel) {
                 var resultsArr = (multidb > 1) ? "multidb" : "singledb";
+                // XXX Right now the GUI doesn't discriminate between single and multicoll
+                //resultsArr += (multicoll > 1) ? "-multicoll" : "-singlecoll";
 
                 var queryDoc = { _id: myId };
                 queryDoc[resultsArr + ".name"] = test.name;
@@ -457,7 +477,8 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, testFilte
  * Run tests defined in a tests array (outside of the function)
  *
  * @param threadCounts - array of threads to use
- * @param multidb - multidb 1 or 0
+ * @param multidb - multidb (number of dbs)
+ * @param multicoll - multicollection (number of collections)
  * @param seconds - the time to run each performance test for
  * @param trials - the number of trials to run
  * @param reportLabel - the label for the test run
@@ -470,8 +491,8 @@ function runTests(threadCounts, multidb, seconds, trials, reportLabel, testFilte
  * @param testBed - testbed information such as server_storage_engine, harness, server_git_commit_date
  * @returns {{}} the results of a run set of tests
  */
-function mongoPerfRunTests(threadCounts, multidb, seconds, trials, reportLabel, testFilter, reportHost, reportPort, commitDate, shard, writeOptions, testBed) {
-    testResults = runTests(threadCounts, multidb, seconds, trials, reportLabel, testFilter, reportHost, reportPort, commitDate, shard, writeOptions, testBed);
+function mongoPerfRunTests(threadCounts, multidb, multicoll, seconds, trials, reportLabel, testFilter, reportHost, reportPort, commitDate, shard, writeOptions, testBed) {
+    testResults = runTests(threadCounts, multidb, multicoll, seconds, trials, reportLabel, testFilter, reportHost, reportPort, commitDate, shard, writeOptions, testBed);
     print("@@@RESULTS_START@@@");
     print(JSON.stringify(testResults));
     print("@@@RESULTS_END@@@");

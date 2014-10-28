@@ -32,6 +32,9 @@ def parse_arguments():
     parser.add_argument('-m', '--multidb', dest='multidb',
                         help='Specify how many databases the test should use',
                         type=int, default=1)
+    parser.add_argument('-c', '--multicoll', dest='multicoll',
+                        help='Specify how many collections the test should use',
+                        type=int, default=1)
     parser.add_argument('--trialTime', dest='seconds',
                         help='Specify how many seconds to run each trial',
                         type=int, default=5)
@@ -159,6 +162,7 @@ def send_results_to_dyno(results, label, write_options, test_bed, cmdstr, server
                         "nThread": int(threadrun),
                         "trialTime": args.seconds,
                         "multidb": args.multidb,
+                        "multiColl" : args.multicoll,
                         "shard": args.shard,
                         "label": label,
                         "testfiles": args.testfiles,
@@ -235,6 +239,10 @@ def main():
     if args.multidb < 1:
         print("MultiDB option must be greater than zero. Will be set to 1.")
         args.multidb = 1
+
+    if args.multicoll < 1:
+        print("MultiCollection option must be greater than zero. Will be set to 1.")
+        args.multicoll = 1
 
     if args.shard < 0:
         print("shard option must be [0, 2]. Will be set to 0.")
@@ -313,6 +321,7 @@ def main():
     cmdstr = ("mongoPerfRunTests(" +
               str(args.threads) + ", " +
               str(args.multidb) + ", " +
+              str(args.multicoll) + ", " +
               str(args.seconds) + ", " +
               str(args.trials) + ", " +
               "'" + args.reportlabel + "', " +

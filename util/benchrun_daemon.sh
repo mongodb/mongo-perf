@@ -304,6 +304,20 @@ function run_mongo_perf() {
             fi
         fi
 
+        ${SUDO} bash -c "echo 3 > /proc/sys/vm/drop_caches"
+
+        # Run with multi-collection.
+        if [ ! -z "$MPERF_MULTI_COLL" ]
+        then
+            if [ $THIS_PLATFORM == 'Windows' ]
+            then
+                python benchrun.py -l "${THIS_PLATFORM}-${THIS_HOST}-${PLATFORM_SUFFIX}-${LAST_HASH}-${STORAGE_ENGINE}-multicoll" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 1 --mongo-repo-path `cygpath -w ${BUILD_DIR}` --writeCmd true --multicoll $MPERF_MULTI_COLL
+            else
+                ${BR_START} python benchrun.py -l "${THIS_PLATFORM}-${THIS_HOST}-${PLATFORM_SUFFIX}-${LAST_HASH}-${STORAGE_ENGINE}-multicoll" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 1 --mongo-repo-path ${BUILD_DIR} --writeCmd true --multicoll $MPERF_MULTI_COLL
+            fi
+        fi
+
+
         # Kill the mongod process and perform cleanup.
         kill -n 9 ${MONGOD_PID}
         pkill -9 ${MONGOD}         # kills all mongod processes -- assumes no other use for host
