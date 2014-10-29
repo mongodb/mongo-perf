@@ -1,10 +1,16 @@
+#!/usr/bin/env python
+import sys
+import os
+
+# load local library path
+local_libs_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'libs')
+sys.path.append(local_libs_path)
+
 from argparse import ArgumentParser
 from subprocess import Popen, PIPE, call
 import datetime
-import sys
 import json
 import urllib2
-import os
 
 from bson import json_util as json_extended_util
 import git

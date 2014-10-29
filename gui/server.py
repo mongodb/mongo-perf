@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Copyright 2013 10gen, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
+import os
+
+# load local library path
+local_libs_path = os.path.join(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."), 'libs')
+sys.path.append(local_libs_path)
+
 """Web app for mongo-perf"""
 
 import json
@@ -22,6 +31,7 @@ import argparse
 
 import pymongo
 import bson
+
 from bottle import *
 
 
