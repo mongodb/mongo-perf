@@ -14,14 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Web app for mongo-perf"""
 import sys
 import os
 
 # load local library path
 local_libs_path = os.path.join(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."), 'libs')
-sys.path.append(local_libs_path)
+sys.path.insert(1, local_libs_path)
 
-"""Web app for mongo-perf"""
 
 import json
 from collections import defaultdict

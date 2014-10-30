@@ -4,7 +4,7 @@ import os
 
 # load local library path
 local_libs_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'libs')
-sys.path.append(local_libs_path)
+sys.path.insert(1, local_libs_path)
 
 from argparse import ArgumentParser
 from subprocess import Popen, PIPE, call
