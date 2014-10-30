@@ -3,3 +3,5 @@ boto==2.8.0
 bottle==0.11.6
 argparse==1.2.1
 GitPython==0.1.7
+PyGithub==1.25.2
+
