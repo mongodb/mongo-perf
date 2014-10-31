@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from argparse import ArgumentParser
 from subprocess import Popen, PIPE, call
 import datetime
@@ -7,15 +8,25 @@ import urllib2
 import os
 
 from bson import json_util as json_extended_util
-import git
 import pymongo
 
 
 dyno_url = "http://dyno.mongodb.parts/api/v1/results"
 
 
+
 class MongoShellCommandError(Exception):
     """ Raised with the mongo shell comes back with an unexpected error
+    """
+
+
+class BenchrunError(Exception):
+    """ Raised when benchrun has an internal error
+    """
+
+
+class BenchrunWarning(Exception):
+    """ Raised when benchrun has an internal error
     """
 
 
@@ -162,7 +173,7 @@ def send_results_to_dyno(results, label, write_options, test_bed, cmdstr, server
                         "nThread": int(threadrun),
                         "trialTime": args.seconds,
                         "multidb": args.multidb,
-                        "multiColl" : args.multicoll,
+                        "multiColl": args.multicoll,
                         "shard": args.shard,
                         "label": label,
                         "testfiles": args.testfiles,
@@ -223,6 +234,54 @@ def load_file_in_shell(subproc, file, echo=True):
     if line != "true":
         raise MongoShellCommandError("unable to load file %s message was %s" % (file, line))
 
+
+def _get_git_committed_date_from_local(git_hash, path):
+    import git
+    # Get commit info
+    repo = git.Repo(path)
+    # Use hash to get commit_date
+    try:
+        try:
+            structTime = repo.commit(git_hash).committed_date
+            committed_date = datetime.datetime(*structTime[:6])
+        except:
+            scalarTime = repo.commit(git_hash).committed_date
+            committed_date = datetime.datetime.fromtimestamp(scalarTime)
+    except:
+        raise BenchrunWarning(
+            "WARNING: could not find Git commit %s in repository %s. trying github" % (git_hash, path))
+    return committed_date
+
+
+def _get_git_committed_date_from_github(git_hash):
+    from github import Github
+
+    try :
+        g = Github()
+        repo = g.get_repo('mongodb/mongo')
+        commit = repo.get_commit(git_hash)
+        date = commit.commit.committer.date
+    except Exception as e:
+        raise BenchrunWarning("Warning: could not find Git commit %s in main mongodb repo. Error: %s" % (git_hash, e.message))
+    return date
+
+def _get_git_committed_date(git_hash, path=None):
+    try:
+        if path is not None and os.path.exists(path):
+            try:
+                committed_date = _get_git_committed_date_from_local(git_hash, path)
+            except BenchrunWarning as brw:
+                print brw.message
+                committed_date = _get_git_committed_date_from_github(git_hash)
+        else:
+            committed_date = _get_git_committed_date_from_github(git_hash)
+    except BenchrunWarning as e:
+        print e.message
+        print "WARNING: setting git commit date to current date and time"
+        committed_date = datetime.datetime.now()
+    return committed_date
+
+
 def main():
     parser = parse_arguments()
     args = parser.parse_args()
@@ -256,26 +315,12 @@ def main():
           "print('db version: ' + db.version()); db.serverBuildInfo().gitVersion;"])
     print("")
 
-    # Get commit info
-    # TODO: put in path exists check
-    repo = git.Repo(args.repo_path)
-
     # get the server info and status
     (server_build_info, server_status) = get_server_info(hostname=args.hostname, port=args.port,
                                                          replica_set=args.replica_set)
 
     # Use hash to get commit_date
-    try:
-        try:
-            structTime = repo.commit(server_build_info['gitVersion']).committed_date
-            committed_date = datetime.datetime(*structTime[:6])
-        except:
-            scalarTime = repo.commit(server_build_info['gitVersion']).committed_date
-            committed_date = datetime.datetime.fromtimestamp(scalarTime)
-    except:
-        print "WARNING: could not find Git commit", server_build_info['gitVersion'], "in", args.repo_path
-        print "         substituting current date / time"
-        committed_date = datetime.datetime.now()
+    committed_date = _get_git_committed_date(server_build_info['gitVersion'], args.repo_path)
 
     # universal schema Test Bed JSON
     test_bed = {}
