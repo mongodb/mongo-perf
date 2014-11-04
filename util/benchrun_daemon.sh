@@ -59,8 +59,6 @@ RPORT=27017
 BREAK_PATH=${MPERFBASE}/build-perf
 # trying to use sudo for cache flush, et al
 SUDO=sudo
-# test agenda from all .js files found here
-TEST_DIR=${MPERFPATH}/testcases
 # seconds between polls
 SLEEPTIME=60
 # uncomment to fetch recently-built binaries from mongodb.org instead of compiling from source
@@ -271,7 +269,7 @@ function run_mongo_perf() {
         TIME="$(date "+%Y%m%d_%H:%M")"
 
         # list of testcase definitions
-        TESTCASES=$(find $TEST_DIR -name "simple*.js")
+        TESTCASES=$(find testcases -name "*.js")
 
         # list of thread counts to run (high counts first to minimize impact of first trial)
         determine_bench_threads
