@@ -142,7 +142,7 @@ def gen_query(labels, dates, versions, start, end, limit, ids, commits, engines)
 
     query = {"$and": [label_query, date_query, version_query, start_query, end_query, id_query, commit_query,
                       engines_query]}
-    cursor = db.raw.find(query).sort([('commit_date', pymongo.DESCENDING),
+    cursor = db.raw.find(query).sort([('commit_date', pymongo.ASCENDING),
                                       ('platform', pymongo.ASCENDING),
                                       ('label', pymongo.ASCENDING),
                                       ('server_storage_engine', pymongo.ASCENDING)])
@@ -202,7 +202,7 @@ def getDefaultIDs():
     baselineid = db['raw'].find({'version': {'$not': prere}}, {'_id': 1}).sort('commit_date', pymongo.DESCENDING).limit(
         1)
     # 6 newer ids
-    newids = db['raw'].find({}, {'_id': 1}).sort('commit_date', pymongo.DESCENDING).limit(6);
+    newids = db['raw'].find({}, {'_id': 1}).sort('commit_date', pymongo.DESCENDING).limit(6)
     outlist = []
     if baselineid.count(True) > 0:
         outlist.append(str(baselineid[0]['_id']))
