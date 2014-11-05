@@ -17,10 +17,9 @@
 
 import json
 from collections import defaultdict
-from copy import copy
 from ConfigParser import SafeConfigParser
-import argparse
 
+import argparse
 import pymongo
 import bson
 from bottle import *
@@ -251,7 +250,10 @@ def results_page():
                 result_entry = []
                 result_entry.append(result['date'])
                 for thread in threads:
-                    result_entry.append([result[thread]['ops_per_sec'], result[thread]['standardDeviation']])
+                    if thread in result:
+                        result_entry.append([result[thread]['ops_per_sec'], result[thread]['standardDeviation']])
+                    else:
+                        result_entry.append(['', ''])
                 # here we have [<date>, ops1, ops2...]
                 results_section.append(result_entry)
 
@@ -290,17 +292,35 @@ def to_dygraphs_data_format(in_data):
     representation of the input and a js string containing
     dygraphs representation of labels
     """
+
+    thread_counts = set()
+    ## get all thread counts
+    for data_set in in_data:
+        for thread_entry in data_set['data']:
+            thread_counts.add(thread_entry[0])
+    thread_counts = list(thread_counts)
+    thread_counts.sort()
+
     # start by initializing our two new arrays
-    d = in_data[0]
-    graph_data = copy(d['data'])
-    labels = ["# of Threads", d['label']]
+    graph_data = []
+    labels = ["# of Threads"]
+
+    # setup the labels
+    for series in in_data:
+        labels.append(series['label'])
 
     # append data for each point
-    for series in in_data[1:]:
-        data = series['data']
-        for point in range(len(graph_data)):
-            graph_data[point].append(data[point][1])
-        labels.append(series['label'])
+    for thread_count in thread_counts:
+        graph_data.append([])
+        point = len(graph_data)-1
+        graph_data[point].append(thread_count)
+        for series in in_data:
+            thread_count_entry = [None, None]
+            for entry in series['data']:
+                if (entry[0] == thread_count):
+                    thread_count_entry = entry[1]
+                    break
+            graph_data[point].append(thread_count_entry)
 
     return graph_data, labels
 
@@ -372,4 +392,4 @@ def new_main_page():
 
 if __name__ == '__main__':
     do_reload = '--reload' in sys.argv
-    run(host=SERVER_BIND_IP, port=SERVER_PORT, server=AutoServer)
+    run(host=SERVER_BIND_IP, port=SERVER_PORT, server=AutoServer, debug=True)
