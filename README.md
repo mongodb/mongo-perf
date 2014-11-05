@@ -17,6 +17,7 @@ subprocess
 GitPython
 PyYAML
 requests
+PyGithub
 
 *Python Reporting Dependencies*  
 bottle  

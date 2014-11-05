@@ -321,7 +321,7 @@ function clear_caches() {
 }
 
 function get_benchrun_options() {
-    BENCHRUN_OPTIONS=-"-l ${THIS_PLATFORM}-${THIS_HOST}-${PLATFORM_SUFFIX}-${LAST_HASH}-${STORAGE_ENGINE}"
+    BENCHRUN_OPTIONS="-l ${THIS_PLATFORM}-${THIS_HOST}-${PLATFORM_SUFFIX}-${LAST_HASH}-${STORAGE_ENGINE}"
     BENCHRUN_OPTIONS+=" --rhost ${RHOST} --rport ${RPORT} -t ${THREAD_COUNTS} -s ${SHELLPATH} -f ${TESTCASES} --trialTime 5 --trialCount 1 --writeCmd true"
 
     if [ -z $FETCHMCI ]
