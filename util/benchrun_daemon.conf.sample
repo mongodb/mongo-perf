@@ -114,6 +114,11 @@
 #############
 # DLPATH="${MPERFPATH}/download"
 
+#############
+# Custom compile arguments
+#############
+# BUILD_ARGS="--64 --release"
+
 ###########################################
 # Binaries Options
 ###########################################

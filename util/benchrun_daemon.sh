@@ -94,6 +94,8 @@ TEST_TRIALS_COUNT=1
 TEST_TRIALS_TIME=5
 # benchrun write command
 TEST_WRITE_COMMAND=true
+# compile aguments
+BUILD_ARGS="--64 --release"
 
 
 #### Default Binaries Options
@@ -224,15 +226,10 @@ function do_git_tasks() {
     fi
 }
 
-function determine_build_args() {
-    BUILD_ARGS="--64 --release"
-}
-
 function run_build() {
     if [ "$FETCH_BINARIES" != true ]
     then
         cd $BUILD_DIR
-        determine_build_args
         if [ $THIS_PLATFORM == 'Windows' ]
         then
             ${SCONSPATH} -j ${NUM_CPUS} ${BUILD_ARGS} --win2008plus ${MONGOD} ${MONGO}
