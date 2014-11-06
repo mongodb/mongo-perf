@@ -87,7 +87,7 @@ SLEEPTIME=60
 FETCH_BINARIES=true
 DLPATH="${MPERFPATH}/download"
 # benchrun tag filter
-TEST_TAGS_FILTER="\\'sanity\\'"
+TEST_TAGS_FILTER="'sanity'"
 # benchrun trials count
 TEST_TRIALS_COUNT=1
 # benchrun trials time
