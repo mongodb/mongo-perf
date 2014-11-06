@@ -390,4 +390,4 @@ def new_main_page():
 
 if __name__ == '__main__':
     do_reload = '--reload' in sys.argv
-    run(host=SERVER_BIND_IP, port=SERVER_PORT, server=AutoServer, debug=True)
+    run(host=SERVER_BIND_IP, port=SERVER_PORT, server=AutoServer)
