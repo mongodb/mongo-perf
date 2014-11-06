@@ -37,7 +37,7 @@
 # MPERF_MULTI_DB=true
 
 #############
-# Enable Multi DB Runs
+# Enable Multi Collection Runs
 #############
 # MPERF_MULTI_COLL=true
 
