@@ -99,6 +99,18 @@ BINARIES_MCI_PROJECT="mongodb-mongo-master"
 #BINARIES_DISTRIBUTION="ubuntu1404"
 #BINARIES_CPU_ARCH="x86_64"
 
+# allow a branch or tag to be passed as the first argument
+if [ $# == 1 ]
+then
+    BRANCH=$1
+fi
+
+# Source the config file if its there
+CONFIG_FILE_PATH=$(get_script_path)
+if [ -f "${CONFIG_FILE_PATH}/benchrun_daemon.conf" ]
+then
+    source "${CONFIG_FILE_PATH}/benchrun_daemon.conf"
+fi
 
 if [ $THIS_PLATFORM == 'Windows' ]
 then
@@ -109,22 +121,6 @@ then
     DBPATH=`cygpath -w ${DBPATH}`
     SUDO=''
     BINARIES_DISTRIBUTION='2008plus'
-fi
-
-
-
-# allow a branch or tag to be passed as the first argument
-if [ $# == 1 ]
-then
-    BRANCH=$1
-fi
-
-
-# Source the config file if its there
-CONFIG_FILE_PATH=$(get_script_path)
-if [ -f "${CONFIG_FILE_PATH}/benchrun_daemon.conf" ]
-then
-    source "${CONFIG_FILE_PATH}/benchrun_daemon.conf"
 fi
 
 # clean up booleans
