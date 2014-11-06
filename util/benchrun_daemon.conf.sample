@@ -14,7 +14,7 @@
 #############
 # Tags filter to run
 #############
-# TEST_TAGS_FILTER=sanity
+# TEST_TAGS_FILTER="\\'sanity\\'"
 
 #############
 # number of trials to run each test trough
