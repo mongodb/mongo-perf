@@ -84,12 +84,12 @@ SUDO=sudo
 # seconds between polls
 SLEEPTIME=60
 # uncomment to fetch recently-built binaries from mongodb.org instead of compiling from source
-FETCHMCI='TRUE'
+FETCH_BINARIES=true
 DLPATH="${MPERFPATH}/download"
 LOG_DIRECTORY=
 
 
-#### Binaries Options
+#### Default Binaries Options
 # for MCI pulls
 BINARIES_MCI_PROJECT="mongodb-mongo-master"
 #BINARIES_MCI_VARIANT="linux-64"
@@ -120,14 +120,17 @@ then
 fi
 
 
-
+# Source the config file if its there
 CONFIG_FILE_PATH=$(get_script_path)
 if [ -f "${CONFIG_FILE_PATH}/benchrun_daemon.conf" ]
 then
     source "${CONFIG_FILE_PATH}/benchrun_daemon.conf"
 fi
 
-function get_binaries_options()
+# clean up booleans
+FETCH_BINARIES=$(echo ${FETCH_BINARIES} | tr '[:upper:]' '[:lower:]')
+
+function determine_get_binaries_options()
 {
     BINARIES_OPTIONS=""
     if [[ -n "$BINARIES_MCI_PROJECT" ]]
@@ -163,7 +166,7 @@ function get_binaries_options()
 }
 
 function do_git_tasks() {
-    if [ -z $FETCHMCI ]
+    if [ "$FETCH_BINARIES" != true ]
     then
         cd "$BUILD_DIR" || exit 1
         rm -rf build
@@ -184,7 +187,7 @@ function do_git_tasks() {
         fi
         cd ${MPERFPATH} || exit 1
         echo "downloading binary artifacts from MCI"
-        BINARIES_OPTIONS=$(get_binaries_options)
+        BINARIES_OPTIONS=$(determine_get_binaries_options)
         echo "Getting Binaries with options: ${BINARIES_OPTIONS}"
         if [ $THIS_PLATFORM == 'Windows' ]
         then
@@ -226,18 +229,15 @@ function determine_build_args() {
 }
 
 function run_build() {
-    if [ -z $FETCHMCI ]
+    if [ "$FETCH_BINARIES" != true ]
     then
         cd $BUILD_DIR
         determine_build_args
-        if [ -z $FETCHMCI ]
+        if [ $THIS_PLATFORM == 'Windows' ]
         then
-            if [ $THIS_PLATFORM == 'Windows' ]
-            then
-                ${SCONSPATH} -j ${NUM_CPUS} ${BUILD_ARGS} --win2008plus ${MONGOD} ${MONGO}
-            else
-                ${SCONSPATH} -j ${NUM_CPUS} ${BUILD_ARGS} ${MONGOD} ${MONGO}
-            fi
+            ${SCONSPATH} -j ${NUM_CPUS} ${BUILD_ARGS} --win2008plus ${MONGOD} ${MONGO}
+        else
+            ${SCONSPATH} -j ${NUM_CPUS} ${BUILD_ARGS} ${MONGOD} ${MONGO}
         fi
     fi
 }
@@ -320,11 +320,11 @@ function clear_caches() {
     fi
 }
 
-function get_benchrun_options() {
+function determine_benchrun_options() {
     BENCHRUN_OPTIONS="-l ${THIS_PLATFORM}-${THIS_HOST}-${PLATFORM_SUFFIX}-${LAST_HASH}-${STORAGE_ENGINE}"
     BENCHRUN_OPTIONS+=" --rhost ${RHOST} --rport ${RPORT} -t ${THREAD_COUNTS} -s ${SHELLPATH} -f ${TESTCASES} --trialTime 5 --trialCount 1 --writeCmd true"
 
-    if [ -z $FETCHMCI ]
+    if [ "$FETCH_BINARIES" != true ]
     then
         if [ $THIS_PLATFORM == 'Windows' ]
         then
@@ -368,7 +368,7 @@ function run_mongo_perf() {
         # list of thread counts to run (high counts first to minimize impact of first trial)
         determine_bench_threads
 
-        BR_OPTIONS=$(get_benchrun_options)
+        BR_OPTIONS=$(determine_benchrun_options)
 
         clear_caches
 

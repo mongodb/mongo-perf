@@ -1,0 +1,187 @@
+###################################################
+# Sample benachrun_daemon.conf
+#
+# rename to benachrun_daemon.conf in the same directory as the benachrun_daemon.sh script to use
+###################################################
+
+#############
+# Fetch the precompiled binaries for the test.
+# If true it will fetch the binaries.  If false it will compile the source in the
+# BUILD_DIR path.
+#############
+# FETCH_BINARIES=true
+
+#############
+# Root Directory for your mongo-perf working directory
+#############
+# MPERFPATH=${MPERFBASE}/mongo-perf
+
+#############
+# The location of the mongodb source to build the mongod binary to test with.
+#############
+# BUILD_DIR=${MPERFBASE}/mongo
+
+#############
+# Directory for database output files.
+# This directory will be deleted in between runs.
+#############
+# DBPATH=${MPERFBASE}/db
+
+#############
+# Name or path of the scons build utility
+#############
+# SCONSPATH=scons
+
+#############
+# Name of the mongod server binary to run for the test
+#############
+# MONGOD=mongod
+
+#############
+# Name of the mongo shell binary to run for the test
+#############
+# MONGO=mongo
+
+#############
+# Path to the mongo shell binary to run
+#############
+# SHELLPATH=${BUILD_DIR}/${MONGO}
+
+#############
+# branch to monitor for checkins
+#############
+# BRANCH=master
+
+###########################################
+# Results Reporting
+###########################################
+
+#############
+# Results database URL/Hostname
+# this is a mongod url
+# this example assumes a two-member replica set
+#############
+# RHOST="mongo-perf/mongo-perf-db-1.vpc3.10gen.cc,mongo-perf-db-2.vpc3.10gen.cc"
+
+#############
+# Results database Port
+#############
+# RPORT=27017
+
+#############
+# Break file path
+# create this file to un-daemonize (exit the loop)
+#############
+# BREAK_PATH=${MPERFBASE}/build-perf
+
+#############
+# Sleep time between polls in seconds
+#############
+# SLEEPTIME=60
+
+#############
+# Download path for the downloaded and extracted binaries
+#############
+# DLPATH="${MPERFPATH}/download"
+
+###########################################
+# Binaries Options
+###########################################
+
+########################
+# MCI Binaries Options
+# Gets the binaries from the MCI build system using the
+# latest green build as the current set of binaries to get
+#
+# Only set BINARIES_MCI_PROJECT and BINARIES_MCI_VARIANT to
+# get the latest from MCI
+# DO NOT SET ANY OF THE .org BINARIES OPTIONS IF YOU WANT TO PULL FROM MCI
+########################
+
+#############
+# The MCI project name to pull the info from
+#############
+# BINARIES_MCI_PROJECT="mongodb-mongo-master"
+
+#############
+# The MCI variant to get the info for
+# the current list of variants from mongodb-mongo-master are:
+#
+# cxx11-ubuntu1204-64
+# enterprise-linux-64-amazon-ami
+# enterprise-rhel-57-64-bit
+# enterprise-rhel-62-64-bit
+# enterprise-suse11-64
+# enterprise-ubuntu1204-64
+# enterprise-windows-64
+# fedora8
+# linux-32
+# linux-32-debug
+# linux-64
+# linux-64-debug
+# linux-64-debug-duroff
+# linux-64-duroff
+# osx-108
+# osx-108-cxx11-debug
+# osx-108-debug
+# osx-108-dur-off
+# solaris-64-bit
+# windows-32
+# windows-64
+# windows-64-2k8
+# windows-64-2k8-debug
+# windows-64-debug
+#
+# If not defined it will get the default for the platform you are running on
+#############
+# BINARIES_MCI_VARIANT="linux-64"
+
+########################
+# .org Binaries Options
+# Gets the binaries from the nightlys and releases that are available on the mongodb.org site
+#
+# DO NOT SET ANY OF THE MCI BINARIES OPTIONS IF YOU WANT TO PULL FROM THE .org BINARIES
+########################
+
+#############
+# Follow a specific branch
+# If set to v2.6 it will always get the latest release of the 2.6 releases
+#############
+# BINARIES_BRANCH="v2.6"
+
+#############
+# Get a specific version
+# Will grab the specific version listed.  Do not set BINARIES_BRANCH if you want a specific version pulled
+#############
+# BINARIES_VERSION="2.6.5"
+
+#############
+# Get a specific distribution
+# Example distributions are:
+#
+# for linux:
+# amazon
+# debian71
+# rhel55
+# rhel57
+# rhel62
+# rhel70
+# suse11
+# ubuntu1204
+# ubuntu1404
+#
+# for windows"
+# 2008plus
+#
+##############
+# BINARIES_DISTRIBUTION="ubuntu1404"
+
+#############
+# Get a specific cpu architecture build
+#
+# x86_64
+# i686
+# i386
+
+##############
+# BINARIES_CPU_ARCH="x86_64"
