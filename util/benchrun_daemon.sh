@@ -226,10 +226,6 @@ function do_git_tasks() {
 
 function determine_build_args() {
     BUILD_ARGS="--64 --release"
-    if [ ! -z "$WT_INSTALL" ]
-    then
-      BUILD_ARGS=$BUILD_ARGS" --wiredtiger --cpppath=$WT_INSTALL/include --libpath=$WT_INSTALL/lib"
-    fi
 }
 
 function run_build() {
@@ -310,8 +306,12 @@ function determine_bench_threads() {
 }
 
 function determine_storage_engines() {
+
+    ENGINE_TEST=$(${DLPATH}/${MONGOD} --storageEngine=mmapv1 --version)
+    NO_ENGINES=$?
+
     SE_MMAP="mmapv1"
-    if [ ! -z "$WT_INSTALL" ]
+    if [ "$NO_ENGINES" == "0" ]
     then
         SE_WT="wiredtiger"
     fi
@@ -340,6 +340,16 @@ function determine_benchrun_options() {
     echo ${BENCHRUN_OPTIONS}
 }
 
+function determine_mongod_options()
+{
+        MONGOD_OPTIONS="--dbpath ${DBPATH} --smallfiles --nojournal --syncdelay 43200 --logpath mongoperf.log"
+        if [ "$NO_ENGINES" == "0" ]
+        then
+            MONGOD_OPTIONS+=" --storageEngine=${STORAGE_ENGINE}"
+        fi
+        echo ${MONGOD_OPTIONS}
+}
+
 function run_mongo_perf() {
     # Setup
     determine_cpu_masks
@@ -349,15 +359,16 @@ function run_mongo_perf() {
     # Run for mulltiple storage engines
     for STORAGE_ENGINE in $SE_WT $SE_MMAP
     do
+        SERVER_OPTIONS=$(determine_mongod_options)
         # Kick off a mongod process.
         cd $BUILD_DIR || exit 1
         if [ $THIS_PLATFORM == 'Windows' ]
         then
             rm -rf `cygpath -u $DBPATH`/*
-            (./${MONGOD} --dbpath "${DBPATH}" --smallfiles --nojournal --syncdelay 43200 --storageEngine=$STORAGE_ENGINE --logpath mongoperf.log &)
+            (./${MONGOD} ${SERVER_OPTIONS} &)
         else
             rm -rf $DBPATH/*
-            ${MONGOD_START} ./${MONGOD} --dbpath "${DBPATH}" --smallfiles --nojournal --syncdelay 43200 --storageEngine=$STORAGE_ENGINE --fork --logpath mongoperf.log
+            ${MONGOD_START} ./${MONGOD} ${SERVER_OPTIONS} --fork
         fi
         # TODO: doesn't get set properly with --fork ?
         MONGOD_PID=$!

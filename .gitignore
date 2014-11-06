@@ -1,6 +1,5 @@
 tmp/*
 *.log
-*.txt
 tags
 *.pyc
 *.swp
