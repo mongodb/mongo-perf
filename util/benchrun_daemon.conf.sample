@@ -12,6 +12,36 @@
 # FETCH_BINARIES=true
 
 #############
+# Tags filter to run
+#############
+# TEST_TAGS_FILTER=sanity
+
+#############
+# number of trials to run each test trough
+#############
+# TEST_TRIALS_COUNT=1
+
+#############
+# How long to run each test for (in seconds)
+#############
+# TEST_TRIALS_TIME=5
+
+#############
+# Enable write command for the tests
+#############
+# TEST_WRITE_COMMAND=true
+
+#############
+# Enable Multi DB Runs
+#############
+# MPERF_MULTI_DB=true
+
+#############
+# Enable Multi DB Runs
+#############
+# MPERF_MULTI_COLL=true
+
+#############
 # Root Directory for your mongo-perf working directory
 #############
 # MPERFPATH=${MPERFBASE}/mongo-perf

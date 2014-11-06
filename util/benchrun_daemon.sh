@@ -86,7 +86,14 @@ SLEEPTIME=60
 # uncomment to fetch recently-built binaries from mongodb.org instead of compiling from source
 FETCH_BINARIES=true
 DLPATH="${MPERFPATH}/download"
-LOG_DIRECTORY=
+# benchrun tag filter
+TEST_TAGS_FILTER=sanity
+# benchrun trials count
+TEST_TRIALS_COUNT=1
+# benchrun trials time
+TEST_TRIALS_TIME=5
+# benchrun write command
+TEST_WRITE_COMMAND=true
 
 
 #### Default Binaries Options
@@ -125,6 +132,7 @@ fi
 
 # clean up booleans
 FETCH_BINARIES=$(echo ${FETCH_BINARIES} | tr '[:upper:]' '[:lower:]')
+TEST_WRITE_COMMAND=$(echo ${TEST_WRITE_COMMAND} | tr '[:upper:]' '[:lower:]')
 
 function determine_get_binaries_options()
 {
@@ -318,7 +326,7 @@ function clear_caches() {
 
 function determine_benchrun_options() {
     BENCHRUN_OPTIONS="-l ${THIS_PLATFORM}-${THIS_HOST}-${PLATFORM_SUFFIX}-${LAST_HASH}-${STORAGE_ENGINE}"
-    BENCHRUN_OPTIONS+=" --rhost ${RHOST} --rport ${RPORT} -t ${THREAD_COUNTS} -s ${SHELLPATH} -f ${TESTCASES} --trialTime 5 --trialCount 1 --writeCmd true"
+    BENCHRUN_OPTIONS+=" --rhost ${RHOST} --rport ${RPORT} -t ${THREAD_COUNTS} -s ${SHELLPATH} -f ${TESTCASES} --trialTime ${TEST_TRIALS_TIME} --trialCount ${TEST_TRIALS_COUNT} --writeCmd ${TEST_WRITE_COMMAND} --testFilter ${TEST_TAGS_FILTER}"
 
     if [ "$FETCH_BINARIES" != true ]
     then
