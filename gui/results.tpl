@@ -167,7 +167,7 @@
                     <td>{{result['date']}}</td>
                     <td><a href="https://github.com/mongodb/mongo/commit/{{result['commit']}}" target="_blank">{{result['commit'][:7]}}</a></td>
                     %for thread in threads:
-                        %if thread in result:
+                        %if str(thread) in result:
                      <td>{{"{0:.2f}".format(result[str(thread)]["ops_per_sec"])}} <br/>
                          &sigma; = 
                      {{"{0:.2f}".format(result[str(thread)]["standardDeviation"])}}</td>
@@ -264,7 +264,6 @@
         </div>
         <div class="section-break"></div>
       </div>
-            %break
         %end
     </div>
     </body>

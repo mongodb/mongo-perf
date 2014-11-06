@@ -253,7 +253,7 @@ def results_page():
                     if thread in result:
                         result_entry.append([result[thread]['ops_per_sec'], result[thread]['standardDeviation']])
                     else:
-                        result_entry.append(['', ''])
+                        result_entry.append([None, None])
                 # here we have [<date>, ops1, ops2...]
                 results_section.append(result_entry)
 
@@ -298,8 +298,6 @@ def to_dygraphs_data_format(in_data):
     for data_set in in_data:
         for thread_entry in data_set['data']:
             thread_counts.add(thread_entry[0])
-    thread_counts = list(thread_counts)
-    thread_counts.sort()
 
     # start by initializing our two new arrays
     graph_data = []
@@ -310,7 +308,7 @@ def to_dygraphs_data_format(in_data):
         labels.append(series['label'])
 
     # append data for each point
-    for thread_count in thread_counts:
+    for thread_count in sorted(thread_counts):
         graph_data.append([])
         point = len(graph_data)-1
         graph_data[point].append(thread_count)
