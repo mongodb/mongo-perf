@@ -8,6 +8,12 @@ from mongodb_binaries.errors import BinariesNotAvailableError
 from string import Template
 from urllib2 import URLError, urlopen
 
+_HAS_MCI_TOOLS = True
+try:
+    from mci_tools_lib.auth_handler import crowd_get_id_token
+except ImportError:
+    _HAS_MCI_TOOLS = False
+
 _DOT_ORG_DOWNLOAD_ROOT_URL = "http://downloads.mongodb.org/"
 _MCI_ROOT_URL = "https://mci.mongodb.com/version_json/"
 _MCI_LAST_SUCCESSFUL_COMPILE_ROOT = \
@@ -17,14 +23,12 @@ _MCI_LAST_GREEN_ROOT = "https://mci.mongodb.com/json/last_green/"
 
 def get_mci_id_cookies():
     """Login to MCI if the mci-tools library is available"""
-    try:
-        from mci_tools_lib.auth_handler import crowd_get_id_token
-
+    if _HAS_MCI_TOOLS:
         id_token = json.loads(crowd_get_id_token("mongodb-binaries"))
         return {'auth_user': id_token['auth_user'],
                 'auth_token': id_token['auth_token'],
                 'mci-token': id_token["auth_token"]}
-    except ImportError:
+    else:
         return {}
 
 
