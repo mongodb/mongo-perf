@@ -383,22 +383,19 @@ function run_mongo_perf() {
         BR_OPTIONS=$(determine_benchrun_options)
 
         clear_caches
-
         ${BR_START} python benchrun.py ${BR_OPTIONS}
-
-        clear_caches
 
         # Run with multi-DB (4 DBs.)
         if [ ! -z "$MPERF_MULTI_DB" ]
         then
+            clear_caches
             ${BR_START} python benchrun.py ${BR_OPTIONS} -m 4
         fi
-
-        clear_caches
 
         # Run with multi-collection.
         if [ ! -z "$MPERF_MULTI_COLL" ]
         then
+            clear_caches
             ${BR_START} python benchrun.py ${BR_OPTIONS} -m 4 $MPERF_MULTI_COLL
         fi
 
