@@ -3,7 +3,7 @@ import json
 import requests
 import yaml
 
-from mongodb_binaries import BinaryDownload
+from mongodb_binaries.utils import BinaryDownload
 from mongodb_binaries.errors import BinariesNotAvailableError
 from string import Template
 from urllib2 import URLError, urlopen
@@ -30,22 +30,6 @@ def get_mci_id_cookies():
                 'mci-token': id_token["auth_token"]}
     else:
         return {}
-
-
-class RepositoryFactory(object):
-    @staticmethod
-    def get_repo(criteria):
-        """
-        :type criteria: BinariesCriteria
-        :rtype: AbstractRepository
-        """
-        if criteria.project is not None and criteria.variant is not None \
-                and criteria.git_hash is not None:
-            return MCIRepository(criteria)
-        elif criteria.project is not None and criteria.variant is not None:
-            return MCILatestSuccessfulCompileRepository(criteria)
-        else:
-            return ReleasesRepository(criteria)
 
 
 class AbstractRepository(object):
@@ -87,8 +71,8 @@ class ReleasesRepository(AbstractRepository):
         if self.criteria.debug and self.criteria.os_type != "win32":
             match += "-debugsymbols"
 
-        if self.criteria.branch is not None \
-                and self.criteria.branch != "master":
+        if (self.criteria.branch is not None
+            and self.criteria.branch != "master"):
             match += "-" + self.criteria.branch + "-latest"
         elif self.criteria.version is not None:
             match += "-" + self.criteria.version.lstrip('r')
@@ -142,8 +126,8 @@ class MCIRepository(AbstractRepository):
         compile_was_successful = False
         for variant_build in build_results['Builds']:
             # find the right variant
-            if variant_build['Build']['build_variant'] == \
-                    self.criteria.variant:
+            variant = variant_build['Build']['build_variant']
+            if variant == self.criteria.variant:
                 found_variant = True
                 # find the compile task for that variant
                 for task in variant_build['Build']['tasks']:
