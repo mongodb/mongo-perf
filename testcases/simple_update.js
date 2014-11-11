@@ -2,11 +2,11 @@ if ( typeof(tests) != "object" ) {
     tests = [];
 }
 
-tests.push( { name: "Update.v2.IncNoIndex",
+tests.push( { name: "Update.v3.IncNoIndex",
               tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
-                  for ( var i = 0; i < 3200; i++ ) {
+                  for ( var i = 0; i < 4800; i++ ) {
                       collection.insert( { _id : i , x : 0 } );
                   }
                   collection.getDB().getLastError();
@@ -17,11 +17,11 @@ tests.push( { name: "Update.v2.IncNoIndex",
                     update: { $inc : { x : 1 } } },
               ] } );
 
-tests.push( { name: "Update.v2.IncWithIndex",
+tests.push( { name: "Update.v3.IncWithIndex",
               tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
-                  for ( var i = 0; i < 3200; i++ ) {
+                  for ( var i = 0; i < 4800; i++ ) {
                       collection.insert( { _id : i , x : 0 } );
                   }
                   collection.getDB().getLastError();
@@ -33,7 +33,7 @@ tests.push( { name: "Update.v2.IncWithIndex",
                     update: { $inc : { x : 1 } } },
               ] } );
 
-tests.push( { name: "Update.v2.IncNoIndexUpsert",
+tests.push( { name: "Update.v3.IncNoIndexUpsert",
               tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
@@ -41,11 +41,11 @@ tests.push( { name: "Update.v2.IncNoIndexUpsert",
               ops: [
                   { op:  "update",
                     upsert : true,
-                    query: { _id : { "#RAND_INT_PLUS_THREAD" : [ 0, 1000 ] } },
+                    query: { _id : { "#RAND_INT_PLUS_THREAD" : [ 0, 100 ] } },
                     update: { $inc : { x : 1 } } },
               ] } );
 
-tests.push( { name: "Update.v2.IncWithIndexUpsert",
+tests.push( { name: "Update.v3.IncWithIndexUpsert",
               tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
@@ -54,7 +54,7 @@ tests.push( { name: "Update.v2.IncWithIndexUpsert",
               ops: [
                   { op:  "update",
                     upsert : true,
-                    query: { _id : { "#RAND_INT_PLUS_THREAD" : [ 0, 1000 ] } },
+                    query: { _id : { "#RAND_INT_PLUS_THREAD" : [ 0, 100 ] } },
                     update: { $inc : { x : 1 } } },
               ] } );
 
@@ -180,7 +180,7 @@ tests.push( { name: "Update.IncFewLargeDocLongFields",
                                        "elcgijivrt": 1 } } }
               ] } );
 
-tests.push( { name: "Update.v2.SingleDocFieldAtOffset",
+tests.push( { name: "Update.v3.SingleDocFieldAtOffset",
               tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
@@ -194,7 +194,7 @@ tests.push( { name: "Update.v2.SingleDocFieldAtOffset",
                       toInsert["a_" + i.toString()] = "a";
                   }
 
-                  for (var i = 0; i < 3200; i++) {
+                  for (var i = 0; i < 4800; i++) {
                       collection.insert(toInsert);
                  }
                  collection.getDB().getLastError();

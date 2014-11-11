@@ -22,6 +22,22 @@ tests.push( { name: "Insert.EmptyCapped",
                     doc: {} }
               ] } );
 
+tests.push( { name: "Insert.v0.EmptyCapped.SeqID",
+              tags: ['insert','sanity','daily','weekly','monthly'],
+              pre: function( collection ) {
+                  collection.drop();
+                  collection.runCommand( "create", { capped : true,
+                                                     size : 32 * 1024 } );
+              },
+              ops: [
+                  { op:  "insert",
+                    doc: { _id: { "#SEQ_INT":
+                                    { seq_id: 0, start: 0, step: 1, unique: true }
+                                }
+                         }
+                  }
+              ] } );
+
 tests.push( { name: "Insert.JustID",
               tags: ['insert','sanity','daily','weekly','monthly'],
               pre: function( collection ) { collection.drop(); },

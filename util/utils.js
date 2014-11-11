@@ -37,6 +37,13 @@ function prepOp(collection, op) {
     return op;
 }
 
+var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+function generateRandomString(length) {
+    buf = "";
+    for (i=0; i < length; i++) { buf+= possible.charAt(Math.floor(Math.random() * possible.length));; }
+    return buf;
+}
+
 function formatRunDate(now) {
     function pad(dateComponent) {
         dateComponent = "" + dateComponent;

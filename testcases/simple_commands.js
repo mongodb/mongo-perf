@@ -8,26 +8,29 @@ tests.push( { name: "Commands.isMaster",
                   { op: "command", ns : "#B_DB", command : { "isMaster" : 1 } }
               ] } );
 
-//tests.push( { name: "Commands.buildInfo",
-//              ops: [
-//                  { op: "command", ns : "#B_DB", command : { "buildInfo" : 1 } }
-//              ] } );
+tests.push( { name: "Commands.buildInfo",
+              tags: ['skip'],
+              ops: [
+                  { op: "command", ns : "#B_DB", command : { "buildInfo" : 1 } }
+              ] } );
 
-//tests.push( { name: "Commands.illegalOp",
-//              ops: [
-//                  { op: "command", ns : "#B_DB", command : { "notExist" : 1 } }
-//              ] } );
+tests.push( { name: "Commands.illegalOp",
+              tags: ['skip'],
+              ops: [
+                  { op: "command", ns : "#B_DB", command : { "notExist" : 1 } }
+              ] } );
 
-//tests.push( { name: "Commands.nop",
-//              ops: [
-//                  { op: "nop" }
-//              ] } );
+tests.push( { name: "Commands.nop",
+              tags: ['skip'],
+              ops: [
+                  { op: "nop" }
+              ] } );
 
-tests.push( { name: "Commands.CountsFullCollection",
+tests.push( { name: "Commands.v1.CountsFullCollection",
               tags: ['count','commands','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
-                  for ( var i = 0; i < 1000; i++ ) {
+                  for ( var i = 0; i < 4800; i++ ) {
                       collection.insert( { _id : i } );
                   }
                   collection.getDB().getLastError();
@@ -37,11 +40,11 @@ tests.push( { name: "Commands.CountsFullCollection",
               ] } );
 
 
-tests.push( { name: "Commands.CountsIntIDRange",
+tests.push( { name: "Commands.v1.CountsIntIDRange",
               tags: ['count','commands','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
-                  for ( var i = 0; i < 1000; i++ ) {
+                  for ( var i = 0; i < 4800; i++ ) {
                       collection.insert( { _id : i } );
                   }
                   collection.getDB().getLastError();
@@ -55,13 +58,13 @@ tests.push( { name: "Commands.CountsIntIDRange",
               ] } );
 
 
-tests.push( { name: "Commands.v2.FindAndModifyInserts",
+tests.push( { name: "Commands.v3.FindAndModifyInserts",
               tags: ['findAndModify','command','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
               },
               ops: [
-                  { op: "let", target: "x", value: {"#RAND_INT_PLUS_THREAD": [0,1000]}},
+                  { op: "let", target: "x", value: {"#RAND_INT_PLUS_THREAD": [0,100]}},
                   { op: "command",
                     ns : "#B_DB",
                     command : { findAndModify : "#B_COLL",
@@ -77,7 +80,7 @@ function genDistinctTest( name, index, query ) {
     if ( index ) {
         doc.pre = function( collection ) {
             collection.drop();
-            for ( var i = 0; i < 1000; i++ ) {
+            for ( var i = 0; i < 4800; i++ ) {
                 collection.insert( { x : 1 } );
                 collection.insert( { x : 2 } );
                 collection.insert( { x : 3 } );
@@ -88,7 +91,7 @@ function genDistinctTest( name, index, query ) {
     else {
         doc.pre = function( collection ) {
             collection.drop();
-            for ( var i = 0; i < 1000; i++ ) {
+            for ( var i = 0; i < 4800; i++ ) {
                 collection.insert( { x : 1 } );
                 collection.insert( { x : 2 } );
                 collection.insert( { x : 3 } );
@@ -110,7 +113,7 @@ function genDistinctTest( name, index, query ) {
     return doc;
 }
 
-tests.push( genDistinctTest( "Commands.DistinctWithIndex", true, false ) );
-tests.push( genDistinctTest( "Commands.DistinctWithIndexAndQuery", true, true ) );
-tests.push( genDistinctTest( "Commands.DistinctWithoutIndex", false, false ) );
-tests.push( genDistinctTest( "Commands.DistinctWithoutIndexAndQuery", false, true ) );
+tests.push( genDistinctTest( "Commands.v1.DistinctWithIndex", true, false ) );
+tests.push( genDistinctTest( "Commands.v1.DistinctWithIndexAndQuery", true, true ) );
+tests.push( genDistinctTest( "Commands.v1.DistinctWithoutIndex", false, false ) );
+tests.push( genDistinctTest( "Commands.v1.DistinctWithoutIndexAndQuery", false, true ) );

@@ -4,7 +4,7 @@ if ( typeof(tests) != "object" ) {
 
 var setupTestUncontendedSingleDoc = function( collection ) {
    collection.drop();
-   for ( var i = 0; i < 3200; i++ ) {
+   for ( var i = 0; i < 4800; i++ ) {
       collection.insert( { _id : i , x : 0 } );
    }
    collection.getDB().getLastError();
@@ -18,7 +18,7 @@ var testUncontendedSingleDoc = [
    },
 ]
 
-tests.push( { name: "MultiUpdate.v0.Uncontended.SingleDoc.NoIndex",
+tests.push( { name: "MultiUpdate.v1.Uncontended.SingleDoc.NoIndex",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestUncontendedSingleDoc( collection );
@@ -26,7 +26,7 @@ tests.push( { name: "MultiUpdate.v0.Uncontended.SingleDoc.NoIndex",
               ops: testUncontendedSingleDoc,
             } );
               
-tests.push( { name: "MultiUpdate.v0.Uncontended.SingleDoc.Indexed",
+tests.push( { name: "MultiUpdate.v1.Uncontended.SingleDoc.Indexed",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestUncontendedSingleDoc( collection );
@@ -37,7 +37,7 @@ tests.push( { name: "MultiUpdate.v0.Uncontended.SingleDoc.Indexed",
               
 var setupTestUncontendedTwoDocs = function( collection ) {
    collection.drop();
-   for ( var i = 0; i < 3200; i++ ) {
+   for ( var i = 0; i < 4800; i++ ) {
       collection.insert( { _id : i , x : 0 } );
    }
    collection.getDB().getLastError();
@@ -51,7 +51,7 @@ var testUncontendedTwoDocs = [
     },
 ];
 
-tests.push( { name: "MultiUpdate.v0.Uncontended.TwoDocs.NoIndex",
+tests.push( { name: "MultiUpdate.v1.Uncontended.TwoDocs.NoIndex",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestUncontendedTwoDocs( collection );
@@ -59,7 +59,7 @@ tests.push( { name: "MultiUpdate.v0.Uncontended.TwoDocs.NoIndex",
               ops: testUncontendedTwoDocs,
             } );
 
-tests.push( { name: "MultiUpdate.v0.Uncontended.TwoDocs.Indexed",
+tests.push( { name: "MultiUpdate.v1.Uncontended.TwoDocs.Indexed",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestUncontendedTwoDocs( collection );
@@ -70,7 +70,7 @@ tests.push( { name: "MultiUpdate.v0.Uncontended.TwoDocs.Indexed",
                             
 var setupTestContendedLow = function( collection ) {
    collection.drop();
-   for ( var i = 0; i < 3200; i++ ) {
+   for ( var i = 0; i < 4800; i++ ) {
       collection.insert( { _id : i , x : 0 } );
    }
    collection.getDB().getLastError();
@@ -79,12 +79,12 @@ var setupTestContendedLow = function( collection ) {
 var testContendedLow = [
    { op:  "update",
      multi: true,
-     query: { _id : {"#RAND_INT": [0,3200]} },
+     query: { _id : {"#RAND_INT": [0,4800]} },
      update: { $inc : { x : 1 } }
     },
 ];
 
-tests.push( { name: "MultiUpdate.v0.Contended.Low.NoIndex",
+tests.push( { name: "MultiUpdate.v1.Contended.Low.NoIndex",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                  setupTestContendedLow( collection );                               
@@ -92,7 +92,7 @@ tests.push( { name: "MultiUpdate.v0.Contended.Low.NoIndex",
               ops: testContendedLow,
             } );   
                             
-tests.push( { name: "MultiUpdate.v0.Contended.Low.Indexed",
+tests.push( { name: "MultiUpdate.v1.Contended.Low.Indexed",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                  setupTestContendedLow( collection );
@@ -103,7 +103,7 @@ tests.push( { name: "MultiUpdate.v0.Contended.Low.Indexed",
               
 var setupTestContendedMedium = function( collection ) {
    collection.drop();
-   for ( var i = 0; i < 3200; i++ ) {
+   for ( var i = 0; i < 4800; i++ ) {
       collection.insert( { _id : i , x : 0 } );
    }
    collection.getDB().getLastError();                               
@@ -112,12 +112,12 @@ var setupTestContendedMedium = function( collection ) {
 var testContendedMedium = [ 
    { op:  "update",
      multi: true,
-     query: { _id : { $gt: {"#RAND_INT": [0,1700]}, $lt: {"#RAND_INT": [1500,3200]} } },
+     query: { _id : { $gt: {"#RAND_INT": [0,2600]}, $lt: {"#RAND_INT": [2200,4800]} } },
      update: { $inc : { x : 1 } }
    }, 
 ]
 
-tests.push( { name: "MultiUpdate.v0.Contended.Medium.NoIndex",
+tests.push( { name: "MultiUpdate.v1.Contended.Medium.NoIndex",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedMedium( collection );
@@ -125,7 +125,7 @@ tests.push( { name: "MultiUpdate.v0.Contended.Medium.NoIndex",
               ops: testContendedMedium,
             } );   
                             
-tests.push( { name: "MultiUpdate.v0.Contended.Medium.Indexed",
+tests.push( { name: "MultiUpdate.v1.Contended.Medium.Indexed",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedMedium( collection );
@@ -136,7 +136,7 @@ tests.push( { name: "MultiUpdate.v0.Contended.Medium.Indexed",
 
 var setupTestContendedHot = function( collection ) {
    collection.drop();
-   for ( var i = 0; i < 3200; i++ ) {
+   for ( var i = 0; i < 4800; i++ ) {
       collection.insert( { _id : i , x : 0 } );
    }
    collection.getDB().getLastError();                               
@@ -150,7 +150,7 @@ var testContendedHot = [
    }, 
 ]
 
-tests.push( { name: "MultiUpdate.v0.Contended.Hot.NoIndex",
+tests.push( { name: "MultiUpdate.v1.Contended.Hot.NoIndex",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedHot( collection );
@@ -158,7 +158,7 @@ tests.push( { name: "MultiUpdate.v0.Contended.Hot.NoIndex",
               ops: testContendedHot,
             } );   
                             
-tests.push( { name: "MultiUpdate.v0.Contended.Hot.Indexed",
+tests.push( { name: "MultiUpdate.v1.Contended.Hot.Indexed",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedHot( collection );
@@ -169,7 +169,7 @@ tests.push( { name: "MultiUpdate.v0.Contended.Hot.Indexed",
             
 var setupTestContendedSeqDoc = function( collection ) {
    collection.drop();
-   for ( var i = 0; i < 3200; i++ ) {
+   for ( var i = 0; i < 4800; i++ ) {
       collection.insert( { _id : i , x : 0 } );
    }
    collection.getDB().getLastError();                               
@@ -183,7 +183,7 @@ var testContendedSeqDoc = [
    }, 
 ]
 
-tests.push( { name: "MultiUpdate.v0.Contended.Doc.Seq.NoIndex",
+tests.push( { name: "MultiUpdate.v1.Contended.Doc.Seq.NoIndex",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedSeqDoc( collection );
@@ -191,7 +191,7 @@ tests.push( { name: "MultiUpdate.v0.Contended.Doc.Seq.NoIndex",
               ops: testContendedSeqDoc,
             } );   
                             
-tests.push( { name: "MultiUpdate.v0.Contended.Doc.Seq.Indexed",
+tests.push( { name: "MultiUpdate.v1.Contended.Doc.Seq.Indexed",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedSeqDoc( collection );
@@ -202,7 +202,7 @@ tests.push( { name: "MultiUpdate.v0.Contended.Doc.Seq.Indexed",
             
 var setupTestContendedRndDoc = function( collection ) {
    collection.drop();
-   for ( var i = 0; i < 3200; i++ ) {
+   for ( var i = 0; i < 4800; i++ ) {
       collection.insert( { _id : i , x : 0 } );
    }
    collection.getDB().getLastError();                               
@@ -211,12 +211,12 @@ var setupTestContendedRndDoc = function( collection ) {
 var testContendedRndDoc = [ 
    { op:  "update",
      multi: true,
-     query: { _id : 1600 },
-     update: { $set : { x: {"#RAND_INT": [0,3200]} } }
+     query: { _id : 4800 },
+     update: { $set : { x: {"#RAND_INT": [0,4800]} } }
    }, 
 ]
 
-tests.push( { name: "MultiUpdate.v0.Contended.Doc.Rnd.NoIndex",
+tests.push( { name: "MultiUpdate.v1.Contended.Doc.Rnd.NoIndex",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedRndDoc( collection );
@@ -224,7 +224,7 @@ tests.push( { name: "MultiUpdate.v0.Contended.Doc.Rnd.NoIndex",
               ops: testContendedRndDoc,
             } );   
                             
-tests.push( { name: "MultiUpdate.v0.Contended.Doc.Rnd.Indexed",
+tests.push( { name: "MultiUpdate.v1.Contended.Doc.Rnd.Indexed",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedRndDoc( collection );

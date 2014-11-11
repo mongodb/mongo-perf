@@ -3,7 +3,7 @@ if ( typeof(tests) != "object" ) {
 }
 
 tests.push( { name: "Insert.v0.SingleIndex.Seq",
-              tags: ['insert','sanity','daily','weekly','monthly'],
+              tags: ['insert','complex','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({x: 1});
@@ -16,7 +16,7 @@ tests.push( { name: "Insert.v0.SingleIndex.Seq",
               ] } );
               
 tests.push( { name: "Insert.v0.SingleIndex.Uncontested.Rnd",
-              tags: ['insert','sanity','daily','weekly','monthly'],
+              tags: ['insert','complex','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({x: 1});
@@ -29,7 +29,7 @@ tests.push( { name: "Insert.v0.SingleIndex.Uncontested.Rnd",
               ] } );
 
 tests.push( { name: "Insert.v0.SingleIndex.Contested.Rnd",
-              tags: ['insert','sanity','daily','weekly','monthly'],
+              tags: ['insert','complex','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({x: 1});
@@ -42,7 +42,7 @@ tests.push( { name: "Insert.v0.SingleIndex.Contested.Rnd",
               ] } );
 
 tests.push( { name: "Insert.v0.MultiIndex.Uncontested.Rnd",
-              tags: ['insert','sanity','daily','weekly','monthly'],
+              tags: ['insert','complex','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({x: 1});
@@ -60,7 +60,7 @@ tests.push( { name: "Insert.v0.MultiIndex.Uncontested.Rnd",
               ] } );
 
 tests.push( { name: "Insert.v0.MultiIndex.Contested.Rnd",
-              tags: ['insert','sanity','daily','weekly','monthly'],
+              tags: ['insert','complex','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({x: 1});
@@ -78,7 +78,7 @@ tests.push( { name: "Insert.v0.MultiIndex.Contested.Rnd",
               ] } );
 
 tests.push( { name: "Insert.v0.MultiKeyIndex.Uncontested.Rnd",
-              tags: ['insert','sanity','daily','weekly','monthly'],
+              tags: ['insert','complex','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({x: 1});
@@ -96,7 +96,7 @@ tests.push( { name: "Insert.v0.MultiKeyIndex.Uncontested.Rnd",
               ] } );
 
 tests.push( { name: "Insert.v0.MultiKeyIndex.Contested.Rnd",
-              tags: ['insert','sanity','daily','weekly','monthly'],
+              tags: ['insert','complex','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({x: 1});
@@ -111,4 +111,20 @@ tests.push( { name: "Insert.v0.MultiKeyIndex.Contested.Rnd",
                              ] ,
                         }
                   }
+              ] } );
+
+tests.push( { name: "Insert.v0.SetWithMultiIndex.String",
+              tags: ['insert','complex','daily','weekly','monthly'],
+              pre: function( collection ) {
+                  collection.drop();
+                  for ( var i = 0; i < 4800; i++ ) {
+                      collection.insert( { _id : i , x : 0, y : i } );
+                  }
+                  collection.getDB().getLastError();
+                  collection.ensureIndex( { x : 1 } );
+                  collection.ensureIndex( { y : 1 } );
+              },
+              ops: [
+                  { op:  "insert",
+                    doc: { x : {"#RAND_INT": [0,1000] }, y : {"#RAND_STRING": [1024] } } },
               ] } );
