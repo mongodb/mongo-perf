@@ -261,13 +261,24 @@ function run_mongo_perf() {
 
         # Kick off a mongod process.
         cd $BUILD_DIR
+
+        if [ $STORAGE_ENGINE == "mmapv1" ]
+        then
+            EXTRA="--syncdelay 14400"
+        elif [ $STORAGE_ENGINE == "wiredtiger" ]
+        then
+            EXTRA='--wiredTigerEngineConfig "checkpoint=(wait=14400)"'
+        else
+            EXTRA=""
+        fi
+
         if [ $THIS_PLATFORM == 'Windows' ]
         then
             rm -rf `cygpath -u $DBPATH`/*
-            (./${MONGOD} --dbpath "${DBPATH}" --smallfiles --nojournal --syncdelay 43200 --storageEngine=$STORAGE_ENGINE --logpath mongoperf.log &)
+             (eval ./${MONGOD} --dbpath "${DBPATH}" $EXTRA --storageEngine=$STORAGE_ENGINE --logpath mongoperf.log &)
         else
             rm -rf $DBPATH/*
-            ${MONGOD_START} ./${MONGOD} --dbpath "${DBPATH}" --smallfiles --nojournal --syncdelay 43200 --storageEngine=$STORAGE_ENGINE --fork --logpath mongoperf.log
+            (eval ${MONGOD_START} ./${MONGOD} --dbpath "${DBPATH}" "$EXTRA" --storageEngine=$STORAGE_ENGINE --fork --logpath mongoperf.log)
         fi
         # TODO: doesn't get set properly with --fork ?
         MONGOD_PID=$!
