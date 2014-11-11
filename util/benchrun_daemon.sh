@@ -12,11 +12,14 @@ if [ $THIS_PLATFORM == 'CYGWIN_NT-6.1' ]
 then
     THIS_PLATFORM='Windows'
     PLATFORM_SUFFIX="2K8"
-fi
-if [ $THIS_PLATFORM == 'CYGWIN_NT-6.3' ]
+elif [ $THIS_PLATFORM == 'CYGWIN_NT-6.2' ]
 then
     THIS_PLATFORM='Windows'
     PLATFORM_SUFFIX="2K12"
+elif [ $THIS_PLATFORM == 'CYGWIN_NT-6.3' ]
+then
+    THIS_PLATFORM='Windows'
+    PLATFORM_SUFFIX="2K12R2"
 fi
 
 # *nix user name
@@ -25,7 +28,13 @@ if [ $THIS_PLATFORM == 'Linux' ]
 then
     NUM_CPUS=$(grep ^processor /proc/cpuinfo | wc -l)
     NUM_SOCKETS=$(grep ^physical\ id /proc/cpuinfo | sort | uniq | wc -l)
-else
+elif [ $THIS_PLATFORM == 'Windows' ]
+then
+    NUM_CPUS=$(wmic cpu get NumberOfCores|grep -v NumberOfCores|egrep -v '^$' | paste -sd+ - | bc)
+    NUM_SOCKETS=$(wmic cpu get NumberOfCores | grep -v NumberOfCores | egrep -v '^$' | wc -l)
+elif [ $THIS_PLATFORM == 'Darwin' ]
+then
+    #NUM_CPUS=$(/usr/sbin/system_profiler | grep Cores: | cut -f2 -d:)
     NUM_CPUS=4
     NUM_SOCKETS=1
 fi
@@ -59,8 +68,6 @@ RPORT=27017
 BREAK_PATH=${MPERFBASE}/build-perf
 # trying to use sudo for cache flush, et al
 SUDO=sudo
-# test agenda from all .js files found here
-TEST_DIR=${MPERFPATH}/testcases
 # seconds between polls
 SLEEPTIME=60
 # uncomment to fetch recently-built binaries from mongodb.org instead of compiling from source
@@ -271,7 +278,7 @@ function run_mongo_perf() {
         TIME="$(date "+%Y%m%d_%H:%M")"
 
         # list of testcase definitions
-        TESTCASES=$(find $TEST_DIR -name "simple*.js")
+        TESTCASES=$(find testcases -name "*.js")
 
         # list of thread counts to run (high counts first to minimize impact of first trial)
         determine_bench_threads
