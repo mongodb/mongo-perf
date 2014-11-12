@@ -1,0 +1,1 @@
+// Setup selecting and checkboxes

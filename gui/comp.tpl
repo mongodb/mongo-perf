@@ -1,25 +1,36 @@
 <!doctype html>
 <html lang="us">
-  <head>
+<head>
     <meta charset="utf-8">
     <title>MongoDB Performance Benchmarks</title>
     <link href="static/css/jquery-ui-1.10.1.custom.min.css" rel="stylesheet">
     <link href="static/css/perf_style.css" rel="stylesheet">
     <link href="static/css/page.css" rel="stylesheet">
-    <link href="static/bootstrap-3.1.1-dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="static/DataTables-1.10.4/media/css/jquery.dataTables.css" rel="stylesheet">
+    <link href="static/bootstrap-3.3.0-dist/css/bootstrap.min.css" rel="stylesheet">
     <script type="text/javascript" src="static/js/jquery-1.9.1.min.js"></script>
     <script type="text/javascript" src="static/js/jquery-ui-1.10.1.custom.min.js"></script>
-    <script type="text/javascript" src="static/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="static/DataTables-1.10.4/media/js/jquery.dataTables.js"></script>
+    <script type="text/javascript" src="static/bootstrap-3.3.0-dist/js/bootstrap.js"></script>
     <script type="text/javascript" src="static/js/perf_lib.js"></script>
+    <script type="text/javascript" src="static/js/main.js"></script>
     <script>
         $(document).ready(function(){
             $('#selectTable').dataTable({
-                    "bPaginate": false,
-                    "bLengthChange": false,
-                    "bInfo": false,
-                    "bSortable": true,
-                    "bAutoWidth": true,
-                    "dom": "lrtip"
+                "bPaginate": false,
+                "bLengthChange": false,
+                "bInfo": false,
+                "bSortable": true,
+                "bAutoWidth": true,
+                "dom": "lrtip"
+    //                ,
+    //                "columnDefs": [
+    //                    {
+    //                        "targets": [ 0 ],
+    //                        "visible": false,
+    //                        "searchable": false
+    //                    }
+    //                ]
             });
 
             var table = $('#selectTable').DataTable();
@@ -42,77 +53,109 @@
                 table.column(5).search(this.value).draw();
             });
 
-        });
-
-        function isVisible(elem) {
-            return elem.offsetWidth > 0 || elem.offsetHeight > 0;
-        }
-
-        var selectBool = false;
-        function selectClicked() {
-            var selectRows = $('[name="id"]')
-            for(var i = 0; i < selectRows.length; i++) {
-                if(!selectBool) {
-                    //set to selected if its not hidden
-                    if(isVisible(selectRows[i])) {
-                        selectRows[i].checked=true;
-                    }
-                } else {
-                    //set to unselected
-                    selectRows[i].checked=false;
+            $('#selectTable tbody').on( 'click', 'tr', function () {
+                $(this).toggleClass('selected');
+                if (!$(this).find('input').is(':checked')) {
+                    $(this).find('input').attr('checked', 'checked');
                 }
-            }
+                else {
+                    $(this).find('input').attr('checked', null);
+                }
 
-            if(!selectBool) {
-                $('#selectall')[0].innerHTML = "Unselect All";
-            } else {
-                $('#selectall')[0].innerHTML = "Select All";
-            }
-
-            selectBool = !selectBool;
-            return false;
-        }
+            } );
+        });
     </script>
-  </head>
-  <div class="container">
-  <body>
-    <h1>MongoDB Performance Benchmarks</h1>
-    <div id="selection" class="row">
-      <form name="custom_form" id="custom_form" action="results" method="get">
-        <button action="submit" class="btn btn-primary">Submit</button>
-        <table id="selectTable" class="table table-striped">
-          <thead>
-              <tr>
-                <th><button onclick="selectClicked();" class="btn btn-default" type="button" id="selectall">Select All</button></td>
-                <th><input type="text" id="labelfield" placeholder="Label Filter" /></th>
-                <th><input type="text" id="versionfield" placeholder="Version Filter" /></th>
-                <th><input type="text" id="datefield" placeholder="Date Filter" /></th>
-                <th><input type="text" id="commitfield" name="commit" placeholder="Commit Filter" /></th>
-                <th><input type="text" id="enginefield" name="engine" placeholder="Engine Filter" /></th>
-              </tr>
-              <tr>
-                <th style="width: 10%">Select</th>
-                <th style="width: 25%">Label</th>
-                <th style="width: 10%">Version</th>
-                <th style="width: 20%">Date</th>
-                  <th style="width: 35%">Git Hash</th>
-                  <th style="width: 35%">Storage Engine</th>
-              </tr>
-          </thead>
-          %for row in allrows:
-          <tr id="{{row['_id']}}" name="docrow">
-            <td><input type="checkbox" name="id" value={{row["_id"]}}></td>
-            <td>{{row["label"]}}</td>
-            <td>{{row["version"]}}</td>
-            <td>{{row["date"]}}</td>
-            <td><a href="https://github.com/mongodb/mongo/commit/{{row['commit']}}">{{row['commit']}}</a></td>
-            <td>{{row["server_storage_engine"]}}</td>
-          </tr>
-          %end
-        </table>
-        <button action="submit" class="btn btn-primary">Submit</button>
-      </form>
+</head>
+<body>
+<div id="wrapper">
+
+    <!-- Sidebar -->
+    <div id="sidebar-wrapper">
+        <ul class="sidebar-nav">
+            <li class="sidebar-brand">
+                <a href="#">Start Bootstrap</a>
+            </li>
+            <li>
+                <a href="#">Dashboard</a>
+            </li>
+            <li>
+                <a href="#">Shortcuts</a>
+            </li>
+            <li>
+                <a href="#">Overview</a>
+            </li>
+            <li>
+                <a href="#">Events</a>
+            </li>
+            <li>
+                <a href="#">About</a>
+            </li>
+            <li>
+                <a href="#">Services</a>
+            </li>
+            <li>
+                <a href="#">Contact</a>
+            </li>
+        </ul>
     </div>
-  </body>
-  </div>
+    <div class="container-fluid">
+
+        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+            <div class="container">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="#">MongoDB Benchmark Results</a>
+                </div>
+                <div class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav">
+                        <li><a href="/">Home</a></li>
+                    </ul>
+                </div>
+                <!--/.nav-collapse -->
+            </div>
+        </div>
+        <div id="selection" class="row">
+            <form name="custom_form" id="custom_form" action="results" method="get">
+                <button action="submit" class="btn btn-primary">Submit</button>
+                <table id="selectTable" class="table table-striped display">
+                    <thead>
+                    <tr>
+                        <th></th>
+                        <th><input type="text" id="labelfield" placeholder="Label Filter" /></th>
+                        <th><input type="text" id="versionfield" placeholder="Version Filter" /></th>
+                        <th><input type="text" id="datefield" placeholder="Date Filter" /></th>
+                        <th><input type="text" id="commitfield" placeholder="Commit Filter" /></th>
+                        <th><input type="text" id="enginefield" placeholder="Engine Filter" /></th>
+                    </tr>
+                    <tr>
+                        <th style="width: 10%">Record Id</th>
+                        <th style="width: 25%">Label</th>
+                        <th style="width: 10%">Version</th>
+                        <th style="width: 20%">Date</th>
+                        <th style="width: 35%">Git Hash</th>
+                        <th style="width: 35%">Storage Engine</th>
+                    </tr>
+                    </thead>
+                    %for row in allrows:
+                    <tr data-recordid="{{row['_id']}}" name="docrow">
+                        <td><input type="checkbox" name="id" value={{row["_id"]}}></td>
+                        <td>{{row["label"]}}</td>
+                        <td>{{row["version"]}}</td>
+                        <td>{{row["date"]}}</td>
+                        <td><a href="https://github.com/mongodb/mongo/commit/{{row['commit']}}">{{row['commit']}}</a></td>
+                        <td>{{row["server_storage_engine"]}}</td>
+                    </tr>
+                    %end
+                </table>
+                <button action="submit" class="btn btn-primary">Submit</button>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
 </html>
