@@ -96,6 +96,12 @@ TEST_TRIALS_TIME=5
 TEST_WRITE_COMMAND=true
 # compile aguments
 BUILD_ARGS="--64 --release"
+# amount of time between data sync to disk
+DISK_SYNC_DELAY=14400
+# mutlti db runs
+# MPERF_MULTI_DB=4
+# mutli collection runs
+# MPERF_MULTI_COLL=
 
 
 #### Default Binaries Options
@@ -322,8 +328,7 @@ function clear_caches() {
 }
 
 function determine_benchrun_options() {
-    BENCHRUN_OPTIONS="-l ${THIS_PLATFORM}-${THIS_HOST}-${PLATFORM_SUFFIX}-${LAST_HASH}-${STORAGE_ENGINE}"
-    BENCHRUN_OPTIONS+=" --rhost ${RHOST} --rport ${RPORT} -t ${THREAD_COUNTS} -s ${SHELLPATH} -f ${TESTCASES} --trialTime ${TEST_TRIALS_TIME} --trialCount ${TEST_TRIALS_COUNT} --writeCmd ${TEST_WRITE_COMMAND} --testFilter ${TEST_TAGS_FILTER}"
+    BENCHRUN_OPTIONS=" --rhost ${RHOST} --rport ${RPORT} -t ${THREAD_COUNTS} -s ${SHELLPATH} -f ${TESTCASES} --trialTime ${TEST_TRIALS_TIME} --trialCount ${TEST_TRIALS_COUNT} --writeCmd ${TEST_WRITE_COMMAND} --testFilter ${TEST_TAGS_FILTER}"
 
     if [ "$FETCH_BINARIES" != true ]
     then
@@ -339,10 +344,25 @@ function determine_benchrun_options() {
 
 function determine_mongod_options()
 {
-        MONGOD_OPTIONS="--dbpath ${DBPATH} --smallfiles --nojournal --syncdelay 43200 --logpath mongoperf.log"
+        MONGOD_OPTIONS="--dbpath ${DBPATH} --smallfiles --nojournal --logpath mongoperf.log"
         if [ "$NO_ENGINES" == "0" ]
         then
             MONGOD_OPTIONS+=" --storageEngine=${STORAGE_ENGINE}"
+        fi
+
+        if [ $STORAGE_ENGINE == "mmapv1" ]
+        then
+            MONGOD_OPTIONS+=" --syncdelay ${DISK_SYNC_DELAY}"
+        elif [ $STORAGE_ENGINE == "wiredtiger" ]
+        then
+            WTEC_TEST=$(${DLPATH}/${MONGOD} --wiredTigerEngineConfig "checkpoint=(wait=${DISK_SYNC_DELAY})" --version)
+            NO_WTEC=$?
+            if [ "$NO_WTEC" == "0" ]
+            then
+                MONGOD_OPTIONS+=' --wiredTigerEngineConfig "checkpoint=(wait=${DISK_SYNC_DELAY})"'
+            fi
+        else
+            EXTRA=""
         fi
         echo ${MONGOD_OPTIONS}
 }
@@ -362,10 +382,10 @@ function run_mongo_perf() {
         if [ $THIS_PLATFORM == 'Windows' ]
         then
             rm -rf `cygpath -u $DBPATH`/*
-            (./${MONGOD} ${SERVER_OPTIONS} &)
+            (eval ./${MONGOD} ${SERVER_OPTIONS} &)
         else
             rm -rf $DBPATH/*
-            ${MONGOD_START} ./${MONGOD} ${SERVER_OPTIONS} --fork
+            (eval ${MONGOD_START} ./${MONGOD} ${SERVER_OPTIONS} --fork)
         fi
         # TODO: doesn't get set properly with --fork ?
         MONGOD_PID=$!
@@ -382,21 +402,23 @@ function run_mongo_perf() {
 
         BR_OPTIONS=$(determine_benchrun_options)
 
-        clear_caches
-        ${BR_START} python benchrun.py ${BR_OPTIONS}
+        BASE_BENCHRUN_LABEL="${THIS_PLATFORM}-${THIS_HOST}-${PLATFORM_SUFFIX}-${LAST_HASH}-${STORAGE_ENGINE}"
 
-        # Run with multi-DB (4 DBs.)
+        clear_caches
+        ${BR_START} python benchrun.py -l ${BASE_BENCHRUN_LABEL} ${BR_OPTIONS}
+
+        # Run with multi-DB
         if [ ! -z "$MPERF_MULTI_DB" ]
         then
             clear_caches
-            ${BR_START} python benchrun.py ${BR_OPTIONS} -m 4
+            ${BR_START} python benchrun.py -l ${BASE_BENCHRUN_LABEL}-multidb${MPERF_MULTI_DB} ${BR_OPTIONS} -m ${MPERF_MULTI_DB}
         fi
 
         # Run with multi-collection.
         if [ ! -z "$MPERF_MULTI_COLL" ]
         then
             clear_caches
-            ${BR_START} python benchrun.py ${BR_OPTIONS} -m 4 $MPERF_MULTI_COLL
+            ${BR_START} python benchrun.py -l ${BASE_BENCHRUN_LABEL}--multicoll${MPERF_MULTI_COLL} ${BR_OPTIONS} --multicoll $MPERF_MULTI_COLL
         fi
 
 

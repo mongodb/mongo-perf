@@ -34,7 +34,7 @@
 #############
 # Enable Multi DB Runs
 #############
-# MPERF_MULTI_DB=true
+# MPERF_MULTI_DB=4
 
 #############
 # Enable Multi Collection Runs
@@ -81,6 +81,11 @@
 # branch to monitor for checkins
 #############
 # BRANCH=master
+
+#############
+# amount of time between data sync to disk
+#
+# DISK_SYNC_DELAY=14400
 
 ###########################################
 # Results Reporting
