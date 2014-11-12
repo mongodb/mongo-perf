@@ -1,0 +1,82 @@
+#!/usr/bin/env python
+"""get-mongodb-binaries gets a set of compiled binaries
+
+"""
+import argparse
+import os
+import sys
+import tempfile
+
+from mongodb_binaries import BinariesCriteria, BinariesManager
+
+
+def do_download(args):
+    requested_binaries = BinariesCriteria(os_type=args.os_type,
+                                          branch=args.branch,
+                                          version=args.revision,
+                                          cpu_arch=args.cpu_arch,
+                                          debug=args.debug,
+                                          project=args.project,
+                                          git_hash=args.git_hash,
+                                          variant=args.variant)
+
+    binaries_manager = BinariesManager(directory=args.download_dir)
+    binaries_manager.update(criteria=requested_binaries)
+
+
+def main():
+    # Main Section
+
+    # setup command line arguments
+    parser = argparse.ArgumentParser(description='Download MongoDB binaries')
+
+    parser.add_argument('--dir', dest='download_dir', action='store',
+                        required=True,
+                        help='the directory to download the binaries file to')
+    parser.add_argument('--branch', dest='branch', action='store',
+                        default=None,
+                        help='the branch to get the latest build for eg v2.6')
+    parser.add_argument('--revision', dest='revision', action='store',
+                        default=None,
+                        help='the version to get the binaries for')
+    parser.add_argument('--distribution', dest='distribution', action='store',
+                        default=None,
+                        help='the distribution to get the binaries for')
+    parser.add_argument('--os', dest='os_type', action='store',
+                        help='override the os to grab the binaries for '
+                             '(linux, osx, win32, sunos5)',
+                        default=None)
+    parser.add_argument('--cpu', dest='cpu_arch', action='store',
+                        help='grabs the CPU architecture (defaults to x86_64 '
+                             'can be i686',
+                        default="x86_64")
+    parser.add_argument('--debug', action='store_true',
+                        help='if true grab the debugsymbols version of the '
+                             'binaries')
+    parser.add_argument('--project', action='store', dest='project',
+                        default=None,
+                        help='the MCI project to get the mongodb binaries for')
+    parser.add_argument('--variant', action='store', dest='variant',
+                        default=None,
+                        help='the MCI variant to get the binaries for')
+    parser.add_argument('--githash', action='store', dest='git_hash',
+                        default=None,
+                        help='the Git hash for the MCI build to get the '
+                             'binaries for')
+
+    args = parser.parse_args()
+
+    # set the temporary path to the same directory the binaries directory
+    # are being deployed to
+    tempfile.tempdir = os.path.dirname(os.path.realpath(args.download_dir))
+
+    do_download(args)
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except Exception as e:
+        sys.stderr.write(e.message)
+        sys.exit(1)
+    sys.exit(0)

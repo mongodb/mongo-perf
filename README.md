@@ -14,12 +14,14 @@ mongo shell >= 2.7.7-pre- (at revision 881b3a97fb5080b4e5d5ce11ad016da73ea23931 
 argparse  
 pymongo  
 subprocess  
-GitPython  
+GitPython
+PyYAML
+requests
+PyGithub
 
 *Python Reporting Dependencies*  
 bottle  
-GitPython  
-boto (optional)  
+GitPython
 
 ### HOW TO RUN:
 *To run a micro benchmarking test or tests:*  
