@@ -6,14 +6,18 @@
         <link href="static/css/jquery-ui-1.10.1.custom.min.css" rel="stylesheet">
         <link rel="stylesheet" href="static/css/page.css">
         <link href="static/css/perf_style.css" rel="stylesheet">
-        <link href="static/bootstrap-3.1.1-dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="static/bootstrap-3.3.0-dist/css/bootstrap.min.css" rel="stylesheet">
         <script type="text/javascript" src="static/js/jquery-1.9.1.min.js"></script>
         <script type="text/javascript" src="static/js/jquery-ui-1.10.1.custom.min.js"></script>
+        <script type="text/javascript" src="static/bootstrap-3.3.0-dist/js/bootstrap.js"></script>
         <script type="text/javascript" src="static/js/perf_lib.js"></script>
         <script type="text/javascript" src="static/js/jquery.dataTables.min.js"></script>
         <script type="text/javascript" src="static/js/dygraph-combined.js"></script>
+        <script type="text/javascript" src="static/js/mongo-perf.js"></script>
         <script>
-            reloadlist = []
+            var numGraphs = {{len(results)}};
+            var even_spread = true;
+            reloadlist = [];
             $(document).ready(function(){
                 $('table').dataTable({
                         "bPaginate": false,
@@ -22,7 +26,7 @@
                         "bInfo": false,
                         "bAutoWidth": true
                 });
-                hideTablesClicked();
+                //hideTablesClicked();
             });
 
             var dygraphs = [];
@@ -30,105 +34,33 @@
                             "#FFEC1E", "#0A79BD", "#00B215", "#BAA900",
                             "#A34A00", "#C21F00", "#222222", "#FF44EE",
                             "#FF5A00", "#AA66FF", "#3BCC75", "#29190F"];
-            function dyToggle(graphIdx, seriesIdx, el) {
-              dygraphs[graphIdx].setVisibility(seriesIdx, el.checked);
-            }
-
-            var numGraphs = {{len(results)}};
-
-            //TODO fix this to do it properly, its an ugly hack
-            function useThreads() {
-                var myurl = document.URL;
-                myurl = myurl + '&xaxis=1'
-                window.location.replace(myurl);
-            }
-            function useTime() {
-                var myurl = document.URL;
-                myurl = myurl + '&xaxis=0'
-                window.location.replace(myurl);
-            }
-
-            function hideTablesClicked() {
-                //change button to show tables (and change function call)
-                $('#tablesbutton').attr('onclick', 'showTablesClicked()');
-                $('#tablesbutton').text('Show Tables');
-                //call hideTables
-                hideTables();
-            }
-
-            function showTablesClicked() {
-                //change button to show tables (and change function call)
-                $('#tablesbutton').attr('onclick', 'hideTablesClicked()');
-                $('#tablesbutton').text('Hide Tables');
-                //call showTables
-                showTables();
-            }
-
-            function hideTables() {
-                for(var i = 0; i < numGraphs; i++) {
-                    hideTableByIDClicked(i);
-                }
-            }
-
-            function showTables() {
-                for(var i = 0; i < numGraphs; i++) {
-                    showTableByIDClicked(i);
-                }
-            }
-
-            function hideTableByIDClicked(IDNum) {
-                //change button to show tables (and change function call)
-                $('#table' + IDNum + 'button').attr('onclick', 'showTableByIDClicked(' + IDNum + ')');
-                $('#table' + IDNum + 'button').text('Show Table');
-                //call hideTables
-                hideTableByID(IDNum);
-            }
-
-            function showTableByIDClicked(IDNum) {
-                $('#table' + IDNum + 'button').attr('onclick', 'hideTableByIDClicked(' + IDNum + ')');
-                $('#table' + IDNum + 'button').text('Hide Table');
-                //call hideTables
-                showTableByID(IDNum);
-            }
-
-            function hideTableByID(tableID) {
-                $('#table-' + tableID).css('display', 'none');
-            }
-
-            function showTableByID(tableID) {
-                $('#table-' + tableID).css('display', '');
-            }
 
 
-
-            var even_spread = true;
-
-            function get_date_data(start_data) {
-                var out_data = [];
-                var spread_counter = 1;
-                for(var i = 0; i < start_data.length; i++) {
-                    var temp_list = []
-                    for(var j = 0; j < start_data[i].length; j++) {
-                        if(j === 0) {
-                            if(even_spread) {
-                                temp_list.push(spread_counter);
-                                spread_counter += 1;
-                            } else {
-                                temp_list.push(new Date(start_data[i][j]))
-                            }
-                        } else {
-                            temp_list.push(start_data[i][j])
-                        }
-                    }
-                    out_data.push(temp_list)
-                }
-                return out_data
-            }
         </script>
     </head>
-    <div class="container">
     <body>
-        <h1>MongoDB Benchmark Results (<a href="/">Home</a>)</h1>
+    <div class="container">
+        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+            <div class="container">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="#">MongoDB Benchmark Results</a>
+                </div>
+                <div class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav">
+                        <li><a href="/">Home</a></li>
+                    </ul>
+                </div>
+                <!--/.nav-collapse -->
+            </div>
+        </div>
+        <div class="row">
+        <div class="col-md-10" role="main">
         %if use_dates:
         <button onclick='useThreads()' >Use Threads</button>
         %else:
@@ -140,10 +72,10 @@
         <br />
         %import urllib
         %for k, (outer_result, dygraph_data) in enumerate(zip(results, dygraph_results)):
-        <div class="test-entry">
+        <div data-filterable="{{outer_result['name'].lower()}}"  class="test-entry">
         <h2 id="{{outer_result['name']}}"><a href="https://github.com/search?q={{outer_result['name'][outer_result['name'].rfind(":") + 1:]}}+repo%3Amongodb%2Fmongo-perf&amp;type=Code&amp;ref=searchresults" target="_blank">{{outer_result['name']}}</a></h2>
         <button id='table{{k}}button' onclick='showTableByIDClicked("{{k}}")'>Show Table</button>
-        <table class="table table-striped" id="table-{{k}}">
+        <table class="table table-striped" id="table-{{k}}" style="display: none;">
             <thead>
                 <tr>
                     <th style="width: 5%">Num</th>
@@ -181,7 +113,7 @@
         </table>
         <br/>
         <div class="container">
-        <div class="dygraph-wrapper">
+        <div class="data-filterable dygraph-wrapper">
           <div id="graph_{{k}}" class="graph" style="width:600px;height:300px;"></div>
         </div>
         <script>
@@ -264,7 +196,28 @@
         </div>
         <div class="section-break"></div>
       </div>
+
+
         %end
+    </div>
+        <div class="col-md-2">
+            <div class="affix" data-spy="affix" data-offset-top="70" data-offset-bottom="200">
+                <div>
+                    %if use_dates:
+                    <button onclick='useThreads()'>Use Threads</button>
+                    %else:
+                    <button onclick='useTime()'>Use Time</button>
+                    %end
+                    <button id='tablesbutton' onclick='showTablesClicked()'>Show Tables</button>
+                </div>
+                <br/>
+                <div style="clear: left">
+                    <label for="filter">Filter:</label>
+                    <input type="search" name="filter" class="filter-input" value=""/>
+                </div>
+            </div>
+        </div>
+    </div>
     </div>
     </body>
 </html>

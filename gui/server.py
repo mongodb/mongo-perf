@@ -35,8 +35,10 @@ default_options = {
 }
 
 # setup command line arguments
-argument_parser = argparse.ArgumentParser(description='The mongo-perf web server.')
-argument_parser.add_argument('--mode', dest='mode', action='store', default='prod', choices=['prod', 'devel'],
+argument_parser = argparse.ArgumentParser(
+    description='The mongo-perf web server.')
+argument_parser.add_argument('--mode', dest='mode', action='store',
+                             default='prod', choices=['prod', 'devel'],
                              help='The mode to run the mongo-perf server in')
 args = argument_parser.parse_args()
 
@@ -51,9 +53,11 @@ if not config.has_section("mongo-perf"):
 
 # performance metrics are stored in mongod
 # database info
-DATABASE_REPLICA_SET = config.get(section='mongo-perf', option='database_replica_set')
+DATABASE_REPLICA_SET = config.get(section='mongo-perf',
+                                  option='database_replica_set')
 DATABASE_HOST = config.get(section='mongo-perf', option='database_hostname')
-DATABASE_PORT = config.get(section='mongo-perf', option='database_port', raw=True)
+DATABASE_PORT = config.get(section='mongo-perf', option='database_port',
+                           raw=True)
 DATABASE_NAME = config.get(section='mongo-perf', option='database_name')
 
 # web server settings
@@ -62,9 +66,11 @@ SERVER_PORT = config.get(section='mongo-perf', option='server_port', raw=True)
 
 # connect to our standalone, or replica set database
 if DATABASE_REPLICA_SET == 'none':
-    db = pymongo.Connection(host=DATABASE_HOST, port=DATABASE_PORT)[DATABASE_NAME]
+    db = pymongo.Connection(host=DATABASE_HOST, port=DATABASE_PORT)[
+        DATABASE_NAME]
 else:
-    db = pymongo.Connection(host=DATABASE_HOST, port=DATABASE_PORT, replicaSet=DATABASE_REPLICA_SET)[DATABASE_NAME]
+    db = pymongo.Connection(host=DATABASE_HOST, port=DATABASE_PORT,
+                            replicaSet=DATABASE_REPLICA_SET)[DATABASE_NAME]
 
 
 @route('/static/:filename#.*#')
@@ -72,7 +78,8 @@ def send_static(filename):
     return static_file(filename, root='./static')
 
 
-def gen_query(labels, dates, versions, start, end, limit, ids, commits, engines):
+def gen_query(labels, dates, versions, start, end, limit, ids, commits,
+              engines):
     if start:
         start_query = {'commit_date': {'$gte': start}}
     else:
@@ -119,7 +126,8 @@ def gen_query(labels, dates, versions, start, end, limit, ids, commits, engines)
     if engines:
         if engines.startswith('/') and engines.endswith('/'):
             engines_query = {'server_storage_engine': {'$regex':
-                                                           engines[1:-1], '$options': 'i'}}
+                                                           engines[1:-1],
+                                                       '$options': 'i'}}
         else:
             engines_query = {'server_storage_engine': {'$in': engines}}
     else:
@@ -139,12 +147,15 @@ def gen_query(labels, dates, versions, start, end, limit, ids, commits, engines)
     else:
         commit_query = {}
 
-    query = {"$and": [label_query, date_query, version_query, start_query, end_query, id_query, commit_query,
-                      engines_query]}
+    query = {
+    "$and": [label_query, date_query, version_query, start_query, end_query,
+             id_query, commit_query,
+             engines_query]}
     cursor = db.raw.find(query).sort([('commit_date', pymongo.ASCENDING),
                                       ('platform', pymongo.ASCENDING),
                                       ('label', pymongo.ASCENDING),
-                                      ('server_storage_engine', pymongo.ASCENDING)])
+                                      ('server_storage_engine',
+                                       pymongo.ASCENDING)])
 
     if limit:
         cursor.limit(limit)
@@ -168,10 +179,12 @@ def process_cursor(cursor, multidb):
                                platform=entry['platform'],
                                version=entry['version'],
                                label=entry['label'],
-                               server_storage_engine=entry['server_storage_engine'])
+                               server_storage_engine=entry[
+                                   'server_storage_engine'])
 
                     if 'commit_date' in entry.keys():
-                        row['date'] = entry['commit_date'].strftime("%b %d %I:%M%p")
+                        row['date'] = entry['commit_date'].strftime(
+                            "%b %d %I:%M%p")
                     else:
                         # legacy data before we had commit_date in the schema
                         row['date'] = 'legacy'
@@ -190,7 +203,8 @@ def process_cursor(cursor, multidb):
 
 
 def raw_data(labels, multidb, dates, start, end, limit, ids, commits, engines):
-    cursor = gen_query(labels, dates, None, start, end, limit, ids, commits, engines)
+    cursor = gen_query(labels, dates, None, start, end, limit, ids, commits,
+                       engines)
     result = process_cursor(cursor, multidb)
     return result
 
@@ -198,10 +212,12 @@ def raw_data(labels, multidb, dates, start, end, limit, ids, commits, engines):
 def getDefaultIDs():
     prere = re.compile('pre')
     # most recent baseline id
-    baselineid = db['raw'].find({'version': {'$not': prere}}, {'_id': 1}).sort('commit_date', pymongo.DESCENDING).limit(
+    baselineid = db['raw'].find({'version': {'$not': prere}}, {'_id': 1}).sort(
+        'commit_date', pymongo.DESCENDING).limit(
         1)
     # 6 newer ids
-    newids = db['raw'].find({}, {'_id': 1}).sort('commit_date', pymongo.DESCENDING).limit(6)
+    newids = db['raw'].find({}, {'_id': 1}).sort('commit_date',
+                                                 pymongo.DESCENDING).limit(6)
     outlist = []
     if baselineid.count(True) > 0:
         outlist.append(str(baselineid[0]['_id']))
@@ -251,7 +267,9 @@ def results_page():
                 result_entry.append(result['date'])
                 for thread in threads:
                     if thread in result:
-                        result_entry.append([result[thread]['ops_per_sec'], result[thread]['standardDeviation']])
+                        result_entry.append([result[thread]['ops_per_sec'],
+                                             result[thread][
+                                                 'standardDeviation']])
                     else:
                         result_entry.append([None, None])
                 # here we have [<date>, ops1, ops2...]
@@ -273,17 +291,21 @@ def results_page():
         for outer_result in results:
             out = []
             for i, result in enumerate(outer_result['results']):
-                out.append({'label': ' / '.join((result['label'], result['version'],
-                                                 result['date'], result['server_storage_engine'])),
-                            'data': sorted([int(k), [v['ops_per_sec'], v['standardDeviation']]]
-                                           for (k, v) in result.iteritems() if k.isdigit())})
+                out.append(
+                    {'label': ' / '.join((result['label'], result['version'],
+                                          result['date'],
+                                          result['server_storage_engine'])),
+                     'data': sorted(
+                         [int(k), [v['ops_per_sec'], v['standardDeviation']]]
+                         for (k, v) in result.iteritems() if k.isdigit())})
                 threads.update(int(k) for k in result if k.isdigit())
             dygraph_data, dygraph_labels = to_dygraphs_data_format(out)
             dygraph_results.append({'data': json.dumps(dygraph_data),
                                     'labels_json': json.dumps(dygraph_labels),
                                     'labels_list': dygraph_labels})
         return template('results.tpl', results=results, request=request,
-                        dygraph_results=dygraph_results, threads=sorted(threads),
+                        dygraph_results=dygraph_results,
+                        threads=sorted(threads),
                         use_dates=False, spread_dates=False)
 
 
@@ -310,7 +332,7 @@ def to_dygraphs_data_format(in_data):
     # append data for each point
     for thread_count in sorted(thread_counts):
         graph_data.append([])
-        point = len(graph_data)-1
+        point = len(graph_data) - 1
         graph_data[point].append(thread_count)
         for series in in_data:
             thread_count_entry = [None, None]
@@ -323,7 +345,8 @@ def to_dygraphs_data_format(in_data):
     return graph_data, labels
 
 
-def get_rows(commit_regex, start_date, end_date, label_regex, version_regex, engine_regex):
+def get_rows(commit_regex, start_date, end_date, label_regex, version_regex,
+             engine_regex):
     if commit_regex is not None:
         commit_regex = '/' + commit_regex + '/'
     if label_regex is not None:
@@ -333,7 +356,8 @@ def get_rows(commit_regex, start_date, end_date, label_regex, version_regex, eng
     if engine_regex is not None:
         engine_regex = '/' + engine_regex + '/'
 
-    csr = gen_query(label_regex, None, version_regex, start_date, end_date, None, None, commit_regex, engine_regex)
+    csr = gen_query(label_regex, None, version_regex, start_date, end_date,
+                    None, None, commit_regex, engine_regex)
     rows = []
     for record in csr:
         if 'commit_date' in record.keys():
@@ -379,7 +403,8 @@ def new_main_page():
     else:
         end = None
 
-    rows = get_rows(commit_regex, start, end, label_regex, version_regex, engine_regex)
+    rows = get_rows(commit_regex, start, end, label_regex, version_regex,
+                    engine_regex)
 
     if nohtml:
         response.content_type = 'application/json'
@@ -390,4 +415,4 @@ def new_main_page():
 
 if __name__ == '__main__':
     do_reload = '--reload' in sys.argv
-    run(host=SERVER_BIND_IP, port=SERVER_PORT, server=AutoServer)
+    run(host=SERVER_BIND_IP, port=SERVER_PORT, server=AutoServer, debug=True)
