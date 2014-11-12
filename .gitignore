@@ -1,6 +1,6 @@
 tmp/*
 *.log
-*.txt
 tags
 *.pyc
 *.swp
+benchrun_daemon.conf
