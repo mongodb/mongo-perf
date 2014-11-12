@@ -331,7 +331,7 @@ function run_mongo_perf() {
             then
                 python benchrun.py -l "${THIS_PLATFORM}-${THIS_HOST}-${PLATFORM_SUFFIX}-${LAST_HASH}-${STORAGE_ENGINE}-multicoll${$MPERF_MULTI_COLL}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 1 --mongo-repo-path `cygpath -w ${BUILD_DIR}` --writeCmd true --multicoll $MPERF_MULTI_COLL
             else
-                ${BR_START} python benchrun.py -l "${THIS_PLATFORM}-${THIS_HOST}-${PLATFORM_SUFFIX}-${LAST_HASH}-${STORAGE_ENGINE}-multicolli${$MPERF_MULTI_COLL}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 1 --mongo-repo-path ${BUILD_DIR} --writeCmd true --multicoll $MPERF_MULTI_COLL
+                ${BR_START} python benchrun.py -l "${THIS_PLATFORM}-${THIS_HOST}-${PLATFORM_SUFFIX}-${LAST_HASH}-${STORAGE_ENGINE}-multicoll${$MPERF_MULTI_COLL}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 1 --mongo-repo-path ${BUILD_DIR} --writeCmd true --multicoll $MPERF_MULTI_COLL
             fi
         fi
 
