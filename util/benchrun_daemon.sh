@@ -311,14 +311,14 @@ function run_mongo_perf() {
         # drop linux caches
         ${SUDO} bash -c "echo 3 > /proc/sys/vm/drop_caches"
 
-        # Run with multi-DB (4 DBs.)
+        # Run with multi-DB
         if [ ! -z "$MPERF_MULTI_DB" ]
         then
             if [ $THIS_PLATFORM == 'Windows' ]
             then
-                python benchrun.py -l "${THIS_PLATFORM}-${THIS_HOST}-${PLATFORM_SUFFIX}-${LAST_HASH}-${STORAGE_ENGINE}-multi" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 1 --mongo-repo-path `cygpath -w ${BUILD_DIR}` --writeCmd true
+                python benchrun.py -l "${THIS_PLATFORM}-${THIS_HOST}-${PLATFORM_SUFFIX}-${LAST_HASH}-${STORAGE_ENGINE}-multidb${MPERF_MULTI_DB}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m $MPERF_MULTI_DB -f $TESTCASES --trialTime 5 --trialCount 1 --mongo-repo-path `cygpath -w ${BUILD_DIR}` --writeCmd true
             else
-                ${BR_START} python benchrun.py -l "${THIS_PLATFORM}-${THIS_HOST}-${PLATFORM_SUFFIX}-${LAST_HASH}-${STORAGE_ENGINE}-multi" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 1 --mongo-repo-path ${BUILD_DIR} --writeCmd true
+                ${BR_START} python benchrun.py -l "${THIS_PLATFORM}-${THIS_HOST}-${PLATFORM_SUFFIX}-${LAST_HASH}-${STORAGE_ENGINE}-multidb${MPERF_MULTI_DB}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m $MPERF_MULTI_DB -f $TESTCASES --trialTime 5 --trialCount 1 --mongo-repo-path ${BUILD_DIR} --writeCmd true
             fi
         fi
 
@@ -329,9 +329,9 @@ function run_mongo_perf() {
         then
             if [ $THIS_PLATFORM == 'Windows' ]
             then
-                python benchrun.py -l "${THIS_PLATFORM}-${THIS_HOST}-${PLATFORM_SUFFIX}-${LAST_HASH}-${STORAGE_ENGINE}-multicoll" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 1 --mongo-repo-path `cygpath -w ${BUILD_DIR}` --writeCmd true --multicoll $MPERF_MULTI_COLL
+                python benchrun.py -l "${THIS_PLATFORM}-${THIS_HOST}-${PLATFORM_SUFFIX}-${LAST_HASH}-${STORAGE_ENGINE}-multicoll${$MPERF_MULTI_COLL}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -f $TESTCASES --trialTime 5 --trialCount 1 --mongo-repo-path `cygpath -w ${BUILD_DIR}` --writeCmd true --multicoll $MPERF_MULTI_COLL
             else
-                ${BR_START} python benchrun.py -l "${THIS_PLATFORM}-${THIS_HOST}-${PLATFORM_SUFFIX}-${LAST_HASH}-${STORAGE_ENGINE}-multicoll" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH" -m 4 -f $TESTCASES --trialTime 5 --trialCount 1 --mongo-repo-path ${BUILD_DIR} --writeCmd true --multicoll $MPERF_MULTI_COLL
+                ${BR_START} python benchrun.py -l "${THIS_PLATFORM}-${THIS_HOST}-${PLATFORM_SUFFIX}-${LAST_HASH}-${STORAGE_ENGINE}-multicolli${$MPERF_MULTI_COLL}" --rhost "$RHOST" --rport "$RPORT" -t ${THREAD_COUNTS} -s "$SHELLPATH"-f $TESTCASES --trialTime 5 --trialCount 1 --mongo-repo-path ${BUILD_DIR} --writeCmd true --multicoll $MPERF_MULTI_COLL
             fi
         fi
 
