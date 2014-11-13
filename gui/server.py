@@ -412,6 +412,30 @@ def new_main_page():
     else:
         return template('comp.tpl', allrows=rows)
 
+@route("/catalog")
+def get_catalog():
+    commit_regex = request.GET.get('commit')
+    start_date = request.GET.get('start')
+    end_date = request.GET.get('end')
+    label_regex = request.GET.get('label')
+    version_regex = request.GET.get('version')
+    engine_regex = request.GET.get('engine')
+    # convert to appropriate type
+    if start_date:
+        start = datetime.strptime(start_date, '%m/%d/%Y')
+    else:
+        start = None
+    if end_date:
+        end = datetime.strptime(end_date, '%m/%d/%Y')
+    else:
+        end = None
+
+    rows = get_rows(commit_regex, start, end, label_regex, version_regex, engine_regex)
+    response.content_type = 'application/json'
+    for i in rows:
+        i['githash_short']=i['commit'][:7]+"..."
+        i['githash_link']="<a href=\"https://github.com/mongodb/mongo/commit/"+i['commit']+"\">"+i['commit'][:7]+"...</a>"
+    return json.dumps({"data": rows})
 
 if __name__ == '__main__':
     do_reload = '--reload' in sys.argv
