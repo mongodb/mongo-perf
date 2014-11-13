@@ -15,54 +15,47 @@
     <script type="text/javascript" src="static/js/perf_lib.js"></script>
     <script type="text/javascript" src="static/js/main.js"></script>
     <script>
-        $(document).ready(function(){
-            $('#selectTable').dataTable({
-                "bPaginate": false,
-                "bLengthChange": false,
-                "bInfo": false,
-                "bSortable": true,
-                "bAutoWidth": true,
-                "dom": "lrtip"
-    //                ,
-    //                "columnDefs": [
-    //                    {
-    //                        "targets": [ 0 ],
-    //                        "visible": false,
-    //                        "searchable": false
-    //                    }
-    //                ]
-            });
-
-            var table = $('#selectTable').DataTable();
-
-            //manually set filtering up
-            $('#labelfield').on('keyup change', function() {
-                table.column(1).search(this.value).draw();
-            });
-            $('#versionfield').on('keyup change', function() {
-                table.column(2).search(this.value).draw();
-            });
-            //TODO get date range working
-            $('#datefield').on('keyup change', function() {
-                table.column(3).search(this.value).draw();
-            });
-            $('#commitfield').on('keyup change', function() {
-                table.column(4).search(this.value).draw();
-            });
-            $('#enginefield').on('keyup change', function() {
-                table.column(5).search(this.value).draw();
-            });
-
-            $('#selectTable tbody').on( 'click', 'tr', function () {
-                $(this).toggleClass('selected');
-                if (!$(this).find('input').is(':checked')) {
-                    $(this).find('input').attr('checked', 'checked');
-                }
-                else {
-                    $(this).find('input').attr('checked', null);
-                }
-
-            } );
+        $(document).ready(function () {
+//            $('#selectTable').dataTable({
+//                "bPaginate": false,
+//                "bLengthChange": false,
+//                "bInfo": false,
+//                "bSortable": true,
+//                "bAutoWidth": true,
+//                "dom": "lrtip",
+//                responsive: true
+//            });
+//
+//            var table = $('#selectTable').DataTable();
+//
+//            //manually set filtering up
+//            $('#labelfield').on('keyup change', function () {
+//                table.column(1).search(this.value).draw();
+//            });
+//            $('#versionfield').on('keyup change', function () {
+//                table.column(2).search(this.value).draw();
+//            });
+//            //TODO get date range working
+//            $('#datefield').on('keyup change', function () {
+//                table.column(3).search(this.value).draw();
+//            });
+//            $('#commitfield').on('keyup change', function () {
+//                table.column(4).search(this.value).draw();
+//            });
+//            $('#enginefield').on('keyup change', function () {
+//                table.column(5).search(this.value).draw();
+//            });
+//
+//            $('#selectTable tbody').on('click', 'tr', function () {
+//                $(this).toggleClass('selected');
+//                if (!$(this).find('input').is(':checked')) {
+//                    $(this).find('input').attr('checked', 'checked');
+//                }
+//                else {
+//                    $(this).find('input').attr('checked', null);
+//                }
+//
+//            });
         });
     </script>
 </head>
@@ -120,37 +113,29 @@
             </div>
         </div>
         <div id="selection" class="row">
-            <form name="custom_form" id="custom_form" action="results" method="get">
-                <button action="submit" class="btn btn-primary">Submit</button>
+            <form name="custom_form" id="custom_form" action="results"
+                  method="get">
+                <button onclick="captureSelected()" action="submit" class="btn btn-primary">Submit</button>
                 <table id="selectTable" class="table table-striped display">
                     <thead>
                     <tr>
                         <th></th>
-                        <th><input type="text" id="labelfield" placeholder="Label Filter" /></th>
-                        <th><input type="text" id="versionfield" placeholder="Version Filter" /></th>
-                        <th><input type="text" id="datefield" placeholder="Date Filter" /></th>
-                        <th><input type="text" id="commitfield" placeholder="Commit Filter" /></th>
-                        <th><input type="text" id="enginefield" placeholder="Engine Filter" /></th>
+                        <th><input type="text" id="labelfield" placeholder="Label Filter"/></th>
+                        <th><input type="text" id="versionfield" placeholder="Version Filter"/></th>
+                        <th><input type="text" id="datefield" placeholder="Date Filter"/></th>
+                        <th><input type="text" id="commitfield" placeholder="Commit Filter"/></th>
+                        <th><input type="text" id="enginefield" placeholder="Engine Filter"/></th>
                     </tr>
                     <tr>
-                        <th style="width: 10%">Record Id</th>
-                        <th style="width: 25%">Label</th>
+                        <th style="width: 3%"></th>
+                        <th style="">Label</th>
                         <th style="width: 10%">Version</th>
-                        <th style="width: 20%">Date</th>
-                        <th style="width: 35%">Git Hash</th>
-                        <th style="width: 35%">Storage Engine</th>
+                        <th style="width: 10%">Date</th>
+                        <th style="width: 5%">Git Hash</th>
+                        <th style="width: 5%">Storage Engine</th>
                     </tr>
                     </thead>
-                    %for row in allrows:
-                    <tr data-recordid="{{row['_id']}}" name="docrow">
-                        <td><input type="checkbox" name="id" value={{row["_id"]}}></td>
-                        <td>{{row["label"]}}</td>
-                        <td>{{row["version"]}}</td>
-                        <td>{{row["date"]}}</td>
-                        <td><a href="https://github.com/mongodb/mongo/commit/{{row['commit']}}">{{row['commit']}}</a></td>
-                        <td>{{row["server_storage_engine"]}}</td>
-                    </tr>
-                    %end
+
                 </table>
                 <button action="submit" class="btn btn-primary">Submit</button>
             </form>
