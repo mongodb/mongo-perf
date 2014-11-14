@@ -99,9 +99,9 @@ BUILD_ARGS="--64 --release"
 # amount of time between data sync to disk
 DISK_SYNC_DELAY=14400
 # mutlti db runs
-# MPERF_MULTI_DB=4
+# MPERF_MULTI_DB=8
 # mutli collection runs
-# MPERF_MULTI_COLL=
+# MPERF_MULTI_COLL=8
 
 
 #### Default Binaries Options
@@ -164,7 +164,7 @@ function determine_get_binaries_options()
            BINARIES_OPTIONS+=" --revision=${BINARIES_VERSION}"
         fi
     else
-        BINARIES_OPTIONS+=' --revision=${BINARIES_VERSION:$BRANCH}'
+        BINARIES_OPTIONS+=" --revision=${BINARIES_VERSION:-$BRANCH}"
     fi
     if [[ -n "$BINARIES_DISTRIBUTION" ]]
     then
@@ -208,6 +208,11 @@ function do_git_tasks() {
                 python ${MPERFPATH}/util/get-mongodb-binaries --dir "${DLPATH}" ${BINARIES_OPTIONS}
         fi
         chmod +x ${DLPATH}/${MONGOD}
+        if [ ! -x ${DLPATH}/${MONGOD} ]
+        then
+            echo "check permissions or existence of $MONGOD in $DLPATH"
+            exit 7
+        fi
         cp -p ${DLPATH}/${MONGOD} ${BUILD_DIR}
         cp -p ${DLPATH}/${MONGO} ${BUILD_DIR}
 
@@ -344,7 +349,7 @@ function determine_benchrun_options() {
 
 function determine_mongod_options()
 {
-        MONGOD_OPTIONS="--dbpath ${DBPATH} --smallfiles --nojournal --logpath mongoperf.log"
+        MONGOD_OPTIONS='--logpath mongoperf.log'
         if [ "$NO_ENGINES" == "0" ]
         then
             MONGOD_OPTIONS+=" --storageEngine=${STORAGE_ENGINE}"
@@ -359,7 +364,7 @@ function determine_mongod_options()
             NO_WTEC=$?
             if [ "$NO_WTEC" == "0" ]
             then
-                MONGOD_OPTIONS+=' --wiredTigerEngineConfig "checkpoint=(wait=${DISK_SYNC_DELAY})"'
+                MONGOD_OPTIONS+=" --wiredTigerEngineConfig checkpoint=(wait=${DISK_SYNC_DELAY})"
             fi
         else
             EXTRA=""
@@ -382,10 +387,11 @@ function run_mongo_perf() {
         if [ $THIS_PLATFORM == 'Windows' ]
         then
             rm -rf `cygpath -u $DBPATH`/*
-            (eval ./${MONGOD} ${SERVER_OPTIONS} &)
+            (./${MONGOD} --dbpath ${DBPATH} ${SERVER_OPTIONS} &)
         else
             rm -rf $DBPATH/*
-            (eval ${MONGOD_START} ./${MONGOD} ${SERVER_OPTIONS} --fork)
+            echo ${MONGOD_START} ./${MONGOD} --dbpath ${DBPATH} ${SERVER_OPTIONS} --fork
+            ${MONGOD_START} ./${MONGOD} --dbpath ${DBPATH} ${SERVER_OPTIONS} --fork
         fi
         # TODO: doesn't get set properly with --fork ?
         MONGOD_PID=$!
@@ -411,14 +417,14 @@ function run_mongo_perf() {
         if [ ! -z "$MPERF_MULTI_DB" ]
         then
             clear_caches
-            ${BR_START} python benchrun.py -l ${BASE_BENCHRUN_LABEL}-multidb${MPERF_MULTI_DB} ${BR_OPTIONS} -m ${MPERF_MULTI_DB}
+            ${BR_START} python benchrun.py -l "${BASE_BENCHRUN_LABEL}-multidb${MPERF_MULTI_DB}" ${BR_OPTIONS} -m ${MPERF_MULTI_DB}
         fi
 
         # Run with multi-collection.
         if [ ! -z "$MPERF_MULTI_COLL" ]
         then
             clear_caches
-            ${BR_START} python benchrun.py -l ${BASE_BENCHRUN_LABEL}--multicoll${MPERF_MULTI_COLL} ${BR_OPTIONS} --multicoll $MPERF_MULTI_COLL
+            ${BR_START} python benchrun.py -l "${BASE_BENCHRUN_LABEL}--multicoll${MPERF_MULTI_COLL}" ${BR_OPTIONS} --multicoll $MPERF_MULTI_COLL
         fi
 
 

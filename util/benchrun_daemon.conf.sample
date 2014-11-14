@@ -34,12 +34,12 @@
 #############
 # Enable Multi DB Runs
 #############
-# MPERF_MULTI_DB=4
+# MPERF_MULTI_DB=8
 
 #############
 # Enable Multi Collection Runs
 #############
-# MPERF_MULTI_COLL=true
+# MPERF_MULTI_COLL=8
 
 #############
 # Root Directory for your mongo-perf working directory
