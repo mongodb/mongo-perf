@@ -282,11 +282,11 @@ function determine_process_invocation() {
     if [ $THIS_PLATFORM == 'Linux' ]
     then
         # ensure numa zone reclaims are off
-        if [ -x `which numactl` ]
+        if [ -x "`which numactl`" ]
         then
             MONGOD_START="numactl --physcpubind="$MONGOD_MASK" --interleave=all "
             BR_START="taskset -c "$BENCHRUN_MASK" "
-        elif [-x `which taskset` ]
+        elif [-x "`which taskset`" ]
         then
             MONGOD_START="taskset -c "$MONGOD_MASK" "
             BR_START="taskset -c "$BENCHRUN_MASK" "
