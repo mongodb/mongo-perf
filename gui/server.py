@@ -15,17 +15,18 @@
 
 """Web app for mongo-perf"""
 
+import argparse
+import bson
 import json
+import pymongo
+import time
+
+from bottle import *
 from collections import defaultdict
 from ConfigParser import SafeConfigParser
 
-import argparse
-import pymongo
-import bson
-from bottle import *
 
-
-default_options = {
+DEFAULT_OPTIONS = {
     'database_hostname': 'localhost',
     'database_port': 27017,
     'database_replica_set': 'none',
@@ -33,20 +34,26 @@ default_options = {
     'server_port': 8080,
     'server_bindip': '0.0.0.0'
 }
+DEFAULT_STORAGE_ENGINE = 'mmapv0'
+CONFIG_INI_FILE_PRODUCTION = 'mongo-perf-prod.ini'
+CONFIG_INI_FILE_DEVELOPMENT = 'mongo-perf-devel.ini'
+RUN_MODE_PRODUCTION = 'prod'
+RUN_MODE_DEVELOPMENT = 'devel'
 
 # setup command line arguments
 argument_parser = argparse.ArgumentParser(
     description='The mongo-perf web server.')
 argument_parser.add_argument('--mode', dest='mode', action='store',
-                             default='prod', choices=['prod', 'devel'],
+                             default='prod', choices=[RUN_MODE_PRODUCTION,
+                                                      RUN_MODE_DEVELOPMENT],
                              help='The mode to run the mongo-perf server in')
 args = argument_parser.parse_args()
 
-config = SafeConfigParser(defaults=default_options)
+config = SafeConfigParser(defaults=DEFAULT_OPTIONS)
 if args.mode == 'prod':
-    config_files = ['mongo-perf-prod.ini']
+    config_files = [CONFIG_INI_FILE_PRODUCTION]
 else:
-    config_files = ['mongo-perf-devel.ini']
+    config_files = [CONFIG_INI_FILE_DEVELOPMENT]
 config.read(config_files)
 if not config.has_section("mongo-perf"):
     config.add_section("mongo-perf")
@@ -148,9 +155,8 @@ def gen_query(labels, dates, versions, start, end, limit, ids, commits,
         commit_query = {}
 
     query = {
-    "$and": [label_query, date_query, version_query, start_query, end_query,
-             id_query, commit_query,
-             engines_query]}
+        "$and": [label_query, date_query, version_query, start_query, end_query,
+                 id_query, commit_query, engines_query]}
     cursor = db.raw.find(query).sort([('commit_date', pymongo.ASCENDING),
                                       ('platform', pymongo.ASCENDING),
                                       ('label', pymongo.ASCENDING),
@@ -361,24 +367,80 @@ def get_rows(commit_regex, start_date, end_date, label_regex, version_regex,
     rows = []
     for record in csr:
         if 'commit_date' in record.keys():
-            myDate = record["commit_date"].strftime("%b %d  %I:%M %p")
+            commit_date = record["commit_date"].strftime("%b %d  %I:%M %p")
+            commit_date_timestamp = time.mktime(
+                record["commit_date"].timetuple())
         else:
-            myDate = 'legacy'
+            commit_date = 'legacy'
+            commit_date_timestamp = 0
+
+        if 'run_time' in record.keys():
+            run_date = record['run_time'].strftime("%Y-%m-%d %H:%M")
+            run_date_timestamp = time.mktime(
+                record["run_time"].timetuple())
+        else:
+            run_date = 'legacy'
+            run_date_timestamp = 0
 
         if 'version' in record.keys():
-            myVersion = record["version"]
+            server_version = record['version']
         else:
-            myVersion = 'pending'
+            server_version = 'pending'
 
-        tmpdoc = {"commit": record["commit"],
-                  "label": record["label"],
-                  "version": myVersion,
-                  "date": myDate,
-                  "_id": str(record["_id"])}
-        if "server_storage_engine" in record:
-            tmpdoc["server_storage_engine"] = record["server_storage_engine"]
+        test_holder = []
+        if 'singledb' in record.keys():
+            test_holder = record['singledb']
+        elif 'multidb-multicoll' in record.keys():
+            test_holder = record['multidb-multicoll']
+
+        if 'server_storage_engine' in record:
+            server_storage_engine = record['server_storage_engine']
         else:
-            tmpdoc["server_storage_engine"] = "mmapv0"
+            server_storage_engine = DEFAULT_STORAGE_ENGINE
+
+        # Get the threads and the test suites run
+        tests = set()
+        test_suites = set()
+        thread_count_set = set()
+        for test in test_holder:
+            tests.add(test['name'])
+            test_suites.add(test['name'].split(".", 1)[0])
+            for thread_count in test['results']:
+                if thread_count.isdigit():
+                    thread_count_set.add(thread_count)
+
+
+        # Calculate the runtime
+        if 'end_time' in record.keys() and 'run_time' in record.keys():
+            run_time = (record['end_time'] - record['run_time'])
+            run_time = '{:02}:{:02}:{:02}'.format(run_time.seconds // 3600,
+                                                  run_time.seconds % 3600 // 60,
+                                                  run_time.seconds % 60)
+        else:
+            run_time = None
+
+        tmpdoc = {
+            "_id": str(record["_id"]),
+            "commit": record["commit"],
+            "label": record["label"],
+            "version": server_version,
+            "commit_date": {
+                "display": commit_date,
+                "timestamp": int(commit_date_timestamp)
+            },
+            "run_date": {
+                "display": run_date,
+                "timestamp": int(run_date_timestamp)
+            },
+            "platform": record["platform"],
+            "writeOptions": record['writeOptions'],
+            "run_time": run_time,
+            "test_suites": sorted(test_suites),
+            "tests": list(sorted(tests)),
+            "threads": sorted(thread_count_set, key=int),
+            "server_storage_engine": server_storage_engine
+        }
+
         rows.append(tmpdoc)
     return rows
 
@@ -403,6 +465,45 @@ def new_main_page():
     else:
         end = None
 
+    versions = db.raw.aggregate([{"$match": {"version": {"$exists": 1}}},{"$group": {"_id": "$version"}}, {"$sort": {"_id": -1}},{"$project": {"_id": 0, "version": "$_id"}}])['result']
+
+
+    storage_engines = db.raw.aggregate(
+        [{"$match": {"server_storage_engine": {"$exists": 1}}},
+         {"$group": {"_id": "$server_storage_engine"}},
+         {"$sort": {"_id": 1}},
+         {"$project": {"_id": 0, "server_storage_engine": "$_id"}}])['result']
+
+
+    platforms  = db.raw.aggregate(
+        [{"$match": {"platform": {"$exists": 1}}},
+         {"$group": {"_id": "$platform"}},
+         {"$sort": {"_id": 1}},
+         {"$project": {"_id": 0, "platform": "$_id"}}])['result']
+
+    platforms  = db.raw.aggregate(
+        [{"$match": {"platform": {"$exists": 1}}},
+         {"$group": {"_id": "$platform"}},
+         {"$sort": {"_id": 1}},
+         {"$project": {"_id": 0, "platform": "$_id"}}])['result']
+
+    singledb_tests = db.raw.aggregate(
+        [{"$unwind": "$singledb"},
+        {"$group":{"_id":"$singledb.name"}},
+        {"$sort": {"_id": 1}},
+        {"$project": {"_id": 0, "test": "$_id"}}])['result']
+    multi_tests = db.raw.aggregate(
+        [{"$unwind": "$multidb-multicoll"},
+         {"$group":{"_id":"$multidb-multicoll.name"}},
+         {"$sort": {"_id": 1}},
+         {"$project": {"_id": 0, "test": "$_id"}}])['result']
+
+    all_tests = set()
+    for test in singledb_tests:
+        all_tests.add(test['test'])
+    for test in multi_tests:
+        all_tests.add(test['test'])
+
     rows = get_rows(commit_regex, start, end, label_regex, version_regex,
                     engine_regex)
 
@@ -410,32 +511,32 @@ def new_main_page():
         response.content_type = 'application/json'
         return json.dumps(rows)
     else:
-        return template('comp.tpl', allrows=rows)
+        return template('comp.tpl', allrows=rows, versions=versions,
+                        storage_engines=storage_engines, platforms=platforms, tests=sorted(all_tests))
+
 
 @route("/catalog")
 def get_catalog():
-    commit_regex = request.GET.get('commit')
-    start_date = request.GET.get('start')
-    end_date = request.GET.get('end')
-    label_regex = request.GET.get('label')
-    version_regex = request.GET.get('version')
-    engine_regex = request.GET.get('engine')
-    # convert to appropriate type
-    if start_date:
-        start = datetime.strptime(start_date, '%m/%d/%Y')
-    else:
-        start = None
-    if end_date:
-        end = datetime.strptime(end_date, '%m/%d/%Y')
-    else:
-        end = None
+    # commit_regex = request.GET.get('commit')
+    # start_date = request.GET.get('start')
+    # end_date = request.GET.get('end')
+    # label_regex = request.GET.get('label')
+    # version_regex = request.GET.get('version')
+    # engine_regex = request.GET.get('engine')
+    # # convert to appropriate type
+    # if start_date:
+    # start = datetime.strptime(start_date, '%m/%d/%Y')
+    # else:
+    # start = None
+    # if end_date:
+    # end = datetime.strptime(end_date, '%m/%d/%Y')
+    # else:
+    # end = None
 
-    rows = get_rows(commit_regex, start, end, label_regex, version_regex, engine_regex)
+    rows = get_rows(None, None, None, None, None, None)
     response.content_type = 'application/json'
-    for i in rows:
-        i['githash_short']=i['commit'][:7]+"..."
-        i['githash_link']="<a href=\"https://github.com/mongodb/mongo/commit/"+i['commit']+"\">"+i['commit'][:7]+"...</a>"
     return json.dumps({"data": rows})
+
 
 if __name__ == '__main__':
     do_reload = '--reload' in sys.argv
