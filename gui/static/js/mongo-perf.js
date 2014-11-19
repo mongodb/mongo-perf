@@ -2,6 +2,18 @@
  * Created by brian on 8/19/14.
  */
 
+$(document).ready(function () {
+    //color label boxes properly
+    $('.legend-box').each(function(){
+       $(this).find("div.chart-info").each(function (idx) {
+           console.log($(this));
+           $(this).css("background-color", dycolors[idx % dycolors.length]);
+       });
+    });
+});
+
+
+
 
 function dyToggle(graphIdx, seriesIdx, el) {
     dygraphs[graphIdx].setVisibility(seriesIdx, el.checked);
@@ -23,7 +35,7 @@ function useTime() {
 function hideTablesClicked() {
     //change button to show tables (and change function call)
     $('#tablesbutton').attr('onclick', 'showTablesClicked()');
-    $('#tablesbutton').text('Show Tables');
+    $('#tablesbutton i').text('Show Tables');
     //call hideTables
     hideTables();
 }
@@ -51,14 +63,14 @@ function showTables() {
 function hideTableByIDClicked(IDNum) {
     //change button to show tables (and change function call)
     $('#table' + IDNum + 'button').attr('onclick', 'showTableByIDClicked(' + IDNum + ')');
-    $('#table' + IDNum + 'button').text('Show Table');
+    $('#table' + IDNum + 'button i.ban-i').removeClass('fa-ban');
     //call hideTables
     hideTableByID(IDNum);
 }
 
 function showTableByIDClicked(IDNum) {
     $('#table' + IDNum + 'button').attr('onclick', 'hideTableByIDClicked(' + IDNum + ')');
-    $('#table' + IDNum + 'button').text('Hide Table');
+    $('#table' + IDNum + 'button i.ban-i').addClass('fa-ban');
     //call hideTables
     showTableByID(IDNum);
 }
@@ -108,59 +120,62 @@ $(function () {
 
 
 
-//
-//function date_graph(graphName, data, labels, num_map) {
-//    return new Dygraph(
-//        $('#graph_' + graphName)[0],
-//        get_date_data(data), {
-//            hideOverlayOnMouseOut: false,
-//            labels: labels,
-//            strokeWidth: 3, //width of lines connecting data points
-//            colors: dycolors,
-//            labelsDiv: "graph-labels-" + graphName,
-//            includeZero: true, //ensure y-axis starts at 0
-//            xRangePad: 5,
-//            errorBars: true,
-//            fillAlpha: 0.50,
-//            showLabelsOnHighlight: false,
-//            axes: {
-//                x: {
-//                    axisLabelFormatter: function (x) {
-//                        var xval = parseFloat(x);
-//                        var xfloor = parseInt(x);
-//                        if (xval === xfloor) {
-//                            return num_map[xval];
-//                        } else {
-//                            return "";
-//                        }
-//                    },
-//                    valueFormatter: function (x) {
-//                        return num_map[x];
-//                    }
-//                }
-//            },
-//            xlabel: 'Commit Date' //label for x-axis
-//        });
-//}
-//
-//function thread_graph(graphName, data, labels, num_map) {
-//    return new Dygraph(
-//        $('#graph_' + graphName)[0],
-//        data,
-//        {
-//            hideOverlayOnMouseOut: false,
-//            labels: labels,
-//            strokeWidth: 3, //width of lines connecting data points
-//            colors: dycolors,
-//            labelsDiv: "graph-labels-" + graphName,
-//            includeZero: true, //ensure y-axis starts at 0
-//            xRangePad: 5,
-//            errorBars: true,
-//            fillAlpha: 0.50,
-//            showLabelsOnHighlight: false,
-//            xlabel: 'Threads' //label for x-axis
-//        });
-//}
+
+
+function date_graph(graphName, data, labels, num_map) {
+    return new Dygraph(
+        $('#graph_' + graphName)[0],
+        get_date_data(data), {
+            hideOverlayOnMouseOut: false,
+            labels: labels,
+            strokeWidth: 3, //width of lines connecting data points
+            colors: dycolors,
+            labelsDiv: "graph-labels-" + graphName,
+            includeZero: true, //ensure y-axis starts at 0
+            xRangePad: 5,
+            errorBars: true,
+            fillAlpha: 0.50,
+            showLabelsOnHighlight: true,
+            connectSeparatedPoints: true,
+            axes: {
+                x: {
+                    axisLabelFormatter: function (x) {
+                        var xval = parseFloat(x);
+                        var xfloor = parseInt(x);
+                        if (xval === xfloor) {
+                            return num_map[xval];
+                        } else {
+                            return "";
+                        }
+                    },
+                    valueFormatter: function (x) {
+                        return num_map[x];
+                    }
+                }
+            },
+            xlabel: 'Commit Date' //label for x-axis
+        });
+}
+
+function thread_graph(graphName, data, labels, num_map) {
+    return new Dygraph(
+        $('#graph_' + graphName)[0],
+        data,
+        {
+            hideOverlayOnMouseOut: false,
+            labels: labels,
+            strokeWidth: 3, //width of lines connecting data points
+            colors: dycolors,
+            labelsDiv: "graph-labels-" + graphName,
+            includeZero: true, //ensure y-axis starts at 0
+            xRangePad: 5,
+            errorBars: true,
+            fillAlpha: 0.50,
+            showLabelsOnHighlight: true,
+            connectSeparatedPoints: true,
+            xlabel: 'Threads' //label for x-axis
+        });
+}
 
 /**
  * author Remy Sharp
