@@ -21,10 +21,10 @@
             var even_spread = true;
             var reloadlist = [];
             var dygraphs = [];
-            var dycolors = ["#7BBADE", "#93DE7F", "#F29E4A", "#FF7050",
-                            "#FFEC1E", "#0A79BD", "#00B215", "#BAA900",
-                            "#A34A00", "#C21F00", "#222222", "#FF44EE",
-                            "#FF5A00", "#AA66FF", "#3BCC75", "#29190F"];
+            var dycolors = ["#e82924", "#008e45", "#1258ab", "#f67d02",
+                "#672794", "#a41b1c", "#b63395", "#010202",
+                "#01FF02", "#FFF42A", "#01D3CC", "#1E83FF",
+                "#AA7942", "#AA66FF", "#3BCC75", "#929292"];
         </script>
     </head>
     <body>
