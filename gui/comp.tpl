@@ -20,6 +20,9 @@
     <script type="text/javascript" src="static/bootstrap-daterangepicker-1.3.16/daterangepicker.js"></script>
     <script type="text/javascript" src="static/js/perf_lib.js"></script>
     <script type="text/javascript" src="static/js/main.js"></script>
+    <script>
+        var data = {{!table_data}};
+    </script>
 </head>
 <body>
 <div id="wrapper">

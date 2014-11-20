@@ -512,7 +512,7 @@ def new_main_page():
         return json.dumps(rows)
     else:
         return template('comp.tpl', allrows=rows, versions=versions,
-                        storage_engines=storage_engines, platforms=platforms, tests=sorted(all_tests))
+                        storage_engines=storage_engines, platforms=platforms, tests=sorted(all_tests), table_data=json.dumps(rows))
 
 
 @route("/catalog")

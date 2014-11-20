@@ -79,10 +79,7 @@ function format(d) {
 
 $(document).ready(function () {
     var table = $('#selectTable').DataTable({
-        "ajax": {
-            url: "/catalog",
-            type: 'GET'
-        },
+        "data": data,
         "bPaginate": false,
         "bLengthChange": false,
         "bInfo": false,
