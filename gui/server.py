@@ -413,11 +413,17 @@ def get_rows(commit_regex, start_date, end_date, label_regex, version_regex,
         # Calculate the runtime
         if 'end_time' in record.keys() and 'run_time' in record.keys():
             run_time = (record['end_time'] - record['run_time'])
-            run_time = '{:02}:{:02}:{:02}'.format(run_time.seconds // 3600,
+            run_time = '{0:02}:{1:02}:{2:02}'.format(run_time.seconds // 3600,
                                                   run_time.seconds % 3600 // 60,
                                                   run_time.seconds % 60)
         else:
             run_time = None
+
+        writeOptions = False
+        if 'writeOptions' in record.keys():
+            writeOptions = record['writeOptions']
+
+
 
         tmpdoc = {
             "_id": str(record["_id"]),
@@ -433,7 +439,7 @@ def get_rows(commit_regex, start_date, end_date, label_regex, version_regex,
                 "timestamp": int(run_date_timestamp)
             },
             "platform": record["platform"],
-            "writeOptions": record['writeOptions'],
+            "writeOptions": writeOptions,
             "run_time": run_time,
             "test_suites": sorted(test_suites),
             "tests": list(sorted(tests)),

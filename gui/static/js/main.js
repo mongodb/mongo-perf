@@ -26,25 +26,28 @@ function format(d) {
     var test_suites = d.test_suites.join(', ');
     var threads = d.threads.join(', ');
 
-    var safe_icon = 'fa-check';
-    var safe_class = 'writeOptionTrue';
-    if (d.writeOptions.safeGLE == 'false') {
-        safe_icon = 'fa-times';
-        safe_class = 'writeOptionFalse';
-    }
+    if(d.writeOptions) {
+        var safe_icon = 'fa-check';
+        var safe_class = 'writeOptionTrue';
+        if (d.writeOptions.safeGLE == 'false') {
+            safe_icon = 'fa-times';
+            safe_class = 'writeOptionFalse';
+        }
 
-    var cmdmode_icon = 'fa-check';
-    var cmdmode_class = 'writeOptionTrue';
-    if (d.writeOptions.writeCmdMode == 'false') {
-        cmdmode_icon = 'fa-times';
-        cmdmode_class = 'writeOptionFalse';
-    }
+        var cmdmode_icon = 'fa-check';
+        var cmdmode_class = 'writeOptionTrue';
+        if (d.writeOptions.writeCmdMode == 'false') {
+            cmdmode_icon = 'fa-times';
+            cmdmode_class = 'writeOptionFalse';
+        }
 
-    var j_icon = 'fa-check';
-    var j_class = 'writeOptionTrue';
-    if (d.writeOptions.writeConcernJ == 'false') {
-        j_icon = 'fa-times';
-        j_class = 'writeOptionFalse';
+
+        var j_icon = 'fa-check';
+        var j_class = 'writeOptionTrue';
+        if (d.writeOptions.writeConcernJ == 'false') {
+            j_icon = 'fa-times';
+            j_class = 'writeOptionFalse';
+        }
     }
 
     // `d` is the original data object for the row
@@ -68,10 +71,12 @@ function format(d) {
         '<tr>' +
         '<td>Write Options:</td>' +
         '<td>' +
+        (!d.writeOptions ? " unavailable " :
         '<div class="writeOptionCell ' + safe_class + '">&nbsp;safe:&nbsp;<i class="fa fa-fw ' + safe_icon + '"></i></div>' +
         '<div class="writeOptionCell ' + cmdmode_class + '">&nbsp;write cmd:&nbsp;<i class="fa fa-fw ' + cmdmode_icon + '"></i></div>' +
         '<div class="writeOptionCell ' + j_class + '">&nbsp;j:&nbsp;<i class="fa fa-fw ' + j_icon + '"></i></div>' +
-        '<div class="writeOptionWCell">&nbsp;w:&nbsp;' + d.writeOptions.writeConcernW + '</div>' +
+        '<div class="writeOptionWCell">&nbsp;w:&nbsp;' + d.writeOptions.writeConcernW + '</div>'
+        )+
         '</td>' +
         '</tr>' +
         '</table>';
