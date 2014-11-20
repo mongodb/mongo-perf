@@ -7,7 +7,6 @@
         <link href="static/DataTables-1.10.4/media/css/jquery.dataTables.min.css" rel="stylesheet">
         <link href="static/bootstrap-3.3.0-dist/css/bootstrap.min.css" rel="stylesheet">
         <link href="static/font-awesome-4.2.0/css/font-awesome.min.css" rel="stylesheet">
-
         <link href="static/css/main.css" rel="stylesheet">
         <script type="text/javascript" src="static/js/jquery-1.9.1.min.js"></script>
         <script type="text/javascript" src="static/js/jquery-ui-1.10.1.custom.min.js"></script>
@@ -21,16 +20,6 @@
             var numGraphs = {{len(results)}};
             var even_spread = true;
             var reloadlist = [];
-            $(document).ready(function(){
-                $('table').dataTable({
-                        "bPaginate": false,
-                        "bLengthChange": false,
-                        "bFilter": false,
-                        "bInfo": false,
-                        "bAutoWidth": true
-                });
-                //hideTablesClicked();
-            });
             var dygraphs = [];
             var dycolors = ["#7BBADE", "#93DE7F", "#F29E4A", "#FF7050",
                             "#FFEC1E", "#0A79BD", "#00B215", "#BAA900",
@@ -109,17 +98,11 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="table-row row">
+                                <div class="row">
                                     <div class="col-xs-11">
-                                        <table class="table table-striped table-responsive display" id="table-{{k}}" style="display: none;">
+                                        <table class="table table-striped table-condensed table-bordered" id="table-{{k}}" style="display: none;">
                                             <thead>
                                             <tr>
-                                                <th style="width: 5%">Num</th>
-                                                <th style="width: 15%">Label</th>
-                                                <th style="width: 10%">Platform</th>
-                                                <th style="width: 10%">Version</th>
-                                                <th style="width: 10%">Date</th>
-                                                <th style="width: 10%">Commit</th>
                                                 %for thread in threads:
                                                 <th>{{thread}} thread{{'' if thread == 1 else 's'}}</th>
                                                 %end
@@ -128,12 +111,9 @@
                                             <tbody>
                                             %for i, result in enumerate(outer_result['results']):
                                             <tr>
-                                                <td>{{i+1}}</td>
-                                                <td>{{result['label']}}</td>
-                                                <td>{{result['platform']}}</td>
-                                                <td>{{result['version']}}</td>
-                                                <td>{{result['date']}}</td>
-                                                <td><a href="https://github.com/mongodb/mongo/commit/{{result['commit']}}" target="_blank">{{result['commit'][:7]}}</a></td>
+                                                <td colspan="{{len(threads)}}"><small><strong>{{result['label']}} - {{result['version']}} - {{result['date']}} - <a href="https://github.com/mongodb/mongo/commit/{{result['commit']}}" target="_blank">{{result['commit'][:7]}}</a></strong></small></td>
+                                            </tr>
+                                            <tr>
                                                 %for thread in threads:
                                                 %if str(thread) in result:
                                                 <td>{{"{0:.2f}".format(result[str(thread)]["ops_per_sec"])}} <br/>
@@ -185,7 +165,6 @@
                                     <script>
                                         timegraph = date_graph("time-{{k}}",get_date_data({{!dygraph_data['data']}}),{{!dygraph_data['labels_json']}},num_map);
                                         dygraphs.push(timegraph);
-                                        $("#graph-labels-time-{{k}}").ready(timegraph);
                                     </script>
                                     %else:
                                     <div class="row">

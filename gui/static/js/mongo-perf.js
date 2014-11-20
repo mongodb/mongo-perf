@@ -117,11 +117,6 @@ $(function () {
     });
 });
 
-
-
-
-
-
 function date_graph(graphName, data, labels, num_map) {
     return new Dygraph(
         $('#graph_' + graphName)[0],
@@ -237,13 +232,10 @@ $(function () {
         $(window).scroll();
     });
 
-    //$('div[data-filterable]').bind('inview', function (event, visible) {
-    //    if (visible == true) {
-    //        // element is now visible in the viewport
-    //        j = 1;
-    //    } else {
-    //        // element has gone out of viewport
-    //    }
-    //});
+    $('').one('inview', function (event, visible) {
+        if (visible) {
+            $(this).text('Single bound found - I won\'t change again.');
+        }
+    });
 });
 
