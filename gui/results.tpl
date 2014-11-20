@@ -4,15 +4,15 @@
         <meta charset="utf-8">
         <title>MongoDB Performance Benchmarks</title>
         <link href="static/css/jquery-ui-1.10.1.custom.min.css" rel="stylesheet">
-        <link href="static/DataTables-1.10.4/media/css/jquery.dataTables.css" rel="stylesheet">
-        <link href="static/bootstrap-3.3.0-dist/css/bootstrap.css" rel="stylesheet">
+        <link href="static/DataTables-1.10.4/media/css/jquery.dataTables.min.css" rel="stylesheet">
+        <link href="static/bootstrap-3.3.0-dist/css/bootstrap.min.css" rel="stylesheet">
         <link href="static/font-awesome-4.2.0/css/font-awesome.min.css" rel="stylesheet">
 
         <link href="static/css/main.css" rel="stylesheet">
         <script type="text/javascript" src="static/js/jquery-1.9.1.min.js"></script>
         <script type="text/javascript" src="static/js/jquery-ui-1.10.1.custom.min.js"></script>
-        <script type="text/javascript" src="static/bootstrap-3.3.0-dist/js/bootstrap.js"></script>
-        <script type="text/javascript" src="static/DataTables-1.10.4/media/js/jquery.dataTables.js"></script>
+        <script type="text/javascript" src="static/bootstrap-3.3.0-dist/js/bootstrap.min.js"></script>
+        <script type="text/javascript" src="static/DataTables-1.10.4/media/js/jquery.dataTables.min.js"></script>
         <script type="text/javascript" src="static/js/perf_lib.js"></script>
         <script type="text/javascript" src="static/js/jquery.dataTables.min.js"></script>
         <script type="text/javascript" src="static/js/dygraph-combined.js"></script>
