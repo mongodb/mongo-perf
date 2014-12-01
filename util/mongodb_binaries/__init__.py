@@ -147,9 +147,12 @@ class BinariesManager(object):
 
         # see if we need to actually do the download based on
         # the check file and the directory
+        repo = get_repo(criteria=criteria)
+        download = repo.get_available()
+
         do_download = False
         if current_binaries is not None:
-            if current_binaries != criteria:
+            if current_binaries != repo.criteria:
                 do_download = True
                 shutil.rmtree(self.directory)
         elif current_binaries is None and os.path.isdir(self.directory):
@@ -162,15 +165,13 @@ class BinariesManager(object):
             do_download = True
 
         if do_download:
-            repo = get_repo(criteria=criteria)
-            download = repo.get_available()
             # make sure we really need to download
             if (current_binaries is None
-                or current_binaries.hash != download.hash):
+                    or current_binaries.hash != download.hash):
                 if download.download():
                     download.extract_to(self.directory)
                     download.clean()
-                    criteria.hash = download.hash
+                    repo.criteria.hash = download.hash
                     with open(current_binaries_file, 'wb+') as output:
-                        pickle.dump(criteria, output)
+                        pickle.dump(repo.criteria, output)
 
