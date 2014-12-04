@@ -69,6 +69,7 @@ DBPATH=${MPERFBASE}/db
 SCONSPATH=scons
 MONGOD=mongod
 MONGO=mongo
+MONGOD_LOG_PATH=${BUILD_DIR}/mongoperf.log
 # path mongo shell
 SHELLPATH=${BUILD_DIR}/${MONGO}
 # branch to monitor for checkins
@@ -349,7 +350,7 @@ function determine_benchrun_options() {
 
 function determine_mongod_options()
 {
-        MONGOD_OPTIONS='--logpath mongoperf.log'
+        MONGOD_OPTIONS='--logpath ${MONGOD_LOG_PATH}'
         if [ "$NO_ENGINES" == "0" ]
         then
             MONGOD_OPTIONS+=" --storageEngine=${STORAGE_ENGINE}"
