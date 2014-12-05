@@ -2,10 +2,11 @@
 """get-mongodb-binaries gets a set of compiled binaries
 
 """
-import argparse
 import os
 import sys
 import tempfile
+
+import argparse
 
 from mongodb_binaries import BinariesCriteria, BinariesManager
 
@@ -22,7 +23,26 @@ def do_download(args):
 
     binaries_manager = BinariesManager(directory=args.download_dir)
     binaries_manager.update(criteria=requested_binaries)
+    return binaries_manager
 
+
+def export_download_info(binaries_manager):
+    """
+
+    :type binaries_manager: BinariesManager
+    :return:
+    """
+    print ("export MMSA_BINARIES_DOWNLOAD_LINK=%s"
+           % binaries_manager.current_download.link)
+
+    print ("export MMSA_BINARIES_OS=%s"
+           % binaries_manager.requested_criteria.os_type)
+
+    if binaries_manager.requested_criteria.cpu_arch is "x86_64":
+        bits = 64
+    else:
+        bits = 32
+    print ("export MMSA_BINARIES_BITS=%s" % bits)
 
 def main():
     # Main Section
@@ -70,13 +90,12 @@ def main():
     # are being deployed to
     tempfile.tempdir = os.path.dirname(os.path.realpath(args.download_dir))
 
-    do_download(args)
+    export_download_info(do_download(args))
 
 
 if __name__ == '__main__':
-    try:
+    #try:
         main()
-    except Exception as e:
-        sys.stderr.write(e.message)
-        sys.exit(1)
-    sys.exit(0)
+    #except Exception as e:
+    #    sys.exit(1)
+    #sys.exit(0)
