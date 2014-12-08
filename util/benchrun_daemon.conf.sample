@@ -97,6 +97,12 @@
 #############
 # SHELLPATH=${BUILD_DIR}/${MONGO}
 
+
+#############
+# Path to the log output from mongod
+#############
+# MONGOD_LOG_PATH=${BUILD_DIR}/mongoperf.log
+
 #############
 # branch to monitor for checkins
 #############
