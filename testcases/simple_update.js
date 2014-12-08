@@ -180,7 +180,7 @@ tests.push( { name: "Update.IncFewLargeDocLongFields",
                                        "elcgijivrt": 1 } } }
               ] } );
 
-tests.push( { name: "Update.v3.SingleDocFieldAtOffset",
+tests.push( { name: "Update.v4.SingleDocFieldAtOffset",
               tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
@@ -190,17 +190,17 @@ tests.push( { name: "Update.v3.SingleDocFieldAtOffset",
                   // Build the document and insert several copies.
                   var toInsert = {};
                   for (var i = 0; i < kFieldCount; i++) {
-                      toInsert["_id"] = i;
                       toInsert["a_" + i.toString()] = "a";
                   }
 
                   for (var i = 0; i < 4800; i++) {
+                      toInsert["_id"] = i;
                       collection.insert(toInsert);
                  }
                  collection.getDB().getLastError();
               },
               ops: [
-               { op: "let", target: "x", value: {"#RAND_INT_PLUS_THREAD": [0,100]}},
+                  { op: "let", target: "x", value: {"#RAND_INT_PLUS_THREAD": [0,100]}},
                   { op:  "update",
                     multi: false,
                     query: { _id: { "#VARIABLE" : "x" } },
