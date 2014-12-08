@@ -187,8 +187,12 @@ def process_cursor(cursor, multidb):
                                version=entry['version'],
                                label=entry['label'],
                                server_storage_engine=entry[
-                                   'server_storage_engine'],
-                               topology=entry['topology'])
+                                   'server_storage_engine']
+                               )
+
+                    row['topology'] = (entry['topology']
+                                       if 'topology' in entry.keys()
+                                       else DEFAULT_TOPOLOGY)
 
                     if 'commit_date' in entry.keys():
                         row['date'] = entry['commit_date'].strftime(

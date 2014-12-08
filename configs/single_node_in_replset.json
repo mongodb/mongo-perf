@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "processes": [
+    {
+      "mongo-perf-connect-to": true,
+      "mongo-perf-ignore": false,
+      "name": "single",
+      "processType": "mongod",
+      "version": "2.7.4",
+      "args2_6": {
+        "storage": {
+          "dbPath": ""
+        },
+        "net": {
+          "port": 0
+        },
+        "systemLog": {
+          "path": "",
+          "destination": "file"
+        },
+        "replication": {
+          "replSetName": "rs1"
+        }
+      },
+      "args2_4": {
+        "logpath": "",
+        "dbpath": "",
+        "port": 0,
+        "replSet": "rs1"
+      }
+    }
+  ],
+  "options": {
+    "downloadBase": ""
+  },
+  "mongoDbVersions": [
+    {
+      "mongo-perf-ignore": false,
+      "name": "2.6.5",
+      "builds": [
+        {
+          "url": "",
+          "platform": "",
+          "bits": 0,
+          "gitVersion": ""
+        }
+      ]
+    }
+  ],
+  "replicaSets": [
+    {
+      "_id": "rs1",
+      "members": [
+        {
+          "_id": 0,
+          "host": "single",
+          "priority": 10
+        }
+      ]
+    }
+  ]
+}
