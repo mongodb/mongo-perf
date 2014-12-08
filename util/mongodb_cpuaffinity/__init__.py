@@ -5,11 +5,11 @@ import subprocess
 
 
 class NumaNotAvailableError(Exception):
-    """ Raised when a numa funciton is called and numa control is not available
+    """ Raised when a numa function is called and numactl is not available
     """
 
 
-class CPUAffiniitySetNotAvailabeError(Exception):
+class CPUAffinitySetNotAvailableError(Exception):
     """ Raised when unable to set the CPU affinity on a platform
     """
 
@@ -20,13 +20,13 @@ class CPUNode(object):
 
 
 class NumaNode(CPUNode):
-    def __init__(self, node_number, cpu_list, memorysize, memoryfree,
-                 processcount):
+    def __init__(self, node_number, cpu_list, memory_size, memory_free,
+                 process_count):
         self.node_number = node_number
         self.cpu_list = cpu_list
-        self.memorysize = memorysize
-        self.memoryfree = memoryfree
-        self.processcount = processcount
+        self.memory_size = memory_size
+        self.memory_free = memory_free
+        self.process_count = process_count
 
 
 def get_numa_nodes():
@@ -42,16 +42,16 @@ def get_numa_nodes():
     mem_list = process.communicate()
     process = subprocess.Popen(['numactl --hardware | grep free'], shell=True,
                                stdout=subprocess.PIPE)
-    memfree_list = process.communicate()
+    mem_free_list = process.communicate()
     cpu_list = str.splitlines(cpu_list[0])
     mem_list = str.splitlines(mem_list[0])
-    memfree_list = str.splitlines(memfree_list[0])
+    mem_free_list = str.splitlines(mem_free_list[0])
     node_list = {}
     for index in range(len(cpu_list)):
         node_list[index] = NumaNode(str.split(cpu_list[index])[1],
                                     str.split(cpu_list[index])[3:],
                                     str.split(mem_list[index])[3],
-                                    str.split(memfree_list[index])[3], 0)
+                                    str.split(mem_free_list[index])[3], 0)
     return node_list
 
 
@@ -74,7 +74,6 @@ def is_cpu_affinity_settable():
 
 
 def get_cores_available():
-    cpus = []
     if not is_numa_capable():
         cpu_list = range(multiprocessing.cpu_count())
         cpus = {0: CPUNode(cpu_list)}

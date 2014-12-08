@@ -35,6 +35,7 @@ DEFAULT_OPTIONS = {
     'server_bindip': '0.0.0.0'
 }
 DEFAULT_STORAGE_ENGINE = 'mmapv0'
+DEFAULT_TOPOLOGY = 'single_node'
 CONFIG_INI_FILE_PRODUCTION = 'mongo-perf-prod.ini'
 CONFIG_INI_FILE_DEVELOPMENT = 'mongo-perf-devel.ini'
 RUN_MODE_PRODUCTION = 'prod'
@@ -186,7 +187,8 @@ def process_cursor(cursor, multidb):
                                version=entry['version'],
                                label=entry['label'],
                                server_storage_engine=entry[
-                                   'server_storage_engine'])
+                                   'server_storage_engine'],
+                               topology=entry['topology'])
 
                     if 'commit_date' in entry.keys():
                         row['date'] = entry['commit_date'].strftime(
@@ -398,6 +400,11 @@ def get_rows(commit_regex, start_date, end_date, label_regex, version_regex,
         else:
             server_storage_engine = DEFAULT_STORAGE_ENGINE
 
+        if 'topology' in record:
+            topology = record['topology']
+        else:
+            topology = DEFAULT_TOPOLOGY
+
         # Get the threads and the test suites run
         tests = set()
         test_suites = set()
@@ -444,7 +451,8 @@ def get_rows(commit_regex, start_date, end_date, label_regex, version_regex,
             "test_suites": sorted(test_suites),
             "tests": list(sorted(tests)),
             "threads": sorted(thread_count_set, key=int),
-            "server_storage_engine": server_storage_engine
+            "server_storage_engine": server_storage_engine,
+            "topology": topology
         }
 
         rows.append(tmpdoc)
@@ -471,8 +479,17 @@ def new_main_page():
     else:
         end = None
 
-    versions = db.raw.aggregate([{"$match": {"version": {"$exists": 1}}},{"$group": {"_id": "$version"}}, {"$sort": {"_id": -1}},{"$project": {"_id": 0, "version": "$_id"}}])['result']
+    versions = db.raw.aggregate(
+        [{"$match": {"version": {"$exists": 1}}},
+         {"$group": {"_id": "$version"}},
+         {"$sort": {"_id": -1}},
+         {"$project": {"_id": 0, "version": "$_id"}}])['result']
 
+    topologies = db.raw.aggregate(
+        [{"$match": {"topology": {"$exists": 1}}},
+         {"$group": {"_id": "$topology"}},
+         {"$sort": {"_id": 1}},
+         {"$project": {"_id": 0, "topology": "$_id"}}])['result']
 
     storage_engines = db.raw.aggregate(
         [{"$match": {"server_storage_engine": {"$exists": 1}}},
@@ -518,7 +535,7 @@ def new_main_page():
         return json.dumps(rows)
     else:
         return template('comp.tpl', allrows=rows, versions=versions,
-                        storage_engines=storage_engines, platforms=platforms, tests=sorted(all_tests), table_data=json.dumps(rows))
+                        storage_engines=storage_engines, platforms=platforms, tests=sorted(all_tests), table_data=json.dumps(rows), topologies=topologies)
 
 
 @route("/catalog")
