@@ -1,3 +1,4 @@
+import collections
 import copy
 import json
 import requests
@@ -14,6 +15,11 @@ try:
 except ImportError:
     _HAS_MCI_TOOLS = False
 
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
+
 _DOT_ORG_DOWNLOAD_ROOT_URL = "http://downloads.mongodb.org/"
 _MCI_ROOT_URL = "https://mci.mongodb.com/version_json/"
 _MCI_LAST_SUCCESSFUL_COMPILE_ROOT = \
@@ -21,9 +27,6 @@ _MCI_LAST_SUCCESSFUL_COMPILE_ROOT = \
 _MCI_LAST_GREEN_ROOT = "https://mci.mongodb.com/json/last_green/"
 _MCI_VERSION_HISTORY_ROOT = "https://mci.mongodb.com/rest/v1/projects/"
 _MCI_VERSION_STATUS_ROOT = "https://mci.mongodb.com/rest/v1/versions/"
-
-_JSCORE_SUITE_LIST = ['jsCore',
-                      'jsCore_WT']
 
 
 def get_mci_id_cookies():
@@ -200,7 +203,7 @@ class MCIRepository(AbstractRepository):
         if resp.status_code == 200:
             obj = json.loads(resp.text)
             versions = obj['versions']
-            return dict((version['version_id'], version['revision'])
+            return OrderedDict((version['version_id'], version['revision'])
                         for version in versions)
 
 class MCILatestGreenRepository(MCIRepository):
@@ -239,9 +242,9 @@ class MCILatestSuccessfulTasksRepository(MCIRepository):
 
     def __get_last_successful_tasks_git_hash(self, project, variant, tasks):
         # First need to get a list of version_id's that we can iterate through
-        version_list = self._get_version_history(project)
+        versions = self._get_version_history(project)
 
-        for job_id, version in version_list.iteritems():
+        for job_id, version in versions.iteritems():
             endpoint = _MCI_VERSION_STATUS_ROOT + job_id + "/status"
             resp = requests.get(endpoint, cookies=get_mci_id_cookies())
             if resp.status_code == 200:
@@ -250,13 +253,14 @@ class MCILatestSuccessfulTasksRepository(MCIRepository):
                 for task in tasks:
                     if obj['tasks'][task][variant]['status'] != 'success':
                         break
-                return version
+                else:
+                    return version
             else:
                 raise BinariesNotAvailableError(
                     "Unable to find latest good build for project %s variant %s"
                     % (project, variant))
 
         raise BinariesNotAvailableError(
-            "Unable to find build which passes tasks (%s) in MCI history for project"
-            " %s variant %s" % (
+            "Unable to find build which passes tasks (%s) in MCI history "
+            "for project %s variant %s" % (
                 ", ".join(tasks), project, variant))
