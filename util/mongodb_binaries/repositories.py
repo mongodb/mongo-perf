@@ -19,6 +19,11 @@ _MCI_ROOT_URL = "https://mci.mongodb.com/version_json/"
 _MCI_LAST_SUCCESSFUL_COMPILE_ROOT = \
     "https://mci.mongodb.com/rest/v1/tasks/compile/history?project="
 _MCI_LAST_GREEN_ROOT = "https://mci.mongodb.com/json/last_green/"
+_MCI_VERSION_HISTORY_ROOT = "https://mci.mongodb.com/rest/v1/projects/"
+_MCI_VERSION_STATUS_ROOT = "https://mci.mongodb.com/rest/v1/versions/"
+
+_JSCORE_SUITE_LIST = ['jsCore',
+                      'jsCore_WT']
 
 
 def get_mci_id_cookies():
@@ -189,9 +194,17 @@ class MCIRepository(AbstractRepository):
                     extenion = buildvariant['expansions']['ext']
         return extenion
 
+    def _get_version_history(self, project):
+        endpoint = _MCI_VERSION_HISTORY_ROOT + project + "/versions"
+        resp = requests.get(endpoint, cookies=get_mci_id_cookies())
+        if resp.status_code == 200:
+            obj = json.loads(resp.text)
+            versions = obj['versions']
+            return dict((version['version_id'], version['revision'])
+                        for version in versions)
 
 class MCILatestGreenRepository(MCIRepository):
-    """Repository to get info form the lastest green api call in MCI
+    """Repository to get info form the latest green api call in MCI
     """
 
     def __init__(self, criteria):
@@ -212,37 +225,38 @@ class MCILatestGreenRepository(MCIRepository):
                 % (project, variant))
 
 
-class MCILatestSuccessfulCompileRepository(MCIRepository):
-    """Repository to get info from the last successful compile in MCI"""
+class MCILatestSuccessfulTasksRepository(MCIRepository):
+    """Repository to get info from the last tasks to successfully
+    complete in MCI"""
 
     def __init__(self, criteria):
-        super(MCILatestSuccessfulCompileRepository, self).__init__(
+        super(MCILatestSuccessfulTasksRepository, self).__init__(
             copy.copy(criteria))
-        self.criteria.git_hash = self.__get_last_successful_compile_git_hash(
+        self.criteria.git_hash = self.__get_last_successful_tasks_git_hash(
             self.criteria.project,
-            self.criteria.variant)
+            self.criteria.variant,
+            self.criteria.tasks)
 
-    def __get_last_successful_compile_git_hash(self, project, variant):
-        endpoint = _MCI_LAST_SUCCESSFUL_COMPILE_ROOT + project
-        resp = requests.get(endpoint, cookies=get_mci_id_cookies())
-        if resp.status_code == 200:
-            obj = json.loads(resp.text)
-            for task in obj['Tasks']:
-                current_id = task['_id']
-                for variant_task in task['tasks']:
-                    if variant_task['build_variant'] == variant and \
-                                    variant_task['status'] == 'success':
-                        return current_id
+    def __get_last_successful_tasks_git_hash(self, project, variant, tasks):
+        # First need to get a list of version_id's that we can iterate through
+        version_list = self._get_version_history(project)
 
-            raise BinariesNotAvailableError(
-                "Unable to find successful compile in MCI history for project"
-                " %s variant %s" % (
-                    project, variant))
-        else:
-            raise BinariesNotAvailableError(
-                "Unable to find latest good build for project %s variant %s"
-                % (project, variant))
+        for job_id, version in version_list.iteritems():
+            endpoint = _MCI_VERSION_STATUS_ROOT + job_id + "/status"
+            resp = requests.get(endpoint, cookies=get_mci_id_cookies())
+            if resp.status_code == 200:
+                obj = json.loads(resp.text)
+                # If any tasks are not successful, skip to the next version_id
+                for task in tasks:
+                    if obj['tasks'][task][variant]['status'] != 'success':
+                        break
+                return version
+            else:
+                raise BinariesNotAvailableError(
+                    "Unable to find latest good build for project %s variant %s"
+                    % (project, variant))
 
-
-
-
+        raise BinariesNotAvailableError(
+            "Unable to find build which passes tasks (%s) in MCI history for project"
+            " %s variant %s" % (
+                ", ".join(tasks), project, variant))

@@ -182,6 +182,11 @@
 #############
 # BINARIES_MCI_VARIANT="linux-64"
 
+#############
+# A list of space separated tasks that have completed successfully
+#############
+# BINARIES_MCI_SUCCESSFUL_TASKS="jsCore jsCore_WT"
+
 ########################
 # .org Binaries Options
 # Gets the binaries from the nightlys and releases that are available on the mongodb.org site
