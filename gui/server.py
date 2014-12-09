@@ -80,6 +80,27 @@ else:
                             replicaSet=DATABASE_REPLICA_SET)[DATABASE_NAME]
 
 
+
+# make sure the indexes needed for the gui are created
+
+# primary main page index
+db.raw.ensure_index([('commit_date', pymongo.ASCENDING),
+                     ('platform', pymongo.ASCENDING),
+                     ('label', pymongo.ASCENDING),
+                     ('server_storage_engine', pymongo.ASCENDING)])
+# # main page filters
+db.raw.ensure_index([('commit_date', pymongo.ASCENDING)])
+db.raw.ensure_index([('server_storage_engine', pymongo.ASCENDING)])
+db.raw.ensure_index([('label', pymongo.ASCENDING)])
+db.raw.ensure_index([('platform', pymongo.ASCENDING)])
+db.raw.ensure_index([('version', pymongo.ASCENDING)])
+db.raw.ensure_index([('singledb.name', pymongo.ASCENDING)])
+db.raw.ensure_index([('multidb.name', pymongo.ASCENDING)])
+db.raw.ensure_index([('run_date', pymongo.ASCENDING)])
+db.raw.ensure_index([('run_time', pymongo.ASCENDING)])
+
+
+
 @route('/static/:filename#.*#')
 def send_static(filename):
     return static_file(filename, root='./static')
