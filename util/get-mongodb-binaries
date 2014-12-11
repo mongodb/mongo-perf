@@ -19,7 +19,8 @@ def do_download(args):
                                           debug=args.debug,
                                           project=args.project,
                                           git_hash=args.git_hash,
-                                          variant=args.variant)
+                                          variant=args.variant,
+                                          tasks=args.tasks)
 
     binaries_manager = BinariesManager(directory=args.download_dir)
     binaries_manager.update(criteria=requested_binaries)
@@ -83,6 +84,9 @@ def main():
                         default=None,
                         help='the Git hash for the MCI build to get the '
                              'binaries for')
+    parser.add_argument('--tasks', nargs='+', dest='tasks', default=[],
+                        help='the MCI tasks that have been successfully '
+                             'completed',)
 
     args = parser.parse_args()
 

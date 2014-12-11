@@ -109,13 +109,14 @@ DISK_SYNC_DELAY=14400
 
 #### Default Binaries Options
 # for MCI pulls
-BINARIES_MCI_PROJECT="mongodb-mongo-master"
+#BINARIES_MCI_PROJECT="mongodb-mongo-master"
 #BINARIES_MCI_VARIANT="linux-64"
 # for .org site pulls
 #BINARIES_BRANCH="v2.6"
 #BINARIES_VERSION="2.6.5"
 #BINARIES_DISTRIBUTION="ubuntu1404"
 #BINARIES_CPU_ARCH="x86_64"
+#BINARIES_MCI_SUCCESSFUL_TASKS="compile"
 
 
 MMS_AUTOMATION=false
@@ -200,6 +201,10 @@ function determine_get_binaries_options()
     if [[ -n "$BINARIES_CPU_ARCH" ]]
     then
        BINARIES_OPTIONS+=" --cpu=${BINARIES_CPU_ARCH}"
+    fi
+    if [[ -n "$BINARIES_MCI_SUCCESSFUL_TASKS" ]]
+    then
+       BINARIES_OPTIONS+=" --tasks ${BINARIES_MCI_SUCCESSFUL_TASKS}"
     fi
     echo ${BINARIES_OPTIONS}
 }
