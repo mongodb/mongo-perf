@@ -27,6 +27,26 @@
 # TEST_TRIALS_TIME=5
 
 #############
+# Host to run the test on
+#############
+# TEST_HOST=localhost
+
+#############
+# mongod/mongos port to run the test on
+#############
+# TEST_PORT=27017
+
+#############
+# write concern to use for the test
+#############
+# TEST_WRITE_CONCERN=1
+
+#############
+# force journal confirm for tests (j option)
+#############
+# TEST_JOURNAL_CONFIRM=false
+
+#############
 # Enable write command for the tests
 #############
 # TEST_WRITE_COMMAND=true
@@ -231,3 +251,50 @@
 
 ##############
 # BINARIES_CPU_ARCH="x86_64"
+
+#############
+# Use the MMS Automation Agent to setup the mongod for the tests
+#############
+# MMS_AUTOMATION=false
+
+#############
+# Config directory for the mms automation agents config files
+# will cycle through all .json files in this directory for each test
+#############
+# MMSA_TEMPLATE_DIR=${MPERFPATH}/configs
+
+#############
+# Root directory for the MMS automation paths
+#############
+# MMSA_ROOT=/home/ec2-user/replset
+
+#############
+# The write location for the main MMS Automation Agent config file
+#############
+# MMSA_CONFIG_FILE=${MMSA_ROOT}/cluster.json
+
+#############
+# The main downloads directory for the mms automation agent
+#############
+# MMSA_DOWNLOAD_ROOT=${MMSA_ROOT}/downloads
+
+#############
+# The log directory that the MMS Automation agent will use to log mongod
+# or mongos logs to
+#############
+# MMSA_LOG_ROOT=${MMSA_ROOT}/logs
+
+#############
+# The data directory that the MMS Automation agent will use to write the data
+# from mongod or mongos logs to
+#############
+# MMSA_DATA_ROOT=${MMSA_ROOT}/data
+
+#############
+# The PID directory that the mongod or mongos writes its running pids too
+#############
+# MMSA_PID_ROOT=${MMSA_ROOT}/pids
+
+
+
+

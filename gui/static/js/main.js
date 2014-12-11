@@ -65,6 +65,11 @@ function format(d) {
         '<td>' + d.run_time + '</td>' +
         '</tr>' +
         '<tr>' +
+        '<tr>' +
+        '<td>Topology:</td>' +
+        '<td>' + d.topology+ '</td>' +
+        '</tr>' +
+        '<tr>' +
         '<td>Threads:</td>' +
         '<td>' + threads + '</td>' +
         '</tr>' +
@@ -168,6 +173,22 @@ $(document).ready(function () {
         $('#version_filter').multiselect('refresh');
         table.draw();
     });
+    $('#topology_filter')
+        .on('keyup change', function () {
+            table.draw();
+        })
+        .multiselect({
+            buttonContainer: '<div class="topology-field-container btn-group" />',
+            enableFiltering: true,
+            numberDisplayed: 1
+        });
+    $('#topology_reset_button').on('click', function() {
+        $('#topology_filter option').each(function () {
+            $(this).prop('selected', false);
+        });
+        $('#topology_filter').multiselect('refresh');
+        table.draw();
+    });
     $('#commitfield').on('keyup change', function () {
         table.column(4).search(this.value).draw();
     });
@@ -231,6 +252,13 @@ $(document).ready(function () {
                     show_for_version = show_for_version | (full_data.version == $(this).attr('value'));
                 });
                 show = show & show_for_version;
+            }
+            if ($('.topology-field-container input:checked').length){
+                var show_for_topology = false;
+                $('.topology-field-container input:checked').each(function () {
+                    show_for_topology = show_for_topology | (full_data.topology == $(this).attr('value'));
+                });
+                show = show & show_for_topology;
             }
 
             if ($('.engine-field-container input:checked').length){

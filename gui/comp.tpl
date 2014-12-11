@@ -100,7 +100,15 @@
                                     </select>
                                     <button type="button" id="test_reset_button" class="btn btn-default"><i class="fa fa-times-circle"></i></button>
                                 </div>
-
+                                <label for="topology_filter" class="control-label">Topology</label>
+                                <div class="input-group">
+                                    <select multiple="multiple" id="topology_filter" class="form-control input-sm">
+                                        %for topology in topologies:
+                                        <option value="{{topology['topology']}}">{{topology['topology']}}</option>
+                                        %end
+                                    </select>
+                                    <button type="button" id="topology_reset_button" class="btn btn-default"><i class="fa fa-times-circle"></i></button>
+                                </div>
                                 <label for="version_filter" class="control-label">Version</label>
                                 <div class="input-group">
                                     <select multiple="multiple" id="version_filter" class="form-control input-sm">

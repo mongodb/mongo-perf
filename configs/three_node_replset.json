@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "processes": [
+    {
+      "mongo-perf-connect-to": true,
+      "mongo-perf-ignore": false,
+      "name": "foo",
+      "processType": "mongod",
+      "version": "mongo-perf-running",
+      "args2_6": {
+        "replication": {
+          "replSetName": "rs1"
+        }
+      },
+      "args2_4": {
+        "replSet": "rs1"
+      }
+    },
+    {
+      "mongo-perf-connect-to": false,
+      "mongo-perf-ignore": false,
+      "name": "bar",
+      "processType": "mongod",
+      "version": "mongo-perf-running",
+      "args2_6": {
+        "replication": {
+          "replSetName": "rs1"
+        }
+      },
+      "args2_4": {
+        "replSet": "rs1"
+      }
+    },
+    {
+      "mongo-perf-connect-to": false,
+      "mongo-perf-ignore": false,
+      "name": "baz",
+      "processType": "mongod",
+      "version": "mongo-perf-running",
+      "args2_6": {
+        "replication": {
+          "replSetName": "rs1"
+        }
+      },
+      "args2_4": {
+        "replSet": "rs1"
+      }
+    }
+  ],
+  "replicaSets": [
+    {
+      "_id": "rs1",
+      "members": [
+        {
+          "_id": 0,
+          "host": "foo",
+          "priority": 10
+        },
+        {
+          "_id": 1,
+          "host": "bar"
+        },
+        {
+          "_id": 2,
+          "host": "baz"
+        }
+      ]
+    }
+  ]
+}
