@@ -92,7 +92,7 @@ db.raw.ensure_index([('commit_date', pymongo.ASCENDING),
 # # main page filters
 db.raw.ensure_index([('commit_date', pymongo.ASCENDING)])
 db.raw.ensure_index([('server_storage_engine', pymongo.ASCENDING)])
-db.raw.ensure_index([('label', pymongo.ASCENDING)])
+db.raw.ensure_index([('label', pymongo.ASCENDING)], unique=True)
 db.raw.ensure_index([('platform', pymongo.ASCENDING)])
 db.raw.ensure_index([('version', pymongo.ASCENDING)])
 db.raw.ensure_index([('singledb.name', pymongo.ASCENDING)])
