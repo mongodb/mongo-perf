@@ -641,7 +641,7 @@ do
         run_build
         if [ $? == 0 ]
         then
-            if [ ! MMS_AUTOMATION ]
+            if [ "${MMS_AUTOMATION}" != "true" ]
             then
                 run_mongo_perf
             else
