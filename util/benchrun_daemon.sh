@@ -5,6 +5,8 @@
 # script should work on Linux, Solaris, MacOSX
 # for Windows, run under cygwin
 
+
+
 function get_script_path()
 {
     SOURCE="${BASH_SOURCE[0]}"
@@ -107,13 +109,36 @@ DISK_SYNC_DELAY=14400
 
 #### Default Binaries Options
 # for MCI pulls
-BINARIES_MCI_PROJECT="mongodb-mongo-master"
+#BINARIES_MCI_PROJECT="mongodb-mongo-master"
 #BINARIES_MCI_VARIANT="linux-64"
 # for .org site pulls
 #BINARIES_BRANCH="v2.6"
 #BINARIES_VERSION="2.6.5"
 #BINARIES_DISTRIBUTION="ubuntu1404"
 #BINARIES_CPU_ARCH="x86_64"
+#BINARIES_MCI_SUCCESSFUL_TASKS="compile"
+
+
+MMS_AUTOMATION=false
+MMSA_TEMPLATE_DIR=${MPERFPATH}/configs
+MMSA_ROOT=/home/ec2-user/replset
+MMSA_CONFIG_FILE=${MMSA_ROOT}/cluster.json
+MMSA_DOWNLOAD_ROOT=${MMSA_ROOT}/downloads
+MMSA_LOG_ROOT=${MMSA_ROOT}/logs
+MMSA_PID_ROOT=${MMSA_ROOT}/pids
+MMSA_DATA_ROOT=${MMSA_ROOT}/data
+
+
+TEST_HOST=localhost
+TEST_PORT=27017
+# TEST_REPLSET=something
+TEST_WRITE_CONCERN=1
+TEST_JOURNAL_CONFIRM=false
+
+
+
+
+MMS_AUTOMATION=false
 
 # allow a branch or tag to be passed as the first argument
 if [ $# == 1 ]
@@ -142,6 +167,8 @@ fi
 # clean up booleans
 FETCH_BINARIES=$(echo ${FETCH_BINARIES} | tr '[:upper:]' '[:lower:]')
 TEST_WRITE_COMMAND=$(echo ${TEST_WRITE_COMMAND} | tr '[:upper:]' '[:lower:]')
+TEST_JOURNAL_CONFIRM=$(echo ${TEST_JOURNAL_CONFIRM} | tr '[:upper:]' '[:lower:]')
+MMS_AUTOMATION=$(echo ${MMS_AUTOMATION} | tr '[:upper:]' '[:lower:]')
 
 function determine_get_binaries_options()
 {
@@ -175,6 +202,10 @@ function determine_get_binaries_options()
     then
        BINARIES_OPTIONS+=" --cpu=${BINARIES_CPU_ARCH}"
     fi
+    if [[ -n "$BINARIES_MCI_SUCCESSFUL_TASKS" ]]
+    then
+       BINARIES_OPTIONS+=" --tasks ${BINARIES_MCI_SUCCESSFUL_TASKS}"
+    fi
     echo ${BINARIES_OPTIONS}
 }
 
@@ -204,9 +235,9 @@ function do_git_tasks() {
         echo "Getting Binaries with options: ${BINARIES_OPTIONS}"
         if [ $THIS_PLATFORM == 'Windows' ]
         then
-                python `cygpath -w ${MPERFPATH}/util/get-mongodb-binaries` --dir `cygpath -w "${DLPATH}"` ${BINARIES_OPTIONS}
+                eval $(python `cygpath -w ${MPERFPATH}/util/get-mongodb-binaries` --dir `cygpath -w "${DLPATH}"` ${BINARIES_OPTIONS})
         else
-                python ${MPERFPATH}/util/get-mongodb-binaries --dir "${DLPATH}" ${BINARIES_OPTIONS}
+                eval $(python ${MPERFPATH}/util/get-mongodb-binaries --dir "${DLPATH}" ${BINARIES_OPTIONS})
         fi
         chmod +x ${DLPATH}/${MONGOD}
         if [ ! -x ${DLPATH}/${MONGOD} ]
@@ -220,7 +251,9 @@ function do_git_tasks() {
     fi
 
     BINHASH=""
+    BINVERSION=""
     BINHASH=$(${DLPATH}/${MONGOD} --version | egrep git.version|perl -pe '$_="$1" if m/git.version:\s(\w+)/')
+    BINVERSION=$(${DLPATH}/${MONGOD} --version | egrep db.version|perl -pe '$_="$1" if m/db.version\sv(.+)$/')
 
     if [ -z "$LAST_HASH" ]
     then
@@ -322,7 +355,7 @@ function determine_storage_engines() {
     SE_MMAP="mmapv1"
     if [ "$NO_ENGINES" == "0" ]
     then
-        SE_WT="wiredtiger"
+        SE_WT="wiredTiger"
     fi
 }
 
@@ -334,7 +367,21 @@ function clear_caches() {
 }
 
 function determine_benchrun_options() {
-    BENCHRUN_OPTIONS=" --rhost ${RHOST} --rport ${RPORT} -t ${THREAD_COUNTS} -s ${SHELLPATH} -f ${TESTCASES} --trialTime ${TEST_TRIALS_TIME} --trialCount ${TEST_TRIALS_COUNT} --writeCmd ${TEST_WRITE_COMMAND} --testFilter ${TEST_TAGS_FILTER}"
+    BENCHRUN_OPTIONS=""
+    BENCHRUN_OPTIONS+=" --host=${TEST_HOST}"
+    BENCHRUN_OPTIONS+=" --port=${TEST_PORT}"
+    BENCHRUN_OPTIONS+=" --rhost ${RHOST}"
+    BENCHRUN_OPTIONS+=" --rport ${RPORT}"
+    BENCHRUN_OPTIONS+=" -t ${THREAD_COUNTS}"
+    BENCHRUN_OPTIONS+=" -s ${SHELLPATH}"
+    BENCHRUN_OPTIONS+=" -f ${TESTCASES}"
+    BENCHRUN_OPTIONS+=" --trialTime ${TEST_TRIALS_TIME}"
+    BENCHRUN_OPTIONS+=" --trialCount ${TEST_TRIALS_COUNT}"
+    BENCHRUN_OPTIONS+=" --writeCmd ${TEST_WRITE_COMMAND}"
+    BENCHRUN_OPTIONS+=" --testFilter ${TEST_TAGS_FILTER}"
+    BENCHRUN_OPTIONS+=" -w ${TEST_WRITE_CONCERN}"
+    BENCHRUN_OPTIONS+=" -j ${TEST_JOURNAL_CONFIRM}"
+
 
     if [ "$FETCH_BINARIES" != true ]
     then
@@ -345,8 +392,25 @@ function determine_benchrun_options() {
             BENCHRUN_OPTIONS+=" --mongo-repo-path \"${BUILD_DIR}\""
         fi
     fi
+    if [ -n "$TEST_REPLSET" ]
+    then
+        BENCHRUN_OPTIONS+=" --replset ${TEST_REPLSET}"
+    fi
+
+    if [ -n "$TEST_REPLSET" ]
+    then
+        BENCHRUN_OPTIONS+=" --replset ${TEST_REPLSET}"
+    fi
+
+    if [ -n "${TOPOLOGY_NAME}" ]
+    then
+        BENCHRUN_OPTIONS+=" --topology ${TOPOLOGY_NAME}"
+    fi
+
     echo ${BENCHRUN_OPTIONS}
 }
+
+
 
 function determine_mongod_options()
 {
@@ -371,6 +435,94 @@ function determine_mongod_options()
             EXTRA=""
         fi
         echo ${MONGOD_OPTIONS}
+}
+
+
+function determine_mmsa_mongod_options()
+{
+        MMSA_MONGOD_OPTIONS='"storage":{'
+        if [ "$NO_ENGINES" == "0" ]
+        then
+            MMSA_MONGOD_OPTIONS+="\"engine\":\"${STORAGE_ENGINE}\","
+        fi
+
+        if [ $STORAGE_ENGINE == "mmapv1" ]
+        then
+            MMSA_MONGOD_OPTIONS+="\"syncPeriodSecs\":${DISK_SYNC_DELAY}"
+        elif [ $STORAGE_ENGINE == "wiredTiger" ]
+        then
+            WTEC_TEST=$(${DLPATH}/${MONGOD} --wiredTigerEngineConfig "checkpoint=(wait=${DISK_SYNC_DELAY})" --version)
+            NO_WTEC=$?
+            if [ "$NO_WTEC" == "0" ]
+            then
+                MMSA_MONGOD_OPTIONS+="\"wiredTiger\":{\"engineConfig\":\"checkpoint=(wait=${DISK_SYNC_DELAY})\"}"
+            fi
+        else
+            EXTRA=""
+        fi
+        MMSA_MONGOD_OPTIONS+='}'
+        echo ${MMSA_MONGOD_OPTIONS}
+}
+
+function determine_mmsa_options_file()
+{
+
+    MMSA_MONGOD_OPTIONS=$(determine_mmsa_mongod_options)
+    MMSA_TEMP_CONFIG=$(mktemp -t mongo-perf-mmsa.XXXXXXXXXX)
+    cat <<EOF > $MMSA_TEMP_CONFIG
+    {
+        "template": "${TOPOLOGY}",
+        "config_file_location": "${MMSA_CONFIG_FILE}",
+        "download_path":"${MMSA_DOWNLOAD_ROOT}",
+        "log_path":"${MMSA_LOG_ROOT}",
+        "data_path":"${MMSA_DATA_ROOT}",
+        "pid_dir_path":"${MMSA_PID_ROOT}",
+        "download_url":"${MMSA_BINARIES_DOWNLOAD_LINK}",
+        "download_os":"${MMSA_BINARIES_OS}",
+        "download_bits":"${MMSA_BINARIES_BITS}",
+        "download_git_hash":"${BINHASH}",
+        "download_version":"${BINVERSION}",
+        "mongod_options":{
+            ${MMSA_MONGOD_OPTIONS}
+        }
+    }
+EOF
+    echo ${MMSA_TEMP_CONFIG}
+}
+
+function determine_benchrun_label() {
+    BASE_BENCHRUN_LABEL="${THIS_PLATFORM}-${THIS_HOST}"
+    if [ -n "${PLATFORM_SUFFIX}" ]
+    then
+        BASE_BENCHRUN_LABEL+="-${PLATFORM_SUFFIX}"
+    fi
+    BASE_BENCHRUN_LABEL+="-${LAST_HASH:0:7}-${STORAGE_ENGINE}"
+    if [ -n "${TOPOLOGY_NAME}" ]
+    then
+        BASE_BENCHRUN_LABEL+="-${TOPOLOGY_NAME}"
+    fi
+    echo ${BASE_BENCHRUN_LABEL}
+}
+
+function run_benchrun() {
+
+    clear_caches
+    ${BR_START} python benchrun.py -l ${BASE_BENCHRUN_LABEL} ${BR_OPTIONS}
+
+    # Run with multi-DB
+    if [ ! -z "$MPERF_MULTI_DB" ]
+    then
+        clear_caches
+        ${BR_START} python benchrun.py -l "${BASE_BENCHRUN_LABEL}-multidb${MPERF_MULTI_DB}" ${BR_OPTIONS} -m ${MPERF_MULTI_DB}
+    fi
+
+    # Run with multi-collection.
+    if [ ! -z "$MPERF_MULTI_COLL" ]
+    then
+        clear_caches
+        ${BR_START} python benchrun.py -l "${BASE_BENCHRUN_LABEL}--multicoll${MPERF_MULTI_COLL}" ${BR_OPTIONS} --multicoll ${MPERF_MULTI_COLL}
+    fi
+
 }
 
 function run_mongo_perf() {
@@ -408,26 +560,9 @@ function run_mongo_perf() {
         determine_bench_threads
 
         BR_OPTIONS=$(determine_benchrun_options)
+        BASE_BENCHRUN_LABEL=$(determine_benchrun_label)
 
-        BASE_BENCHRUN_LABEL="${THIS_PLATFORM}-${THIS_HOST}-${PLATFORM_SUFFIX}-${LAST_HASH}-${STORAGE_ENGINE}"
-
-        clear_caches
-        ${BR_START} python benchrun.py -l ${BASE_BENCHRUN_LABEL} ${BR_OPTIONS}
-
-        # Run with multi-DB
-        if [ ! -z "$MPERF_MULTI_DB" ]
-        then
-            clear_caches
-            ${BR_START} python benchrun.py -l "${BASE_BENCHRUN_LABEL}-multidb${MPERF_MULTI_DB}" ${BR_OPTIONS} -m ${MPERF_MULTI_DB}
-        fi
-
-        # Run with multi-collection.
-        if [ ! -z "$MPERF_MULTI_COLL" ]
-        then
-            clear_caches
-            ${BR_START} python benchrun.py -l "${BASE_BENCHRUN_LABEL}--multicoll${MPERF_MULTI_COLL}" ${BR_OPTIONS} --multicoll $MPERF_MULTI_COLL
-        fi
-
+        run_benchrun
 
         # Kill the mongod process and perform cleanup.
         kill -n 9 ${MONGOD_PID}
@@ -435,6 +570,44 @@ function run_mongo_perf() {
         pkill -9 mongod            # needed this for loitering mongod executable w/o .exe extension?
         sleep 5
         rm -rf ${DBPATH}/*
+    done
+}
+
+function run_mongo_perf_mmsa() {
+    # Setup
+    determine_storage_engines
+    shopt -s nullglob; for TOPOLOGY in ${MMSA_TEMPLATE_DIR}/*.json
+    do
+        determine_cpu_masks
+        determine_process_invocation
+       # Run for mulltiple storage engines
+        for STORAGE_ENGINE in $SE_WT $SE_MMAP
+        do
+            MMSA_OPTIONS_FILE=$(determine_mmsa_options_file)
+            eval $(python ${MPERFPATH}/util/mms-automation-config --optionsfile ${MMSA_OPTIONS_FILE})
+            sleep 15
+
+            cd $MPERFPATH
+            TIME="$(date "+%Y%m%d_%H:%M")"
+
+            # list of testcase definitions
+            TESTCASES=$(find testcases -name "*.js")
+
+            # list of thread counts to run (high counts first to minimize impact of first trial)
+            determine_bench_threads
+
+            TOPOLOGY_NAME=$(basename $TOPOLOGY)
+            TOPOLOGY_NAME=${TOPOLOGY_NAME%.json}
+
+            BR_OPTIONS=$(determine_benchrun_options)
+            BASE_BENCHRUN_LABEL=$(determine_benchrun_label)
+
+            run_benchrun
+
+            # shutdown the server and clean up the files
+            eval $(python ${MPERFPATH}/util/mms-automation-config --optionsfile ${MMSA_OPTIONS_FILE} --shutdown)
+            unlink ${MMSA_OPTIONS_FILE}
+        done
     done
 }
 
@@ -468,7 +641,12 @@ do
         run_build
         if [ $? == 0 ]
         then
-            run_mongo_perf
+            if [ ! MMS_AUTOMATION ]
+            then
+                run_mongo_perf
+            else
+                run_mongo_perf_mmsa
+            fi
         fi
     fi
     if [ -e $BREAK_PATH ]

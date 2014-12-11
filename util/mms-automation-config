@@ -1,0 +1,464 @@
+#!/usr/bin/env python
+""" Manipulate the config of a running MMS Automation Agent for Mongo Perf
+"""
+import argparse
+import copy
+import json
+import mongodb_cpuaffinity
+import os
+import psutil
+import pymongo
+import shutil
+import sys
+import tempfile
+import time
+
+from psutil import Process, NoSuchProcess
+
+
+PORT_START = 27017
+MMSA_DB_SECTION_KEY = 'mongoDbVersions'
+MMSA_VERSION_KEY = 'version'
+MMSA_PROCESSES_KEY = 'processes'
+MMSA_PROCESS_NAME = 'mongodb-mms-automation-agent'
+MONGO_PERF_IGNORE_PROCESS_KEY = 'mongo-perf-ignore'
+MONGO_PERF_CONNECT_TO = 'mongo-perf-connect-to'
+MONGO_PERF_MAX_WAIT_TIME = 30  # in seconds
+
+_next_version = 0
+
+
+class MMSAutomationConfigError(Exception):
+    """ Raised when an exception occurs in the config process
+    """
+
+
+def setup_next_version(config_file_data):
+    """
+    :param config_file_data:
+    :return:
+    """
+    config_version = 0
+    if MMSA_VERSION_KEY in config_file_data.keys():
+        config_version = config_file_data[MMSA_VERSION_KEY]
+    globals()['_next_version'] = config_version + 1
+
+
+def get_next_version():
+    """
+    Get the next version number for writing the config file
+    :return:
+    """
+    globals()['_next_version'] += 1
+    return globals()['_next_version']
+
+
+def shutdown_running(args, config_data):
+    """ Main function to coordinate shutdown of the mongo services
+    :param args:
+    :param config_data:
+    :return:
+    """
+    config_data = set_disabled_status(config_data)
+    write_config_file(args.config_file_location, config_data)
+    wait_till_all_shutdown(args)
+    clean_generated_data(args, config_data)
+
+
+def set_disabled_status(config_data, disabled=True):
+    """
+    Set the disabled status of the mongo services
+    :param config_data:
+    :param disabled:
+    :return:
+    """
+    for process in config_data[MMSA_PROCESSES_KEY]:
+        process['disabled'] = disabled
+    return config_data
+
+
+def wait_till_all_shutdown(args):
+    """
+    Wait till all processes are shutdown
+    :param args:
+    :return:
+    """
+    pids = []
+    # get the list of running processes form the pid files
+    for pid_file in os.listdir(args.pid_dir_path):
+        full_pid_file_path = os.path.join(args.pid_dir_path, pid_file)
+        if pid_file.endswith(".pid"):
+            try:
+                proc = Process(get_pid_from_file(full_pid_file_path))
+                pids.append(proc)
+            except NoSuchProcess:
+                pass
+    # kill any running processes
+    if len(pids) > 0:
+        gone, alive = psutil.wait_procs(pids, timeout=60)
+        for p in alive:
+            p.kill()
+    # remove all the pid files
+    for pid_file in os.listdir(args.pid_dir_path):
+        full_pid_file_path = os.path.join(args.pid_dir_path, pid_file)
+        if os.path.isfile(full_pid_file_path):
+            os.unlink(full_pid_file_path)
+
+
+def wait_till_all_running(args, config_data):
+    """
+    Wait till all mongo services defined in the config data are running
+    :param args:
+    :param config_data:
+    :return:
+    """
+    left_wait_time = MONGO_PERF_MAX_WAIT_TIME
+    wait_sleep_time = 50.0 / 1000.0  # 50 milliseconds
+    not_yet_running_processes = []
+    for process in config_data[MMSA_PROCESSES_KEY]:
+        if 'disabled' in process.keys() and process['disabled'] != True:
+            not_yet_running_processes.append(
+                process['args2_6']['processManagement']['pidFilePath'])
+
+    while len(not_yet_running_processes) > 0 and left_wait_time > 0:
+        for pid_file in os.listdir(args.pid_dir_path):
+            full_pid_file_path = os.path.join(args.pid_dir_path, pid_file)
+            if full_pid_file_path in not_yet_running_processes:
+                try:
+                    pid = get_pid_from_file(full_pid_file_path)
+                    proc = Process(pid)
+                    not_yet_running_processes.remove(full_pid_file_path)
+                except NoSuchProcess:
+                    raise MMSAutomationConfigError(
+                        "PID file found but process is not running")
+        time.sleep(50.0 / 1000.0)
+        left_wait_time -= wait_sleep_time
+
+    if left_wait_time <= 0:
+        raise MMSAutomationConfigError("Timeout waiting for processes to start")
+
+    replica_set_name = get_replica_set_name(config_data)
+    if replica_set_name is not None:
+        primary_left_wait_time = MONGO_PERF_MAX_WAIT_TIME
+        hostname, port = get_designated_primary(config_data)
+        if (hostname is None or port is None):
+            raise MMSAutomationConfigError("Unable to figure out primary "
+                                           "hostname or port.  Make sure "
+                                           "mongo-perf-connect-to is set to "
+                                           "true on the process that will be "
+                                           "the primary")
+        client = pymongo.MongoClient("mongodb://%s:%s/test" % (hostname, port))
+        db = client.test
+        while primary_left_wait_time > 0:
+            is_master = db.command('isMaster')
+            if (is_master['ismaster']
+                    and 'setName' in is_master.keys()
+                    and is_master['setName'] is not None):
+                break
+            time.sleep(50.0 / 1000.0)
+            primary_left_wait_time -= wait_sleep_time
+
+        if primary_left_wait_time <= 0:
+            raise MMSAutomationConfigError("Timeout waiting for primary to"
+                                           " be acquired")
+
+
+def get_pid_from_file(filename):
+    with open(filename) as f:
+        return int(f.read().rstrip())
+
+
+def write_config_file(location, data):
+    data[MMSA_VERSION_KEY] = get_next_version()
+    # create a temp file as the new fixed mmsa config
+    with tempfile.NamedTemporaryFile(delete=False) as tmp_config_file:
+        tmp_config_file.write(json.dumps(data, indent=4))
+    shutil.move(tmp_config_file.name, location)
+
+
+def get_config_from_file(config_file_path):
+    if os.path.isfile(config_file_path):
+        with open(config_file_path) as config_file:
+            return json.load(config_file)
+    else:
+        raise MMSAutomationConfigError(
+            "Unable to find config file: %s" % config_file_path)
+
+
+def clean_generated_data(args, config_data):
+    # for each process clean the
+    # data dir and log dir
+    for process in config_data[MMSA_PROCESSES_KEY]:
+
+        # remove and setup the database paths
+        args2_6_db_path = process['args2_6']['storage']['dbPath']
+        if os.path.exists(args2_6_db_path):
+            shutil.rmtree(args2_6_db_path)
+        args2_4_db_path = process['args2_4']['dbpath']
+        if os.path.exists(args2_4_db_path):
+            shutil.rmtree(args2_4_db_path)
+
+        # remove and setup the logs
+        args2_6_log_path = process['args2_6']['systemLog']['path']
+        if os.path.exists(args2_6_log_path):
+            os.unlink(args2_6_log_path)
+
+        args2_4_log_path = process['args2_4']['logpath']
+        if os.path.exists(args2_4_log_path):
+            os.unlink(args2_4_log_path)
+
+    # setup the pids dir
+    if not os.path.exists(args.pid_dir_path):
+        os.mkdir(args.pid_dir_path)
+
+
+def get_core_chunks(process_count):
+    use_cpu_affinity = False
+    core_chunks = []
+    if mongodb_cpuaffinity.is_cpu_affinity_settable():
+        use_cpu_affinity = True
+        cpus = mongodb_cpuaffinity.get_cores_available()
+        cpu_count = len(cpus)
+        processes_per_cpu = process_count / cpu_count
+        for k in cpus:
+            cpu_cores_count = len(cpus[k].cpu_list)
+            cores_per_process = cpu_cores_count / processes_per_cpu
+
+            if cores_per_process < 1:
+                raise MMSAutomationConfigError(
+                    "Not enough cores to run, "
+                    "cant map less then one core per process")
+
+            processing_chunk = 0
+            while processing_chunk < processes_per_cpu:
+                start_point = processing_chunk * cores_per_process
+                end_point = ((processing_chunk + 1) * cores_per_process)
+                core_chunks.append([int(core_id) for core_id in
+                                    cpus[k].cpu_list[start_point:end_point]])
+                processing_chunk += 1
+    return use_cpu_affinity, core_chunks
+
+
+def populate_config(args, config_file_data):
+    #
+    # config_file_data = nested_dict(config_file_data)
+
+    # config_file_data = config_file_data_dict()
+    # set up the version
+    if 'options' not in config_file_data:
+        config_file_data['options'] = {}
+    config_file_data['options']['downloadBase'] = args.download_path
+
+    config_file_data[MMSA_DB_SECTION_KEY] = [
+        {
+            "name": args.download_version + args.download_git_hash,
+            "builds": [
+                {
+                    "url": args.download_url,
+                    "platform": args.download_os,
+                    "bits": int(args.download_bits),
+                    "gitVersion": args.download_git_hash
+                }
+            ]
+        }
+    ]
+
+    # process count is the number of members and add one
+    # for the benchrun client
+    benchrun_cpus = []
+    set_cpu_affinity, core_chunks = get_core_chunks(
+        len(config_file_data[MMSA_PROCESSES_KEY]) + 1)
+    if set_cpu_affinity:
+        benchrun_cpus = core_chunks.pop()
+
+    mongod_options = {}
+    if hasattr(args, 'mongod_options'):
+        o2d = lambda f: (dict((name, o2d(getattr(f, name))) for name in dir(f)
+                              if not name.startswith('__'))
+                         if isinstance(f, type) else f)
+        mongod_options = o2d(args.mongod_options)
+
+    port = PORT_START
+    for process in config_file_data[MMSA_PROCESSES_KEY]:
+        if (MONGO_PERF_IGNORE_PROCESS_KEY not in process.keys()
+                or not process[MONGO_PERF_IGNORE_PROCESS_KEY]):
+
+            process['version'] = args.download_version + args.download_git_hash
+            db_path = os.path.join(args.data_path, process['name'])
+            log_path = os.path.join(args.log_path, "%s.log" % process['name'])
+            pid_file_path = os.path.join(args.pid_dir_path,
+                                         "%s.pid" % process['name'])
+            if 'args2_6' not in process:
+                process['args2_6'] = {}
+            if process['processType'] == 'mongod':
+                process['args2_6'].update(copy.deepcopy(mongod_options))
+
+            if 'net' not in process['args2_6']:
+                process['args2_6']['net'] = {}
+            process['args2_6']['net']['port'] = port
+            if 'storage' not in process['args2_6']:
+                process['args2_6']['storage'] = {}
+            process['args2_6']['storage']['dbPath'] = db_path
+            if 'systemLog' not in process['args2_6']:
+                process['args2_6']['systemLog'] = {}
+            process['args2_6']['systemLog']['path'] = log_path
+            process['args2_6']['systemLog']['destination'] = 'file'
+            if 'processManagement' not in process['args2_6']:
+                process['args2_6']['processManagement'] = {}
+            process['args2_6']['processManagement'][
+                'pidFilePath'] = pid_file_path
+
+            if 'args2_4' not in process:
+                process['args2_4'] = {}
+            process['args2_4']['port'] = port
+            process['args2_4']['dbpath'] = db_path
+            process['args2_4']['logpath'] = log_path
+            process['args2_4']['pidfilepath'] = pid_file_path
+
+            if set_cpu_affinity:
+                core_chunk = core_chunks.pop()
+                process['numCores'] = len(core_chunk)
+                process['cpuAffinity'] = core_chunk
+
+            port += 1
+
+    return config_file_data, benchrun_cpus
+
+
+def get_replica_set_name(config_data):
+    name = None
+    for process in config_data[MMSA_PROCESSES_KEY]:
+        if ('mongo-perf-primary' in process.keys()
+                and process['mongo-perf-primary']
+                and 'replication' in process['arg2_6']
+                and 'replSetName' in process['arg2_6']['replSetName']):
+            name = process['arg2_6']['replSetName']
+
+    if name is None and 'replicaSets' in config_data.keys():
+        if len(config_data['replicaSets']) > 1:
+            raise MMSAutomationConfigError(
+                "Multiple replica sets defined and no mongo-perf-primary "
+                "process set.  Unable to figure out replica set name")
+        name = config_data['replicaSets'][0]['_id']
+    return name
+
+
+def get_designated_primary(config_data):
+    for process  in config_data[MMSA_PROCESSES_KEY]:
+        if (MONGO_PERF_CONNECT_TO in process.keys()
+                and process[MONGO_PERF_CONNECT_TO]):
+            hostname = (process['hostname'] if 'hostname' in process.keys()
+                        else 'localhost')
+            port = process['args2_6']['net']['port']
+            return hostname, port
+    return None, None
+
+def check_mms_automation_agent_running():
+    for proc in psutil.process_iter():
+        if proc.name() == MMSA_PROCESS_NAME:
+            return True
+    raise MMSAutomationConfigError(
+        "MMS Automation Agent does not appear to be running. "
+        "Looking for process name %s" % MMSA_PROCESS_NAME)
+
+# lambda to convert a json file to an object (like args) and not just a nested
+# set of dicts
+h2o = lambda x: (type('jo', (), dict((k, h2o(v)) for k, v in x.items()))
+                 if isinstance(x,dict) else x)
+json_file_to_obj = lambda s: h2o(json.load(s))
+
+
+def main():
+    parser = argparse.ArgumentParser(description='')
+
+    parser.add_argument('--template', dest='template', action='store',
+                        required=False, help='the mms-automation template file')
+    parser.add_argument('--downloadPath', dest='download_path', action='store',
+                        required=False,
+                        help='the mms-automation download base path')
+    parser.add_argument('--dataPath', dest='data_path', action='store',
+                        required=False, help='the mms-automation data base path')
+    parser.add_argument('--logPath', dest='log_path', action='store',
+                        required=False, help='the mms-automation log base path')
+    parser.add_argument('--configloc', dest='config_file_location',
+                        action='store',
+                        required=False, help='the mms-automation config file')
+    parser.add_argument('--pidDirectory', dest='pid_dir_path', action='store',
+                        required=False, help='the mms-automation config file')
+    parser.add_argument('--downloadOS', dest='download_os', action='store',
+                        required=False, help='the mms-automation config file')
+    parser.add_argument('--downloadURL', dest='download_url', action='store',
+                        required=False, help='the mms-automation config file')
+    parser.add_argument('--downloadBits', dest='download_bits', action='store',
+                        required=False, help='the mms-automation config file')
+    parser.add_argument('--downloadGitHash', dest='download_git_hash',
+                        action='store',
+                        required=False, help='the mms-automation config file')
+    parser.add_argument('--downloadVersion', dest='download_version',
+                        action='store',
+                        required=False, help='the mms-automation config file')
+    parser.add_argument('--shutdown', dest='shutdown',
+                        action='store_true',
+                        required=False, help='the mms-automation config file')
+    parser.add_argument('--optionsfile', dest='options_file',
+                        action='store',
+                        required=False, help='the mms-automation config file')
+
+    args = parser.parse_args()
+
+    shut_down = args.shutdown
+
+    if args.options_file is not None and os.path.isfile(args.options_file):
+        with open(args.options_file) as options_file:
+            args = json_file_to_obj(options_file)
+
+    tempfile.tempdir = os.path.dirname(
+        os.path.realpath(args.config_file_location))
+
+    check_mms_automation_agent_running()
+
+    if os.path.exists(args.config_file_location):
+        current_config_data = get_config_from_file(args.config_file_location)
+        setup_next_version(current_config_data)
+        # shutdown any running processes
+        shutdown_running(args, current_config_data)
+
+    if shut_down:
+        return
+
+    # modify the passed config
+    output_config, bench_run_cores = populate_config(args, get_config_from_file(
+        args.template))
+    output_config = set_disabled_status(output_config, False)
+
+    # write the new config
+    write_config_file(args.config_file_location, output_config)
+    wait_till_all_running(args, output_config)
+
+    replica_set_name = get_replica_set_name(output_config)
+    if replica_set_name is not None:
+        print "TEST_REPLSET=%s" % replica_set_name
+
+    if len(bench_run_cores) > 0:
+        print "BR_START=\"taskset -c %s\"" % ','.join(map(str, bench_run_cores))
+        print "NUM_CPUS=%d" % len(bench_run_cores)
+    else:
+        print "BR_START=''"
+        print "NUM_CPUS=''"
+
+if __name__ == '__main__':
+    try:
+        main()
+    except Exception as e:
+        sys.stderr.write(e)
+        sys.exit(1)
+    sys.exit(0)
+
+
+
+
+
+
+
+
+

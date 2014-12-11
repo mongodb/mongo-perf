@@ -245,6 +245,7 @@ function getDefaultTestBed(commitDate) {
     testBed.harness.version = "unknown";
     testBed.harness.git_hash = "unknown";
     testBed.server_git_commit_date = commitDate;
+    testBed.topology = "single_node";
 
     // get the server storageEngine
     var serverStatus = db.runCommand({serverStatus: 1});

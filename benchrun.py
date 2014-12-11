@@ -98,6 +98,9 @@ def parse_arguments():
     parser.add_argument('--testFilter', dest='testFilter',
                         help='run just the specified tests/suites e.g. --testFilter "[\'insert\',\'remove\']" or "%%" for the kitchen sink',
                         default='\'sanity\'')
+    parser.add_argument('--topology', dest='topology',
+                        help='The topology name the test is being run against',
+                        default='single_node')
 
     return parser
 
@@ -221,7 +224,9 @@ def send_results_to_dyno(results, label, write_options, test_bed, cmdstr, server
                 }
                 req = urllib2.Request(dyno_url)
                 req.add_header('Content-Type', 'application/json')
-                urllib2.urlopen(req, json.dumps(result, default=json_extended_util.default))
+                urllib2.urlopen(req,
+                                json.dumps(result,
+                                           default=json_extended_util.default))
     return
 
 
@@ -232,7 +237,8 @@ def load_file_in_shell(subproc, file, echo=True):
     subproc.stdin.write(cmd)
     line = subproc.stdout.readline().strip()
     if line != "true":
-        raise MongoShellCommandError("unable to load file %s message was %s" % (file, line))
+        raise MongoShellCommandError("unable to load file %s message was %s"
+                                     % (file, line))
 
 
 def _get_git_committed_date_from_local(git_hash, path):
@@ -249,27 +255,31 @@ def _get_git_committed_date_from_local(git_hash, path):
             committed_date = datetime.datetime.fromtimestamp(scalarTime)
     except:
         raise BenchrunWarning(
-            "WARNING: could not find Git commit %s in repository %s. trying github" % (git_hash, path))
+            "WARNING: could not find Git commit %s in repository %s. trying "
+            "github" % (git_hash, path))
     return committed_date
 
 
 def _get_git_committed_date_from_github(git_hash):
     from github import Github
 
-    try :
+    try:
         g = Github()
         repo = g.get_repo('mongodb/mongo')
         commit = repo.get_commit(git_hash)
         date = commit.commit.committer.date
     except Exception as e:
-        raise BenchrunWarning("Warning: could not find Git commit %s in main mongodb repo. Error: %s" % (git_hash, e.message))
+        raise BenchrunWarning("Warning: could not find Git commit %s in main "
+                              "mongodb repo. Error: %s" % (git_hash, e.message))
     return date
+
 
 def _get_git_committed_date(git_hash, path=None):
     try:
         if path is not None and os.path.exists(path):
             try:
-                committed_date = _get_git_committed_date_from_local(git_hash, path)
+                committed_date = _get_git_committed_date_from_local(git_hash,
+                                                                    path)
             except BenchrunWarning as brw:
                 print brw.message
                 committed_date = _get_git_committed_date_from_github(git_hash)
@@ -287,12 +297,14 @@ def main():
     args = parser.parse_args()
 
     if not args.testfiles:
-        print("Must provide at least one test file. Run with --help for details.")
+        print("Must provide at least one test file."
+              " Run with --help for details.")
         sys.exit(1)
 
     for testfile in args.testfiles:
         if not os.path.exists(testfile):
-            print("A test file that was passed in does not exist: %s" % testfile)
+            print("A test file that was passed in does not exist: %s"
+                  % testfile)
             sys.exit(1)
 
     if args.multidb < 1:
@@ -300,7 +312,8 @@ def main():
         args.multidb = 1
 
     if args.multicoll < 1:
-        print("MultiCollection option must be greater than zero. Will be set to 1.")
+        print("MultiCollection option must be greater than zero."
+              " Will be set to 1.")
         args.multicoll = 1
 
     if args.shard < 0:
@@ -312,15 +325,19 @@ def main():
 
     # Print version info.
     call([args.shellpath, "--norc", "--port", args.port, "--eval",
-          "print('db version: ' + db.version()); db.serverBuildInfo().gitVersion;"])
+          "print('db version: ' + db.version());"
+          " db.serverBuildInfo().gitVersion;"])
     print("")
 
     # get the server info and status
-    (server_build_info, server_status) = get_server_info(hostname=args.hostname, port=args.port,
-                                                         replica_set=args.replica_set)
+    (server_build_info, server_status) = get_server_info(hostname=args.hostname,
+                                                         port=args.port,
+                                                         replica_set=
+                                                         args.replica_set)
 
     # Use hash to get commit_date
-    committed_date = _get_git_committed_date(server_build_info['gitVersion'], args.repo_path)
+    committed_date = _get_git_committed_date(server_build_info['gitVersion'],
+                                             args.repo_path)
 
     # universal schema Test Bed JSON
     test_bed = {}
@@ -341,6 +358,7 @@ def main():
     test_bed["server_version"] = server_build_info['version']
     # determine mongod git hash in use
     test_bed["server_git_hash"] = server_build_info['gitVersion']
+    test_bed["topology"] = args.topology
     # get the storage engine
     if 'storageEngine' in server_status:
         test_bed["server_storage_engine"] = server_status['storageEngine']['name']
@@ -348,7 +366,8 @@ def main():
         test_bed["server_storage_engine"] = 'mmapv0'
 
     # Open a mongo shell subprocess and load necessary files.
-    mongo_proc = Popen([args.shellpath, "--norc", "--quiet", "--port", args.port], stdin=PIPE, stdout=PIPE)
+    mongo_proc = Popen([args.shellpath, "--norc", "--quiet", "--port",
+                        args.port], stdin=PIPE, stdout=PIPE)
 
     # load test files
     load_file_in_shell(mongo_proc, 'util/utils.js')
@@ -420,7 +439,7 @@ if __name__ == '__main__':
     try:
         main()
     except Exception as e:
-        sys.stderr.write(e.message)
+        sys.stderr.write(e)
         sys.exit(1)
     sys.exit(0)
 

@@ -8,7 +8,7 @@ import repositories
 from mongodb_binaries.errors import (BinariesNotAvailableError,
                                      DownloadDirectoryExistsError)
 from mongodb_binaries.repositories import (MCIRepository,
-                                          MCILatestSuccessfulCompileRepository,
+                                           MCILatestSuccessfulTasksRepository,
                                           MCILatestGreenRepository,
                                           ReleasesRepository)
 
@@ -24,6 +24,9 @@ def get_repo(criteria):
     if (criteria.project is not None and criteria.variant is not None
             and criteria.git_hash is not None):
         return MCIRepository(criteria)
+    elif (criteria.project is not None and criteria.variant is not None
+            and criteria.tasks):
+        return MCILatestSuccessfulTasksRepository(criteria)
     elif criteria.project is not None and criteria.variant is not None:
         return MCILatestGreenRepository(criteria)
     else:
@@ -63,7 +66,7 @@ class BinariesCriteria(object):
 
     def __init__(self, os_type=None, branch=None, version=None,
                  distribution=None, cpu_arch="x86_64", debug=False,
-                 project=None, git_hash=None, variant=None):
+                 project=None, git_hash=None, variant=None, tasks=[]):
 
         self.os_type = os_type
         self.variant = variant
@@ -74,6 +77,7 @@ class BinariesCriteria(object):
         self.debug = debug
         self.project = project
         self.git_hash = git_hash
+        self.tasks = tasks
         self.hash = None
 
         # determine OS type if not passed in
