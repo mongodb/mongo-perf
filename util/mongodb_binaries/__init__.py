@@ -130,6 +130,8 @@ class BinariesManager(object):
 
     def __init__(self, directory):
         self.directory = directory
+        self.current_download = None
+        self.requested_criteria = None
 
     def update(self, criteria):
         """
@@ -152,7 +154,8 @@ class BinariesManager(object):
         # see if we need to actually do the download based on
         # the check file and the directory
         repo = get_repo(criteria=criteria)
-        download = repo.get_available()
+        self.current_download = repo.get_available()
+        self.requested_criteria = repo.criteria
 
         do_download = False
         if current_binaries is not None:
@@ -171,11 +174,11 @@ class BinariesManager(object):
         if do_download:
             # make sure we really need to download
             if (current_binaries is None
-                    or current_binaries.hash != download.hash):
-                if download.download():
-                    download.extract_to(self.directory)
-                    download.clean()
-                    repo.criteria.hash = download.hash
+                    or current_binaries.hash != self.current_download.hash):
+                if self.current_download.download():
+                    self.current_download.extract_to(self.directory)
+                    self.current_download.clean()
+                    repo.criteria.hash = self.current_download.hash
                     with open(current_binaries_file, 'wb+') as output:
                         pickle.dump(repo.criteria, output)
 
