@@ -162,6 +162,7 @@ then
     DBPATH=`cygpath -w ${DBPATH}`
     SUDO=''
     BINARIES_DISTRIBUTION='2008plus'
+    MONGOD_LOG_PATH=`cygpath -w ${MONGOD_LOG_PATH}`
 fi
 
 # clean up booleans
