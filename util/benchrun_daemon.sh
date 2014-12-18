@@ -317,7 +317,7 @@ function determine_process_invocation() {
     if [ $THIS_PLATFORM == 'Linux' ]
     then
         # ensure numa zone reclaims are off
-        if [ -x `which numactl` ]
+        if [ -x "$(which numactl)" ]
         then
             MONGOD_START="numactl --physcpubind="$MONGOD_MASK" --interleave=all "
             BR_START="taskset -c "$BENCHRUN_MASK" "
@@ -350,7 +350,7 @@ function determine_bench_threads() {
 
 function determine_storage_engines() {
 
-    ENGINE_TEST=$(${DLPATH}/${MONGOD} --storageEngine=mmapv1 --version)
+    ENGINE_TEST=$(${DLPATH}/${MONGOD} --storageEngine=mmapv1 --version) > /dev/null 2>&1
     NO_ENGINES=$?
 
     SE_MMAP="mmapv1"
@@ -424,13 +424,19 @@ function determine_mongod_options()
         if [ $STORAGE_ENGINE == "mmapv1" ]
         then
             MONGOD_OPTIONS+=" --syncdelay ${DISK_SYNC_DELAY}"
-        elif [ $STORAGE_ENGINE == "wiredtiger" ]
+        elif [ "$STORAGE_ENGINE" == "$SE_WT" ]
         then
-            WTEC_TEST=$(${DLPATH}/${MONGOD} --wiredTigerEngineConfig "checkpoint=(wait=${DISK_SYNC_DELAY})" --version)
-            NO_WTEC=$?
-            if [ "$NO_WTEC" == "0" ]
+            ${DLPATH}/${MONGOD} --wiredTigerEngineConfig "checkpoint=(wait=${DISK_SYNC_DELAY})" --version > /dev/null 2>&1
+            WTEC_TEST=$?
+            ${DLPATH}/${MONGOD} --wiredTigerCheckpointDelaySecs ${DISK_SYNC_DELAY} --version > /dev/null 2>&1
+            WTCDS_TEST=$?
+            if [ "$WTEC_TEST" == "0" ]
             then
                 MONGOD_OPTIONS+=" --wiredTigerEngineConfig checkpoint=(wait=${DISK_SYNC_DELAY})"
+            fi
+            if [ "$WTCDS_TEST" == "0" ]
+            then
+                MONGOD_OPTIONS+=" --wiredTigerCheckpointDelaySecs ${DISK_SYNC_DELAY}"
             fi
         else
             EXTRA=""
@@ -450,11 +456,13 @@ function determine_mmsa_mongod_options()
         if [ $STORAGE_ENGINE == "mmapv1" ]
         then
             MMSA_MONGOD_OPTIONS+="\"syncPeriodSecs\":${DISK_SYNC_DELAY}"
-        elif [ $STORAGE_ENGINE == "wiredTiger" ]
+        elif [ "$STORAGE_ENGINE" == "$SE_WT" ]
         then
-            WTEC_TEST=$(${DLPATH}/${MONGOD} --wiredTigerEngineConfig "checkpoint=(wait=${DISK_SYNC_DELAY})" --version)
-            NO_WTEC=$?
-            if [ "$NO_WTEC" == "0" ]
+            ${DLPATH}/${MONGOD} --wiredTigerEngineConfig "checkpoint=(wait=${DISK_SYNC_DELAY})" --version > /dev/null 2>&1
+            WTEC_TEST=$?
+            ${DLPATH}/${MONGOD} --wiredTigerCheckpointDelaySecs ${DISK_SYNC_DELAY} --version > /dev/null 2>&1
+            WTCDS_TEST=$?
+            if [[ "$WTEC_TEST" == "0" || "$WTCDS_TEST" == "0" ]]
             then
                 MMSA_MONGOD_OPTIONS+="\"wiredTiger\":{\"engineConfig\":\"checkpoint=(wait=${DISK_SYNC_DELAY})\"}"
             fi
