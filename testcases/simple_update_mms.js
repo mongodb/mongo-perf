@@ -106,3 +106,17 @@ tests.push( { name: "Update.MmsIncDeepDistinctPath3",
                                       "h.23.59.v": 1 } }
                   }
               ] } );
+
+// Increment three deep fields. The selected fields are far to the right in each subtree,
+// but do not share a common prefix.
+tests.push( { name: "Update.v0.MmsIncDeepDistinctPath4",
+              tags: ['update','sanity','mms','daily','weekly','monthly'],
+              pre: setupMMS,
+              ops: [
+                  { op:  "update",
+                    query: { _id: 0 },
+                    update: { $inc: { "h.23.59.n": 1,
+                                      "h.12.59.t": 1,
+                                      "h.0.59.v": 1 } }
+                  }
+              ] } );
