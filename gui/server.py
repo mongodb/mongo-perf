@@ -81,6 +81,9 @@ else:
                             replicaSet=DATABASE_REPLICA_SET)[DATABASE_NAME]
 
 
+global filter_cache
+filter_cache = {}
+filter_cache_timeout = 300
 
 # make sure the indexes needed for the gui are created
 
@@ -377,7 +380,6 @@ def to_dygraphs_data_format(in_data):
 
     return graph_data, labels
 
-
 def get_rows(commit_regex, start_date, end_date, label_regex, version_regex,
              engine_regex):
     if commit_regex is not None:
@@ -419,6 +421,8 @@ def get_rows(commit_regex, start_date, end_date, label_regex, version_regex,
             test_holder = record['singledb']
         elif 'multidb-multicoll' in record.keys():
             test_holder = record['multidb-multicoll']
+        elif 'multidb' in record.keys():
+            test_holder = record['multidb']
 
         if 'server_storage_engine' in record:
             server_storage_engine = record['server_storage_engine']
@@ -433,13 +437,13 @@ def get_rows(commit_regex, start_date, end_date, label_regex, version_regex,
         # Get the threads and the test suites run
         tests = set()
         test_suites = set()
-        thread_count_set = set()
+        # thread_count_set = set()
         for test in test_holder:
             tests.add(test['name'])
             test_suites.add(test['name'].split(".", 1)[0])
-            for thread_count in test['results']:
-                if thread_count.isdigit():
-                    thread_count_set.add(thread_count)
+            # for thread_count in test['results']:
+            #     if thread_count.isdigit():
+            #         thread_count_set.add(thread_count)
 
 
         # Calculate the runtime
@@ -475,7 +479,7 @@ def get_rows(commit_regex, start_date, end_date, label_regex, version_regex,
             "run_time": run_time,
             "test_suites": sorted(test_suites),
             "tests": list(sorted(tests)),
-            "threads": sorted(thread_count_set, key=int),
+            # "threads": sorted(thread_count_set, key=int),
             "server_storage_engine": server_storage_engine,
             "topology": topology
         }
@@ -486,6 +490,7 @@ def get_rows(commit_regex, start_date, end_date, label_regex, version_regex,
 
 @route("/")
 def new_main_page():
+    global filter_cache
     commit_regex = request.GET.get('commit')
     start_date = request.GET.get('start')
     end_date = request.GET.get('end')
@@ -504,53 +509,51 @@ def new_main_page():
     else:
         end = None
 
-    versions = db.raw.aggregate(
-        [{"$match": {"version": {"$exists": 1}}},
-         {"$group": {"_id": "$version"}},
-         {"$sort": {"_id": -1}},
-         {"$project": {"_id": 0, "version": "$_id"}}])['result']
+    if ('last_updated' not in filter_cache
+        or time.time() > filter_cache['last_updated'] + filter_cache_timeout):
+        filter_cache['versions'] = db.raw.aggregate(
+            [{"$match": {"version": {"$exists": 1}}},
+             {"$group": {"_id": "$version"}},
+             {"$sort": {"_id": -1}},
+             {"$project": {"_id": 0, "version": "$_id"}}])['result']
 
-    topologies = db.raw.aggregate(
-        [{"$match": {"topology": {"$exists": 1}}},
-         {"$group": {"_id": "$topology"}},
-         {"$sort": {"_id": 1}},
-         {"$project": {"_id": 0, "topology": "$_id"}}])['result']
+        filter_cache['topologies'] = db.raw.aggregate(
+            [{"$match": {"topology": {"$exists": 1}}},
+             {"$group": {"_id": "$topology"}},
+             {"$sort": {"_id": 1}},
+             {"$project": {"_id": 0, "topology": "$_id"}}])['result']
 
-    storage_engines = db.raw.aggregate(
-        [{"$match": {"server_storage_engine": {"$exists": 1}}},
-         {"$group": {"_id": "$server_storage_engine"}},
-         {"$sort": {"_id": 1}},
-         {"$project": {"_id": 0, "server_storage_engine": "$_id"}}])['result']
+        filter_cache['storage_engines'] = db.raw.aggregate(
+            [{"$match": {"server_storage_engine": {"$exists": 1}}},
+             {"$group": {"_id": "$server_storage_engine"}},
+             {"$sort": {"_id": 1}},
+             {"$project": {"_id": 0, "server_storage_engine": "$_id"}}])['result']
 
+        filter_cache['platforms']  = db.raw.aggregate(
+            [{"$match": {"platform": {"$exists": 1}}},
+             {"$group": {"_id": "$platform"}},
+             {"$sort": {"_id": 1}},
+             {"$project": {"_id": 0, "platform": "$_id"}}])['result']
 
-    platforms  = db.raw.aggregate(
-        [{"$match": {"platform": {"$exists": 1}}},
-         {"$group": {"_id": "$platform"}},
-         {"$sort": {"_id": 1}},
-         {"$project": {"_id": 0, "platform": "$_id"}}])['result']
+        singledb_tests = db.raw.aggregate(
+            [{"$unwind": "$singledb"},
+            {"$group":{"_id":"$singledb.name"}},
+            {"$sort": {"_id": 1}},
+            {"$project": {"_id": 0, "test": "$_id"}}])['result']
+        multi_tests = db.raw.aggregate(
+            [{"$unwind": "$multidb"},
+             {"$group":{"_id":"$multidb.name"}},
+             {"$sort": {"_id": 1}},
+             {"$project": {"_id": 0, "test": "$_id"}}])['result']
 
-    platforms  = db.raw.aggregate(
-        [{"$match": {"platform": {"$exists": 1}}},
-         {"$group": {"_id": "$platform"}},
-         {"$sort": {"_id": 1}},
-         {"$project": {"_id": 0, "platform": "$_id"}}])['result']
+        all_tests = set()
+        for test in singledb_tests:
+            all_tests.add(test['test'])
+        for test in multi_tests:
+            all_tests.add(test['test'])
 
-    singledb_tests = db.raw.aggregate(
-        [{"$unwind": "$singledb"},
-        {"$group":{"_id":"$singledb.name"}},
-        {"$sort": {"_id": 1}},
-        {"$project": {"_id": 0, "test": "$_id"}}])['result']
-    multi_tests = db.raw.aggregate(
-        [{"$unwind": "$multidb-multicoll"},
-         {"$group":{"_id":"$multidb-multicoll.name"}},
-         {"$sort": {"_id": 1}},
-         {"$project": {"_id": 0, "test": "$_id"}}])['result']
-
-    all_tests = set()
-    for test in singledb_tests:
-        all_tests.add(test['test'])
-    for test in multi_tests:
-        all_tests.add(test['test'])
+        filter_cache['tests'] = sorted(all_tests)
+        filter_cache['last_updated'] = time.time()
 
     rows = get_rows(commit_regex, start, end, label_regex, version_regex,
                     engine_regex)
@@ -559,8 +562,13 @@ def new_main_page():
         response.content_type = 'application/json'
         return json.dumps(rows)
     else:
-        return template('comp.tpl', allrows=rows, versions=versions,
-                        storage_engines=storage_engines, platforms=platforms, tests=sorted(all_tests), table_data=json.dumps(rows), topologies=topologies)
+        return template('comp.tpl', allrows=rows,
+                        versions=filter_cache['versions'],
+                        storage_engines=filter_cache['storage_engines'],
+                        platforms=filter_cache['platforms'],
+                        tests=filter_cache['tests'],
+                        table_data=json.dumps(rows),
+                        topologies=filter_cache['topologies'])
 
 
 @route("/catalog")

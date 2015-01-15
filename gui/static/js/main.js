@@ -69,10 +69,10 @@ function format(d) {
         '<td>Topology:</td>' +
         '<td>' + d.topology+ '</td>' +
         '</tr>' +
-        '<tr>' +
-        '<td>Threads:</td>' +
-        '<td>' + threads + '</td>' +
-        '</tr>' +
+        //'<tr>' +
+        //'<td>Threads:</td>' +
+        //'<td>' + threads + '</td>' +
+        //'</tr>' +
         '<tr>' +
         '<td>Write Options:</td>' +
         '<td>' +
