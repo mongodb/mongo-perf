@@ -15,8 +15,6 @@ function captureSelected() {
 
 /* Formatting function for row details - modify as you need */
 function format(d) {
-    var foo = 1;
-
     var platform_icon = 'fa-laptop';
     var platform = d.platform.toLowerCase();
     if (platform == 'linux') platform_icon = 'fa-linux';
@@ -24,7 +22,7 @@ function format(d) {
     else if (platform == 'darwin') platform_icon = 'fa-apple';
 
     var test_suites = d.test_suites.join(', ');
-    var threads = d.threads.join(', ');
+    //var threads = d.threads.join(', ');
 
     if(d.writeOptions) {
         var safe_icon = 'fa-check';
