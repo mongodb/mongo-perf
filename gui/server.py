@@ -391,8 +391,14 @@ def get_rows(commit_regex, start_date, end_date, label_regex, version_regex,
     if engine_regex is not None:
         engine_regex = '/' + engine_regex + '/'
 
-    csr = gen_query(label_regex, None, version_regex, start_date, end_date,
-                    None, None, commit_regex, engine_regex)
+    csr = db.raw.find({}, {'singledb.results': 0, 'multidb.results': 0,
+                           'multidb-multicoll.results': 0})
+    csr.sort([('commit_date', pymongo.ASCENDING),
+              ('platform', pymongo.ASCENDING),
+              ('label', pymongo.ASCENDING),
+              ('server_storage_engine',
+              pymongo.ASCENDING)])
+
     rows = []
     for record in csr:
         if 'commit_date' in record.keys():
@@ -416,13 +422,15 @@ def get_rows(commit_regex, start_date, end_date, label_regex, version_regex,
         else:
             server_version = 'pending'
 
-        test_holder = []
+        test_holder = None
         if 'singledb' in record.keys():
-            test_holder = record['singledb']
+            test_holder = 'singledb'
         elif 'multidb-multicoll' in record.keys():
-            test_holder = record['multidb-multicoll']
+            test_holder = 'multidb-multicoll'
         elif 'multidb' in record.keys():
-            test_holder = record['multidb']
+            test_holder = 'multidb'
+
+
 
         if 'server_storage_engine' in record:
             server_storage_engine = record['server_storage_engine']
@@ -438,12 +446,14 @@ def get_rows(commit_regex, start_date, end_date, label_regex, version_regex,
         tests = set()
         test_suites = set()
         # thread_count_set = set()
-        for test in test_holder:
-            tests.add(test['name'])
-            test_suites.add(test['name'].split(".", 1)[0])
-            # for thread_count in test['results']:
-            #     if thread_count.isdigit():
-            #         thread_count_set.add(thread_count)
+
+        if test_holder is not None:
+            for test in record[test_holder]:
+                tests.add(test['name'])
+                test_suites.add(test['name'].split(".", 1)[0])
+                # for thread_count in test['results']:
+                #     if thread_count.isdigit():
+                #         thread_count_set.add(thread_count)
 
 
         # Calculate the runtime
