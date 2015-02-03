@@ -94,7 +94,10 @@ def parse_arguments():
                         nargs='?', const='true', choices=['true', 'false'],
                         help='this option turns on use of the write command instead of legacy write operations',
                         default='true')
-    parser.add_argument('--nodyno', dest='nodyno', action='store_true', help='dont submit test results to dyno')
+    parser.add_argument('--dyno', dest='dyno', nargs='?', const='true', choices=['true', 'false'],
+                        help='Enable or disable submitting to dyno',
+                        default='false')
+    parser.add_argument('--nodyno', dest='nodyno', action='store_true', help='dont submit test results to dyno - for backwards compatibility')
     parser.add_argument('--testFilter', dest='testFilter',
                         help='run just the specified tests/suites e.g. --testFilter "[\'insert\',\'remove\']" or "%%" for the kitchen sink',
                         default='\'sanity\'')
@@ -426,7 +429,7 @@ def main():
         elif not got_results and getting_results:
             line_results += line
 
-    if got_results and not args.nodyno:
+    if got_results and not args.nodyno and args.dyno == 'true':
         # Encode as mongodb-extended-json
         results = cleanup_result_dates(json.loads(line_results))
         # send results to dyno

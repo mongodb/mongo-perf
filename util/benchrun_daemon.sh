@@ -105,6 +105,8 @@ DISK_SYNC_DELAY=14400
 # MPERF_MULTI_DB=8
 # mutli collection runs
 # MPERF_MULTI_COLL=8
+# submit to dyno
+SUBMIT_TO_DYNO=false
 
 
 #### Default Binaries Options
@@ -408,6 +410,12 @@ function determine_benchrun_options() {
         BENCHRUN_OPTIONS+=" --topology ${TOPOLOGY_NAME}"
     fi
 
+    if [ "${SUBMIT_TO_DYNO}" != "true" ]
+    then
+        BENCHRUN_OPTIONS+=" --dyno false"
+    else
+        BENCHRUN_OPTIONS+=" --dyno true"
+    fi
     echo ${BENCHRUN_OPTIONS}
 }
 
