@@ -442,7 +442,7 @@ if __name__ == '__main__':
     try:
         main()
     except Exception as e:
-        sys.stderr.write(e)
+        sys.stderr.write(str(e))
         sys.exit(1)
     sys.exit(0)
 
