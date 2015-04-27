@@ -370,7 +370,8 @@ def main():
 
     # Open a mongo shell subprocess and load necessary files.
     mongo_proc = Popen([args.shellpath, "--norc", "--quiet", "--port",
-                        args.port], stdin=PIPE, stdout=PIPE)
+                        args.port, "--host", args.hostname],
+                        stdin=PIPE, stdout=PIPE)
 
     # load test files
     load_file_in_shell(mongo_proc, 'util/utils.js')
