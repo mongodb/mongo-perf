@@ -327,9 +327,9 @@ def main():
         args.shard = 2
 
     # Print version info.
-    call([args.shellpath, "--norc", "--port", args.port, "--eval",
-          "print('db version: ' + db.version());"
-          " db.serverBuildInfo().gitVersion;"])
+    call([args.shellpath, "--norc", "--host", args.hostname, "--port", args.port, "--eval",
+           "print('db version: ' + db.version());"
+           " db.serverBuildInfo().gitVersion;"])
     print("")
 
     # get the server info and status
