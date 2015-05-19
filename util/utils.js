@@ -385,7 +385,15 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, reportLabel
         basicFields = testBed; // Map
         basicFields.commit = bi.gitVersion;
         basicFields.label = reportLabel;
-        basicFields.platform = bi.sysInfo.split(" ")[0];
+        if (bi.sysInfo) {
+            basicFields.platform = bi.sysInfo.split(" ")[0];
+        }
+        else if (bi.buildEnvironment.target_os) {
+            basicFields.platform = bi.buildEnvironment.target_os;
+        }
+        else {
+            basicFields.platform = "Unknown Platform";
+        }
         basicFields.run_date = formatRunDate(startTime);
         basicFields.run_time = startTime;
         basicFields.commit_date = new Date(testBed.server_git_commit_date);
