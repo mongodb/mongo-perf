@@ -2,31 +2,51 @@ if ( typeof(tests) != "object" ) {
     tests = [];
 }
 
+/*
+ * Setup: 
+ * Test: Run command isMaster
+ */
 tests.push( { name: "Commands.isMaster",
               tags: ['isMaster','commands','sanity','daily','weekly','monthly'],
               ops: [
                   { op: "command", ns : "#B_DB", command : { "isMaster" : 1 } }
               ] } );
 
+/*
+ * Setup: 
+ * Test: Run command buildInfo
+ */
 tests.push( { name: "Commands.buildInfo",
               tags: ['skip'],
               ops: [
                   { op: "command", ns : "#B_DB", command : { "buildInfo" : 1 } }
               ] } );
 
+/*
+ * Setup: 
+ * Test: Run a non-existent test
+ */
 tests.push( { name: "Commands.illegalOp",
               tags: ['skip'],
               ops: [
                   { op: "command", ns : "#B_DB", command : { "notExist" : 1 } }
               ] } );
 
+/*
+ * Setup: 
+ * Test: Run benchrun command nop. Doesn't touch the server.
+ */
 tests.push( { name: "Commands.nop",
               tags: ['skip'],
               ops: [
                   { op: "nop" }
               ] } );
 
-tests.push( { name: "Commands.v1.CountsFullCollection",
+/*
+ * Setup: Create collection of documents with only integer _id field
+ * Test: Call count command on collection
+ */
+tests.push( { name: "Commands.CountsFullCollection",
               tags: ['count','commands','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
@@ -40,7 +60,11 @@ tests.push( { name: "Commands.v1.CountsFullCollection",
               ] } );
 
 
-tests.push( { name: "Commands.v1.CountsIntIDRange",
+/*
+ * Setup: Create collection of documents with only integer _id field
+ * Test: Count documents with _id in range (10,100). 
+ */
+tests.push( { name: "Commands.CountsIntIDRange",
               tags: ['count','commands','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
@@ -57,8 +81,13 @@ tests.push( { name: "Commands.v1.CountsIntIDRange",
                                                   "$lt" : 100 } } } }
               ] } );
 
-
-tests.push( { name: "Commands.v3.FindAndModifyInserts",
+/*
+ * Setup: 
+ * Test: Call find and modify with upsert on an integer _id field. The
+ *       _id field is updated to the existing value. Each thread works
+ *       on distinct range of documents.
+ */
+tests.push( { name: "Commands.FindAndModifyInserts",
               tags: ['findAndModify','command','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
@@ -73,6 +102,14 @@ tests.push( { name: "Commands.v3.FindAndModifyInserts",
                                 update : { _id : { "#VARIABLE" : "x" } } } }
               ] } );
 
+/*
+ * Function to generate tests using distinct command. 
+ * name: The name to give to the test
+ * index: Use an index or not
+ * query: Use a query on field x to the distinct command
+ * 
+ * The function creates a full test, with name, tags, ops, and pre fields
+ */
 function genDistinctTest( name, index, query ) {
     var doc = { name : name,
                 tags: ['distinct','command','sanity','daily','weekly','monthly']
@@ -113,7 +150,35 @@ function genDistinctTest( name, index, query ) {
     return doc;
 }
 
-tests.push( genDistinctTest( "Commands.v1.DistinctWithIndex", true, false ) );
-tests.push( genDistinctTest( "Commands.v1.DistinctWithIndexAndQuery", true, true ) );
-tests.push( genDistinctTest( "Commands.v1.DistinctWithoutIndex", false, false ) );
-tests.push( genDistinctTest( "Commands.v1.DistinctWithoutIndexAndQuery", false, true ) );
+/*
+ * Setup: Create a collection with documents {_id, x}, with three
+ *        distinct integer values of x, with an index on x.
+ * Test:  Call distinct command on field x. 
+ */
+tests.push( genDistinctTest( "Commands.DistinctWithIndex", true, false ) );
+
+/*
+ * Setup: Create a collection with documents {_id, x}, with three
+ *        distinct integer values of x, with an index on x.
+ * Test: Call distinct command on key 'x' and query {x : 1}. Returns the 1 valid
+ *       distinct value. Uses an index scan to compute the distinct values
+ */
+tests.push( genDistinctTest( "Commands.DistinctWithIndexAndQuery", true, true ) );
+
+/*
+ * Setup: Create a collection with documents {_id, x}, with three
+ *        distinct integer values of x
+ * Test: Call distinct command on key 'x'. Returns the 3 valid
+ *       distinct values. Performs a collection scan over all the
+ *       documents to compute the distinct values
+ */
+tests.push( genDistinctTest( "Commands.DistinctWithoutIndex", false, false ) );
+
+/*
+ * Setup: Create a collection with documents {_id, x}, with three
+ *        distinct integer values of x
+ * Test: Call distinct command on key 'x' and query {x : 1}. Returns the 1 valid
+ *       distinct value. Performs a collection scan over all the
+ *       documents to compute the distinct values
+ */
+tests.push( genDistinctTest( "Commands.DistinctWithoutIndexAndQuery", false, true ) );

@@ -2,7 +2,15 @@ if ( typeof(tests) != "object" ) {
     tests = [];
 }
 
-tests.push( { name: "Insert.v0.SingleIndex.Seq",
+
+/*
+ * Setup: Create an index on field x
+ * Test: Insert documents with default OID and field x with
+ *       sequentially increasing integers. Each thread will insert
+ *       into a distinct range of integers. Single threaded this will
+ *       always add to the max key in the index.
+ */
+tests.push( { name: "Insert.SingleIndex.Seq",
               tags: ['insert','complex','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
@@ -15,7 +23,13 @@ tests.push( { name: "Insert.v0.SingleIndex.Seq",
                             { seq_id: 0, start: 0, step: 1, unique: true } } } }
               ] } );
               
-tests.push( { name: "Insert.v0.SingleIndex.Uncontested.Rnd",
+/*
+ * Setup: Create an index on field x
+ * Test: Insert documents with default OID and field x with random
+ *       integer values. Each thread will insert into a distinct range
+ *       of integers.
+ */
+tests.push( { name: "Insert.SingleIndex.Uncontested.Rnd",
               tags: ['insert','complex','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
@@ -28,7 +42,13 @@ tests.push( { name: "Insert.v0.SingleIndex.Uncontested.Rnd",
                   }
               ] } );
 
-tests.push( { name: "Insert.v0.SingleIndex.Contested.Rnd",
+/*
+ * Setup: Create an index on field x
+ * Test: Insert documents with default OID and field x with random
+ *       integer values. All threads insert into the same region of
+ *       integers possibly leading to contention.
+ */
+tests.push( { name: "Insert.SingleIndex.Contested.Rnd",
               tags: ['insert','complex','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
@@ -41,7 +61,13 @@ tests.push( { name: "Insert.v0.SingleIndex.Contested.Rnd",
                   }
               ] } );
 
-tests.push( { name: "Insert.v0.MultiIndex.Uncontested.Rnd",
+/*
+ * Setup: Create indexes on fields x,y,z
+ * Test: Insert documents with default OID and fields x,y,z with
+ *       different random integer values. Each thread will insert into
+ *       a distinct range of integers.
+ */
+tests.push( { name: "Insert.MultiIndex.Uncontested.Rnd",
               tags: ['insert','complex','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
@@ -59,7 +85,13 @@ tests.push( { name: "Insert.v0.MultiIndex.Uncontested.Rnd",
                   }
               ] } );
 
-tests.push( { name: "Insert.v0.MultiIndex.Contested.Rnd",
+/*
+ * Setup: Create indexes on fields x,y,z
+ * Test: Insert documents with default OID and fields x,y,z with
+ *       different random integer values.  All threads insert into the
+ *       same region of integers.
+ */
+tests.push( { name: "Insert.MultiIndex.Contested.Rnd",
               tags: ['insert','complex','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
@@ -77,7 +109,13 @@ tests.push( { name: "Insert.v0.MultiIndex.Contested.Rnd",
                   }
               ] } );
 
-tests.push( { name: "Insert.v0.MultiKeyIndex.Uncontested.Rnd",
+/*
+ * Setup: Create an index on field x
+ * Test: Insert documents with default OID and field x with an array
+ *       of random integer values. Each value needs to be
+ *       indexed. Each thread uses a unique range of random numbers.
+ */
+tests.push( { name: "Insert.MultiKeyIndex.Uncontested.Rnd",
               tags: ['insert','complex','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
@@ -95,7 +133,14 @@ tests.push( { name: "Insert.v0.MultiKeyIndex.Uncontested.Rnd",
                   }
               ] } );
 
-tests.push( { name: "Insert.v0.MultiKeyIndex.Contested.Rnd",
+/*
+ * Setup: Create an index on field x
+ * Test: Insert documents with default OID and field x with an array
+ *       of random integer values. Each value needs to be indexed. All
+ *       threads use the same range of random numbers, and may have
+ *       contention on the index keys.  
+ */
+tests.push( { name: "Insert.MultiKeyIndex.Contested.Rnd",
               tags: ['insert','complex','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
@@ -113,18 +158,3 @@ tests.push( { name: "Insert.v0.MultiKeyIndex.Contested.Rnd",
                   }
               ] } );
 
-tests.push( { name: "Insert.v0.SetWithMultiIndex.String",
-              tags: ['insert','complex','daily','weekly','monthly'],
-              pre: function( collection ) {
-                  collection.drop();
-                  for ( var i = 0; i < 4800; i++ ) {
-                      collection.insert( { _id : i , x : 0, y : i } );
-                  }
-                  collection.getDB().getLastError();
-                  collection.ensureIndex( { x : 1 } );
-                  collection.ensureIndex( { y : 1 } );
-              },
-              ops: [
-                  { op:  "insert",
-                    doc: { x : {"#RAND_INT": [0,1000] }, y : {"#RAND_STRING": [1024] } } },
-              ] } );
