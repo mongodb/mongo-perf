@@ -32,7 +32,7 @@ tests.push( { name : "Inserts.PartialIndex.v1.FilteredRange",
               ] } );
 
 tests.push( { name : "Inserts.PartialIndex.v1.NonFilteredRange",
-              tags: ['partial_index','insert','daily','weekly','monthly'],
+              tags: ['partial_index','insert','daily','weekly','monthly', , 'core-insert'],
               pre: function( collection ) {
                   setupTestFiltered(collection);
               },

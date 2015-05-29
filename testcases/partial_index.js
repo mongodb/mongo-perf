@@ -27,7 +27,7 @@ var setupTestIndexed = function (collection) {
 }
 
 tests.push( { name : "Queries.PartialIndex.v1.FilteredRange",
-              tags: ['partial_index','query','daily','weekly','monthly'],
+              tags: ['partial_index','query','daily','weekly','monthly', 'core-query'],
               pre: function( collection ) {
                   setupTestFiltered(collection);
               },
@@ -58,7 +58,7 @@ tests.push( { name : "Queries.PartialIndex.v1.FullRange",
 
 
 tests.push( { name : "Queries.PartialIndex.v1.FilteredRange.Inequality",
-              tags: ['partial_index','query','daily','weekly','monthly'],
+              tags: ['partial_index','query','daily','weekly','monthly', 'core-query'],
               pre: function( collection ) {
                   setupTestFiltered(collection);
               },
@@ -78,7 +78,7 @@ tests.push( { name : "Queries.PartialIndex.v1.NonFilteredRange.Inequality",
               ] } );
 
 tests.push( { name : "Queries.PartialIndex.v1.FullRange.Inequality",
-              tags: ['partial_index','query','daily','weekly','monthly'],
+              tags: ['partial_index','query','daily','weekly','monthly', 'core-query'],
               pre: function( collection ) {
                   setupTestFiltered(collection);
               },
@@ -89,7 +89,7 @@ tests.push( { name : "Queries.PartialIndex.v1.FullRange.Inequality",
 
 // Compare to the selective. How much does the selective help?
 tests.push( { name : "Queries.PartialIndex.AllInFilter.v1.FilteredRange",
-              tags: ['partial_index','query','weekly','monthly'],
+              tags: ['partial_index','query','weekly','monthly', 'core-query'],
               pre: function( collection ) {
                   setupTestFilteredNonSelective(collection);
               },
@@ -100,7 +100,7 @@ tests.push( { name : "Queries.PartialIndex.AllInFilter.v1.FilteredRange",
 
 // Compare to the regular index case
 tests.push( { name : "Queries.PartialIndex.AllInFilter.v1.FullRange",
-              tags: ['partial_index','query','weekly','monthly'],
+              tags: ['partial_index','query','weekly','monthly', 'core-query'],
               pre: function( collection ) {
                   setupTestFilteredNonSelective(collection);
               },
@@ -111,7 +111,7 @@ tests.push( { name : "Queries.PartialIndex.AllInFilter.v1.FullRange",
 
 // compare to the filtered selective case. Any difference?
 tests.push( { name : "Queries.PartialIndex.AllInFilter.v1.FilteredRange.Inequality",
-              tags: ['partial_index','query','weekly','monthly'],
+              tags: ['partial_index','query','weekly','monthly', 'core-query'],
               pre: function( collection ) {
                   setupTestFilteredNonSelective(collection);
               },
@@ -122,7 +122,7 @@ tests.push( { name : "Queries.PartialIndex.AllInFilter.v1.FilteredRange.Inequali
 
 // compare to regular index
 tests.push( { name : "Queries.PartialIndex.AllInFilter.v1.FullRange.Inequality",
-              tags: ['partial_index','query','weekly','monthly'],
+              tags: ['partial_index','query','weekly','monthly', 'core-query'],
               pre: function( collection ) {
                   setupTestFilteredNonSelective(collection);
               },

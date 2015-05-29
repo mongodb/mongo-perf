@@ -3,7 +3,7 @@ if ( typeof(tests) != "object" ) {
 }
 
 tests.push( { name: "Update.v0.SetWithIndex.Random",
-              tags: ['update','complex','daily','weekly','monthly'],
+              tags: ['update','complex','daily','weekly','monthly', 'core-update'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {

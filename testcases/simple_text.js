@@ -97,7 +97,7 @@ function oplistSingleWord(caseSensitive) {
 
 // Single-word search, case-insensitive
 tests.push( { name: "Queries.Text.FindSingle",
-            tags: ['query','text','daily','weekly','monthly'],
+            tags: ['query','text','daily','weekly','monthly', 'core-query'],
             pre: function(collection) {
                 populateCollection(collection, numTerm, dictSize);
             },
@@ -106,7 +106,7 @@ tests.push( { name: "Queries.Text.FindSingle",
 
 // Single-word search, case-sensitive
 tests.push( { name: "Queries.Text.FindSingleCaseSensitive",
-            tags: ['query','text','daily','weekly','monthly'],
+            tags: ['query','text','daily','weekly','monthly', 'core-query'],
             pre: function(collection) {
                 populateCollection(collection, numTerm, dictSize);
             },
@@ -135,7 +135,7 @@ function oplistThreeWord(caseSensitive) {
 
 // Three-word search (or), case-insensitive
 tests.push( { name: "Queries.Text.FindThreeWords",
-            tags: ['query','text','daily','weekly','monthly'],
+            tags: ['query','text','daily','weekly','monthly', 'core-query'],
             pre: function(collection) {
                 populateCollection(collection, numTerm, dictSize);
             },
@@ -144,7 +144,7 @@ tests.push( { name: "Queries.Text.FindThreeWords",
 
 // Three-word search (or), case sensitive
 tests.push( { name: "Queries.Text.FindThreeWordsCaseSensiive",
-            tags: ['query','text','daily','weekly','monthly'],
+            tags: ['query','text','daily','weekly','monthly', 'core-query'],
             pre: function(collection) {
                 populateCollection(collection, numTerm, dictSize);
             },
@@ -173,7 +173,7 @@ function oplistPhrase(caseSensitive) {
 
 // Phrase search, case-insensitive
 tests.push( { name: "Queries.Text.FindPhrase",
-            tags: ['query','text','daily','weekly','monthly'],
+            tags: ['query','text','daily','weekly','monthly', 'core-query'],
             pre: function(collection) {
                 populateCollection(collection, numTerm, dictSize);
             },
@@ -182,7 +182,7 @@ tests.push( { name: "Queries.Text.FindPhrase",
 
 // Phrase search, case-sensitive
 tests.push( { name: "Queries.Text.FindPhraseCaseSensitive",
-            tags: ['query','text','daily','weekly','monthly'],
+            tags: ['query','text','daily','weekly','monthly', 'core-query'],
             pre: function(collection) {
                 populateCollection(collection, numTerm, dictSize);
             },

@@ -18,7 +18,7 @@ tests.push( { name: "Update.v3.IncNoIndex",
               ] } );
 
 tests.push( { name: "Update.v3.IncWithIndex",
-              tags: ['update','sanity','daily','weekly','monthly'],
+              tags: ['update','sanity','daily','weekly','monthly', 'core-update'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -34,7 +34,7 @@ tests.push( { name: "Update.v3.IncWithIndex",
               ] } );
 
 tests.push( { name: "Update.v3.IncNoIndexUpsert",
-              tags: ['update','sanity','daily','weekly','monthly'],
+              tags: ['update','sanity','daily','weekly','monthly', 'core-update'],
               pre: function( collection ) {
                   collection.drop();
               },
@@ -46,7 +46,7 @@ tests.push( { name: "Update.v3.IncNoIndexUpsert",
               ] } );
 
 tests.push( { name: "Update.v3.IncWithIndexUpsert",
-              tags: ['update','sanity','daily','weekly','monthly'],
+              tags: ['update','sanity','daily','weekly','monthly', 'core-update'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex( { x : 1 } );
@@ -66,7 +66,7 @@ var shortFieldNames =
    "xm", "ym", "zm", "an", "bn", "cn", "dn", "en", "fn", "gn"];
 
 tests.push( { name: "Update.IncFewSmallDoc",
-              tags: ['update','sanity','daily','weekly','monthly'],
+              tags: ['update','sanity','daily','weekly','monthly', 'core-update'],
               pre: function( collection ) {
                   collection.drop();
 

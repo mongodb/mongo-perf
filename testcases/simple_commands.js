@@ -75,7 +75,7 @@ tests.push( { name: "Commands.v3.FindAndModifyInserts",
 
 function genDistinctTest( name, index, query ) {
     var doc = { name : name,
-                tags: ['distinct','command','sanity','daily','weekly','monthly']
+                tags: ['distinct','command','sanity','daily','weekly','monthly', 'core-commands']
               };
     if ( index ) {
         doc.pre = function( collection ) {
@@ -101,7 +101,7 @@ function genDistinctTest( name, index, query ) {
     }
 
     var op = { op: "command",
-               tags: ['distinct','command','sanity','daily','weekly','monthly'],
+               tags: ['distinct','command','sanity','daily','weekly','monthly', 'core-commands'],
                ns : "#B_DB",
                command : { distinct : "#B_COLL",
                            key : "x" } };

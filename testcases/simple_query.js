@@ -43,7 +43,7 @@ tests.push( { name: "Queries.v1.IntIdFindOne",
               ] } );
 
 tests.push( { name: "Queries.v1.IntNonIdFindOne",
-              tags: ['query','sanity','daily','weekly','monthly'],
+              tags: ['query','sanity','daily','weekly','monthly', 'core-query'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -84,7 +84,7 @@ tests.push( { name : "Queries.v1.IntNonIDRange",
               ] } );
 
 tests.push( { name: "Queries.v1.RegexPrefixFindOne",
-              tags: ['query','sanity','daily','weekly','monthly'],
+              tags: ['query','sanity','daily','weekly','monthly', 'core-query'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -98,7 +98,7 @@ tests.push( { name: "Queries.v1.RegexPrefixFindOne",
               ] } );
 
 tests.push( { name: "Queries.v1.TwoInts",
-              tags: ['query','sanity','daily','weekly','monthly'],
+              tags: ['query','sanity','daily','weekly','monthly', 'core-query'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -118,7 +118,7 @@ tests.push( { name: "Queries.v1.TwoInts",
 // PROJECTION TESTS
 
 tests.push( { name: "Queries.v1.IntNonIdFindOneProjectionCovered",
-              tags: ['query','sanity','daily','weekly','monthly'],
+              tags: ['query','sanity','daily','weekly','monthly', 'core-query'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -136,7 +136,7 @@ tests.push( { name: "Queries.v1.IntNonIdFindOneProjectionCovered",
 
 
 tests.push( { name: "Queries.v1.IntNonIdFindOneProjection",
-              tags: ['query','sanity','daily','weekly','monthly'],
+              tags: ['query','sanity','daily','weekly','monthly', 'core-query'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -211,7 +211,7 @@ tests.push( { name: "Queries.v1.FindWideDocProjection",
 
 
 tests.push( { name: "Queries.v1.FindProjectionThreeFieldsCovered",
-              tags: ['query','sanity','daily','weekly','monthly'],
+              tags: ['query','sanity','daily','weekly','monthly', 'core-query'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -259,7 +259,7 @@ tests.push( { name: "Queries.v1.FindProjectionDottedField",
               ] } );
 
 tests.push( { name: "Queries.v1.FindProjectionDottedField.Indexed",
-              tags: ['query','sanity','daily','weekly','monthly'],
+              tags: ['query','sanity','daily','weekly','monthly', 'core-query'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {

@@ -27,7 +27,7 @@ tests.push( { name: "MultiUpdate.v1.Uncontended.SingleDoc.NoIndex",
             } );
               
 tests.push( { name: "MultiUpdate.v1.Uncontended.SingleDoc.Indexed",
-              tags: ['update','daily','weekly','monthly'],
+              tags: ['update','daily','weekly','monthly', 'core-multi'],
               pre: function( collection ) {
                   setupTestUncontendedSingleDoc( collection );
                   collection.ensureIndex( { x : 1 } );
@@ -52,7 +52,7 @@ var testUncontendedTwoDocs = [
 ];
 
 tests.push( { name: "MultiUpdate.v1.Uncontended.TwoDocs.NoIndex",
-              tags: ['update','daily','weekly','monthly'],
+              tags: ['update','daily','weekly','monthly', 'core-multi'],
               pre: function( collection ) {
                   setupTestUncontendedTwoDocs( collection );
               },
@@ -60,7 +60,7 @@ tests.push( { name: "MultiUpdate.v1.Uncontended.TwoDocs.NoIndex",
             } );
 
 tests.push( { name: "MultiUpdate.v1.Uncontended.TwoDocs.Indexed",
-              tags: ['update','daily','weekly','monthly'],
+              tags: ['update','daily','weekly','monthly', 'core-multi'],
               pre: function( collection ) {
                   setupTestUncontendedTwoDocs( collection );
                   collection.ensureIndex( { x : 1 } );                  
@@ -85,7 +85,7 @@ var testContendedLow = [
 ];
 
 tests.push( { name: "MultiUpdate.v1.Contended.Low.NoIndex",
-              tags: ['update','daily','weekly','monthly'],
+              tags: ['update','daily','weekly','monthly', 'core-multi'],
               pre: function( collection ) {
                  setupTestContendedLow( collection );                               
               },
@@ -93,7 +93,7 @@ tests.push( { name: "MultiUpdate.v1.Contended.Low.NoIndex",
             } );   
                             
 tests.push( { name: "MultiUpdate.v1.Contended.Low.Indexed",
-              tags: ['update','daily','weekly','monthly'],
+              tags: ['update','daily','weekly','monthly', 'core-multi'],
               pre: function( collection ) {
                  setupTestContendedLow( collection );
                  collection.ensureIndex( { x : 1 } );                                    
