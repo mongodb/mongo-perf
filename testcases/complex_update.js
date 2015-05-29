@@ -10,7 +10,7 @@ if ( typeof(tests) != "object" ) {
  *       updates a distinct range of documents.
  */
 tests.push( { name: "Update.SetWithIndex.Random",
-              tags: ['update','complex','daily','weekly','monthly'],
+              tags: ['update','complex','daily','weekly','monthly', 'core-update'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {

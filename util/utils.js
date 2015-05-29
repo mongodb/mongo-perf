@@ -168,7 +168,10 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, writeOptio
             result["getmore"] +
             result["command"];
     }
-    print("\t" + thread + "\t" + total);
+    error_string = "";
+    if (result["errCount"] != 0)
+        error_string = "There were errors: " + result["errCount"];
+    print("\t" + thread + "\t" + total + "\t" + error_string);
 
     if ("post" in test) {
         for (var i = 0; i < multidb; i++) {
@@ -185,45 +188,7 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, writeOptio
         }
     }
 
-    return { ops_per_sec: total };
-}
-
-function medianCompare(x, y) {
-  return x - y;
-}
-function getMedian(sortableNumbers) {
-    var rval;
-    if (sortableNumbers.length == 0)
-        rval = undefined;
-    else if (sortableNumbers.length == 1)
-        rval = sortableNumbers[0];
-    else {
-        sortableNumbers.sort(medianCompare);
-        var candidateIndex = Math.floor(sortableNumbers.length / 2);
-        if (sortableNumbers.length % 2 != 0) {
-            // we have an odd number of values.
-            // select the middle value in the sorted list
-            rval = sortableNumbers[candidateIndex];
-        }
-        else {
-            // we have an even number of values
-            // interpolate between the two values in the middle of the sorted list
-            rval = (sortableNumbers[candidateIndex - 1] + sortableNumbers[candidateIndex] ) / 2;
-        }
-    }
-    return rval;
-}
-
-function getVariance(numericArray) {
-    var avg = getMean(numericArray);
-    var i = numericArray.length;
-    var x = 0;
-
-    while (i--) {
-        x += Math.pow((numericArray[ i ] - avg), 2);
-    }
-    x /= numericArray.length;
-    return x;
+    return { ops_per_sec: total, error_count : result["errCount"]};
 }
 
 function getMean(values) {
@@ -232,36 +197,6 @@ function getMean(values) {
         sum += values[j];
     }
     return sum / values.length;
-}
-
-function getDefaultTestBed(commitDate) {
-    if (typeof commitDate === "undefined") commitDate = new Date();
-
-    var shell_build_info = db.runCommand("buildInfo");
-
-    var testBed = {};
-    // test harness, client and server info
-    testBed.client = {};
-    testBed.client.name = "mongo shell";
-    testBed.client.version = shell_build_info.version;
-    testBed.client.git_hash = shell_build_info.gitVersion;
-    testBed.harness = {};
-    testBed.harness.name = "manual";
-    testBed.harness.version = "unknown";
-    testBed.harness.git_hash = "unknown";
-    testBed.server_git_commit_date = commitDate;
-    testBed.topology = "single_node";
-
-    // get the server storageEngine
-    var serverStatus = db.runCommand({serverStatus: 1});
-    if (serverStatus.storageEngine !== undefined && serverStatus.storageEngine.name !== undefined) {
-        testBed.server_storage_engine = serverStatus.storageEngine.name;
-    }
-    else {
-        testBed.server_storage_engine = "mmapv0";
-    }
-
-    return testBed;
 }
 
 function getDefaultWriteOptions() {
@@ -293,7 +228,6 @@ function doCompare(test, compareTo) {
 }
 
 function doExecute(test, testFilter) {
-
     // Use % to indicate all tests
     if ( !Array.isArray(testFilter) ) {
         if ( testFilter == "%" ) {
@@ -338,6 +272,7 @@ function doExecute(test, testFilter) {
     return false;
 }
 
+
 /**
  * Run tests defined in a tests array (outside of the function)
  *
@@ -348,48 +283,28 @@ function doExecute(test, testFilter) {
  * @param trials - the number of trials to run
  * @param reportLabel - the label for the test run
  * @param testFilter - tests/suites to run, default "sanity"
- * @param reportHost - the hostname for the database to send the reported data to (defaults to localhost)
- * @param reportPort - the port number for the database to send the reported data to (defaults to 27017)
- * @param commitDate - the commit date/time to report (defaults to the current time/date)
  * @param shard - the number of shards the test is run for (defaults to 0)
  * @param writeOptions - the writeOptions to be used with the test (defaults to {safeGLE:false, writeConcernW:0, writeConcernJ:false, writeCmdMode: false}
- * @param testBed - testbed information such as server_storage_engine, harness, server_git_commit_date
+ * @param excludeTestbed - Exclude testbed information from results
  * @returns {{}} the results of a run set of tests
  */
-function runTests(threadCounts, multidb, multicoll, seconds, trials, reportLabel, testFilter, reportHost, reportPort, commitDate, shard, writeOptions, testBed) {
+function runTests(threadCounts, multidb, multicoll, seconds, trials, testFilter, shard, writeOptions, excludeTestbed) {
 
-    if (typeof reportHost === "undefined") reportHost = "localhost";
-    if (typeof reportPort === "undefined") reportPort = "27017";
-    if (typeof commitDate === "undefined") commitDate = new Date();
     if (typeof shard === "undefined") shard = 0;
     if (typeof writeOptions === "undefined") writeOptions = getDefaultWriteOptions();
-    if (typeof testBed === "undefined") testBed = getDefaultTestBed(commitDate);
     if (typeof testFilter === "undefined") testFilter = "sanity";
+    if (typeof excludeTestbed === "undefined") excludeTestbed = false;
     
+
     var testResults = {};
     testResults.results=[];
-    // The following are only used when reportLabel is not None.
-    var resultsCollection = db.getSiblingDB("bench_results").raw;
-    var myId = 0;
 
-    // If dumping the results to a remote host.
-    if (reportHost !== "localhost" || reportPort !== "27017") {
-        var connection = new Mongo(reportHost + ":" + reportPort);
-        resultsCollection = connection.getDB("bench_results").raw;
-    }
-
-    // Set up the reporting database and the object that will hold these tests' info.
-    if (reportLabel) {
-        resultsCollection.ensureIndex({ label: 1 }, { unique: true });
-
-        var startTime = new Date();
-        myId = new ObjectId();
-        var bi = db.runCommand("buildInfo");
-
+    // Save basic testbed info if not running in evergreen
+    if (!excludeTestbed) {
         var basicFields = {};
-        basicFields = testBed; // Map
+        var bi = db.runCommand("buildInfo");
+        
         basicFields.commit = bi.gitVersion;
-        basicFields.label = reportLabel;
         if (bi.sysInfo) {
             basicFields.platform = bi.sysInfo.split(" ")[0];
         }
@@ -399,24 +314,13 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, reportLabel
         else {
             basicFields.platform = "Unknown Platform";
         }
-        basicFields.run_date = formatRunDate(startTime);
-        basicFields.run_time = startTime;
-        basicFields.commit_date = new Date(testBed.server_git_commit_date);
         basicFields.version = bi.version;
         basicFields.writeOptions = writeOptions; // Map
-
-        var oldDoc = resultsCollection.findOne({ label: reportLabel });
-        if (oldDoc) {
-            myId = oldDoc._id;
-            resultsCollection.update({ _id: myId }, { $set: basicFields });
-        } else {
-            basicFields._id = myId;
-            resultsCollection.insert(basicFields);
-        }
+        testResults['basicFields'] = basicFields;
     }
 
     print("@@@START@@@");
-    testResults['run_start_time'] = new Date();
+    testResults['start'] = new Date();
 
     // Run all tests in the test file.
     for (var i = 0; i < tests.length; i++) {
@@ -424,15 +328,13 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, reportLabel
         var errors = [];
         // Execute if it has a matching tag to the suite that was passed in
         if ( doExecute(test, testFilter) ) {
-            print(test.name);
-
+            print(test.name)
             var threadResults = {};
-            threadResults['run_start_time'] = new Date();
+            threadResults['start'] = new Date();
             for (var t = 0; t < threadCounts.length; t++) {
                 var threadCount = threadCounts[t];
                 var results = [];
                 var newResults = {};
-                newResults['run_start_time'] = new Date();
                 for (var j = 0; j < trials; j++) {
                     try {
                         results[j] = runTest(test, threadCount, multidb, multicoll, seconds, shard, writeOptions);
@@ -440,53 +342,30 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, reportLabel
                     catch(err) {
                         // Error handling to catch exceptions thrown in/by js for error
                         // Not all errors from the mongo shell are put up as js exceptions
-                        print("Error running test " + test + ": " + err.message);
+                        print("Error running test " + test + ": " + err.message + ":" + err.stack);
                         errors.push({test: test, trial: j, threadCount: threadCount, multidb: multidb, multicoll: multicoll, shard: shard, writeOptions: writeOptions, error: {message: err.message, code: err.code}})
                     }
                 }
                 var values = [];
+                var errors = [];
                 for (var j = 0; j < trials; j++) {
-                    values[j] = results[j].ops_per_sec
-                }
+                    values[j] = results[j].ops_per_sec,
+                    errors[j] = results[j].error_count.toNumber()
+               }
                 // uncomment if one needs to save the trial values that comprise the mean
-                //newResults.ops_per_sec_values = values;
+                newResults.ops_per_sec_values = values;
+                newResults.error_values = errors;
                 newResults.ops_per_sec = getMean(values);
-                newResults.median = getMedian(values);
-                newResults.standardDeviation = Math.sqrt(getVariance(values));
-                newResults.run_end_time = new Date();
-                newResults.n = trials;
-                newResults.elapsed_secs = seconds;  // TODO: update mongo shell to return actual elapsed time
                 threadResults[threadCount] = newResults;
             }
-            threadResults['run_end_time'] = new Date();
+            threadResults['end'] = new Date();
             testResults['results'].push({
                 name: test.name,
                 results: threadResults
             });
-
-            if (reportLabel) {
-                var resultsArr = (multidb > 1) ? "multidb" : "singledb";
-                // XXX Right now the GUI doesn't discriminate between single and multicoll
-                //resultsArr += (multicoll > 1) ? "-multicoll" : "-singlecoll";
-
-                var queryDoc = { _id: myId };
-                queryDoc[resultsArr + ".name"] = test.name;
-                var end_time = new Date();
-
-                if (resultsCollection.findOne(queryDoc)) {
-                    var innerUpdateDoc = {};
-                    innerUpdateDoc[resultsArr + ".$.results"] = threadResults;
-                    innerUpdateDoc['end_time'] = end_time;
-                    resultsCollection.update(queryDoc, { $set: innerUpdateDoc });
-                } else {
-                    var innerUpdateDoc = {};
-                    innerUpdateDoc[resultsArr] = { name: test.name, results: threadResults };
-                    resultsCollection.update({ _id: myId }, { $push: innerUpdateDoc, $set: {end_time: end_time } });
-                }
-            }
         }
     }
-    testResults['run_end_time'] = new Date();
+    testResults['end'] = new Date();
     testResults['errors'] =  errors;
     // End delimiter for the useful output to be displayed.
     print("@@@END@@@");
@@ -502,18 +381,14 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, reportLabel
  * @param multicoll - multicollection (number of collections)
  * @param seconds - the time to run each performance test for
  * @param trials - the number of trials to run
- * @param reportLabel - the label for the test run
  * @param testFilter - tests / suites to run, default "sanity"
- * @param reportHost - the hostname for the database to send the reported data to (defaults to localhost)
- * @param reportPort - the port number for the database to send the reported data to (defaults to 27017)
- * @param commitDate - the commit date/time to report (defaults to the current time/date)
  * @param shard - the number of shards the test is run for (defaults to 0)
  * @param writeOptions - the writeOptions to be used with the test (defaults to {safeGLE:false, writeConcernW:0, writeConcernJ:false, writeCmdMode: false}
- * @param testBed - testbed information such as server_storage_engine, harness, server_git_commit_date
+ * @param excludeTestbed - Exclude testbed information from results
  * @returns {{}} the results of a run set of tests
  */
-function mongoPerfRunTests(threadCounts, multidb, multicoll, seconds, trials, reportLabel, testFilter, reportHost, reportPort, commitDate, shard, writeOptions, testBed) {
-    testResults = runTests(threadCounts, multidb, multicoll, seconds, trials, reportLabel, testFilter, reportHost, reportPort, commitDate, shard, writeOptions, testBed);
+function mongoPerfRunTests(threadCounts, multidb, multicoll, seconds, trials, testFilter, shard, writeOptions, excludeTestbed) {
+    testResults = runTests(threadCounts, multidb, multicoll, seconds, trials, testFilter, shard, writeOptions, excludeTestbed);
     print("@@@RESULTS_START@@@");
     print(JSON.stringify(testResults));
     print("@@@RESULTS_END@@@");

@@ -11,7 +11,7 @@ if ( typeof(tests) != "object" ) {
  *       separate range of documents
  */
 tests.push( { name: "Mixed.FindOneUpdateIntId-50-50",
-              tags: ['mixed','sanity','daily','weekly','monthly'],
+              tags: ['mixed','sanity','daily','weekly','monthly', 'core'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {

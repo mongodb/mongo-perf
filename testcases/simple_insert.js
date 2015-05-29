@@ -67,7 +67,7 @@ tests.push( { name: "Insert.EmptyCapped.SeqIntID",
  *        
  */
 tests.push( { name: "Insert.JustID",
-              tags: ['insert','sanity','daily','weekly','monthly'],
+              tags: ['insert','sanity','daily','weekly','monthly', 'core-insert'],
               pre: function( collection ) { collection.drop(); },
               ops: [
                   { op:  "insert",
