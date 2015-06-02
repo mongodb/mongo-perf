@@ -6,22 +6,21 @@ var setupTest = function (collection) {
     collection.drop();
 }
 
+/*
+ * Create a selective partial index for tests
+ */
 var setupTestFiltered = function (collection) {
     setupTest(collection);
     collection.createIndex( { x : 1 }, { filter : { a : { $lt : 500 } } } );
 }
 
-var setupTestFilteredNonSelective = function (collection) {
-    setupTest(collection);
-    collection.createIndex( { x : 1 }, { filter : { a : { $lt : 4800 } } } );
-}
-
-var setupTestIndexed = function (collection) {
-    setupTest(collection);
-    collection.createIndex( { x : 1 });
-}
-
-tests.push( { name : "Inserts.PartialIndex.v1.FilteredRange",
+/*
+ * Setup: Create a partial index for a < 500 
+ * Test: Insert documents with two random integer fields a and x, with
+ *       a satisfying the filter for the partial index. Document will
+ *       be indexed.
+ */
+tests.push( { name : "Inserts.PartialIndex.FilteredRange",
               tags: ['partial_index','insert','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestFiltered(collection);
@@ -31,7 +30,13 @@ tests.push( { name : "Inserts.PartialIndex.v1.FilteredRange",
                   { op: "insert", doc:  { x : {"#RAND_INT" : [ 0, 500 ]}, a : {"#RAND_INT" : [ 0, 500 ]} } }
               ] } );
 
-tests.push( { name : "Inserts.PartialIndex.v1.NonFilteredRange",
+/*
+ * Setup: Create a partial index for a < 500 
+ * Test: Insert documents with two random integer fields a and x, with
+ *       a not satisfying the filter for the partial index. Document will
+ *       not be indexed.
+ */
+tests.push( { name : "Inserts.PartialIndex.NonFilteredRange",
               tags: ['partial_index','insert','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestFiltered(collection);
@@ -41,7 +46,13 @@ tests.push( { name : "Inserts.PartialIndex.v1.NonFilteredRange",
                   { op: "insert", doc:  { x : {"#RAND_INT" : [ 500, 4800 ]}, a : {"#RAND_INT" : [ 500, 4800 ]} } }
               ] } );
 
-tests.push( { name : "Inserts.PartialIndex.v1.FullRange",
+/*
+ * Setup: Create a partial index for a < 500 
+ * Test: Insert documents with two random integer fields a and x,
+ *       where a may, or may not satisfy the filter for the partial
+ *       index. Some of the documents will be indexed (10.4%).
+ */
+tests.push( { name : "Inserts.PartialIndex.FullRange",
               tags: ['partial_index','insert','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestFiltered(collection);

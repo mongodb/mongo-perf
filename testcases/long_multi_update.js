@@ -18,7 +18,12 @@ var testBigAllDocs = [
    },
 ]
 
-tests.push( { name: "MultiUpdate.v0.BigAllDocs.NoIndex",
+/*
+ * Setup: Create a collection with 100k documents with integer _id,
+ *        and integer field x = 0
+ * Test: Increment the x field on all 100k documents
+ */
+tests.push( { name: "MultiUpdate.BigAllDocs.NoIndex",
               tags: ['update','slow','weekly','monthly'],
               pre: function( collection ) {
                   setupTestBigAllDocs( collection );                                
@@ -26,7 +31,13 @@ tests.push( { name: "MultiUpdate.v0.BigAllDocs.NoIndex",
               ops: testBigAllDocs,
             } );       
               
-tests.push( { name: "MultiUpdate.v0.BigAllDocs.Indexed",
+/*
+ * Setup: Create a collection with 100k documents with integer _id,
+ *        and integer field x = 0, and an index on x
+ * Test: Increment the x field on all 100k documents. After each
+ *       operation there is one index key entry
+ */
+tests.push( { name: "MultiUpdate.BigAllDocs.Indexed",
               tags: ['update','slow','weekly','monthly'],
               pre: function( collection ) {
                   setupTestBigAllDocs( collection );
@@ -51,7 +62,12 @@ var testBigAllDocsMultiChange = [
    },
 ]
 
-tests.push( { name: "MultiUpdate.v0.BigAllDocsMultiChange.NoIndex",
+/*
+ * Setup: Create a collection with 100k documents with integer _id,
+ *        and integer field x = 0, y='b'
+ * Test: Increment the x field and set y='b' on all 100k documents.
+ */
+tests.push( { name: "MultiUpdate.BigAllDocsMultiChange.NoIndex",
               tags: ['update','slow','weekly','monthly'],
               pre: function( collection ) {
                   setupTestBigAllDocsMultiChange( collection );                                
@@ -59,7 +75,14 @@ tests.push( { name: "MultiUpdate.v0.BigAllDocsMultiChange.NoIndex",
               ops: testBigAllDocsMultiChange,
             } );       
               
-tests.push( { name: "MultiUpdate.v0.BigAllDocsMultiChange.Indexed",
+/*
+ * Setup: Create a collection with 100k documents with integer _id,
+ *        and integer field x = 0, y='b', both indexed
+ * Test: Increment the x field and set y='b' on all 100k
+ *       documents. Test updates both indexes. After each operation
+ *       there is one index key in each index.
+ */
+tests.push( { name: "MultiUpdate.BigAllDocsMultiChange.Indexed",
               tags: ['update','slow','weekly','monthly'],
               pre: function( collection ) {
                   setupTestBigAllDocsMultiChange( collection );
@@ -85,7 +108,12 @@ var testContendedAllDocs = [
    },
 ]
               
-tests.push( { name: "MultiUpdate.v0.Contended.AllDocs.NoIndex",
+/*
+ * Setup: Create a collection with 3200 documents with integer _id,
+ *        and integer field x = 0
+ * Test: Increment the x field on all 3200 documents
+ */
+tests.push( { name: "MultiUpdate.Contended.AllDocs.NoIndex",
               tags: ['update','slow','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedAllDocs( collection )
@@ -93,7 +121,13 @@ tests.push( { name: "MultiUpdate.v0.Contended.AllDocs.NoIndex",
               ops: testContendedAllDocs,
             } );   
               
-tests.push( { name: "MultiUpdate.v0.Contended.AllDocs.Indexed",
+/*
+ * Setup: Create a collection with 3200 documents with integer _id,
+ *        and integer field x = 0, and an index on x
+ * Test: Increment the x field on all 3200 documents. After each
+ *       operation there is one index key entry
+ */
+tests.push( { name: "MultiUpdate.Contended.AllDocs.Indexed",
               tags: ['update','slow','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedAllDocs( collection );
