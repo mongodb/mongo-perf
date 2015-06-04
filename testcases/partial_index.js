@@ -21,7 +21,7 @@ var setupTest = function (collection) {
  */
 var setupTestFiltered = function (collection) {
     setupTest(collection);
-    collection.createIndex( { x : 1 }, { filter : { a : { $lt : 500 } } } );
+    collection.createIndex( { x : 1 }, { partialFilterExpression : { a : { $lt : 500 } } } );
 }
 
 /*
@@ -31,7 +31,7 @@ var setupTestFiltered = function (collection) {
  */
 var setupTestFilteredNonSelective = function (collection) {
     setupTest(collection);
-    collection.createIndex( { x : 1 }, { filter : { a : { $lt : 4800 } } } );
+    collection.createIndex( { x : 1 }, { partialIndexExpression : { a : { $lt : 4800 } } } );
 }
 
 /*
@@ -56,7 +56,8 @@ tests.push( { name : "Queries.PartialIndex.FilteredRange",
               },
 
               ops : [
-                  { op: "find", query:  { x : {"#RAND_INT" : [ 0, 500 ]}, a : {$lt : 500  } } }
+                  { op: "let", target: "x", value : {"#RAND_INT" : [ 0, 500]}},
+                  { op: "find", query:  { x : {"#VARIABLE" : "x"}, a : {$lt : 500  } } }
               ] } );
 
 /* 
@@ -73,7 +74,8 @@ tests.push( { name : "Queries.PartialIndex.NonFilteredRange",
               },
 
               ops : [
-                  { op: "find", query:  { x : {"#RAND_INT" : [ 500, 4800 ]}, a : {$gte : 500  } } }
+                  { op: "let", target: "x", value : {"#RAND_INT" : [ 500, 4800 ]}},
+                  { op: "find", query:  { x : {"#VARIABLE" : "x"}, a : {$gte : 500  } } }
               ] } );
 
 /* 
@@ -84,13 +86,14 @@ tests.push( { name : "Queries.PartialIndex.NonFilteredRange",
  *       of the searches can use the partial index.
  */
 tests.push( { name : "Queries.PartialIndex.FullRange",
-              tags: ['partial_index','query','daily','weekly','monthly'],
+              tags: ['partial_index','query','daily','weekly','monthly', 'now'],
               pre: function( collection ) {
                   setupTestFiltered(collection);
               },
 
               ops : [
-                  { op: "find", query:  { x : {"#RAND_INT" : [ 0, 4800 ]}, a : {$lt : 4800  } } }
+                  { op: "let", target: "x", value : {"#RAND_INT" : [ 0, 4800 ]}},
+                  { op: "find", query:  { x : {"#VARIABLE" : "x"}, a : {"VARIABLE" : "x"  } } }
               ] } );
 
 
@@ -108,7 +111,8 @@ tests.push( { name : "Queries.PartialIndex.AllInFilter.FilteredRange",
               },
 
               ops : [
-                  { op: "find", query:  { x : {"#RAND_INT" : [ 0, 500 ]}, a : {$lt : 500  } } }
+                  { op: "let", target: "x", value : {"#RAND_INT" : [ 0, 500 ]}},
+                  { op: "find", query:  { x :  {"#VARIABLE" : "x"}, a : {$lt : 500  } } }
               ] } );
 
 /* 
@@ -124,6 +128,7 @@ tests.push( { name : "Queries.PartialIndex.AllInFilter.FullRange",
               },
 
               ops : [
-                  { op: "find", query:  { x : { "#RAND_INT" : [ 0 , 4800 ] }, a : {$lt : 4800  } } }
+                  { op: "let", target: "x", value : {"#RAND_INT" : [ 0, 4800 ]}},
+                  { op: "find", query:  { x : {"#VARIABLE" : "x"}, a : {"VARIABLE" : "x"  } } }
               ] } );
 

@@ -11,7 +11,7 @@ var setupTest = function (collection) {
  */
 var setupTestFiltered = function (collection) {
     setupTest(collection);
-    collection.createIndex( { x : 1 }, { filter : { a : { $lt : 500 } } } );
+    collection.createIndex( { x : 1 }, { partialIndexExpression : { a : { $lt : 500 } } } );
 }
 
 /*
