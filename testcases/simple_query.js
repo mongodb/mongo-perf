@@ -6,7 +6,7 @@ tests.push( { name : "Queries.v1.Empty",
               tags: ['query','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
-                  for ( var i = 0; i < 4800; i++ ) {
+                  for ( var i = 0; i < 100; i++ ) {
                       collection.insert( {} );
                   }
                   collection.getDB().getLastError();
@@ -19,7 +19,7 @@ tests.push( { name : "Queries.v1.NoMatch",
               tags: ['query','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
-                  for ( var i = 0; i < 4800; i++ ) {
+                  for ( var i = 0; i < 100; i++ ) {
                       collection.insert( {} );
                   }
                   collection.getDB().getLastError();
@@ -157,7 +157,7 @@ tests.push( { name: "Queries.v1.IntNonIdFindProjectionCovered",
               tags: ['query','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
-                  for ( var i = 0; i < 4800; i++ ) {
+                  for ( var i = 0; i < 100; i++ ) {
                       collection.insert( { x : i } );
                   }
                   collection.getDB().getLastError();
@@ -174,7 +174,7 @@ tests.push( { name: "Queries.v1.FindProjection",
               tags: ['query','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
-                  for ( var i = 0; i < 4800; i++ ) {
+                  for ( var i = 0; i < 100; i++ ) {
                       collection.insert( { x : i } );
                   }
                   collection.getDB().getLastError();
@@ -191,7 +191,7 @@ tests.push( { name: "Queries.v1.FindWideDocProjection",
               tags: ['query','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
-                  for ( var i = 0; i < 4800; i++ ) {
+                  for ( var i = 0; i < 100; i++ ) {
                       collection.insert( { a : i, 
                           b: i, c: i, d: i, e: i,
                           f: i, g: i, h: i, i: i,
@@ -231,7 +231,7 @@ tests.push( { name: "Queries.v1.FindProjectionThreeFields",
               tags: ['query','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
-                  for ( var i = 0; i < 4800; i++ ) {
+                  for ( var i = 0; i < 100; i++ ) {
                       collection.insert( { x : i, y: i, z: i } );
                   }
                   collection.getDB().getLastError();
@@ -247,7 +247,7 @@ tests.push( { name: "Queries.v1.FindProjectionDottedField",
               tags: ['query','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
-                  for ( var i = 0; i < 4800; i++ ) {
+                  for ( var i = 0; i < 100; i++ ) {
                       collection.insert( { x : { y: i } } );
                   }
                   collection.getDB().getLastError();
