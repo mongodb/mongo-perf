@@ -39,3 +39,18 @@ cd gui
 python server.py  
 ```
 Go to http://localhost:8080 to see the results.  
+
+
+### RESULT CHANGES
+
+Mongo-perf is built upon the Mongo shell benchrun command. The results
+format of benchrun changed in Mongo 3.1.5 and 3.0.5. Because of the
+result changes, mongo-perf results from before 3.1.5 or 3.0.5 may not
+be directly comparable to results after 3.1.5 or 3.0.5.
+
+As of Mongo 3.1.5 and 3.0.5 the benchrun command measures op performance on the client side,
+instead of on the server side. Any and only those ops passed into the op array of the benchrun
+command are counted as ops for the purpose of reporting throughput. In some cases this may cause
+the reported throughput to be higher than previous version of mongo-perf (for instance, if the
+"let" operation is used), or lower than before (for instance, if the shell issues getMore commands
+in addition to a query in order to complete an op).

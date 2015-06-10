@@ -155,14 +155,19 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, writeOptio
     // invoke the built-in mongo shell function
     var result = benchRun(benchArgs);
 
-    var total =
-        result["insert"] +
-        result["query"] +
-        result["update"] +
-        result["delete"] +
-        result["getmore"] +
-        result["command"];
-
+    var total;
+    if ("totalOps/s" in result) {
+        total = result["totalOps/s"];
+    }
+    else {
+        total =
+            result["insert"] +
+            result["query"] +
+            result["update"] +
+            result["delete"] +
+            result["getmore"] +
+            result["command"];
+    }
     print("\t" + thread + "\t" + total);
 
     if ("post" in test) {
