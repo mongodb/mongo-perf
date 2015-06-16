@@ -62,7 +62,7 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, writeOptio
 
     if (typeof writeOptions === "undefined") writeOptions = getDefaultWriteOptions();
     if (typeof shard === "undefined") shard = 0;
-    if (typeof testFilter === "undefined") testFilter = "sanity";
+    if (typeof includeFilter === "undefined") includeFilter = "sanity";
 
     var collections = [];
 
@@ -213,11 +213,12 @@ function doCompare(test, compareTo) {
     var tags = test.tags;
     
     if ( Array.isArray(compareTo) ) {
-        for (var i=0; i < compareTo.length; i++) {
+        for (var i = 0;i < compareTo.length; i++) {
             if ( tags.indexOf(compareTo[i]) > -1 || test.name == compareTo[i]) {
                 return true;
             }
         }
+        return false;
     }
     else {
         if ( tags.indexOf(compareTo) > -1 || test.name == compareTo) {
@@ -227,49 +228,69 @@ function doCompare(test, compareTo) {
     return false;
 }
 
-function doExecute(test, testFilter) {
+function doCompareExclude(test, compareTo) {
+    var tags = test.tags;
+    
+    if ( Array.isArray(compareTo) ) {
+        for (var i = 0;i < compareTo.length; i++) {
+            if (!( tags.indexOf(compareTo[i]) > -1 || test.name == compareTo[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+    else {
+        if ( tags.indexOf(compareTo) > -1 || test.name == compareTo) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function doExecute(test, includeFilter, excludeFilter) {
+    
+    var include = false;
     // Use % to indicate all tests
-    if ( !Array.isArray(testFilter) ) {
-        if ( testFilter == "%" ) {
-            return true;
+    if ( !Array.isArray(includeFilter) ) {
+        if ( includeFilter == "%" ) {
+            include = true;
         }
     }
     
     // If we have a textFilter but no tags, then bail
-    if ( !Array.isArray(test.tags) ) {
+    else if ( !Array.isArray(test.tags) ) {
         return false;
     }
-
-    if ( Array.isArray(testFilter) ) {
-        // have the form : ['suitea', 'suiteb', 'Insert.foo' ]
-        return doCompare(test, testFilter);
-    }
-    else if ( typeof testFilter == "object" ) {
-        // Have the form { include: ['suitea'], exclude: ['suiteb', 'Insert.foo'] }
-        var include = testFilter.include;
-        var exclude = testFilter.exclude;
-        
-        if ( Array.isArray(exclude) && Array.isArray(include) ) {
-            if ( !doCompare(test, exclude) && doCompare(test, include) ) {
-                return true;
+    
+    if ( !include && Array.isArray(includeFilter) ) {
+        if (Array.isArray(includeFilter[0])) {
+            // lists of lists of filters. Must match all lists
+            for (var i=0; i < includeFilter.length; i++) {
+                if (!doCompare(test, includeFilter[i])) {
+                    return false;
+                }
             }
-            else {
-                return false;
+            include = true;
+        }
+        else {
+            // have the form : ['suitea', 'suiteb', 'Insert.foo' ]
+            include = doCompare(test, includeFilter);
+        }
+    }
+    if ( !include ) {
+        return false;
+    }
+    if ( Array.isArray(excludeFilter) ) {
+        if (Array.isArray(excludeFilter[0])) {
+            // lists of lists of filters. Must match all lists
+            for (var i=0; i < excludeFilter.length; i++) {
+                if (doCompareExclude(test, excludeFilter[i])) {
+                    return false;
+                }
             }
         }
-
-        if ( Array.isArray(exclude) ) {
-            return !doCompare(test, exclude);
-        }
-        if ( Array.isArray(include) ) {
-            return doCompare(test, include);
-        }
     }
-    else {
-        // Have the form 'suitea'
-        return doCompare(test, testFilter);
-    }
-    return false;
+    return true;
 }
 
 
@@ -282,17 +303,18 @@ function doExecute(test, testFilter) {
  * @param seconds - the time to run each performance test for
  * @param trials - the number of trials to run
  * @param reportLabel - the label for the test run
- * @param testFilter - tests/suites to run, default "sanity"
+ * @param includeFilter - tests/suites to run, default "sanity"
+ * @param excludeFilter - tests / suites not to run
  * @param shard - the number of shards the test is run for (defaults to 0)
  * @param writeOptions - the writeOptions to be used with the test (defaults to {safeGLE:false, writeConcernW:0, writeConcernJ:false, writeCmdMode: false}
  * @param excludeTestbed - Exclude testbed information from results
  * @returns {{}} the results of a run set of tests
  */
-function runTests(threadCounts, multidb, multicoll, seconds, trials, testFilter, shard, writeOptions, excludeTestbed) {
+function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, writeOptions, excludeTestbed) {
 
     if (typeof shard === "undefined") shard = 0;
     if (typeof writeOptions === "undefined") writeOptions = getDefaultWriteOptions();
-    if (typeof testFilter === "undefined") testFilter = "sanity";
+    if (typeof includeFilter === "undefined") includeFilter = "sanity";
     if (typeof excludeTestbed === "undefined") excludeTestbed = false;
     
 
@@ -327,7 +349,7 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, testFilter,
         var test = tests[i];
         var errors = [];
         // Execute if it has a matching tag to the suite that was passed in
-        if ( doExecute(test, testFilter) ) {
+        if ( doExecute(test, includeFilter, excludeFilter) ) {
             print(test.name)
             var threadResults = {};
             threadResults['start'] = new Date();
@@ -381,14 +403,15 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, testFilter,
  * @param multicoll - multicollection (number of collections)
  * @param seconds - the time to run each performance test for
  * @param trials - the number of trials to run
- * @param testFilter - tests / suites to run, default "sanity"
+ * @param includeFilter - tests / suites to run, default "sanity"
+ * @param excludeFilter - tests / suites not to run
  * @param shard - the number of shards the test is run for (defaults to 0)
  * @param writeOptions - the writeOptions to be used with the test (defaults to {safeGLE:false, writeConcernW:0, writeConcernJ:false, writeCmdMode: false}
  * @param excludeTestbed - Exclude testbed information from results
  * @returns {{}} the results of a run set of tests
  */
-function mongoPerfRunTests(threadCounts, multidb, multicoll, seconds, trials, testFilter, shard, writeOptions, excludeTestbed) {
-    testResults = runTests(threadCounts, multidb, multicoll, seconds, trials, testFilter, shard, writeOptions, excludeTestbed);
+function mongoPerfRunTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, writeOptions, excludeTestbed) {
+    testResults = runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, writeOptions, excludeTestbed);
     print("@@@RESULTS_START@@@");
     print(JSON.stringify(testResults));
     print("@@@RESULTS_END@@@");
