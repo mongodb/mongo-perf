@@ -365,3 +365,20 @@ tests.push( { name: "Queries.FindProjectionDottedField.Indexed",
                     query: { 'x.y' : {"#RAND_INT_PLUS_THREAD": [0,100]}},
                     filter: { 'x.y' : 1, _id : 0 } }
               ] } );
+
+/*
+ * Setup: Insert 100 5mb documents into database
+ * Test: Do a table scan
+ */
+tests.push( { name: "Queries.LargeDocs",
+              tags: ['query','weekly','monthly'],
+              pre: function( collection ) {
+                  collection.drop();
+                  var bigString = new Array(1024*1024*5).toString();
+                  for ( var i = 0; i < 100; i++ ) {
+                      collection.insert( { x : bigString } );
+                  }
+              },
+              ops: [
+                  { op: "find", query: {} }
+              ] } );
