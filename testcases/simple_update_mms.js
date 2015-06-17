@@ -20,7 +20,11 @@ var setupMMS = function( collection ) {
     collection.insert(base);
 };
 
-// Increment one shallow (top-level) field.
+/*
+* Setup: Insert a single doc that has three fields with one being an array
+*        that is 24 levels deep and 60 elements each
+* Test:  Increment one of shallow (top-level) field on the single doc
+*/
 tests.push( { name: "Update.MmsIncShallow1",
               tags: ['update','sanity','mms','daily','weekly','monthly'],
               pre: setupMMS,
@@ -31,7 +35,11 @@ tests.push( { name: "Update.MmsIncShallow1",
                   }
               ] } );
 
-// Increment two shallow (top-level) fields.
+/*
+* Setup: Insert a single doc that has three fields with one being an array
+*        that is 24 levels deep and 60 elements each
+* Test:  Increment two shallow (top-level) fields on the single doc
+*/
 tests.push( { name: "Update.MmsIncShallow2",
               tags: ['update','sanity','mms','daily','weekly','monthly'],
               pre: setupMMS,
@@ -42,7 +50,12 @@ tests.push( { name: "Update.MmsIncShallow2",
                   }
               ] } );
 
-// Increment one deep field. The selected field is far to the right in each subtree.
+/*
+* Setup: Insert a single doc that has three fields with one being an array
+*        that is 24 levels deep and 60 elements each
+* Test:  Increment one deep field. The selected field is at the high indexed
+*        end of the arrays 
+*/
 tests.push( { name: "Update.MmsIncDeep1",
               tags: ['update','sanity','mms','daily','weekly','monthly'],
               pre: setupMMS,
@@ -53,8 +66,12 @@ tests.push( { name: "Update.MmsIncDeep1",
                   }
               ] } );
 
-// Increment two deep fields. The selected fields are far to the right in each subtree,
-// and share a common prefix.
+/*
+* Setup: Insert a single doc that has three fields with one being an array
+*        that is 24 levels deep and 60 elements each
+* Test:  Increment two deep fields. The selected fields are at the high 
+*        indexed end of the arrays 
+*/
 tests.push( { name: "Update.MmsIncDeepSharedPath2",
               tags: ['update','sanity','mms','daily','weekly','monthly'],
               pre: setupMMS,
@@ -66,8 +83,12 @@ tests.push( { name: "Update.MmsIncDeepSharedPath2",
                   }
               ] } );
 
-// Increment three deep fields. The selected fields are far to the right in each subtree,
-// and share a common prefix.
+/*
+* Setup: Insert a single doc that has three fields with one being an array
+*        that is 24 levels deep and 60 elements each
+* Test:  Increment three deep fields. The selected fields are at the hgih
+*        indexed end of the arrays
+*/
 tests.push( { name: "Update.MmsIncDeepSharedPath3",
               tags: ['update','sanity','mms','daily','weekly','monthly'],
               pre: setupMMS,
@@ -80,8 +101,12 @@ tests.push( { name: "Update.MmsIncDeepSharedPath3",
                   }
               ] } );
 
-// Increment two deep fields. The selected fields are far to the right in each subtree,
-// but do not share a common prefix.
+/*
+* Setup: Insert a single doc that has three fields with one being an array
+*        that is 24 levels deep and 60 elements each
+* Test:  Increment two deep fields. The selected fields are near the high 
+*        indexed end of the arrays and do not share the same prefix
+*/
 tests.push( { name: "Update.MmsIncDeepDistinctPath2",
               tags: ['update','sanity','mms','daily','weekly','monthly'],
               pre: setupMMS,
@@ -93,8 +118,12 @@ tests.push( { name: "Update.MmsIncDeepDistinctPath2",
                   }
               ] } );
 
-// Increment three deep fields. The selected fields are far to the right in each subtree,
-// but do not share a common prefix.
+/*
+* Setup: Insert a single doc that has three fields with one being an array
+*        that is 24 levels deep and 60 elements each
+* Test:  Increment three deep fields. The selected fields are near the high
+*        indexed end of the arrays and do not share a common prefix.
+*/
 tests.push( { name: "Update.MmsIncDeepDistinctPath3",
               tags: ['update','sanity','mms','daily','weekly','monthly'],
               pre: setupMMS,
@@ -107,8 +136,13 @@ tests.push( { name: "Update.MmsIncDeepDistinctPath3",
                   }
               ] } );
 
-// Increment three deep fields. The selected fields are far to the right in each subtree,
-// but do not share a common prefix.
+
+/*
+* Setup: Insert a single doc that has three fields with one being an array
+*        that is 24 levels deep and 60 elements each
+* Test:  Increment three deep fields. The selected fields are at the high indexed
+*        end of the 2nd level array but evenly spreaded in the first level array
+*/
 tests.push( { name: "Update.v0.MmsIncDeepDistinctPath4",
               tags: ['update','sanity','mms','daily','weekly','monthly'],
               pre: setupMMS,

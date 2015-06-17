@@ -18,6 +18,12 @@ var testUncontendedSingleDoc = [
    },
 ]
 
+/*
+* Setup: Populate collection with unique integer _id and an integer field X=0
+* Test:  Each thread works in its own range of docs
+*        1. randomly selects one document using _id
+*        2. update one filed X by $inc (with multi=true)
+*/
 tests.push( { name: "MultiUpdate.v1.Uncontended.SingleDoc.NoIndex",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
@@ -25,8 +31,16 @@ tests.push( { name: "MultiUpdate.v1.Uncontended.SingleDoc.NoIndex",
               },
               ops: testUncontendedSingleDoc,
             } );
-              
-tests.push( { name: "MultiUpdate.v1.Uncontended.SingleDoc.Indexed",
+
+/*
+* Setup: Populate collection with unique integer ID's and an integer field X=0
+*        Create index on X
+* Test:  Each thread works in its own range of docs
+*        1. randomly selects one document using _id 
+*        2. update the indexed filed X by $inc (with multi=true)
+* Notes: High contention on the index X
+*/
+tests.push( { name: "MultiUpdate.Uncontended.SingleDoc.Indexed",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestUncontendedSingleDoc( collection );
@@ -51,7 +65,13 @@ var testUncontendedTwoDocs = [
     },
 ];
 
-tests.push( { name: "MultiUpdate.v1.Uncontended.TwoDocs.NoIndex",
+/*
+* Setup: Populate collection with unique integer _id and an integer field X=0
+* Test:  Each thread works in its own range of docs; 
+*        1. randomly selects two documents using _id
+*        2. update the X filed in documents by $inc (with multi=true)
+*/
+tests.push( { name: "MultiUpdate.Uncontended.TwoDocs.NoIndex",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestUncontendedTwoDocs( collection );
@@ -59,7 +79,15 @@ tests.push( { name: "MultiUpdate.v1.Uncontended.TwoDocs.NoIndex",
               ops: testUncontendedTwoDocs,
             } );
 
-tests.push( { name: "MultiUpdate.v1.Uncontended.TwoDocs.Indexed",
+/*
+* Setup: Populate collection with unique integer _id and an integer field X=0
+*        Create index on X
+* Test:  Each thread works in its own range of docs; 
+*        1. randomly selects two documents using _id
+*        2. update the indexed X filed in documents by $inc (with multi=true)
+* Notes: High contention on the index X
+*/
+tests.push( { name: "MultiUpdate.Uncontended.TwoDocs.Indexed",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestUncontendedTwoDocs( collection );
@@ -84,15 +112,29 @@ var testContendedLow = [
     },
 ];
 
-tests.push( { name: "MultiUpdate.v1.Contended.Low.NoIndex",
+/*
+* Setup: Populate collection with unique integer _id and an integer field X=0
+* Test:  1. each thread randomly selects a document from the entire collection 
+*           using _id
+*        2. update filed X by $inc (with multi=true)
+*/
+tests.push( { name: "MultiUpdate.Contended.Low.NoIndex",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                  setupTestContendedLow( collection );                               
               },
               ops: testContendedLow,
             } );   
-                            
-tests.push( { name: "MultiUpdate.v1.Contended.Low.Indexed",
+
+/*
+* Setup: Populate collection with unique integer _id and an integer field X=0
+*        Create index on X.
+* Test:  1. each thread randomly selects a document from the entire collection 
+*           using _id
+*        2. update indexed filed X by $inc (with multi=true)
+* Notes: High contention on index
+*/
+tests.push( { name: "MultiUpdate.Contended.Low.Indexed",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                  setupTestContendedLow( collection );
@@ -117,7 +159,13 @@ var testContendedMedium = [
    }, 
 ]
 
-tests.push( { name: "MultiUpdate.v1.Contended.Medium.NoIndex",
+/*
+* Setup: Populate collection with unique integer _id and an integer field X=0
+* Test:  1. each thread randomly selects a rnange of documents using _id 
+*           from the entire collection (each batch is ~1200 docs) 
+*        2. update filed X by $inc (with multi=true)
+*/
+tests.push( { name: "MultiUpdate.Contended.Medium.NoIndex",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedMedium( collection );
@@ -125,7 +173,15 @@ tests.push( { name: "MultiUpdate.v1.Contended.Medium.NoIndex",
               ops: testContendedMedium,
             } );   
                             
-tests.push( { name: "MultiUpdate.v1.Contended.Medium.Indexed",
+/*
+* Setup: Populate collection with unique integer _id and an integer field X=0
+*        Create index on X.
+* Test:  1. each thread randomly selects a rnange of documents using _id 
+*           from the entire collection (each batch is ~1200 docs) 
+*        2. update indexed filed X by $inc (with multi=true)
+* Notes: High contention on index X
+*/
+tests.push( { name: "MultiUpdate.Contended.Medium.Indexed",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedMedium( collection );
@@ -150,15 +206,29 @@ var testContendedHot = [
    }, 
 ]
 
-tests.push( { name: "MultiUpdate.v1.Contended.Hot.NoIndex",
+
+/*
+* Setup: Populate collection with unique integer _id and an integer field X=0
+* Test:  All threads select the same 20 documents (1590 < _id < 1610)
+*        and update X by $inc (with multi=true)
+* Notes: High contention on the 20 documents updated
+*/
+tests.push( { name: "MultiUpdate.Contended.Hot.NoIndex",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedHot( collection );
               },
               ops: testContendedHot,
             } );   
-                            
-tests.push( { name: "MultiUpdate.v1.Contended.Hot.Indexed",
+
+/*
+* Setup: Populate collection with unique integer _id and an integer field X=0
+*        Create index on X
+* Test:  All threads select the same 20 documents (1590 < _id < 1610)
+*        and update the indexed filed X by $inc (with multi=true)
+* Notes: High contention on the 20 documents updated as well as on index X
+*/
+tests.push( { name: "MultiUpdate.Contended.Hot.Indexed",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedHot( collection );
@@ -167,6 +237,7 @@ tests.push( { name: "MultiUpdate.v1.Contended.Hot.Indexed",
               ops: testContendedHot,
             } );   
             
+
 var setupTestContendedSeqDoc = function( collection ) {
    collection.drop();
    for ( var i = 0; i < 4800; i++ ) {
@@ -183,15 +254,26 @@ var testContendedSeqDoc = [
    }, 
 ]
 
-tests.push( { name: "MultiUpdate.v1.Contended.Doc.Seq.NoIndex",
+/*
+* Setup: Populate collection with unique integer _id and an integer field X=0
+* Test:  All threads compete to $inc field X of doc _id:1600 
+*        (with multi=true)
+*/
+tests.push( { name: "MultiUpdate.Contended.Doc.Seq.NoIndex",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedSeqDoc( collection );
               },
               ops: testContendedSeqDoc,
             } );   
-                            
-tests.push( { name: "MultiUpdate.v1.Contended.Doc.Seq.Indexed",
+
+/*
+* Setup: Populate collection with unique integer _id and an integer field X=0
+         Create index on X
+* Test:  All threads compete to $inc indexed field X of doc _id:1600 
+*        (with multi=true)
+*/
+tests.push( { name: "MultiUpdate.Contended.Doc.Seq.Indexed",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedSeqDoc( collection );
@@ -216,15 +298,26 @@ var testContendedRndDoc = [
    }, 
 ]
 
-tests.push( { name: "MultiUpdate.v1.Contended.Doc.Rnd.NoIndex",
+/*
+* Setup: Populate collection with unique integer _id and an integer field X=0
+* Test:  All threads compete on doc _id:4800 and update its X to a random value
+*        (with multi=true)
+*/
+tests.push( { name: "MultiUpdate.Contended.Doc.Rnd.NoIndex",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedRndDoc( collection );
               },
               ops: testContendedRndDoc,
             } );   
-                            
-tests.push( { name: "MultiUpdate.v1.Contended.Doc.Rnd.Indexed",
+
+/*
+* Setup: Populate collection with unique integer _id and an integer field X=0
+*        Create index on X
+* Test:  All threads compete on doc _id:4800 and update indexed X to a 
+*        random value (with multi=true)
+*/
+tests.push( { name: "MultiUpdate.Contended.Doc.Rnd.Indexed",
               tags: ['update','daily','weekly','monthly'],
               pre: function( collection ) {
                   setupTestContendedRndDoc( collection );

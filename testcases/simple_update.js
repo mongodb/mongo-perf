@@ -2,7 +2,13 @@ if ( typeof(tests) != "object" ) {
     tests = [];
 }
 
-tests.push( { name: "Update.v3.IncNoIndex",
+/*
+* Setup: Populate a collection with an integer field X set to 0
+*        and integer _id field
+* Test:  Each thread works in a range of 100 documents; randomly selects a 
+*        document based on the integer _id field and increments X
+*/
+tests.push( { name: "Update.IncNoIndex",
               tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
@@ -17,7 +23,14 @@ tests.push( { name: "Update.v3.IncNoIndex",
                     update: { $inc : { x : 1 } } },
               ] } );
 
-tests.push( { name: "Update.v3.IncWithIndex",
+/*
+* Setup: Populate a collection with an integer field X set to 0
+*        and integer _id field. Create index on X
+* Test:  Each thread works in a range of 100 documents; randomly selects a 
+*        document using _id and increments X; there will be contention on
+*        updating the index key  
+*/
+tests.push( { name: "Update.IncWithIndex",
               tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
@@ -33,7 +46,12 @@ tests.push( { name: "Update.v3.IncWithIndex",
                     update: { $inc : { x : 1 } } },
               ] } );
 
-tests.push( { name: "Update.v3.IncNoIndexUpsert",
+/*
+* Setup: Starts with an empty collection
+* Test:  Each thread works in a range of 100 documents; randomly selects a 
+*        document using _id and upserts(increment) X
+*/
+tests.push( { name: "Update.IncNoIndexUpsert",
               tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
@@ -45,7 +63,12 @@ tests.push( { name: "Update.v3.IncNoIndexUpsert",
                     update: { $inc : { x : 1 } } },
               ] } );
 
-tests.push( { name: "Update.v3.IncWithIndexUpsert",
+/*
+* Setup: Starts with an empty collection; creates index on integer field X
+* Test:  Each thread works in a range of 100 documents; randomly selects a 
+*        document using _id and upserts(increment) X
+*/
+tests.push( { name: "Update.IncWithIndexUpsert",
               tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
@@ -65,6 +88,13 @@ var shortFieldNames =
    "ri", "si", "ti", "ui", "vi", "wi", "xi", "yi", "zi", "aj",
    "xm", "ym", "zm", "an", "bn", "cn", "dn", "en", "fn", "gn"];
 
+/*
+* Setup: Populate the collection with 100 documents, each has 20 integer
+*        fields with a two charater field name and an integer _id field
+* Test:  All threads work on the same 100 documents. Each thread progresses
+*        sequentially through the collection by _id field, and increments 
+*        the same 5 of the 20 integer fields in the document. 
+*/
 tests.push( { name: "Update.IncFewSmallDoc",
               tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
@@ -91,6 +121,13 @@ tests.push( { name: "Update.IncFewSmallDoc",
                                        ta : 1 } } }
               ] } );
 
+/*
+* Setup: Populate the collection with 100 documents, each has 50 integer
+*        fields with a two charater field name plus an integer _id field
+* Test:  All threads work on the same 100 documents. Each thread progresses
+*        sequentially through the collection by _id field, and increments
+*        the same 5 of the 20 integer fields in the document. 
+*/
 tests.push( { name: "Update.IncFewLargeDoc",
               tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
@@ -128,6 +165,13 @@ var longFieldNames =
      "dosiyispnf", "nvtaemdwtp", "vzojziqbkj", "kbtfmcjlgl", "ialgxzuhnq", "djqfxvmycc",
      "ocrpwmeqyb", "tcrrliflby"];
 
+/*
+* Setup: Populate the collection with 100 documents, each has 20 integer
+*        fields with a ten charater field name plus an integer _id field
+* Test:  All threads work on the same 100 documents. Each thread progresses
+*        sequentially through the collection by _id field, and increments
+*        the same 5 of the 20 integer fields in the document. 
+*/
 tests.push( { name: "Update.IncFewSmallDocLongFields",
               tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
@@ -154,6 +198,13 @@ tests.push( { name: "Update.IncFewSmallDocLongFields",
                                        "elcgijivrt": 1 } } }
               ] } );
 
+/*
+* Setup: Populate the collection with 100 documents, each has 50 integer
+*        fields with a ten charater field name plus an integer _id field
+* Test:  All threads work on the same 100 documents. Each thread progresses 
+*        sequentially through the collection by _id field, and increments 
+*        the same 5 of the 20 integer fields in the document. 
+*/
 tests.push( { name: "Update.IncFewLargeDocLongFields",
               tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
@@ -180,7 +231,14 @@ tests.push( { name: "Update.IncFewLargeDocLongFields",
                                        "elcgijivrt": 1 } } }
               ] } );
 
-tests.push( { name: "Update.v4.SingleDocFieldAtOffset",
+/*
+* Setup: Populate the collection with documents that have 512 fields with 
+*        a single character "a" and an integer _id field
+* Test:  Each thread works on a range of 100 documents; randomly selects a
+*        document by _id and set the middle field (256 out of 512) to "a" 
+*        then immediately update the same field to "b"
+*/
+tests.push( { name: "Update.SingleDocFieldAtOffset",
               tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
                   collection.drop();
@@ -213,6 +271,13 @@ tests.push( { name: "Update.v4.SingleDocFieldAtOffset",
                   }
               ] } );
 
+/*
+* Setup: Populate the collection with 100 documents that have 512 fields with 
+*        a single character "a" 
+* Test:  Each thread does two multi updates on all documents
+*        First change a_256 to "a", then to "aa" 
+*        High contention on the documents as a result from the multi-updates
+*/
 tests.push( { name: "Update.FieldAtOffset",
               tags: ['update','sanity','daily','weekly','monthly'],
               pre: function( collection ) {
