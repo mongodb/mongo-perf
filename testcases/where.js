@@ -9,7 +9,7 @@ if ( typeof(tests) != "object" ) {
  */
  function generateSimpleDocs(collection) {
     collection.drop();
-    for (var i = 0; i < 4800; i++) {
+    for (var i = 0; i < 1000; i++) {
         collection.insert({x: i});
     }
  }
@@ -83,8 +83,12 @@ tests.push({name: "Where.In.Where",
  */
  function generateArrayDocs(collection) {
     collection.drop();
-    for (var i = 0; i < 4800; i++) {
-        collection.insert({x: i});
+    for (var i = 0; i < 1000; i++) {
+        var numbers = [];
+        for (var j = 0; j < 10; j++) {
+          numbers.push(Math.floor(Math.random() * 101));
+        }
+        collection.insert({results: numbers});
     }
  }
 
