@@ -12,7 +12,7 @@ tests.push( { name : "Where.v1.CompareToInt.QueryLanguage",
               tags: ['query','querylanguage'],
               pre: function( collection ) {
                   collection.drop();
-                  for ( var i = 0; i < 4800; i++ ) {
+                  for (var i = 0; i < 4800; i++) {
                       collection.insert( { x : i } );
                   }
               },
@@ -22,13 +22,13 @@ tests.push( { name : "Where.v1.CompareToInt.QueryLanguage",
 
 /**
  * Setup: creates a collection with 4800 documents of the form { x : i }
- * Test: Finds { x : 1 } using a $where query with ===
+ * Test: Finds { x : 1 } using a $where query with === (type-safe equality check)
  */
 tests.push( { name : "Where.v1.CompareToInt.Where.TripleEquals",
               tags: ['query','where'],
               pre: function( collection ) {
                   collection.drop();
-                  for ( var i = 0; i < 4800; i++ ) {
+                  for (var i = 0; i < 4800; i++) {
                       collection.insert( { x : i } );
                   }
               },
@@ -38,13 +38,13 @@ tests.push( { name : "Where.v1.CompareToInt.Where.TripleEquals",
 
 /**
  * Setup: creates a collection with 4800 documents of the form { x : i }
- * Test: Finds { x : 1 } using a $where query with ==
+ * Test: Finds { x : 1 } using a $where query with == (weak equality check)
  */
 tests.push( { name : "Where.v1.CompareToInt.Where.DoubleEquals",
               tags: ['query','where'],
               pre: function( collection ) {
                   collection.drop();
-                  for ( var i = 0; i < 4800; i++ ) {
+                  for (var i = 0; i < 4800; i++) {
                       collection.insert( { x : i } );
                   }
               },
@@ -60,7 +60,7 @@ tests.push( { name : "Where.v1.In.QueryLanguage",
               tags: ['query','querylanguage'],
               pre: function( collection ) {
                   collection.drop();
-                  for ( var i = 0; i < 4800; i++ ) {
+                  for (var i = 0; i < 4800; i++) {
                       collection.insert( { x : i } );
                   }
               },
@@ -76,7 +76,7 @@ tests.push( { name : "Where.v1.In.Where",
               tags: ['query','where'],
               pre: function( collection ) {
                   collection.drop();
-                  for ( var i = 0; i < 4800; i++ ) {
+                  for (var i = 0; i < 4800; i++) {
                       collection.insert( { x : i } );
                   }
               },
@@ -101,7 +101,7 @@ tests.push( { name : "Where.v1.ElemMatch.QueryLanguage",
               tags: ['query','querylanguage'],
               pre: function( collection ) {
                   collection.drop();
-                  for ( var i = 0; i < 4800; i++ ) {
+                  for (var i = 0; i < 4800; i++) {
                     var numbers = [];
                     for (var j = 0; j < 10; j++) {
                       numbers.push(Math.floor(Math.random() * 101));
@@ -123,7 +123,7 @@ tests.push( { name : "Where.v1.ElemMatch.Where",
               tags: ['query','where'],
               pre: function( collection ) {
                   collection.drop();
-                  for ( var i = 0; i < 4800; i++ ) {
+                  for (var i = 0; i < 4800; i++) {
                     var numbers = [];
                     for (var j = 0; j < 10; j++) {
                       numbers.push(Math.floor(Math.random() * 101));
@@ -145,22 +145,23 @@ tests.push( { name : "Where.v1.ElemMatch.Where",
 /*
  * Helper function to generate permutations for Regex queries
  */
-function generatePermutations() {
+function generatePermutationsCollection(c) {
     var strings = [];
-    for ( var i = 0; i < 26; i++ ) {
+    for (var i = 0; i < 26; i++) {
         strings.push(String.fromCharCode(95+i));
     }
     var collection = [];
-    for ( var i = 0; i < 26; i++ ) {
-        for (var j = 0; j < 26; j++ ) {
-            for (var k = 0; k < 26; k++ ) {
-                for (var l = 0; l < 26; l++ ) {
+    for (var i = 0; i < 26; i++) {
+        for (var j = 0; j < 26; j++) {
+            for (var k = 0; k < 26; k++) {
+                for (var l = 0; l < 26; l++) {
                     collection.push( { x : strings[i]+strings[j]+strings[k]+strings[l] } ); 
                 }
             }
         }
     }
-    return collection;
+    c.drop();
+    c.insert(collection);
 }
 
 /*
@@ -169,11 +170,7 @@ function generatePermutations() {
  */
 tests.push( { name : "Where.v1.Regex.QueryLanguage",
             tags: ['query','querylanguage'],
-            pre: function(collection) {
-                collection.drop();
-                var coll = generatePermutations();
-                collection.insert(coll)
-            },
+            pre: generatePermutationsCollection,
             ops: [
                 { op : "find", query : { x : /^aa/ } }
             ]
@@ -185,11 +182,7 @@ tests.push( { name : "Where.v1.Regex.QueryLanguage",
  */
 tests.push( { name : "Where.v1.Regex.Where",
             tags: ['query','where'],
-            pre: function(collection) {
-                collection.drop();
-                var coll = generatePermutations();
-                collection.insert(coll)
-            },
+            pre: generatePermutationsCollection,
             ops: [
                 { op : "find", query : { '$where' : function() { return /^aa/.test(this.x); } } }
             ]
@@ -198,28 +191,29 @@ tests.push( { name : "Where.v1.Regex.Where",
 /*
  * Helper function to generate collection of deeply nested documents
  */
-function generateNestedCollection() {
+function generateNestedCollection(c) {
     var strings = [];
-    for ( var i = 0; i < 26; i++ ) {
+    for (var i = 0; i < 26; i++) {
         strings.push(String.fromCharCode(95+i));
     }
     var collection = [];
-    for ( var i = 0; i < 13; i++ ) {
+    for (var i = 0; i < 13; i++) {
         collection[i] = {};
         for (var j = 0; j < 13; j++) {
             collection[i][strings[j]] = {};
-            for ( var k = 0; k < 13; k++) {
+            for (var k = 0; k < 13; k++) {
                 collection[i][strings[j]][strings[k]] = {};
-                for ( var l = 0; l < 13; l++) {
+                for (var l = 0; l < 13; l++) {
                     collection[i][strings[j]][strings[k]][strings[l]] = {};
-                    for ( var m = 0; m < 13; m++) {
+                    for (var m = 0; m < 13; m++) {
                         collection[i][strings[j]][strings[k]][strings[l]][strings[m]] = i + j + k + l + m;
                     }
                 }
             }
         }
     }
-    return collection
+    c.drop();
+    c.insert(collection);
 }
 
 /*
@@ -228,11 +222,7 @@ function generateNestedCollection() {
  */
 tests.push( { name : "Where.v1.SimpleNested.QueryLanguage",
             tags: ['query','querylanguage'],
-            pre: function(collection) {
-                collection.drop();
-                var coll = generateNestedCollection();
-                collection.insert(coll);
-            },
+            pre: generateNestedCollection,
             ops: [
                 { op : "find", query : { 'd.c.b.a' : 1 } }
             ]
@@ -244,11 +234,7 @@ tests.push( { name : "Where.v1.SimpleNested.QueryLanguage",
  */
 tests.push( { name : "Where.v1.SimpleNested.Where",
             tags: ['query', 'where'],
-            pre: function(collection) {
-                collection.drop();
-                var coll = generateNestedCollection();
-                collection.insert(coll);
-            },
+            pre: generateNestedCollection,
             ops: [
                 { op : "find", query : { '$where' : function() { return this.d.c.b.a === 1 } } }
             ]   
@@ -264,8 +250,8 @@ tests.push( { name : "Where.v1.CompareFields.Equals",
               tags: ['query','where'],
               pre: function( collection ) {
                   collection.drop();
-                  for ( var i = 0; i < 200; i++ ) {
-                    for ( var j = 0; j < 200; j++ ) {
+                  for (var i = 0; i < 200; i++) {
+                    for (var j = 0; j < 200; j++) {
                       collection.insert( { x : i, y : j } );
                     }
                   }
@@ -282,8 +268,8 @@ tests.push( { name : "Where.v1.CompareFields.Gt",
               tags: ['query','where'],
               pre: function( collection ) {
                   collection.drop();
-                  for ( var i = 0; i < 200; i++ ) {
-                    for ( var j = 0; j < 200; j++ ) {
+                  for (var i = 0; i < 200; i++) {
+                    for (var j = 0; j < 200; j++) {
                       collection.insert( { x : i, y : j } );
                     }
                   }
@@ -300,8 +286,8 @@ tests.push( { name : "Where.v1.CompareFields.Gte",
               tags: ['query','where'],
               pre: function( collection ) {
                   collection.drop();
-                  for ( var i = 0; i < 200; i++ ) {
-                    for ( var j = 0; j < 200; j++ ) {
+                  for (var i = 0; i < 200; i++) {
+                    for (var j = 0; j < 200; j++) {
                       collection.insert( { x : i, y : j } );
                     }
                   }
@@ -318,8 +304,8 @@ tests.push( { name : "Where.v1.CompareFields.Lt",
               tags: ['query','where'],
               pre: function( collection ) {
                   collection.drop();
-                  for ( var i = 0; i < 200; i++ ) {
-                    for ( var j = 0; j < 200; j++ ) {
+                  for (var i = 0; i < 200; i++) {
+                    for (var j = 0; j < 200; j++) {
                       collection.insert( { x : i, y : j } );
                     }
                   }
@@ -336,8 +322,8 @@ tests.push( { name : "Where.v1.CompareFields.Lte",
               tags: ['query','where'],
               pre: function( collection ) {
                   collection.drop();
-                  for ( var i = 0; i < 200; i++ ) {
-                    for ( var j = 0; j < 200; j++ ) {
+                  for (var i = 0; i < 200; i++) {
+                    for (var j = 0; j < 200; j++) {
                       collection.insert( { x : i, y : j } );
                     }
                   }
@@ -354,8 +340,8 @@ tests.push( { name : "Where.v1.Mixed",
               tags: ['query','where','querylanguage'],
               pre: function( collection ) {
                   collection.drop();
-                  for ( var i = 0; i < 200; i++ ) {
-                    for ( var j = 0; j < 200; j++ ) {
+                  for (var i = 0; i < 200; i++) {
+                    for (var j = 0; j < 200; j++) {
                       collection.insert( { x : i, y : j } );
                     }
                   }
@@ -370,11 +356,7 @@ tests.push( { name : "Where.v1.Mixed",
  */
 tests.push( { name : "Where.v1.ComplexNested",
             tags: ['query','where'],
-            pre: function(collection) {
-                collection.drop();
-                var coll = generateNestedCollection();
-                collection.insert(coll);
-            },
+            pre: generateNestedCollection,
             ops: [
                 { op : "find", query : { '$where' : function() { return this.d.c.b.a === this.a.b.c.d } } }
             ]   
@@ -385,28 +367,29 @@ tests.push( { name : "Where.v1.ComplexNested",
 /*
  * Helper function to generate collection with large deeply nested documents
  */
-function generateBigDeeplyNestedCollection() {
+function generateBigDeeplyNestedCollection(c) {
     var strings = [];
-    for ( var i = 0; i < 26; i++ ) {
+    for (var i = 0; i < 26; i++) {
         strings.push(String.fromCharCode(95+i));
     }
     var collection = [];
-    for ( var i = 0; i < 10; i++ ) {
+    for (var i = 0; i < 10; i++) {
         collection[i] = {};
         for (var j = 0; j < 26; j++) {
             collection[i][strings[j]] = {};
-            for ( var k = 0; k < 26; k++) {
+            for (var k = 0; k < 26; k++) {
                 collection[i][strings[j]][strings[k]] = {};
-                for ( var l = 0; l < 26; l++) {
+                for (var l = 0; l < 26; l++) {
                     collection[i][strings[j]][strings[k]][strings[l]] = {};
-                    for ( var m = 0; m < 26; m++) {
+                    for (var m = 0; m < 26; m++) {
                         collection[i][strings[j]][strings[k]][strings[l]][strings[m]] = i + j + k + l + m;
                     }
                 }
             }
         }
     }
-    return collection;
+    c.drop();
+    c.insert(collection);
 }
 
 /*
@@ -415,11 +398,7 @@ function generateBigDeeplyNestedCollection() {
  */
 tests.push( { name : "Where.v1.ReallyBigNestedComparison.QueryLanguage",
             tags: ['query','querylanguage'],
-            pre: function(collection) {
-                collection.drop();
-                var coll = generateBigDeeplyNestedCollection();
-                collection.insert(coll);
-            },
+            pre: generateBigDeeplyNestedCollection,
             ops: [
                 { op : "find", query : { 'a.b.c.d' : 1 } }
             ]
@@ -431,11 +410,7 @@ tests.push( { name : "Where.v1.ReallyBigNestedComparison.QueryLanguage",
  */
 tests.push( { name : "Where.v1.ReallyBigNestedComparison.Where",
             tags: ['query','where'],
-            pre: function(collection) {
-                collection.drop();
-                var coll = generateBigDeeplyNestedCollection();
-                collection.insert(coll);
-            },
+            pre: generateBigDeeplyNestedCollection,
             ops: [
                 { op : "find", query : { '$where': function() { return this.a.b.c.d == 1; } } } 
             ]
