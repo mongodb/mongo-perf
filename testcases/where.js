@@ -5,7 +5,7 @@ if ( typeof(tests) != "object" ) {
 // Queries that can be written in query language and using $where
 
 /**
- * Helper function to generate a collection with 4800 documents of the form { x : i }
+ * Helper function to generate a collection with 4800 documents of the form {x : i}
  */
  function generateSimpleDocs(collection) {
     collection.drop();
@@ -15,6 +15,7 @@ if ( typeof(tests) != "object" ) {
  }
 
 /**
+ * Setup: creates a collection with 4800 documents of the form {x : i}
  * Test: Finds {x: 1} using query language
  */
 tests.push({name: "Where.CompareToInt.QueryLanguage",
@@ -25,6 +26,7 @@ tests.push({name: "Where.CompareToInt.QueryLanguage",
             ]});
 
 /**
+ * Setup: creates a collection with 4800 documents of the form {x : i}
  * Test: Finds {x: 1} using a $where query with === (type-safe equality)
  */
 tests.push({name: "Where.CompareToInt.Where.TripleEquals",
@@ -35,6 +37,7 @@ tests.push({name: "Where.CompareToInt.Where.TripleEquals",
             ]});
 
 /**
+ * Setup: creates a collection with 4800 documents of the form {x : i}
  * Test: Finds {x: 1} using a $where query with == (weak equality)
  */
 tests.push({name: "Where.CompareToInt.Where.DoubleEquals",
@@ -45,6 +48,7 @@ tests.push({name: "Where.CompareToInt.Where.DoubleEquals",
             ]});
 
 /**
+ * Setup: creates a collection with 4800 documents of the form {x : i}
  * Test: Finds all documents with x between 1 and 6 using $in 
  */
 tests.push({name: "Where.In.QueryLanguage",
@@ -55,6 +59,7 @@ tests.push({name: "Where.In.QueryLanguage",
             ]});
 
 /**
+ * Setup: creates a collection with 4800 documents of the form {x : i}
  * Test: Finds all documents with x between 1 and 6 using a $where query
  */
 tests.push({name: "Where.In.Where",
@@ -84,6 +89,8 @@ tests.push({name: "Where.In.Where",
  }
 
 /**
+ * Setup: creates a collection with 4800 documents containing arrays of 10 
+ * random numbers between 0 and 100
  * Test: Finds all documents with x containing y such that 80 <= y < 85 
  * using $elemMatch
  */
@@ -95,6 +102,8 @@ tests.push({name: "Where.ElemMatch.QueryLanguage",
             ]});
 
 /**
+ * Setup: creates a collection with 4800 documents containing arrays of 10 
+ * random numbers between 0 and 100
  * Test: Finds all documents with x containing y such that 80 <= y < 85 
  * using a $where query
  */
@@ -213,7 +222,7 @@ tests.push({name: "Where.v1.SimpleNested.Where",
 // Queries that require the use of $where
 
 /**
- * Helper function to generate a collection with 40,000 documents of the form { x : i, y : j}
+ * Helper function to generate a collection with 40,000 documents of the form {x: i, y: j}
  */
  function generateTupleDocs(collection) {
     collection.drop();
@@ -225,7 +234,7 @@ tests.push({name: "Where.v1.SimpleNested.Where",
  }
 
 /**
- * Setup: creates a collection with 40,000 documents of the form { x : i, y : j}
+ * Setup: creates a collection with 40,000 documents of the form {x: i, y: j}
  * Test: Finds all documents where x == y
  */
 tests.push({name: "Where.CompareFields.Equals",
@@ -236,7 +245,7 @@ tests.push({name: "Where.CompareFields.Equals",
             ]});
 
 /**
- * Setup: creates a collection with 40,000 documents of the form { x : i, y : j}
+ * Setup: creates a collection with 40,000 documents of the form {x: i, y: j}
  * Test: Finds all documents where x > y
  */
 tests.push({name: "Where.CompareFields.Gt",
@@ -247,7 +256,7 @@ tests.push({name: "Where.CompareFields.Gt",
             ]});
 
 /**
- * Setup: creates a collection with 40,000 documents of the form { x : i, y : j}
+ * Setup: creates a collection with 40,000 documents of the form {x: i, y: j}
  * Test: Finds all documents where x >= y
  */
 tests.push({name: "Where.CompareFields.Gte",
@@ -258,7 +267,7 @@ tests.push({name: "Where.CompareFields.Gte",
             ]});
 
 /**
- * Setup: creates a collection with 40,000 documents of the form { x : i, y : j}
+ * Setup: creates a collection with 40,000 documents of the form {x: i, y: j}
  * Test: Finds all documents where x < y
  */
 tests.push({name: "Where.CompareFields.Lt",
@@ -269,7 +278,7 @@ tests.push({name: "Where.CompareFields.Lt",
             ]});
 
 /**
- * Setup: creates a collection with 40,000 documents of the form { x : i, y : j}
+ * Setup: creates a collection with 40,000 documents of the form {x: i, y: j}
  * Test: Finds all documents where x <= y
  */
 tests.push({name: "Where.CompareFields.Lte",
@@ -280,7 +289,7 @@ tests.push({name: "Where.CompareFields.Lte",
               ]});
 
 /**
- * Setup: creates a collection with 40,000 documents of the form { x : i, y : j}
+ * Setup: creates a collection with 40,000 documents of the form {x: i, y: j}
  * Test: Finds all documents where x == 2 or y == 3 
  */
 tests.push({name: "Where.Mixed",
