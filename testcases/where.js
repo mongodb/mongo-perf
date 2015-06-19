@@ -154,7 +154,7 @@ tests.push({name: "Where.v1.Regex.Where",
             tags: ['query','where'],
             pre: generatePermutationsCollection,
             ops: [
-                {op: "find", query: { '$where' : function() { return /^aa/.test(this.x); } } }
+                {op: "find", query: { '$where' : function() { return /^aa/.test(this.x); }}}
             ]
             } );
 
@@ -206,7 +206,7 @@ tests.push({name: "Where.v1.SimpleNested.Where",
             tags: ['query', 'where'],
             pre: generateNestedCollection,
             ops: [
-                {op: "find", query: { '$where' : function() { return this.d.c.b.a === 1 } } }
+                {op:"find", query: {'$where': function() { return this.d.c.b.a === 1 }}}
             ]   
             } );
 
@@ -298,7 +298,7 @@ tests.push({name: "Where.v1.ComplexNested",
             tags: ['query','where'],
             pre: generateNestedCollection,
             ops: [
-                {op: "find", query: { '$where' : function() { return this.d.c.b.a === this.a.b.c.d } } }
+                {op: "find", query: {'$where': function() { return this.d.c.b.a === this.a.b.c.d }}}
             ]   
             } );
 
@@ -340,7 +340,7 @@ tests.push({name: "Where.v1.ReallyBigNestedComparison.QueryLanguage",
             tags: ['query','querylanguage'],
             pre: generateBigDeeplyNestedCollection,
             ops: [
-                {op: "find", query: { 'a.b.c.d' : 1 } }
+                {op: "find", query: { 'a.b.c.d' : 1 }}
             ]
             } );
 
@@ -352,6 +352,6 @@ tests.push({name: "Where.v1.ReallyBigNestedComparison.Where",
             tags: ['query','where'],
             pre: generateBigDeeplyNestedCollection,
             ops: [
-                {op: "find", query: { '$where': function() { return this.a.b.c.d == 1; } } } 
+                {op: "find", query: {'$where': function() { return this.a.b.c.d == 1; }}} 
             ]
             } );
