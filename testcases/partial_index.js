@@ -86,7 +86,7 @@ tests.push( { name : "Queries.PartialIndex.NonFilteredRange",
  *       of the searches can use the partial index.
  */
 tests.push( { name : "Queries.PartialIndex.FullRange",
-              tags: ['partial_index','query', 'now'],
+              tags: ['partial_index','query'],
               pre: function( collection ) {
                   setupTestFiltered(collection);
               },
