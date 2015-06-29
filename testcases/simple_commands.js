@@ -7,7 +7,7 @@ if ( typeof(tests) != "object" ) {
  * Test: Run command isMaster
  */
 tests.push( { name: "Commands.isMaster",
-              tags: ['isMaster','commands'],
+              tags: ['isMaster','command'],
               ops: [
                   { op: "command", ns : "#B_DB", command : { "isMaster" : 1 } }
               ] } );
@@ -47,7 +47,7 @@ tests.push( { name: "Commands.nop",
  * Test: Call count command on collection
  */
 tests.push( { name: "Commands.CountsFullCollection",
-              tags: ['count','commands'],
+              tags: ['count','command'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -65,7 +65,7 @@ tests.push( { name: "Commands.CountsFullCollection",
  * Test: Count documents with _id in range (10,100). 
  */
 tests.push( { name: "Commands.CountsIntIDRange",
-              tags: ['count','commands'],
+              tags: ['count','command'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
