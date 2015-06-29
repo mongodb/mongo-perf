@@ -17,7 +17,7 @@ tests.push( { name: "Commands.isMaster",
  * Test: Run command buildInfo
  */
 tests.push( { name: "Commands.buildInfo",
-              tags: ['skip'],
+              tags: [],
               ops: [
                   { op: "command", ns : "#B_DB", command : { "buildInfo" : 1 } }
               ] } );
@@ -27,7 +27,7 @@ tests.push( { name: "Commands.buildInfo",
  * Test: Run a non-existent test
  */
 tests.push( { name: "Commands.illegalOp",
-              tags: ['skip'],
+              tags: [],
               ops: [
                   { op: "command", ns : "#B_DB", command : { "notExist" : 1 } }
               ] } );
@@ -37,7 +37,7 @@ tests.push( { name: "Commands.illegalOp",
  * Test: Run benchrun command nop. Doesn't touch the server.
  */
 tests.push( { name: "Commands.nop",
-              tags: ['skip'],
+              tags: [],
               ops: [
                   { op: "nop" }
               ] } );
