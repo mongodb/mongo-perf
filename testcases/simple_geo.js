@@ -96,7 +96,7 @@ for( var i = 0; i < 5; i++) {
  *     - the $maxDistance make sure return ~60 per query
  */
 tests.push( { name: "Geo.geoJSON.nearSphere.2dsphere.find",
-              tags: ['geo', 'sanity', 'daily','weekly','monthly', 'core-geo'],
+              tags: ['geo','core','indexed'],
               pre: function( collection ) { 
                   generateGridMapGeoJSON(collection, 
                           x_min, y_min, x_max, y_max, "2dsphere");
@@ -126,7 +126,7 @@ for( var i = 0; i < 5; i++) {
  *     - find one doc only per operation
  */
 tests.push( { name: "Geo.geoJSON.nearSphere.2dsphere.findOne",
-              tags: ['geo', 'sanity', 'daily','weekly','monthly', 'core-geo'],
+              tags: ['geo','core','indexed'],
               pre: function( collection ) { 
                   generateGridMapGeoJSON(collection, 
                         x_min, y_min, x_max, y_max, "2dsphere");
@@ -157,7 +157,7 @@ for( var i = 0; i < 5; i++) {
  *     - every operation finds ~10 doc
  */
 tests.push( { name: "Geo.geoJSON.within.2dsphere.centersphere",
-              tags: ['geo', 'sanity', 'daily','weekly','monthly', 'core-geo'],
+              tags: ['geo','core','indexed'],
               pre: function( collection ) { 
                   generateGridMapGeoJSON(collection, 
                           x_min, y_min, x_max, y_max, "2dsphere");
@@ -185,7 +185,7 @@ for( var i = 0; i < 5; i++) {
  *     - limit to 100 doc
  */
 tests.push( { name: "Geo.near.2d.find100",
-              tags: ['geo', 'sanity', 'daily','weekly','monthly', 'core-geo'],
+              tags: ['geo','core','indexed'],
               pre: function( collection ) { 
                   generateGridMap(collection, 
                           x_min, y_min, x_max, y_max, "2d");
@@ -212,7 +212,7 @@ for( var i = 0; i < 5; i++) {
  *     - with 2d index
  */
 tests.push( { name: "Geo.near.2d.findOne",
-              tags: ['geo', 'sanity', 'daily','weekly','monthly', 'core-geo'],
+              tags: ['geo','core','indexed'],
               pre: function( collection ) { 
                   generateGridMap(collection, 
                           x_min, y_min, x_max, y_max, "2d");
@@ -241,7 +241,7 @@ for( var i = 0; i < 5; i++) {
  *     - limit to 100 doc via distance
  */
 tests.push( { name: "Geo.within.2d.find",
-              tags: ['geo', 'sanity', 'daily','weekly','monthly', 'core-geo'],
+              tags: ['geo','core','indexed'],
               pre: function( collection ) { 
                   generateGridMap(collection, 
                           x_min, y_min, x_max, y_max, "2d");
