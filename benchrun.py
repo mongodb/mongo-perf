@@ -136,7 +136,7 @@ def main():
         args.shard = 2
 
     if args.includeFilter == [] :
-        args.includeFilter = [['sanity']]
+        args.includeFilter = '%'
     elif len(args.includeFilter) == 1 :
         args.includeFilter = args.includeFilter[0]
         if args.includeFilter == ['%'] :
