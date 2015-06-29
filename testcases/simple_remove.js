@@ -8,7 +8,7 @@ if ( typeof(tests) != "object" ) {
 *        random document in its range using the _id field.
 */
 tests.push( { name: "Remove.IntId",
-              tags: ['remove','sanity','daily','weekly','monthly', 'core-remove'],
+              tags: ['remove', 'core-remove'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -29,7 +29,7 @@ tests.push( { name: "Remove.IntId",
 *        a random document in its range based on the integer field
 */
 tests.push( { name: "Remove.IntNonIdNoIndex",
-              tags: ['remove','sanity','daily','weekly','monthly'],
+              tags: ['remove'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -51,7 +51,7 @@ tests.push( { name: "Remove.IntNonIdNoIndex",
 *        a random document in its range based on the indexed integer field
 */
 tests.push( { name: "Remove.IntNonIdIndex",
-              tags: ['remove','sanity','daily','weekly','monthly', 'core-remove'],
+              tags: ['remove', 'core-remove'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {

@@ -8,7 +8,7 @@ if ( typeof(tests) != "object" ) {
  * Test: Empty query that returns all documents.
  */
 tests.push( { name : "Queries.Empty",
-              tags: ['query','sanity','daily','weekly','monthly'],
+              tags: ['query'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 100; i++ ) {
@@ -27,7 +27,7 @@ tests.push( { name : "Queries.Empty",
  *       using a collection scan and returns no documents
  */
 tests.push( { name : "Queries.NoMatch",
-              tags: ['query','sanity','daily','weekly','monthly'],
+              tags: ['query'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 100; i++ ) {
@@ -46,7 +46,7 @@ tests.push( { name : "Queries.NoMatch",
  *       accesses a distinct range of documents. 
  */
 tests.push( { name: "Queries.IntIdFindOne",
-              tags: ['query','sanity','daily','weekly','monthly'],
+              tags: ['query'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -64,7 +64,7 @@ tests.push( { name: "Queries.IntIdFindOne",
  *       accesses a distinct range of documents. Query uses the index.
  */
 tests.push( { name: "Queries.IntNonIdFindOne",
-              tags: ['query','sanity','daily','weekly','monthly', 'core-query'],
+              tags: ['query', 'core-query'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -83,7 +83,7 @@ tests.push( { name: "Queries.IntNonIdFindOne",
  *       (50,100). All threads are returning the same documents.
  */
 tests.push( { name : "Queries.IntIDRange",
-              tags: ['query','sanity','daily','weekly','monthly'],
+              tags: ['query'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -100,7 +100,7 @@ tests.push( { name : "Queries.IntIDRange",
  *       are returning the same documents and uses index on x. 
  */
 tests.push( { name : "Queries.IntNonIDRange",
-             tags: ['query','sanity','daily','weekly','monthly'],
+             tags: ['query'],
              pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -118,7 +118,7 @@ tests.push( { name : "Queries.IntNonIDRange",
  *       are returning the same document and uses index on x. 
  */
 tests.push( { name: "Queries.RegexPrefixFindOne",
-              tags: ['query','sanity','daily','weekly','monthly', 'core-query'],
+              tags: ['query', 'core-query'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -138,7 +138,7 @@ tests.push( { name: "Queries.RegexPrefixFindOne",
  *       order
  */
 tests.push( { name: "Queries.TwoInts",
-              tags: ['query','sanity','daily','weekly','monthly', 'core-query'],
+              tags: ['query', 'core-query'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -165,7 +165,7 @@ tests.push( { name: "Queries.TwoInts",
  *       query.
  */
 tests.push( { name: "Queries.IntNonIdFindOneProjectionCovered",
-              tags: ['query','sanity','daily','weekly','monthly', 'core-query'],
+              tags: ['query', 'core-query'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -189,7 +189,7 @@ tests.push( { name: "Queries.IntNonIdFindOneProjectionCovered",
  *       distinct range of documents. 
  */
 tests.push( { name: "Queries.IntNonIdFindOneProjection",
-              tags: ['query','sanity','daily','weekly','monthly', 'core-query'],
+              tags: ['query', 'core-query'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -212,7 +212,7 @@ tests.push( { name: "Queries.IntNonIdFindOneProjection",
  *       all the documents. Query should be a covered index query.
  */
 tests.push( { name: "Queries.IntNonIdFindProjectionCovered",
-              tags: ['query','sanity','daily','weekly','monthly'],
+              tags: ['query'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 100; i++ ) {
@@ -235,7 +235,7 @@ tests.push( { name: "Queries.IntNonIdFindProjectionCovered",
  *       documents.
  */
 tests.push( { name: "Queries.FindProjection",
-              tags: ['query','sanity','daily','weekly','monthly'],
+              tags: ['query'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 100; i++ ) {
@@ -257,7 +257,7 @@ tests.push( { name: "Queries.FindProjection",
  *       documents.
  */
 tests.push( { name: "Queries.FindWideDocProjection",
-              tags: ['query','sanity','daily','weekly','monthly'],
+              tags: ['query'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 100; i++ ) {
@@ -287,7 +287,7 @@ tests.push( { name: "Queries.FindWideDocProjection",
  *       scan.
  */
 tests.push( { name: "Queries.FindProjectionThreeFieldsCovered",
-              tags: ['query','sanity','daily','weekly','monthly', 'core-query'],
+              tags: ['query', 'core-query'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -309,7 +309,7 @@ tests.push( { name: "Queries.FindProjectionThreeFieldsCovered",
  *       integer fields.
  */
 tests.push( { name: "Queries.FindProjectionThreeFields",
-              tags: ['query','sanity','daily','weekly','monthly'],
+              tags: ['query'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 100; i++ ) {
@@ -330,7 +330,7 @@ tests.push( { name: "Queries.FindProjectionThreeFields",
  *       x.y. Each thread accesses a distinct range of documents.
  */
 tests.push( { name: "Queries.FindProjectionDottedField",
-              tags: ['query','sanity','daily','weekly','monthly'],
+              tags: ['query'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 100; i++ ) {
@@ -351,7 +351,7 @@ tests.push( { name: "Queries.FindProjectionDottedField",
  *       documents. The query should be a covered index query.
 */
 tests.push( { name: "Queries.FindProjectionDottedField.Indexed",
-              tags: ['query','sanity','daily','weekly','monthly', 'core-query'],
+              tags: ['query', 'core-query'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -371,7 +371,7 @@ tests.push( { name: "Queries.FindProjectionDottedField.Indexed",
  * Test: Do a table scan
  */
 tests.push( { name: "Queries.LargeDocs",
-              tags: ['query','weekly','monthly'],
+              tags: ['query'],
               pre: function( collection ) {
                   collection.drop();
                   var bigString = new Array(1024*1024*5).toString();

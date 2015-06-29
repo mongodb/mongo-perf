@@ -24,7 +24,7 @@ var testBigAllDocs = [
  * Test: Increment the x field on all 100k documents
  */
 tests.push( { name: "MultiUpdate.BigAllDocs.NoIndex",
-              tags: ['update','slow','weekly','monthly'],
+              tags: ['update','slow'],
               pre: function( collection ) {
                   setupTestBigAllDocs( collection );                                
               },
@@ -38,7 +38,7 @@ tests.push( { name: "MultiUpdate.BigAllDocs.NoIndex",
  *       operation there is one index key entry
  */
 tests.push( { name: "MultiUpdate.BigAllDocs.Indexed",
-              tags: ['update','slow','weekly','monthly'],
+              tags: ['update','slow'],
               pre: function( collection ) {
                   setupTestBigAllDocs( collection );
                   collection.ensureIndex( { x : 1 } );                                    
@@ -68,7 +68,7 @@ var testBigAllDocsMultiChange = [
  * Test: Increment the x field and set y='b' on all 100k documents.
  */
 tests.push( { name: "MultiUpdate.BigAllDocsMultiChange.NoIndex",
-              tags: ['update','slow','weekly','monthly'],
+              tags: ['update','slow'],
               pre: function( collection ) {
                   setupTestBigAllDocsMultiChange( collection );                                
               },
@@ -83,7 +83,7 @@ tests.push( { name: "MultiUpdate.BigAllDocsMultiChange.NoIndex",
  *       there is one index key in each index.
  */
 tests.push( { name: "MultiUpdate.BigAllDocsMultiChange.Indexed",
-              tags: ['update','slow','weekly','monthly'],
+              tags: ['update','slow'],
               pre: function( collection ) {
                   setupTestBigAllDocsMultiChange( collection );
                   collection.ensureIndex( { x : 1 } );                                    
@@ -114,7 +114,7 @@ var testContendedAllDocs = [
  * Test: Increment the x field on all 3200 documents
  */
 tests.push( { name: "MultiUpdate.Contended.AllDocs.NoIndex",
-              tags: ['update','slow','weekly','monthly'],
+              tags: ['update','slow'],
               pre: function( collection ) {
                   setupTestContendedAllDocs( collection )
               },
@@ -128,7 +128,7 @@ tests.push( { name: "MultiUpdate.Contended.AllDocs.NoIndex",
  *       operation there is one index key entry
  */
 tests.push( { name: "MultiUpdate.Contended.AllDocs.Indexed",
-              tags: ['update','slow','weekly','monthly'],
+              tags: ['update','slow'],
               pre: function( collection ) {
                   setupTestContendedAllDocs( collection );
                   collection.ensureIndex( { x : 1 } );                                    

@@ -7,7 +7,7 @@ if ( typeof(tests) != "object" ) {
  * Test: Run command isMaster
  */
 tests.push( { name: "Commands.isMaster",
-              tags: ['isMaster','commands','sanity','daily','weekly','monthly'],
+              tags: ['isMaster','commands'],
               ops: [
                   { op: "command", ns : "#B_DB", command : { "isMaster" : 1 } }
               ] } );
@@ -47,7 +47,7 @@ tests.push( { name: "Commands.nop",
  * Test: Call count command on collection
  */
 tests.push( { name: "Commands.CountsFullCollection",
-              tags: ['count','commands','sanity','daily','weekly','monthly'],
+              tags: ['count','commands'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -65,7 +65,7 @@ tests.push( { name: "Commands.CountsFullCollection",
  * Test: Count documents with _id in range (10,100). 
  */
 tests.push( { name: "Commands.CountsIntIDRange",
-              tags: ['count','commands','sanity','daily','weekly','monthly'],
+              tags: ['count','commands'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -88,7 +88,7 @@ tests.push( { name: "Commands.CountsIntIDRange",
  *       on distinct range of documents.
  */
 tests.push( { name: "Commands.FindAndModifyInserts",
-              tags: ['findAndModify','command','sanity','daily','weekly','monthly'],
+              tags: ['findAndModify','command'],
               pre: function( collection ) {
                   collection.drop();
               },
@@ -112,7 +112,7 @@ tests.push( { name: "Commands.FindAndModifyInserts",
  */
 function genDistinctTest( name, index, query ) {
     var doc = { name : name,
-                tags: ['distinct','command','sanity','daily','weekly','monthly', 'core-commands']
+                tags: ['distinct','command', 'core-commands']
               };
     if ( index ) {
         doc.pre = function( collection ) {
@@ -138,7 +138,7 @@ function genDistinctTest( name, index, query ) {
     }
 
     var op = { op: "command",
-               tags: ['distinct','command','sanity','daily','weekly','monthly', 'core-commands'],
+               tags: ['distinct','command', 'core-commands'],
                ns : "#B_DB",
                command : { distinct : "#B_COLL",
                            key : "x" } };

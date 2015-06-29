@@ -26,7 +26,7 @@ var setupMMS = function( collection ) {
 * Test:  Increment one of shallow (top-level) field on the single doc
 */
 tests.push( { name: "Update.MmsIncShallow1",
-              tags: ['update','sanity','mms','daily','weekly','monthly'],
+              tags: ['update','mms'],
               pre: setupMMS,
               ops: [
                   { op:  "update",
@@ -41,7 +41,7 @@ tests.push( { name: "Update.MmsIncShallow1",
 * Test:  Increment two shallow (top-level) fields on the single doc
 */
 tests.push( { name: "Update.MmsIncShallow2",
-              tags: ['update','sanity','mms','daily','weekly','monthly', 'core-update'],
+              tags: ['update','mms', 'core-update'],
               pre: setupMMS,
               ops: [
                   { op:  "update",
@@ -57,7 +57,7 @@ tests.push( { name: "Update.MmsIncShallow2",
 *        end of the arrays 
 */
 tests.push( { name: "Update.MmsIncDeep1",
-              tags: ['update','sanity','mms','daily','weekly','monthly', 'core-update'],
+              tags: ['update','mms', 'core-update'],
               pre: setupMMS,
               ops: [
                   { op:  "update",
@@ -73,7 +73,7 @@ tests.push( { name: "Update.MmsIncDeep1",
 *        indexed end of the arrays 
 */
 tests.push( { name: "Update.MmsIncDeepSharedPath2",
-              tags: ['update','sanity','mms','daily','weekly','monthly', 'core-update'],
+              tags: ['update','mms', 'core-update'],
               pre: setupMMS,
               ops: [
                   { op:  "update",
@@ -90,7 +90,7 @@ tests.push( { name: "Update.MmsIncDeepSharedPath2",
 *        indexed end of the arrays
 */
 tests.push( { name: "Update.MmsIncDeepSharedPath3",
-              tags: ['update','sanity','mms','daily','weekly','monthly', 'core-update'],
+              tags: ['update','mms', 'core-update'],
               pre: setupMMS,
               ops: [
                   { op:  "update",
@@ -108,7 +108,7 @@ tests.push( { name: "Update.MmsIncDeepSharedPath3",
 *        indexed end of the arrays and do not share the same prefix
 */
 tests.push( { name: "Update.MmsIncDeepDistinctPath2",
-              tags: ['update','sanity','mms','daily','weekly','monthly', 'core-update'],
+              tags: ['update','mms', 'core-update'],
               pre: setupMMS,
               ops: [
                   { op:  "update",
@@ -125,7 +125,7 @@ tests.push( { name: "Update.MmsIncDeepDistinctPath2",
 *        indexed end of the arrays and do not share a common prefix.
 */
 tests.push( { name: "Update.MmsIncDeepDistinctPath3",
-              tags: ['update','sanity','mms','daily','weekly','monthly', 'core-update'],
+              tags: ['update','mms', 'core-update'],
               pre: setupMMS,
               ops: [
                   { op:  "update",
@@ -144,7 +144,7 @@ tests.push( { name: "Update.MmsIncDeepDistinctPath3",
 *        end of the 2nd level array but evenly spreaded in the first level array
 */
 tests.push( { name: "Update.v0.MmsIncDeepDistinctPath4",
-              tags: ['update','sanity','mms','daily','weekly','monthly', 'core-update'],
+              tags: ['update','mms', 'core-update'],
               pre: setupMMS,
               ops: [
                   { op:  "update",
