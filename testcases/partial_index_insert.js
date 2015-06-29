@@ -37,7 +37,7 @@ tests.push( { name : "Inserts.PartialIndex.FilteredRange",
  *       not be indexed.
  */
 tests.push( { name : "Inserts.PartialIndex.NonFilteredRange",
-              tags: ['partial_index','insert', 'core-insert'],
+              tags: ['partial_index','insert','core'],
               pre: function( collection ) {
                   setupTestFiltered(collection);
               },

@@ -31,7 +31,7 @@ tests.push( { name: "Update.IncNoIndex",
 *        updating the index key  
 */
 tests.push( { name: "Update.IncWithIndex",
-              tags: ['update', 'core-update'],
+              tags: ['update','core'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -52,7 +52,7 @@ tests.push( { name: "Update.IncWithIndex",
 *        document using _id and upserts(increment) X
 */
 tests.push( { name: "Update.IncNoIndexUpsert",
-              tags: ['update', 'core-update'],
+              tags: ['update','core'],
               pre: function( collection ) {
                   collection.drop();
               },
@@ -69,7 +69,7 @@ tests.push( { name: "Update.IncNoIndexUpsert",
 *        document using _id and upserts(increment) X
 */
 tests.push( { name: "Update.IncWithIndexUpsert",
-              tags: ['update', 'core-update'],
+              tags: ['update','core'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex( { x : 1 } );
@@ -96,7 +96,7 @@ var shortFieldNames =
 *        the same 5 of the 20 integer fields in the document. 
 */
 tests.push( { name: "Update.IncFewSmallDoc",
-              tags: ['update', 'core-update'],
+              tags: ['update','core'],
               pre: function( collection ) {
                   collection.drop();
 

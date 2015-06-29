@@ -64,7 +64,7 @@ tests.push( { name: "Queries.IntIdFindOne",
  *       accesses a distinct range of documents. Query uses the index.
  */
 tests.push( { name: "Queries.IntNonIdFindOne",
-              tags: ['query', 'core-query'],
+              tags: ['query','core'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -118,7 +118,7 @@ tests.push( { name : "Queries.IntNonIDRange",
  *       are returning the same document and uses index on x. 
  */
 tests.push( { name: "Queries.RegexPrefixFindOne",
-              tags: ['query', 'core-query'],
+              tags: ['query','core'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -138,7 +138,7 @@ tests.push( { name: "Queries.RegexPrefixFindOne",
  *       order
  */
 tests.push( { name: "Queries.TwoInts",
-              tags: ['query', 'core-query'],
+              tags: ['query','core'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -165,7 +165,7 @@ tests.push( { name: "Queries.TwoInts",
  *       query.
  */
 tests.push( { name: "Queries.IntNonIdFindOneProjectionCovered",
-              tags: ['query', 'core-query'],
+              tags: ['query','core'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -189,7 +189,7 @@ tests.push( { name: "Queries.IntNonIdFindOneProjectionCovered",
  *       distinct range of documents. 
  */
 tests.push( { name: "Queries.IntNonIdFindOneProjection",
-              tags: ['query', 'core-query'],
+              tags: ['query','core'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -287,7 +287,7 @@ tests.push( { name: "Queries.FindWideDocProjection",
  *       scan.
  */
 tests.push( { name: "Queries.FindProjectionThreeFieldsCovered",
-              tags: ['query', 'core-query'],
+              tags: ['query','core'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -351,7 +351,7 @@ tests.push( { name: "Queries.FindProjectionDottedField",
  *       documents. The query should be a covered index query.
 */
 tests.push( { name: "Queries.FindProjectionDottedField.Indexed",
-              tags: ['query', 'core-query'],
+              tags: ['query','core'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {

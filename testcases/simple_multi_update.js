@@ -41,7 +41,7 @@ tests.push( { name: "MultiUpdate.v1.Uncontended.SingleDoc.NoIndex",
 * Notes: High contention on the index X
 */
 tests.push( { name: "MultiUpdate.Uncontended.SingleDoc.Indexed",
-              tags: ['update', 'core-multi'],
+              tags: ['update','core'],
               pre: function( collection ) {
                   setupTestUncontendedSingleDoc( collection );
                   collection.ensureIndex( { x : 1 } );
@@ -72,7 +72,7 @@ var testUncontendedTwoDocs = [
 *        2. update the X filed in documents by $inc (with multi=true)
 */
 tests.push( { name: "MultiUpdate.Uncontended.TwoDocs.NoIndex",
-              tags: ['update', 'core-multi'],
+              tags: ['update','core'],
               pre: function( collection ) {
                   setupTestUncontendedTwoDocs( collection );
               },
@@ -88,7 +88,7 @@ tests.push( { name: "MultiUpdate.Uncontended.TwoDocs.NoIndex",
 * Notes: High contention on the index X
 */
 tests.push( { name: "MultiUpdate.Uncontended.TwoDocs.Indexed",
-              tags: ['update', 'core-multi'],
+              tags: ['update','core'],
               pre: function( collection ) {
                   setupTestUncontendedTwoDocs( collection );
                   collection.ensureIndex( { x : 1 } );                  
@@ -119,7 +119,7 @@ var testContendedLow = [
 *        2. update filed X by $inc (with multi=true)
 */
 tests.push( { name: "MultiUpdate.Contended.Low.NoIndex",
-              tags: ['update', 'core-multi'],
+              tags: ['update','core'],
               pre: function( collection ) {
                  setupTestContendedLow( collection );                               
               },
@@ -135,7 +135,7 @@ tests.push( { name: "MultiUpdate.Contended.Low.NoIndex",
 * Notes: High contention on index
 */
 tests.push( { name: "MultiUpdate.Contended.Low.Indexed",
-              tags: ['update', 'core-multi'],
+              tags: ['update','core'],
               pre: function( collection ) {
                  setupTestContendedLow( collection );
                  collection.ensureIndex( { x : 1 } );                                    

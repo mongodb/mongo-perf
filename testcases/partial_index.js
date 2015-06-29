@@ -50,7 +50,7 @@ var setupTestIndexed = function (collection) {
  * Test: Query for random documents using the partial index
  */
 tests.push( { name : "Queries.PartialIndex.FilteredRange",
-              tags: ['partial_index','query', 'core-query'],
+              tags: ['partial_index','query','core'],
               pre: function( collection ) {
                   setupTestFiltered(collection);
               },
@@ -105,7 +105,7 @@ tests.push( { name : "Queries.PartialIndex.FullRange",
  * Notes: This test is for comparison with test with selective partial index. 
  */
 tests.push( { name : "Queries.PartialIndex.AllInFilter.FilteredRange",
-              tags: ['partial_index','query', 'core-query'],
+              tags: ['partial_index','query','core'],
               pre: function( collection ) {
                   setupTestFilteredNonSelective(collection);
               },
@@ -122,7 +122,7 @@ tests.push( { name : "Queries.PartialIndex.AllInFilter.FilteredRange",
  * Test: Query for random documents using the partial index. 
  */
 tests.push( { name : "Queries.PartialIndex.AllInFilter.FullRange",
-              tags: ['partial_index','query', 'core-query'],
+              tags: ['partial_index','query','core'],
               pre: function( collection ) {
                   setupTestFilteredNonSelective(collection);
               },

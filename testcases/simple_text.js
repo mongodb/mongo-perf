@@ -101,7 +101,7 @@ function oplistSingleWord(caseSensitive) {
 * Test:  Run case-insensitive single-word text queries against the collection
 */
 tests.push( { name: "Queries.Text.FindSingle",
-            tags: ['query','text', 'core-query'],
+            tags: ['query','text','core'],
             pre: function(collection) {
                 populateCollection(collection, numTerm, dictSize);
             },
@@ -114,7 +114,7 @@ tests.push( { name: "Queries.Text.FindSingle",
 * Test:  Run case-sensitive single-word text queries against the collection
 */
 tests.push( { name: "Queries.Text.FindSingleCaseSensitive",
-            tags: ['query','text', 'core-query'],
+            tags: ['query','text','core'],
             pre: function(collection) {
                 populateCollection(collection, numTerm, dictSize);
             },
@@ -147,7 +147,7 @@ function oplistThreeWord(caseSensitive) {
 * Test:  Run case-insensitive three-words text queries against the collection
 */
 tests.push( { name: "Queries.Text.FindThreeWords",
-            tags: ['query','text', 'core-query'],
+            tags: ['query','text','core'],
             pre: function(collection) {
                 populateCollection(collection, numTerm, dictSize);
             },
@@ -160,7 +160,7 @@ tests.push( { name: "Queries.Text.FindThreeWords",
 * Test:  Run case-sensitive three-words text queries against the collection
 */
 tests.push( { name: "Queries.Text.FindThreeWordsCaseSensitive",
-            tags: ['query','text', 'core-query'],
+            tags: ['query','text','core'],
             pre: function(collection) {
                 populateCollection(collection, numTerm, dictSize);
             },
@@ -193,7 +193,7 @@ function oplistPhrase(caseSensitive) {
 * Test:  Run case-insensitive phrase text queries against the collection
 */
 tests.push( { name: "Queries.Text.FindPhrase",
-            tags: ['query','text', 'core-query'],
+            tags: ['query','text','core'],
             pre: function(collection) {
                 populateCollection(collection, numTerm, dictSize);
             },
@@ -206,7 +206,7 @@ tests.push( { name: "Queries.Text.FindPhrase",
 * Test:  Run case-sensitive phrase text queries against the collection
 */
 tests.push( { name: "Queries.Text.FindPhraseCaseSensitive",
-            tags: ['query','text', 'core-query'],
+            tags: ['query','text','core'],
             pre: function(collection) {
                 populateCollection(collection, numTerm, dictSize);
             },
