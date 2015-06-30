@@ -38,7 +38,7 @@ tests.push( { name: "Mixed.FindOneUpdateIntId-50-50",
  *       documents
  */
 tests.push( { name: "Mixed.FindThenUpdate-50-50",
-              tags: ['mixed'],
+              tags: ['mixed','indexed'],
               pre: function( collection ) {
                   collection.drop();
 

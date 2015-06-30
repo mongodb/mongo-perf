@@ -10,7 +10,7 @@ if ( typeof(tests) != "object" ) {
  *       updates a distinct range of documents.
  */
 tests.push( { name: "Update.SetWithIndex.Random",
-              tags: ['update','core'],
+              tags: ['update','core','indexed'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -34,7 +34,7 @@ tests.push( { name: "Update.SetWithIndex.Random",
  *       indexes). Each thread updates a distinct range of documents.
  */
 tests.push( { name: "Update.SetWithMultiIndex.Random",
-              tags: ['update'],
+              tags: ['update','indexed'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -59,7 +59,7 @@ tests.push( { name: "Update.SetWithMultiIndex.Random",
  *       updates a distinct range of documents.
  */
 tests.push( { name: "Update.SetWithMultiIndex.String",
-              tags: ['update'],
+              tags: ['update','indexed'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {

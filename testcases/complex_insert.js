@@ -11,7 +11,7 @@ if ( typeof(tests) != "object" ) {
  *       always add to the max key in the index.
  */
 tests.push( { name: "Insert.SingleIndex.Seq",
-              tags: ['insert'],
+              tags: ['insert','indexed'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({x: 1});
@@ -30,7 +30,7 @@ tests.push( { name: "Insert.SingleIndex.Seq",
  *       of integers.
  */
 tests.push( { name: "Insert.SingleIndex.Uncontested.Rnd",
-              tags: ['insert'],
+              tags: ['insert','indexed'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({x: 1});
@@ -49,7 +49,7 @@ tests.push( { name: "Insert.SingleIndex.Uncontested.Rnd",
  *       integers possibly leading to contention.
  */
 tests.push( { name: "Insert.SingleIndex.Contested.Rnd",
-              tags: ['insert'],
+              tags: ['insert','indexed'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({x: 1});
@@ -68,7 +68,7 @@ tests.push( { name: "Insert.SingleIndex.Contested.Rnd",
  *       a distinct range of integers.
  */
 tests.push( { name: "Insert.MultiIndex.Uncontested.Rnd",
-              tags: ['insert'],
+              tags: ['insert','indexed'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({x: 1});
@@ -92,7 +92,7 @@ tests.push( { name: "Insert.MultiIndex.Uncontested.Rnd",
  *       same region of integers.
  */
 tests.push( { name: "Insert.MultiIndex.Contested.Rnd",
-              tags: ['insert'],
+              tags: ['insert','indexed'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({x: 1});
@@ -116,7 +116,7 @@ tests.push( { name: "Insert.MultiIndex.Contested.Rnd",
  *       indexed. Each thread uses a unique range of random numbers.
  */
 tests.push( { name: "Insert.MultiKeyIndex.Uncontested.Rnd",
-              tags: ['insert'],
+              tags: ['insert','indexed'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({x: 1});
@@ -141,7 +141,7 @@ tests.push( { name: "Insert.MultiKeyIndex.Uncontested.Rnd",
  *       contention on the index keys.  
  */
 tests.push( { name: "Insert.MultiKeyIndex.Contested.Rnd",
-              tags: ['insert'],
+              tags: ['insert','indexed'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({x: 1});

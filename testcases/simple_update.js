@@ -31,7 +31,7 @@ tests.push( { name: "Update.IncNoIndex",
 *        updating the index key  
 */
 tests.push( { name: "Update.IncWithIndex",
-              tags: ['update','core'],
+              tags: ['update','core','indexed'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -69,7 +69,7 @@ tests.push( { name: "Update.IncNoIndexUpsert",
 *        document using _id and upserts(increment) X
 */
 tests.push( { name: "Update.IncWithIndexUpsert",
-              tags: ['update','core'],
+              tags: ['update','core','indexed'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex( { x : 1 } );

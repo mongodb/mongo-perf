@@ -51,7 +51,7 @@ tests.push( { name: "Remove.IntNonIdNoIndex",
 *        a random document in its range based on the indexed integer field
 */
 tests.push( { name: "Remove.IntNonIdIndex",
-              tags: ['remove','core'],
+              tags: ['remove','core','indexed'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {

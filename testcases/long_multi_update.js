@@ -38,7 +38,7 @@ tests.push( { name: "MultiUpdate.BigAllDocs.NoIndex",
  *       operation there is one index key entry
  */
 tests.push( { name: "MultiUpdate.BigAllDocs.Indexed",
-              tags: ['update','slow'],
+              tags: ['update','slow','indexed'],
               pre: function( collection ) {
                   setupTestBigAllDocs( collection );
                   collection.ensureIndex( { x : 1 } );                                    
@@ -83,7 +83,7 @@ tests.push( { name: "MultiUpdate.BigAllDocsMultiChange.NoIndex",
  *       there is one index key in each index.
  */
 tests.push( { name: "MultiUpdate.BigAllDocsMultiChange.Indexed",
-              tags: ['update','slow'],
+              tags: ['update','slow','indexed'],
               pre: function( collection ) {
                   setupTestBigAllDocsMultiChange( collection );
                   collection.ensureIndex( { x : 1 } );                                    
@@ -128,7 +128,7 @@ tests.push( { name: "MultiUpdate.Contended.AllDocs.NoIndex",
  *       operation there is one index key entry
  */
 tests.push( { name: "MultiUpdate.Contended.AllDocs.Indexed",
-              tags: ['update','slow'],
+              tags: ['update','slow','indexed'],
               pre: function( collection ) {
                   setupTestContendedAllDocs( collection );
                   collection.ensureIndex( { x : 1 } );                                    

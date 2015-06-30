@@ -85,7 +85,7 @@ tests.push( { name: "Insert.JustID",
  *            ranges, and will exercise different ranges of the _id index.
 */
 tests.push( { name: "Insert.SeqIntID.Indexed",
-              tags: ['insert'],
+              tags: ['insert','indexed'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({a: 1});
@@ -144,7 +144,7 @@ tests.push( { name: "Insert.JustNum",
  *            ranges, and will exercise different ranges of the 'x' index.
 */
 tests.push( { name: "Insert.JustNumIndexed",
-              tags: ['insert'],
+              tags: ['insert','indexed'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({x: 1});
