@@ -58,11 +58,12 @@ function formatRunDate(now) {
         pad(now.getDate()));
 }
 
-function runTest(test, thread, multidb, multicoll, runSeconds, shard, writeOptions) {
+function runTest(test, thread, multidb, multicoll, runSeconds, shard, writeOptions, printArgs) {
 
     if (typeof writeOptions === "undefined") writeOptions = getDefaultWriteOptions();
     if (typeof shard === "undefined") shard = 0;
     if (typeof includeFilter === "undefined") includeFilter = "sanity";
+    if (typeof printArgs === "undefined") printArgs = false;
 
     var collections = [];
 
@@ -152,6 +153,9 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, writeOptio
         host: db.getMongo().host,
         parallel: thread };
 
+    if (printArgs) {
+        print(JSON.stringify(benchArgs));
+    }
     // invoke the built-in mongo shell function
     var result = benchRun(benchArgs);
 
@@ -310,12 +314,13 @@ function doExecute(test, includeFilter, excludeFilter) {
  * @param excludeTestbed - Exclude testbed information from results
  * @returns {{}} the results of a run set of tests
  */
-function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, writeOptions, excludeTestbed) {
+function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, writeOptions, excludeTestbed, printArgs) {
 
     if (typeof shard === "undefined") shard = 0;
     if (typeof writeOptions === "undefined") writeOptions = getDefaultWriteOptions();
     if (typeof includeFilter === "undefined") includeFilter = "sanity";
     if (typeof excludeTestbed === "undefined") excludeTestbed = false;
+    if (typeof printArgs === "undefined") printArgs = false;
     
 
     var testResults = {};
@@ -359,7 +364,7 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilt
                 var newResults = {};
                 for (var j = 0; j < trials; j++) {
                     try {
-                        results[j] = runTest(test, threadCount, multidb, multicoll, seconds, shard, writeOptions);
+                        results[j] = runTest(test, threadCount, multidb, multicoll, seconds, shard, writeOptions, printArgs);
                     }
                     catch(err) {
                         // Error handling to catch exceptions thrown in/by js for error
@@ -410,8 +415,8 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilt
  * @param excludeTestbed - Exclude testbed information from results
  * @returns {{}} the results of a run set of tests
  */
-function mongoPerfRunTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, writeOptions, excludeTestbed) {
-    testResults = runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, writeOptions, excludeTestbed);
+function mongoPerfRunTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, writeOptions, excludeTestbed, printArgs) {
+    testResults = runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, writeOptions, excludeTestbed, printArgs);
     print("@@@RESULTS_START@@@");
     print(JSON.stringify(testResults));
     print("@@@RESULTS_END@@@");
