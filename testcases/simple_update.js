@@ -9,7 +9,7 @@ if ( typeof(tests) != "object" ) {
 *        document based on the integer _id field and increments X
 */
 tests.push( { name: "Update.IncNoIndex",
-              tags: ['update'],
+              tags: ['update','regression'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -129,7 +129,7 @@ tests.push( { name: "Update.IncFewSmallDoc",
 *        the same 5 of the 20 integer fields in the document. 
 */
 tests.push( { name: "Update.IncFewLargeDoc",
-              tags: ['update'],
+              tags: ['update','regression'],
               pre: function( collection ) {
                   collection.drop();
 
@@ -173,7 +173,7 @@ var longFieldNames =
 *        the same 5 of the 20 integer fields in the document. 
 */
 tests.push( { name: "Update.IncFewSmallDocLongFields",
-              tags: ['update'],
+              tags: ['update','regression'],
               pre: function( collection ) {
                   collection.drop();
 
@@ -206,7 +206,7 @@ tests.push( { name: "Update.IncFewSmallDocLongFields",
 *        the same 5 of the 20 integer fields in the document. 
 */
 tests.push( { name: "Update.IncFewLargeDocLongFields",
-              tags: ['update'],
+              tags: ['update','regression'],
               pre: function( collection ) {
                   collection.drop();
 
@@ -239,7 +239,7 @@ tests.push( { name: "Update.IncFewLargeDocLongFields",
 *        then immediately update the same field to "b"
 */
 tests.push( { name: "Update.SingleDocFieldAtOffset",
-              tags: ['update'],
+              tags: ['update','regression'],
               pre: function( collection ) {
                   collection.drop();
 
@@ -279,7 +279,7 @@ tests.push( { name: "Update.SingleDocFieldAtOffset",
 *        High contention on the documents as a result from the multi-updates
 */
 tests.push( { name: "Update.FieldAtOffset",
-              tags: ['update'],
+              tags: ['update','regression'],
               pre: function( collection ) {
                   collection.drop();
 

@@ -26,7 +26,7 @@ var setupMMS = function( collection ) {
 * Test:  Increment one of shallow (top-level) field on the single doc
 */
 tests.push( { name: "Update.MmsIncShallow1",
-              tags: ['update','mms','single_threaded'],
+              tags: ['update','mms','single_threaded','regression'],
               pre: setupMMS,
               ops: [
                   { op:  "update",

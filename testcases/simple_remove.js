@@ -29,7 +29,7 @@ tests.push( { name: "Remove.IntId",
 *        a random document in its range based on the integer field
 */
 tests.push( { name: "Remove.IntNonIdNoIndex",
-              tags: ['remove'],
+              tags: ['remove','regression'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {

@@ -68,7 +68,7 @@ tests.push( { name : "Queries.PartialIndex.FilteredRange",
  *       (collection scan)
  */
 tests.push( { name : "Queries.PartialIndex.NonFilteredRange",
-              tags: ['partial_index','query','indexed'],
+              tags: ['partial_index','query','indexed','regression'],
               pre: function( collection ) {
                   setupTestFiltered(collection);
               },
@@ -86,7 +86,7 @@ tests.push( { name : "Queries.PartialIndex.NonFilteredRange",
  *       of the searches can use the partial index.
  */
 tests.push( { name : "Queries.PartialIndex.FullRange",
-              tags: ['partial_index','query','indexed'],
+              tags: ['partial_index','query','indexed','regression'],
               pre: function( collection ) {
                   setupTestFiltered(collection);
               },

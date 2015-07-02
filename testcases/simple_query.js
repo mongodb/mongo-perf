@@ -8,7 +8,7 @@ if ( typeof(tests) != "object" ) {
  * Test: Empty query that returns all documents.
  */
 tests.push( { name : "Queries.Empty",
-              tags: ['query'],
+              tags: ['query','regression'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 100; i++ ) {
@@ -27,7 +27,7 @@ tests.push( { name : "Queries.Empty",
  *       using a collection scan and returns no documents
  */
 tests.push( { name : "Queries.NoMatch",
-              tags: ['query'],
+              tags: ['query','regression'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 100; i++ ) {
@@ -46,7 +46,7 @@ tests.push( { name : "Queries.NoMatch",
  *       accesses a distinct range of documents. 
  */
 tests.push( { name: "Queries.IntIdFindOne",
-              tags: ['query'],
+              tags: ['query','regression'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -83,7 +83,7 @@ tests.push( { name: "Queries.IntNonIdFindOne",
  *       (50,100). All threads are returning the same documents.
  */
 tests.push( { name : "Queries.IntIDRange",
-              tags: ['query'],
+              tags: ['query','regression'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -212,7 +212,7 @@ tests.push( { name: "Queries.IntNonIdFindOneProjection",
  *       all the documents. Query should be a covered index query.
  */
 tests.push( { name: "Queries.IntNonIdFindProjectionCovered",
-              tags: ['query','indexed'],
+              tags: ['query','indexed','regression'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 100; i++ ) {
@@ -235,7 +235,7 @@ tests.push( { name: "Queries.IntNonIdFindProjectionCovered",
  *       documents.
  */
 tests.push( { name: "Queries.FindProjection",
-              tags: ['query','indexed'],
+              tags: ['query','indexed','regression'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 100; i++ ) {
@@ -257,7 +257,7 @@ tests.push( { name: "Queries.FindProjection",
  *       documents.
  */
 tests.push( { name: "Queries.FindWideDocProjection",
-              tags: ['query'],
+              tags: ['query','regression'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 100; i++ ) {
@@ -309,7 +309,7 @@ tests.push( { name: "Queries.FindProjectionThreeFieldsCovered",
  *       integer fields.
  */
 tests.push( { name: "Queries.FindProjectionThreeFields",
-              tags: ['query'],
+              tags: ['query','regression'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 100; i++ ) {
@@ -330,7 +330,7 @@ tests.push( { name: "Queries.FindProjectionThreeFields",
  *       x.y. Each thread accesses a distinct range of documents.
  */
 tests.push( { name: "Queries.FindProjectionDottedField",
-              tags: ['query'],
+              tags: ['query','regression'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 100; i++ ) {

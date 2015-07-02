@@ -47,7 +47,7 @@ tests.push( { name: "Commands.nop",
  * Test: Call count command on collection
  */
 tests.push( { name: "Commands.CountsFullCollection",
-              tags: ['command'],
+              tags: ['command','regression'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -65,7 +65,7 @@ tests.push( { name: "Commands.CountsFullCollection",
  * Test: Count documents with _id in range (10,100). 
  */
 tests.push( { name: "Commands.CountsIntIDRange",
-              tags: ['command'],
+              tags: ['command','regression'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -88,7 +88,7 @@ tests.push( { name: "Commands.CountsIntIDRange",
  *       on distinct range of documents.
  */
 tests.push( { name: "Commands.FindAndModifyInserts",
-              tags: ['command'],
+              tags: ['command','regression'],
               pre: function( collection ) {
                   collection.drop();
               },
