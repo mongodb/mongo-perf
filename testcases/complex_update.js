@@ -2,8 +2,15 @@ if ( typeof(tests) != "object" ) {
     tests = [];
 }
 
-tests.push( { name: "Update.v0.SetWithIndex.Random",
-              tags: ['update','complex','daily','weekly','monthly'],
+/*
+ * Setup: Create collection with integer _id and indexed integer
+ *        field x with initial value 0
+ * Test: Each thread picks a random document based on _id, and sets
+ *       field x to a random integer (updating the index). Each thread
+ *       updates a distinct range of documents.
+ */
+tests.push( { name: "Update.SetWithIndex.Random",
+              tags: ['update','core','indexed','regression'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -18,8 +25,16 @@ tests.push( { name: "Update.v0.SetWithIndex.Random",
                     update: { $set : { x : {"#RAND_INT": [0,1000] } } } },
               ] } );
 
-tests.push( { name: "Update.v0.SetWithMultiIndex.Random",
-              tags: ['update','complex','daily','weekly','monthly'],
+/*
+ * Setup: Create collection with integer _id and indexed integer field
+ *        x with initial value 0, and indexed integer field y
+ *        (distinct values)
+ * Test: Each thread picks a random document based on _id, and sets
+ *       fields x and y to different random integer (updating both
+ *       indexes). Each thread updates a distinct range of documents.
+ */
+tests.push( { name: "Update.SetWithMultiIndex.Random",
+              tags: ['update','indexed','regression'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -35,8 +50,16 @@ tests.push( { name: "Update.v0.SetWithMultiIndex.Random",
                     update: { $set : { x : {"#RAND_INT": [0,1000] }, y : {"#RAND_INT": [0,1000] } } } },
               ] } );
 
-tests.push( { name: "Update.v0.SetWithMultiIndex.String",
-              tags: ['update','complex','daily','weekly','monthly'],
+/*
+ * Setup: Create collection with integer _id and indexed integer field
+ *        x with initial value 0, and indexed random string field y
+ * Test: Each thread picks a random document based on _id, and sets
+ *       fields x to a random integer and y to different random string
+ *       of the same length (updating both indexes). Each thread
+ *       updates a distinct range of documents.
+ */
+tests.push( { name: "Update.SetWithMultiIndex.String",
+              tags: ['update','indexed','regression'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {

@@ -95,18 +95,26 @@ function oplistSingleWord(caseSensitive) {
     return oplist;
 }
 
-// Single-word search, case-insensitive
+/*
+* Setup: Create a text-indexed collection with documents filled with fake
+         words/phrase
+* Test:  Run case-insensitive single-word text queries against the collection
+*/
 tests.push( { name: "Queries.Text.FindSingle",
-            tags: ['query','text','daily','weekly','monthly'],
+            tags: ['query','text','core','indexed'],
             pre: function(collection) {
                 populateCollection(collection, numTerm, dictSize);
             },
             ops: oplistSingleWord(false)
         });
 
-// Single-word search, case-sensitive
+/*
+* Setup: Create a text-indexed collection with documents filled with fake
+         words/phrase
+* Test:  Run case-sensitive single-word text queries against the collection
+*/
 tests.push( { name: "Queries.Text.FindSingleCaseSensitive",
-            tags: ['query','text','daily','weekly','monthly'],
+            tags: ['query','text','core','indexed'],
             pre: function(collection) {
                 populateCollection(collection, numTerm, dictSize);
             },
@@ -133,18 +141,26 @@ function oplistThreeWord(caseSensitive) {
     return oplist;
 }
 
-// Three-word search (or), case-insensitive
+/*
+* Setup: Create a text-indexed collection with documents filled with fake
+         words/phrase
+* Test:  Run case-insensitive three-words text queries against the collection
+*/
 tests.push( { name: "Queries.Text.FindThreeWords",
-            tags: ['query','text','daily','weekly','monthly'],
+            tags: ['query','text','core','indexed'],
             pre: function(collection) {
                 populateCollection(collection, numTerm, dictSize);
             },
             ops: oplistThreeWord(false)
         });
 
-// Three-word search (or), case sensitive
-tests.push( { name: "Queries.Text.FindThreeWordsCaseSensiive",
-            tags: ['query','text','daily','weekly','monthly'],
+/*
+* Setup: Create a text-indexed collection with documents filled with fake
+         words/phrase
+* Test:  Run case-sensitive three-words text queries against the collection
+*/
+tests.push( { name: "Queries.Text.FindThreeWordsCaseSensitive",
+            tags: ['query','text','core','indexed'],
             pre: function(collection) {
                 populateCollection(collection, numTerm, dictSize);
             },
@@ -171,18 +187,26 @@ function oplistPhrase(caseSensitive) {
     return oplist;
 }
 
-// Phrase search, case-insensitive
+/*
+* Setup: Create a text-indexed collection with documents filled with fake
+         words/phrase
+* Test:  Run case-insensitive phrase text queries against the collection
+*/
 tests.push( { name: "Queries.Text.FindPhrase",
-            tags: ['query','text','daily','weekly','monthly'],
+            tags: ['query','text','core','indexed'],
             pre: function(collection) {
                 populateCollection(collection, numTerm, dictSize);
             },
             ops: oplistPhrase(false)
         });
 
-// Phrase search, case-sensitive
+/*
+* Setup: Create a text-indexed collection with documents filled with fake
+         words/phrase
+* Test:  Run case-sensitive phrase text queries against the collection
+*/
 tests.push( { name: "Queries.Text.FindPhraseCaseSensitive",
-            tags: ['query','text','daily','weekly','monthly'],
+            tags: ['query','text','core','indexed'],
             pre: function(collection) {
                 populateCollection(collection, numTerm, dictSize);
             },
