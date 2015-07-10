@@ -8,13 +8,15 @@ if ( typeof(tests) != "object" ) {
  * Helper function to generate documents in the collection using the 
  * generator function to generate the documents
  */
- function generateDocs(collection, nDocs, generator) {
-    collection.drop();
-    docs = [];
-    for (var i = 0; i < n; i++) {
-      docs.push(generator());
+function generateDocs(nDocs, generator) {
+    return function(collection) {
+        collection.drop();
+        docs = [];
+        for (var i = 0; i < nDocs; i++) {
+          docs.push(generator());
+        }
+        collection.insert(docs, {'ordered': false});
     }
-    collection.insert(docs);
  }
 
 /**
@@ -33,13 +35,13 @@ function increasingXGenerator() {
  * Generates a documents containing an array of 10 
  * random numbers between 0 and 100
  */
- function arrayGenerator() {
+function arrayGenerator() {
     var results = [];
     for (var j = 0; j < 10; j++) {
       results.push(Math.floor(Math.random() * 101));
     }
-    return {"results": numbers};
- }
+    return {"results": results };
+}
 
 /**
  * Generates documents of the form {x: i, y: j}
@@ -51,7 +53,7 @@ function increasingXGenerator() {
     var y = 0;
     return function() {
       var doc = { "x" : x, "y": y};
-      if (y++ > maxYValue) {
+      if (y++ > numY) {
         y = 0;
         x++;
       }
@@ -102,13 +104,13 @@ function nestedGenerator(big) {
     return function() {
       doc = {};
       for (var j = 0; j < levelSize; j++) {
-            collection[i][strings[j]] = {};
+            doc[strings[j]] = {};
             for (var k = 0; k < levelSize; k++) {
-                collection[i][strings[j]][strings[k]] = {};
+                doc[strings[j]][strings[k]] = {};
                 for (var l = 0; l < levelSize; l++) {
-                    collection[i][strings[j]][strings[k]][strings[l]] = {};
+                    doc[strings[j]][strings[k]][strings[l]] = {};
                     for (var m = 0; m < levelSize; m++) {
-                        collection[i][strings[j]][strings[k]][strings[l]][strings[m]] 
+                        doc[strings[j]][strings[k]][strings[l]][strings[m]] 
                             = i + j + k + l + m;
                     }
                 }
@@ -127,25 +129,10 @@ function nestedGenerator(big) {
  * Test: Finds {x: 1} using query language
  */
 tests.push({name: "Where.CompareToInt.QueryLanguage",
-            tags: ['query','querylanguage'],
-            pre: function(collection) {
-                generateDocs(collection, 1000, increasingXGenerator())
-            },
+            tags: ['query','querylanguage','compare'],
+            pre: generateDocs(1000, increasingXGenerator()),
             ops: [
               {op: "find", query: {x : 1}}
-            ]});
-
-/**
- * Setup: creates a collection with documents of the form {x : i}
- * Test: Finds {x: 1} using a $where query with === (type-safe equality)
- */
-tests.push({name: "Where.CompareToInt.Where.TripleEquals",
-            tags: ['query','where'],
-            pre: function(collection) {
-                generateDocs(collection, 1000, increasingXGenerator())
-            },
-            ops: [
-              {op: "find", query: {$where: function() {return this.x === 1;}}} 
             ]});
 
 /**
@@ -153,25 +140,21 @@ tests.push({name: "Where.CompareToInt.Where.TripleEquals",
  * Test: Finds {x: 1} using a $where query with == (weak equality)
  */
 tests.push({name: "Where.CompareToInt.Where.DoubleEquals",
-            tags: ['query','where'],
-            pre: function(collection) {
-                generateDocs(collection, 1000, increasingXGenerator())
-            },
+            tags: ['query','where','compare'],
+            pre: generateDocs(1000, increasingXGenerator()),
             ops: [
-              {op: "find", query: {$where: function() {return this.x === 1;}}} 
+              {op: "find", query: {$where: function() {return this.x == 1;}}} 
             ]});
 
 /**
  * Setup: creates a collection with documents of the form {x : i}
- * Test: Finds all documents with x between 1 and 6 using $in 
+ * Test: Finds {x: 1} using a $where query with === (type-safe equality)
  */
-tests.push({name: "Where.In.QueryLanguage",
-            tags: ['query','querylanguage'],
-            pre: function(collection) {
-                generateDocs(collection, 1000, increasingXGenerator())
-            },
+tests.push({name: "Where.CompareToInt.Where.TripleEquals",
+            tags: ['query','where','compare'],
+            pre: generateDocs(1000, increasingXGenerator()),
             ops: [
-              {op: "find", query: {x: {$in: [1, 2, 3, 4, 5, 6]}}} 
+              {op: "find", query: {$where: function() {return this.x === 1;}}} 
             ]});
 
 /**
@@ -180,9 +163,7 @@ tests.push({name: "Where.In.QueryLanguage",
  */
 tests.push({name: "Where.In.Where",
             tags: ['query','where'],
-            pre: function(collection) {
-                generateDocs(collection, 1000, increasingXGenerator())
-            },
+            pre: generateDocs(1000, increasingXGenerator()),
             ops: [
               {op: "find", query: {$where: function() {
                   for (var j = 1; j <= 6; j++) {
@@ -196,18 +177,14 @@ tests.push({name: "Where.In.Where",
             ]});
 
 /**
- * Setup: creates a collection with documents containing arrays of 10 
- * random numbers between 0 and 100
- * Test: Finds all documents with x containing y such that 80 <= y < 85 
- * using $elemMatch
+ * Setup: creates a collection with documents of the form {x : i}
+ * Test: Finds all documents with x between 1 and 6 using $in 
  */
-tests.push({name: "Where.ElemMatch.QueryLanguage",
+tests.push({name: "Where.In.QueryLanguage",
             tags: ['query','querylanguage'],
-            pre: function(collection) {
-              generateDocs(collection, 1000, arrayGenerator())
-            },
+            pre: generateDocs(1000, increasingXGenerator()),
             ops: [
-              {op: "find", query: {results: {$elemMatch: {$gte: 80, $lt: 85 }}}}
+              {op: "find", query: {x: {$in: [1, 2, 3, 4, 5, 6]}}} 
             ]});
 
 /**
@@ -218,9 +195,7 @@ tests.push({name: "Where.ElemMatch.QueryLanguage",
  */
 tests.push({name: "Where.ElemMatch.Where",
             tags: ['query','where'],
-            pre: function(collection) {
-              generateDocs(collection, 1000, arrayGenerator())
-            }
+            pre: generateDocs(1000, arrayGenerator),
             ops: [
               {op: "find", query: {$where : function() {
                 for (result in this.results) {
@@ -232,20 +207,18 @@ tests.push({name: "Where.ElemMatch.Where",
               }}}
             ]});
 
-
-/*
- * Setup: Create collection with documents containing 4 character alphabetic permutations
- * Test: Find document based on Regex Query
+/**
+ * Setup: creates a collection with documents containing arrays of 10 
+ * random numbers between 0 and 100
+ * Test: Finds all documents with x containing y such that 80 <= y < 85 
+ * using $elemMatch
  */
-tests.push({name: "Where.v1.Regex.QueryLanguage",
+tests.push({name: "Where.ElemMatch.QueryLanguage",
             tags: ['query','querylanguage'],
-            pre: function(collection) {
-              generateDocs(collection, Math.pow(26, 4), permutationGenerator())
-            },
+            pre: generateDocs(1000, arrayGenerator),
             ops: [
-              {op: "find", query: { x : /^aa/ } }
-            ]
-            } );
+              {op: "find", query: {results: {$elemMatch: {$gte: 80, $lt: 85 }}}}
+            ]});
 
 /*
  * Setup: Create collection with documents containing 4 character alphabetic permutations
@@ -253,25 +226,21 @@ tests.push({name: "Where.v1.Regex.QueryLanguage",
  */
 tests.push({name: "Where.v1.Regex.Where",
             tags: ['query','where'],
-            pre: function(collection) {
-              generateDocs(collection, Math.pow(26, 4), permutationGenerator())
-            },
+            pre: generateDocs(Math.pow(26, 4), permutationGenerator()),
             ops: [
               {op: "find", query: { '$where' : function() { return /^aa/.test(this.x); }}}
             ]
             } );
 
 /*
- * Setup: Creates a collection of 13 objects, each with 4 nested levels of 13 fields
- * Test: Find document through match of deeply nested field using Query Language
+ * Setup: Create collection with documents containing 4 character alphabetic permutations
+ * Test: Find document based on Regex Query
  */
-tests.push({name: "Where.v1.SimpleNested.QueryLanguage",
+tests.push({name: "Where.v1.Regex.QueryLanguage",
             tags: ['query','querylanguage'],
-            pre: function(collection) {
-              generateDocs(collection, 13, nestedGenerator())
-            },
+            pre: generateDocs(Math.pow(26, 4), permutationGenerator()),
             ops: [
-              {op: "find", query: { 'd.c.b.a' : 1 } }
+              {op: "find", query: { x : /^aa/ } }
             ]
             } );
 
@@ -281,12 +250,22 @@ tests.push({name: "Where.v1.SimpleNested.QueryLanguage",
  */
 tests.push({name: "Where.v1.SimpleNested.Where",
             tags: ['query', 'where'],
-            pre: function(collection) {
-              generateDocs(collection, 13, nestedGenerator(false))
-            },
+            pre: generateDocs(13, nestedGenerator(false)),
             ops: [
               {op:"find", query: {'$where': function() { return this.d.c.b.a === 1 }}}
             ]   
+            } );
+
+/*
+ * Setup: Creates a collection of 13 objects, each with 4 nested levels of 13 fields
+ * Test: Find document through match of deeply nested field using Query Language
+ */
+tests.push({name: "Where.v1.SimpleNested.QueryLanguage",
+            tags: ['query','querylanguage'],
+            pre: generateDocs(13, nestedGenerator()),
+            ops: [
+              {op: "find", query: { 'd.c.b.a' : 1 } }
+            ]
             } );
 
 // Queries that require the use of $where
@@ -297,9 +276,7 @@ tests.push({name: "Where.v1.SimpleNested.Where",
  */
 tests.push({name: "Where.CompareFields.Equals",
             tags: ['query','where'],
-            pre: function(collection) {
-              generateDocs(collection, 1000, increasingXGenerator())
-            },
+            pre: generateDocs(1000, increasingXGenerator()),
             ops: [
               {op: "find", query: {$where: function() {return this.x == this.y}}} 
             ]});
@@ -310,9 +287,7 @@ tests.push({name: "Where.CompareFields.Equals",
  */
 tests.push({name: "Where.CompareFields.Gt",
             tags: ['query','where'],
-            pre: function(collection) {
-              generateDocs(collection, 200, tupleGenerator(200))
-            },
+            pre: generateDocs(200, tupleGenerator(200)),
             ops: [
               {op: "find", query: {$where: function() {return this.x > this.y}}} 
             ]});
@@ -323,9 +298,7 @@ tests.push({name: "Where.CompareFields.Gt",
  */
 tests.push({name: "Where.CompareFields.Gte",
             tags: ['query','where'],
-            pre: function(collection) {
-              generateDocs(collection, 200, tupleGenerator(200))
-            },
+            pre: generateDocs(200, tupleGenerator(200)),
             ops: [
               {op: "find", query: {$where: function() {return this.x >= this.y}}} 
             ]});
@@ -336,9 +309,7 @@ tests.push({name: "Where.CompareFields.Gte",
  */
 tests.push({name: "Where.CompareFields.Lt",
             tags: ['query','where'],
-            pre: function(collection) {
-              generateDocs(collection, 200, tupleGenerator(200))
-            },
+            pre: generateDocs(200, tupleGenerator(200)),
             ops: [
               {op: "find", query: {$where: function() {return this.x < this.y}}}
             ]});
@@ -349,9 +320,7 @@ tests.push({name: "Where.CompareFields.Lt",
  */
 tests.push({name: "Where.CompareFields.Lte",
             tags: ['query','where'],
-            pre: function(collection) {
-              generateDocs(collection, 200, tupleGenerator(200))
-            },
+            pre: generateDocs(200, tupleGenerator(200)),
             ops: [
               {op: "find", query: {$where: function() {return this.x <= this.y}}}
             ]});
@@ -362,9 +331,7 @@ tests.push({name: "Where.CompareFields.Lte",
  */
 tests.push({name: "Where.Mixed",
             tags: ['query','where','querylanguage'],
-            pre: function(collection) {
-              generateDocs(collection, 200, tupleGenerator(200))
-            },
+            pre: generateDocs(200, tupleGenerator(200)),
             ops: [
               {op: "find", query: {$or : [{x: 2}, {$where: function() {return (this.y == 3);}}]}} 
             ]});
@@ -375,9 +342,7 @@ tests.push({name: "Where.Mixed",
  */
 tests.push({name: "Where.v1.ComplexNested",
             tags: ['query','where'],
-            pre: function(collection) {
-              generateDocs(collection, 10, nestedGenerator(true))
-            }
+            pre: generateDocs(10, nestedGenerator(true)),
             ops: [
               {op: "find", query: {'$where': function() { return this.d.c.b.a === this.a.b.c.d }}}
             ]   
@@ -387,28 +352,24 @@ tests.push({name: "Where.v1.ComplexNested",
 
 /*
  * Setup: Creates a collection of 10 documents, each with 4 nested levels of 26 fields
- * Test: Find document through match of a deeply nested field using query language
+ * Test: Find document through match of a deeply nested field using $where 
  */
-tests.push({name: "Where.v1.ReallyBigNestedComparison.QueryLanguage",
-            tags: ['query','querylanguage'],
-            pre: function(collection) {
-              generateDocs(collection, 10, nestedGenerator(true))
-            }
+tests.push({name: "Where.v1.ReallyBigNestedComparison.Where",
+            tags: ['query','where'],
+            pre: generateDocs(10, nestedGenerator(true)),
             ops: [
-              {op: "find", query: { 'a.b.c.d' : 1 }}
+              {op: "find", query: {'$where': function() { return this.a.b.c.d == 1; }}} 
             ]
             } );
 
 /*
  * Setup: Creates a collection of 10 documents, each with 4 nested levels of 26 fields
- * Test: Find document through match of a deeply nested field using $where 
+ * Test: Find document through match of a deeply nested field using query language
  */
-tests.push({name: "Where.v1.ReallyBigNestedComparison.Where",
-            tags: ['query','where'],
-            pre: function(collection) {
-              generateDocs(collection, 10, nestedGenerator(true))
-            }
+tests.push({name: "Where.v1.ReallyBigNestedComparison.QueryLanguage",
+            tags: ['query','querylanguage'],
+            pre: generateDocs(10, nestedGenerator(true)),
             ops: [
-              {op: "find", query: {'$where': function() { return this.a.b.c.d == 1; }}} 
+              {op: "find", query: { 'a.b.c.d' : 1 }}
             ]
             } );
