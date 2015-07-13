@@ -3,11 +3,13 @@ if ( typeof(tests) != "object" ) {
 }
 
 var setupTestUncontendedSingleDoc = function( collection ) {
-   collection.drop();
-   for ( var i = 0; i < 4800; i++ ) {
-      collection.insert( { _id : i , x : 0 } );
-   }
-   collection.getDB().getLastError();
+    collection.drop();
+    var docs = [];
+    for ( var i = 0; i < 4800; i++ ) {
+        docs.push( { _id : i , x : 0 } );
+    }
+    collection.insert(docs);
+    collection.getDB().getLastError();
 }
 
 var testUncontendedSingleDoc = [
@@ -50,11 +52,13 @@ tests.push( { name: "MultiUpdate.Uncontended.SingleDoc.Indexed",
             } );              
               
 var setupTestUncontendedTwoDocs = function( collection ) {
-   collection.drop();
-   for ( var i = 0; i < 4800; i++ ) {
-      collection.insert( { _id : i , x : 0 } );
-   }
-   collection.getDB().getLastError();
+    collection.drop();
+    var docs = [];
+    for ( var i = 0; i < 4800; i++ ) {
+        docs.push( { _id : i , x : 0 } );
+    }
+    collection.insert(docs);
+    collection.getDB().getLastError();
 };
 
 var testUncontendedTwoDocs = [
@@ -97,11 +101,13 @@ tests.push( { name: "MultiUpdate.Uncontended.TwoDocs.Indexed",
             } );
                             
 var setupTestContendedLow = function( collection ) {
-   collection.drop();
-   for ( var i = 0; i < 4800; i++ ) {
-      collection.insert( { _id : i , x : 0 } );
-   }
-   collection.getDB().getLastError();
+    collection.drop();
+    var docs = [];
+    for ( var i = 0; i < 4800; i++ ) {
+        docs.push( { _id : i , x : 0 } );
+    }
+    collection.insert(docs);
+    collection.getDB().getLastError();
 };                            
 
 var testContendedLow = [
@@ -144,11 +150,13 @@ tests.push( { name: "MultiUpdate.Contended.Low.Indexed",
             } );                    
               
 var setupTestContendedMedium = function( collection ) {
-   collection.drop();
-   for ( var i = 0; i < 4800; i++ ) {
-      collection.insert( { _id : i , x : 0 } );
-   }
-   collection.getDB().getLastError();                               
+    collection.drop();
+    var docs = [];
+    for ( var i = 0; i < 4800; i++ ) {
+        docs.push( { _id : i , x : 0 } );
+    }
+    collection.insert(docs);
+    collection.getDB().getLastError();                               
 }
 
 var testContendedMedium = [ 
@@ -191,11 +199,13 @@ tests.push( { name: "MultiUpdate.Contended.Medium.Indexed",
             } );     
 
 var setupTestContendedHot = function( collection ) {
-   collection.drop();
-   for ( var i = 0; i < 4800; i++ ) {
-      collection.insert( { _id : i , x : 0 } );
-   }
-   collection.getDB().getLastError();                               
+    collection.drop();
+    var docs = [];
+    for ( var i = 0; i < 4800; i++ ) {
+        docs.push( { _id : i , x : 0 } );
+    }
+    collection.insert(docs);
+    collection.getDB().getLastError();                               
 }
 
 var testContendedHot = [ 
@@ -239,11 +249,13 @@ tests.push( { name: "MultiUpdate.Contended.Hot.Indexed",
             
 
 var setupTestContendedSeqDoc = function( collection ) {
-   collection.drop();
-   for ( var i = 0; i < 4800; i++ ) {
-      collection.insert( { _id : i , x : 0 } );
+    collection.drop();
+    var docs = [];
+    for ( var i = 0; i < 4800; i++ ) {
+        docs.push( { _id : i , x : 0 } );
    }
-   collection.getDB().getLastError();                               
+    collection.insert(docs);
+    collection.getDB().getLastError();                               
 }
 
 var testContendedSeqDoc = [ 
@@ -283,11 +295,13 @@ tests.push( { name: "MultiUpdate.Contended.Doc.Seq.Indexed",
             } );                            
             
 var setupTestContendedRndDoc = function( collection ) {
-   collection.drop();
-   for ( var i = 0; i < 4800; i++ ) {
-      collection.insert( { _id : i , x : 0 } );
-   }
-   collection.getDB().getLastError();                               
+    collection.drop();
+    var docs = [];
+    for ( var i = 0; i < 4800; i++ ) {
+        docs.push( { _id : i , x : 0 } );
+    }
+    collection.insert(docs);
+    collection.getDB().getLastError();                               
 }
 
 var testContendedRndDoc = [ 

@@ -8,9 +8,11 @@ if ( typeof(tests) != "object" ) {
  */
 var setupTest = function (collection) {
     collection.drop();
+    var docs = [];
     for ( var i = 0; i < 4800; i++ ) {
-        collection.insert( { x : i, a : i } );
+        docs.push( { x : i, a : i } );
     }
+    collection.insert(docs);
     collection.getDB().getLastError();
  
 }
