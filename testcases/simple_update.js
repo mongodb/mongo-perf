@@ -9,7 +9,7 @@ if ( typeof(tests) != "object" ) {
 *        document based on the integer _id field and increments X
 */
 tests.push( { name: "Update.IncNoIndex",
-              tags: ['update','sanity','daily','weekly','monthly'],
+              tags: ['update','regression'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -31,7 +31,7 @@ tests.push( { name: "Update.IncNoIndex",
 *        updating the index key  
 */
 tests.push( { name: "Update.IncWithIndex",
-              tags: ['update','sanity','daily','weekly','monthly'],
+              tags: ['update','core','indexed'],
               pre: function( collection ) {
                   collection.drop();
                   for ( var i = 0; i < 4800; i++ ) {
@@ -52,7 +52,7 @@ tests.push( { name: "Update.IncWithIndex",
 *        document using _id and upserts(increment) X
 */
 tests.push( { name: "Update.IncNoIndexUpsert",
-              tags: ['update','sanity','daily','weekly','monthly'],
+              tags: ['update','core'],
               pre: function( collection ) {
                   collection.drop();
               },
@@ -69,7 +69,7 @@ tests.push( { name: "Update.IncNoIndexUpsert",
 *        document using _id and upserts(increment) X
 */
 tests.push( { name: "Update.IncWithIndexUpsert",
-              tags: ['update','sanity','daily','weekly','monthly'],
+              tags: ['update','core','indexed'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex( { x : 1 } );
@@ -96,7 +96,7 @@ var shortFieldNames =
 *        the same 5 of the 20 integer fields in the document. 
 */
 tests.push( { name: "Update.IncFewSmallDoc",
-              tags: ['update','sanity','daily','weekly','monthly'],
+              tags: ['update','core'],
               pre: function( collection ) {
                   collection.drop();
 
@@ -129,7 +129,7 @@ tests.push( { name: "Update.IncFewSmallDoc",
 *        the same 5 of the 20 integer fields in the document. 
 */
 tests.push( { name: "Update.IncFewLargeDoc",
-              tags: ['update','sanity','daily','weekly','monthly'],
+              tags: ['update','regression'],
               pre: function( collection ) {
                   collection.drop();
 
@@ -173,7 +173,7 @@ var longFieldNames =
 *        the same 5 of the 20 integer fields in the document. 
 */
 tests.push( { name: "Update.IncFewSmallDocLongFields",
-              tags: ['update','sanity','daily','weekly','monthly'],
+              tags: ['update','regression'],
               pre: function( collection ) {
                   collection.drop();
 
@@ -206,7 +206,7 @@ tests.push( { name: "Update.IncFewSmallDocLongFields",
 *        the same 5 of the 20 integer fields in the document. 
 */
 tests.push( { name: "Update.IncFewLargeDocLongFields",
-              tags: ['update','sanity','daily','weekly','monthly'],
+              tags: ['update','regression'],
               pre: function( collection ) {
                   collection.drop();
 
@@ -239,7 +239,7 @@ tests.push( { name: "Update.IncFewLargeDocLongFields",
 *        then immediately update the same field to "b"
 */
 tests.push( { name: "Update.SingleDocFieldAtOffset",
-              tags: ['update','sanity','daily','weekly','monthly'],
+              tags: ['update','regression'],
               pre: function( collection ) {
                   collection.drop();
 
@@ -279,7 +279,7 @@ tests.push( { name: "Update.SingleDocFieldAtOffset",
 *        High contention on the documents as a result from the multi-updates
 */
 tests.push( { name: "Update.FieldAtOffset",
-              tags: ['update','sanity','daily','weekly','monthly'],
+              tags: ['update','regression'],
               pre: function( collection ) {
                   collection.drop();
 

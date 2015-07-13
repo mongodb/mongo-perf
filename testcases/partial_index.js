@@ -50,7 +50,7 @@ var setupTestIndexed = function (collection) {
  * Test: Query for random documents using the partial index
  */
 tests.push( { name : "Queries.PartialIndex.FilteredRange",
-              tags: ['partial_index','query','daily','weekly','monthly'],
+              tags: ['partial_index','query','core','indexed'],
               pre: function( collection ) {
                   setupTestFiltered(collection);
               },
@@ -68,7 +68,7 @@ tests.push( { name : "Queries.PartialIndex.FilteredRange",
  *       (collection scan)
  */
 tests.push( { name : "Queries.PartialIndex.NonFilteredRange",
-              tags: ['partial_index','query','daily','weekly','monthly'],
+              tags: ['partial_index','query','indexed','regression'],
               pre: function( collection ) {
                   setupTestFiltered(collection);
               },
@@ -86,7 +86,7 @@ tests.push( { name : "Queries.PartialIndex.NonFilteredRange",
  *       of the searches can use the partial index.
  */
 tests.push( { name : "Queries.PartialIndex.FullRange",
-              tags: ['partial_index','query','daily','weekly','monthly', 'now'],
+              tags: ['partial_index','query','indexed','regression'],
               pre: function( collection ) {
                   setupTestFiltered(collection);
               },
@@ -105,7 +105,7 @@ tests.push( { name : "Queries.PartialIndex.FullRange",
  * Notes: This test is for comparison with test with selective partial index. 
  */
 tests.push( { name : "Queries.PartialIndex.AllInFilter.FilteredRange",
-              tags: ['partial_index','query','weekly','monthly'],
+              tags: ['partial_index','query','core','indexed'],
               pre: function( collection ) {
                   setupTestFilteredNonSelective(collection);
               },
@@ -122,7 +122,7 @@ tests.push( { name : "Queries.PartialIndex.AllInFilter.FilteredRange",
  * Test: Query for random documents using the partial index. 
  */
 tests.push( { name : "Queries.PartialIndex.AllInFilter.FullRange",
-              tags: ['partial_index','query','weekly','monthly'],
+              tags: ['partial_index','query','core','indexed'],
               pre: function( collection ) {
                   setupTestFilteredNonSelective(collection);
               },
@@ -131,4 +131,3 @@ tests.push( { name : "Queries.PartialIndex.AllInFilter.FullRange",
                   { op: "let", target: "x", value : {"#RAND_INT" : [ 0, 4800 ]}},
                   { op: "find", query:  { x : {"#VARIABLE" : "x"}, a : {"VARIABLE" : "x"  } } }
               ] } );
-

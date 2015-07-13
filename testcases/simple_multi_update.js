@@ -25,7 +25,7 @@ var testUncontendedSingleDoc = [
 *        2. update one filed X by $inc (with multi=true)
 */
 tests.push( { name: "MultiUpdate.v1.Uncontended.SingleDoc.NoIndex",
-              tags: ['update','daily','weekly','monthly'],
+              tags: ['update'],
               pre: function( collection ) {
                   setupTestUncontendedSingleDoc( collection );
               },
@@ -41,7 +41,7 @@ tests.push( { name: "MultiUpdate.v1.Uncontended.SingleDoc.NoIndex",
 * Notes: High contention on the index X
 */
 tests.push( { name: "MultiUpdate.Uncontended.SingleDoc.Indexed",
-              tags: ['update','daily','weekly','monthly'],
+              tags: ['update','core','indexed'],
               pre: function( collection ) {
                   setupTestUncontendedSingleDoc( collection );
                   collection.ensureIndex( { x : 1 } );
@@ -72,7 +72,7 @@ var testUncontendedTwoDocs = [
 *        2. update the X filed in documents by $inc (with multi=true)
 */
 tests.push( { name: "MultiUpdate.Uncontended.TwoDocs.NoIndex",
-              tags: ['update','daily','weekly','monthly'],
+              tags: ['update','core'],
               pre: function( collection ) {
                   setupTestUncontendedTwoDocs( collection );
               },
@@ -88,7 +88,7 @@ tests.push( { name: "MultiUpdate.Uncontended.TwoDocs.NoIndex",
 * Notes: High contention on the index X
 */
 tests.push( { name: "MultiUpdate.Uncontended.TwoDocs.Indexed",
-              tags: ['update','daily','weekly','monthly'],
+              tags: ['update','core','indexed'],
               pre: function( collection ) {
                   setupTestUncontendedTwoDocs( collection );
                   collection.ensureIndex( { x : 1 } );                  
@@ -119,7 +119,7 @@ var testContendedLow = [
 *        2. update filed X by $inc (with multi=true)
 */
 tests.push( { name: "MultiUpdate.Contended.Low.NoIndex",
-              tags: ['update','daily','weekly','monthly'],
+              tags: ['update','core'],
               pre: function( collection ) {
                  setupTestContendedLow( collection );                               
               },
@@ -135,7 +135,7 @@ tests.push( { name: "MultiUpdate.Contended.Low.NoIndex",
 * Notes: High contention on index
 */
 tests.push( { name: "MultiUpdate.Contended.Low.Indexed",
-              tags: ['update','daily','weekly','monthly'],
+              tags: ['update','core','indexed'],
               pre: function( collection ) {
                  setupTestContendedLow( collection );
                  collection.ensureIndex( { x : 1 } );                                    
@@ -166,7 +166,7 @@ var testContendedMedium = [
 *        2. update filed X by $inc (with multi=true)
 */
 tests.push( { name: "MultiUpdate.Contended.Medium.NoIndex",
-              tags: ['update','daily','weekly','monthly'],
+              tags: ['update'],
               pre: function( collection ) {
                   setupTestContendedMedium( collection );
               },
@@ -182,7 +182,7 @@ tests.push( { name: "MultiUpdate.Contended.Medium.NoIndex",
 * Notes: High contention on index X
 */
 tests.push( { name: "MultiUpdate.Contended.Medium.Indexed",
-              tags: ['update','daily','weekly','monthly'],
+              tags: ['update','indexed'],
               pre: function( collection ) {
                   setupTestContendedMedium( collection );
                   collection.ensureIndex( { x : 1 } );                                    
@@ -214,7 +214,7 @@ var testContendedHot = [
 * Notes: High contention on the 20 documents updated
 */
 tests.push( { name: "MultiUpdate.Contended.Hot.NoIndex",
-              tags: ['update','daily','weekly','monthly'],
+              tags: ['update'],
               pre: function( collection ) {
                   setupTestContendedHot( collection );
               },
@@ -229,7 +229,7 @@ tests.push( { name: "MultiUpdate.Contended.Hot.NoIndex",
 * Notes: High contention on the 20 documents updated as well as on index X
 */
 tests.push( { name: "MultiUpdate.Contended.Hot.Indexed",
-              tags: ['update','daily','weekly','monthly'],
+              tags: ['update','indexed'],
               pre: function( collection ) {
                   setupTestContendedHot( collection );
                   collection.ensureIndex( { x : 1 } );                                    
@@ -260,7 +260,7 @@ var testContendedSeqDoc = [
 *        (with multi=true)
 */
 tests.push( { name: "MultiUpdate.Contended.Doc.Seq.NoIndex",
-              tags: ['update','daily','weekly','monthly'],
+              tags: ['update'],
               pre: function( collection ) {
                   setupTestContendedSeqDoc( collection );
               },
@@ -274,7 +274,7 @@ tests.push( { name: "MultiUpdate.Contended.Doc.Seq.NoIndex",
 *        (with multi=true)
 */
 tests.push( { name: "MultiUpdate.Contended.Doc.Seq.Indexed",
-              tags: ['update','daily','weekly','monthly'],
+              tags: ['update','indexed'],
               pre: function( collection ) {
                   setupTestContendedSeqDoc( collection );
                   collection.ensureIndex( { x : 1 } );                                    
@@ -304,7 +304,7 @@ var testContendedRndDoc = [
 *        (with multi=true)
 */
 tests.push( { name: "MultiUpdate.Contended.Doc.Rnd.NoIndex",
-              tags: ['update','daily','weekly','monthly'],
+              tags: ['update'],
               pre: function( collection ) {
                   setupTestContendedRndDoc( collection );
               },
@@ -318,7 +318,7 @@ tests.push( { name: "MultiUpdate.Contended.Doc.Rnd.NoIndex",
 *        random value (with multi=true)
 */
 tests.push( { name: "MultiUpdate.Contended.Doc.Rnd.Indexed",
-              tags: ['update','daily','weekly','monthly'],
+              tags: ['update','indexed'],
               pre: function( collection ) {
                   setupTestContendedRndDoc( collection );
                   collection.ensureIndex( { x : 1 } );                                    

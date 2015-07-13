@@ -11,7 +11,7 @@ if ( typeof(tests) != "object" ) {
  *            any current entry.
  */
 tests.push( { name: "Insert.Empty",
-              tags: ['insert','sanity','daily','weekly','monthly'],
+              tags: ['insert','regression'],
               pre: function( collection ) { collection.drop(); },
               ops: [
                   { op:  "insert",
@@ -26,7 +26,7 @@ tests.push( { name: "Insert.Empty",
  *        Need at least 683 inserts to roll the capped collection.
  */
 tests.push( { name: "Insert.EmptyCapped",
-              tags: ['insert','sanity','daily','weekly','monthly'],
+              tags: ['insert','regression'],
               pre: function( collection ) {
                   collection.drop();
                   collection.runCommand( "create", { capped : true,
@@ -45,7 +45,7 @@ tests.push( { name: "Insert.EmptyCapped",
  *            at least 2048 inserts to roll the capped collection.
  */
 tests.push( { name: "Insert.EmptyCapped.SeqIntID",
-              tags: ['insert','sanity','daily','weekly','monthly'],
+              tags: ['insert','regression'],
               pre: function( collection ) {
                   collection.drop();
                   collection.runCommand( "create", { capped : true,
@@ -67,7 +67,7 @@ tests.push( { name: "Insert.EmptyCapped.SeqIntID",
  *        
  */
 tests.push( { name: "Insert.JustID",
-              tags: ['insert','sanity','daily','weekly','monthly'],
+              tags: ['insert','core'],
               pre: function( collection ) { collection.drop(); },
               ops: [
                   { op:  "insert",
@@ -85,7 +85,7 @@ tests.push( { name: "Insert.JustID",
  *            ranges, and will exercise different ranges of the _id index.
 */
 tests.push( { name: "Insert.SeqIntID.Indexed",
-              tags: ['insert','sanity','daily','weekly','monthly'],
+              tags: ['insert','indexed','regression'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({a: 1});
@@ -106,7 +106,7 @@ tests.push( { name: "Insert.SeqIntID.Indexed",
  *            ranges, and will exercise different ranges of the _id index.
 */
 tests.push( { name: "Insert.IntIDUpsert",
-              tags: ['insert','sanity','daily','weekly','monthly'],
+              tags: ['insert','regression'],
               pre: function( collection ) { collection.drop(); },
               ops: [
                   { op:  "update",
@@ -124,7 +124,7 @@ tests.push( { name: "Insert.IntIDUpsert",
  * Notes: Let mongod create missing _id field
 */
 tests.push( { name: "Insert.JustNum",
-              tags: ['insert','sanity','daily','weekly','monthly'],
+              tags: ['insert','regression'],
               pre: function( collection ) { collection.drop(); },
               ops: [
                   { op:  "insert",
@@ -144,7 +144,7 @@ tests.push( { name: "Insert.JustNum",
  *            ranges, and will exercise different ranges of the 'x' index.
 */
 tests.push( { name: "Insert.JustNumIndexed",
-              tags: ['insert','sanity','daily','weekly','monthly'],
+              tags: ['insert','indexed','regression'],
               pre: function( collection ) {
                   collection.drop();
                   collection.ensureIndex({x: 1});
