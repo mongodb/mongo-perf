@@ -129,7 +129,7 @@ function nestedGenerator(big) {
  * Test: Finds {x: 1} using query language
  */
 tests.push({name: "Where.CompareToInt.QueryLanguage",
-            tags: ['query','querylanguage','compare'],
+            tags: ['query','compare'],
             pre: generateDocs(1000, increasingXGenerator()),
             ops: [
               {op: "find", query: {x : 1}}
@@ -140,7 +140,7 @@ tests.push({name: "Where.CompareToInt.QueryLanguage",
  * Test: Finds {x: 1} using a $where query with == (weak equality)
  */
 tests.push({name: "Where.CompareToInt.Where.DoubleEquals",
-            tags: ['query','where','compare'],
+            tags: ['query','where'],
             pre: generateDocs(1000, increasingXGenerator()),
             ops: [
               {op: "find", query: {$where: function() {return this.x == 1;}}} 
@@ -151,7 +151,7 @@ tests.push({name: "Where.CompareToInt.Where.DoubleEquals",
  * Test: Finds {x: 1} using a $where query with === (type-safe equality)
  */
 tests.push({name: "Where.CompareToInt.Where.TripleEquals",
-            tags: ['query','where','compare'],
+            tags: ['query','where'],
             pre: generateDocs(1000, increasingXGenerator()),
             ops: [
               {op: "find", query: {$where: function() {return this.x === 1;}}} 
@@ -181,7 +181,7 @@ tests.push({name: "Where.In.Where",
  * Test: Finds all documents with x between 1 and 6 using $in 
  */
 tests.push({name: "Where.In.QueryLanguage",
-            tags: ['query','querylanguage'],
+            tags: ['query','compare'],
             pre: generateDocs(1000, increasingXGenerator()),
             ops: [
               {op: "find", query: {x: {$in: [1, 2, 3, 4, 5, 6]}}} 
@@ -214,7 +214,7 @@ tests.push({name: "Where.ElemMatch.Where",
  * using $elemMatch
  */
 tests.push({name: "Where.ElemMatch.QueryLanguage",
-            tags: ['query','querylanguage'],
+            tags: ['query','compare'],
             pre: generateDocs(1000, arrayGenerator),
             ops: [
               {op: "find", query: {results: {$elemMatch: {$gte: 80, $lt: 85 }}}}
@@ -224,7 +224,7 @@ tests.push({name: "Where.ElemMatch.QueryLanguage",
  * Setup: Create collection with documents containing 4 character alphabetic permutations
  * Test: Find document based on Regex $where
  */
-tests.push({name: "Where.v1.Regex.Where",
+tests.push({name: "Where.Regex.Where",
             tags: ['query','where'],
             pre: generateDocs(Math.pow(26, 4), permutationGenerator()),
             ops: [
@@ -236,8 +236,8 @@ tests.push({name: "Where.v1.Regex.Where",
  * Setup: Create collection with documents containing 4 character alphabetic permutations
  * Test: Find document based on Regex Query
  */
-tests.push({name: "Where.v1.Regex.QueryLanguage",
-            tags: ['query','querylanguage'],
+tests.push({name: "Where.Regex.QueryLanguage",
+            tags: ['query','compare'],
             pre: generateDocs(Math.pow(26, 4), permutationGenerator()),
             ops: [
               {op: "find", query: { x : /^aa/ } }
@@ -248,7 +248,7 @@ tests.push({name: "Where.v1.Regex.QueryLanguage",
  * Setup: Creates a collection of 13 objects, each with 4 nested levels of 13 fields
  * Test: Find document through match of deeply nested field using $where
  */
-tests.push({name: "Where.v1.SimpleNested.Where",
+tests.push({name: "Where.SimpleNested.Where",
             tags: ['query', 'where'],
             pre: generateDocs(13, nestedGenerator(false)),
             ops: [
@@ -260,8 +260,8 @@ tests.push({name: "Where.v1.SimpleNested.Where",
  * Setup: Creates a collection of 13 objects, each with 4 nested levels of 13 fields
  * Test: Find document through match of deeply nested field using Query Language
  */
-tests.push({name: "Where.v1.SimpleNested.QueryLanguage",
-            tags: ['query','querylanguage'],
+tests.push({name: "Where.SimpleNested.QueryLanguage",
+            tags: ['query','compare'],
             pre: generateDocs(13, nestedGenerator()),
             ops: [
               {op: "find", query: { 'd.c.b.a' : 1 } }
@@ -330,7 +330,7 @@ tests.push({name: "Where.CompareFields.Lte",
  * Test: Finds all documents where x == 2 or y == 3 
  */
 tests.push({name: "Where.Mixed",
-            tags: ['query','where','querylanguage'],
+            tags: ['query','where'],
             pre: generateDocs(200, tupleGenerator(200)),
             ops: [
               {op: "find", query: {$or : [{x: 2}, {$where: function() {return (this.y == 3);}}]}} 
@@ -340,7 +340,7 @@ tests.push({name: "Where.Mixed",
  * Setup: Creates a collection of 13 objects, each with 4 nested levels of 13 fields
  * Test: Find document through match of two deeply nested fields on the same document using $where
  */
-tests.push({name: "Where.v1.ComplexNested",
+tests.push({name: "Where.ComplexNested",
             tags: ['query','where'],
             pre: generateDocs(10, nestedGenerator(true)),
             ops: [
@@ -354,7 +354,7 @@ tests.push({name: "Where.v1.ComplexNested",
  * Setup: Creates a collection of 10 documents, each with 4 nested levels of 26 fields
  * Test: Find document through match of a deeply nested field using $where 
  */
-tests.push({name: "Where.v1.ReallyBigNestedComparison.Where",
+tests.push({name: "Where.ReallyBigNestedComparison.Where",
             tags: ['query','where'],
             pre: generateDocs(10, nestedGenerator(true)),
             ops: [
@@ -366,8 +366,8 @@ tests.push({name: "Where.v1.ReallyBigNestedComparison.Where",
  * Setup: Creates a collection of 10 documents, each with 4 nested levels of 26 fields
  * Test: Find document through match of a deeply nested field using query language
  */
-tests.push({name: "Where.v1.ReallyBigNestedComparison.QueryLanguage",
-            tags: ['query','querylanguage'],
+tests.push({name: "Where.ReallyBigNestedComparison.QueryLanguage",
+            tags: ['query','compare'],
             pre: generateDocs(10, nestedGenerator(true)),
             ops: [
               {op: "find", query: { 'a.b.c.d' : 1 }}
