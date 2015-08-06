@@ -3,45 +3,27 @@ if ( typeof(tests) != "object" ) {
 }
 
 // generate a grid map from (x1, y1) to (x2, y2), with 100x100 point grid
-function generateGridMap(collection, x1, y1, x2, y2, indexType) {
+function generateGridMap(collection, x1, y1, x2, y2, indexType, legacy) {
     var step_x = (x2 - x1) / 100.0;
     var step_y = (y2 - y1) / 100.0;
 
     collection.drop(); 
     collection.ensureIndex({loc: indexType});
 
+    var count = 0;
     for( var i = x1; i < x2; ) {
         var bulk = collection.initializeUnorderedBulkOp();
 
         for(var j = y1; j < y2; ) {
-            bulk.insert({loc: [i, j]});
+            bulk.insert({
+                loc: legacy ? [i, j] : {type: "Point", coordinates: [i, j]}, 
+                include: (count++) % 100 == 0
+            });
             j = j + step_y;
         }
         bulk.execute( {w: 1});
         i = i + step_x;
     }
-    collection.getDB().getLastError();
-}
-
-// generate a grid map with geoJSON format
-function generateGridMapGeoJSON(collection, x1, y1, x2, y2, indexType) {
-    var step_x = (x2 - x1) / 100.0;
-    var step_y = (y2 - y1) / 100.0;
-
-    collection.drop(); 
-    collection.ensureIndex({loc: indexType});
-
-    for( var i = x1; i < x2; ) {
-        var bulk = collection.initializeUnorderedBulkOp();
-
-        for(var j = y1; j < y2; ) {
-            bulk.insert({loc: {type: "Point", coordinates: [i, j]}});
-            j = j + step_y;
-        }
-        bulk.execute( {w: 1});
-        i = i + step_x;
-    }
-    collection.getDB().getLastError();
 }
 
 /* General Test Setup Notes:
@@ -98,8 +80,42 @@ for( var i = 0; i < 5; i++) {
 tests.push( { name: "Geo.geoJSON.nearSphere.2dsphere.find",
               tags: ['geo','core','indexed'],
               pre: function( collection ) { 
-                  generateGridMapGeoJSON(collection, 
-                          x_min, y_min, x_max, y_max, "2dsphere");
+                  generateGridMap(collection, 
+                          x_min, y_min, x_max, y_max, "2dsphere", false);
+              },
+              ops: ops } );
+
+
+/* Testcase: Geo.geoJSON.nearSphere.2dsphere.withFilter.find30 */
+var ops = [];
+for( var i = 0; i < 5; i++) {
+    for( var j = 0; j < 5; j++) {
+        ops.push({
+            op: "find", 
+            limit: 30,
+            query: {loc: {$nearSphere: {
+                $geometry: {
+                    type: "Point", 
+                    coordinates: [x_query_min + x_query_step * i, 
+                                  y_query_min + y_query_step * j]}}},
+                include: true}});
+    }
+}
+
+/* 
+ * Setup: create map with 2dsphere index
+ * Test: Geo.geoJSON.nearSphere.2dsphere.withFilter.find30
+ *     - to test nearSphere query with geoJSON format, 
+ *     - with 2dsphere index
+ *     - only return docs that pass {include: true} (one in 100 results)
+ *     - limit to 30 docs
+ *     - should scan ~3,000 documents
+ */
+tests.push( { name: "Geo.geoJSON.nearSphere.2dsphere.withFilter.find30",
+              tags: ['geo','core','indexed'],
+              pre: function( collection ) { 
+                  generateGridMap(collection, 
+                          x_min, y_min, x_max, y_max, "2dsphere", false);
               },
               ops: ops } );
 
@@ -118,8 +134,9 @@ for( var i = 0; i < 5; i++) {
                 }}}});
     }
 }
+
 /*
- * Setup: generat map with geoJson format with 2dsphere index
+ * Setup: generate map with geoJson format with 2dsphere index
  * Test: Geo.geoJSON.nearSphere.2dsphere.findOne
  *     - to test nearSphere query with geoJSON format, 
  *     - with 2dsphere index
@@ -128,8 +145,8 @@ for( var i = 0; i < 5; i++) {
 tests.push( { name: "Geo.geoJSON.nearSphere.2dsphere.findOne",
               tags: ['geo','core','indexed'],
               pre: function( collection ) { 
-                  generateGridMapGeoJSON(collection, 
-                        x_min, y_min, x_max, y_max, "2dsphere");
+                  generateGridMap(collection, 
+                        x_min, y_min, x_max, y_max, "2dsphere", false);
               },
               ops: ops } );
 
@@ -159,8 +176,8 @@ for( var i = 0; i < 5; i++) {
 tests.push( { name: "Geo.geoJSON.within.2dsphere.centersphere",
               tags: ['geo','core','indexed'],
               pre: function( collection ) { 
-                  generateGridMapGeoJSON(collection, 
-                          x_min, y_min, x_max, y_max, "2dsphere");
+                  generateGridMap(collection, 
+                          x_min, y_min, x_max, y_max, "2dsphere", false);
               },
               ops: ops } );
 
@@ -188,7 +205,39 @@ tests.push( { name: "Geo.near.2d.find100",
               tags: ['geo','core','indexed'],
               pre: function( collection ) { 
                   generateGridMap(collection, 
-                          x_min, y_min, x_max, y_max, "2d");
+                          x_min, y_min, x_max, y_max, "2d", true);
+              },
+              ops: ops } );
+
+
+/* Testcase: Geo.near.2d.withFilter.find30 */
+ops = [];
+for( var i = 0; i < 5; i++) {
+    for( var j = 0; j < 5; j++) {
+        ops.push({
+            op: "find", 
+            limit: 30,
+            query: {loc: { $near: [x_query_min + x_query_step * i, 
+                                   y_query_min + y_query_step * j]},
+                    include: true
+            }});
+    }
+}
+
+/*
+ * Setup: generate map with 2d index
+ * Test: Geo.near.2d.withFilter.find30
+ *     - to test $near query with legacy format, 
+ *     - with 2d index
+*      - only return docs that pass {include: true} (one in 100 results)
+ *     - limit to 30 docs
+ *     - should scan ~3,000 documents
+ */
+tests.push( { name: "Geo.near.2d.withFilter.find30",
+              tags: ['geo','core','indexed'],
+              pre: function( collection ) { 
+                  generateGridMap(collection, 
+                          x_min, y_min, x_max, y_max, "2d", true);
               },
               ops: ops } );
 
@@ -215,7 +264,7 @@ tests.push( { name: "Geo.near.2d.findOne",
               tags: ['geo','core','indexed'],
               pre: function( collection ) { 
                   generateGridMap(collection, 
-                          x_min, y_min, x_max, y_max, "2d");
+                          x_min, y_min, x_max, y_max, "2d", true);
               },
               ops: ops } );
 
@@ -244,7 +293,7 @@ tests.push( { name: "Geo.within.2d.find",
               tags: ['geo','core','indexed'],
               pre: function( collection ) { 
                   generateGridMap(collection, 
-                          x_min, y_min, x_max, y_max, "2d");
+                          x_min, y_min, x_max, y_max, "2d", true);
               },
               ops: ops } );
 
