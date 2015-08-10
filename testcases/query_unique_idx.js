@@ -40,7 +40,7 @@ tests.push( { name: "Queries.UniqueIdx.Simple",
  * the unique {_id: 1} index after throwing out plans that do not use a unique index lookup.
  */
 tests.push( { name: "Queries.UniqueIdx.HaveNonUniqueIndices",
-              tags: ['query','uniqueidx'],
+              tags: ['query','uniqueidx','regression'],
               pre: function(collection, env) {
                   insertData(collection, env.threads);
                   collection.ensureIndex({a: 1});
@@ -57,7 +57,7 @@ tests.push( { name: "Queries.UniqueIdx.HaveNonUniqueIndices",
  * plan using index {c: 1}.
  */
 tests.push( { name: "Queries.UniqueIdx.MultipleUniqueIndices",
-              tags: ['query','uniqueidx'],
+              tags: ['query','uniqueidx','regression'],
               pre: function(collection, env) {
                   insertData(collection, env.threads);
                   collection.ensureIndex({a: 1}, {unique: true});
@@ -96,7 +96,7 @@ tests.push( { name: "Queries.UniqueIdx.MultikeySimple",
  * throw out the plan using index {b: 1}.
  */
 tests.push( { name: "Queries.UniqueIdx.MultikeyWithUniqueIdx",
-              tags: ['query','uniqueidx'],
+              tags: ['query','uniqueidx','regression'],
               pre: function(collection) {
                   collection.drop();
                   var bulk = collection.initializeUnorderedBulkOp();
@@ -118,7 +118,7 @@ tests.push( { name: "Queries.UniqueIdx.MultikeyWithUniqueIdx",
  * Test: query by _id, a, b, c, and d for a particular i value.
  */
 tests.push( { name: "Queries.UniqueIdx.ManyIdxIsect",
-              tags: ['query','uniqueidx'],
+              tags: ['query','uniqueidx','regression'],
               pre: function(collection) {
                   insertData(collection, 1);
                   collection.ensureIndex({a: 1});
@@ -138,7 +138,7 @@ tests.push( { name: "Queries.UniqueIdx.ManyIdxIsect",
  * 'd'.
  */
 tests.push( { name: "Queries.UniqueIdx.ManyIdxIsectRangePredicates",
-              tags: ['query','uniqueidx'],
+              tags: ['query','uniqueidx','regression'],
               pre: function(collection) {
                   insertData(collection, 1);
                   collection.ensureIndex({a: 1});

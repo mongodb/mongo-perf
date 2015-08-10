@@ -129,7 +129,7 @@ function nestedGenerator(big) {
  * Test: Finds {x: 1} using query language
  */
 tests.push({name: "Where.CompareToInt.QueryLanguage",
-            tags: ['query','compare'],
+            tags: ['compare'],
             pre: generateDocs(500, increasingXGenerator()),
             ops: [
               {op: "find", query: {x : 1}}
@@ -140,7 +140,7 @@ tests.push({name: "Where.CompareToInt.QueryLanguage",
  * Test: Finds {x: 1} using a $where query with == (weak equality)
  */
 tests.push({name: "Where.CompareToInt.Where.DoubleEquals",
-            tags: ['query','where'],
+            tags: ['where','regression'],
             pre: generateDocs(500, increasingXGenerator()),
             ops: [
               {op: "find", query: {$where: function() {return this.x == 1;}}} 
@@ -151,7 +151,7 @@ tests.push({name: "Where.CompareToInt.Where.DoubleEquals",
  * Test: Finds {x: 1} using a $where query with === (type-safe equality)
  */
 tests.push({name: "Where.CompareToInt.Where.TripleEquals",
-            tags: ['query','where'],
+            tags: ['where','regression'],
             pre: generateDocs(500, increasingXGenerator()),
             ops: [
               {op: "find", query: {$where: function() {return this.x === 1;}}} 
@@ -162,7 +162,7 @@ tests.push({name: "Where.CompareToInt.Where.TripleEquals",
  * Test: Find document through match of deeply nested field using $where
  */
 tests.push({name: "Where.SimpleNested.Where",
-            tags: ['query', 'where'],
+            tags: [ 'where','regression'],
             pre: generateDocs(13, nestedGenerator(false)),
             ops: [
               {op:"find", query: {'$where': function() { return this.d.c.b.a === 1; }}}
@@ -174,7 +174,7 @@ tests.push({name: "Where.SimpleNested.Where",
  * Test: Find document through match of deeply nested field using Query Language
  */
 tests.push({name: "Where.SimpleNested.QueryLanguage",
-            tags: ['query','compare'],
+            tags: ['compare'],
             pre: generateDocs(13, nestedGenerator()),
             ops: [
               {op: "find", query: { 'd.c.b.a' : 1 } }
@@ -188,7 +188,7 @@ tests.push({name: "Where.SimpleNested.QueryLanguage",
  * Test: Finds all documents where x == y
  */
 tests.push({name: "Where.CompareFields.Equals",
-            tags: ['query','where'],
+            tags: ['where','regression'],
             pre: generateDocs(500, increasingXGenerator()),
             ops: [
               {op: "find", query: {$where: function() {return this.x == this.y; }}} 
@@ -199,7 +199,7 @@ tests.push({name: "Where.CompareFields.Equals",
  * Test: Finds all documents where x > y
  */
 tests.push({name: "Where.CompareFields.Gt",
-            tags: ['query','where'],
+            tags: ['where','regression'],
             pre: generateDocs(200, tupleGenerator(200)),
             ops: [
               {op: "find", query: {$where: function() {return this.x > this.y; }}} 
@@ -210,7 +210,7 @@ tests.push({name: "Where.CompareFields.Gt",
  * Test: Finds all documents where x >= y
  */
 tests.push({name: "Where.CompareFields.Gte",
-            tags: ['query','where'],
+            tags: ['where','regression'],
             pre: generateDocs(200, tupleGenerator(200)),
             ops: [
               {op: "find", query: {$where: function() {return this.x >= this.y; }}} 
@@ -221,7 +221,7 @@ tests.push({name: "Where.CompareFields.Gte",
  * Test: Finds all documents where x < y
  */
 tests.push({name: "Where.CompareFields.Lt",
-            tags: ['query','where'],
+            tags: ['where','regression'],
             pre: generateDocs(200, tupleGenerator(200)),
             ops: [
               {op: "find", query: {$where: function() {return this.x < this.y; }}}
@@ -232,7 +232,7 @@ tests.push({name: "Where.CompareFields.Lt",
  * Test: Finds all documents where x <= y
  */
 tests.push({name: "Where.CompareFields.Lte",
-            tags: ['query','where'],
+            tags: ['where','regression'],
             pre: generateDocs(200, tupleGenerator(200)),
             ops: [
               {op: "find", query: {$where: function() {return this.x <= this.y; }}}
@@ -243,7 +243,7 @@ tests.push({name: "Where.CompareFields.Lte",
  * Test: Finds all documents where x == 2 or y == 3 
  */
 tests.push({name: "Where.Mixed",
-            tags: ['query','where'],
+            tags: ['where','regression'],
             pre: generateDocs(200, tupleGenerator(200)),
             ops: [
               {op: "find", query: {$or : [{x: 2}, {$where: function() {return (this.y == 3);}}]}} 
@@ -254,7 +254,7 @@ tests.push({name: "Where.Mixed",
  * Test: Find document through match of two deeply nested fields on the same document using $where
  */
 tests.push({name: "Where.ComplexNested",
-            tags: ['query','where'],
+            tags: ['where','regression'],
             pre: generateDocs(10, nestedGenerator(true)),
             ops: [
               {op: "find", query: {'$where': function() { return this.d.c.b.a === this.a.b.c.d; }}}
@@ -268,7 +268,7 @@ tests.push({name: "Where.ComplexNested",
  * Test: Find document through match of a deeply nested field using $where 
  */
 tests.push({name: "Where.ReallyBigNestedComparison.Where",
-            tags: ['query','where'],
+            tags: ['where','regression'],
             pre: generateDocs(10, nestedGenerator(true)),
             ops: [
               {op: "find", query: {'$where': function() { return this.a.b.c.d == 1; }}} 
@@ -280,7 +280,7 @@ tests.push({name: "Where.ReallyBigNestedComparison.Where",
  * Test: Find document through match of a deeply nested field using query language
  */
 tests.push({name: "Where.ReallyBigNestedComparison.QueryLanguage",
-            tags: ['query','compare'],
+            tags: ['compare'],
             pre: generateDocs(10, nestedGenerator(true)),
             ops: [
               {op: "find", query: { 'a.b.c.d' : 1 }}
