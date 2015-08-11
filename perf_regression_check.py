@@ -33,7 +33,7 @@ def main(args):
         previous = previous[0]
         if previous["max"] - this_one["max"] >= (.0001 * previous["max"]):
             print "\tregression found: drop from %s (commit %s) to %s" % (previous["max"], previous["revision"][:5], this_one["max"])
-            Failed = true
+            Failed = True
         else:
             print "\tno regression"
 
