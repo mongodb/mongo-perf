@@ -90,6 +90,9 @@ def parse_arguments():
     parser.add_argument('--exclude-testbed', dest='excludeTestbed', nargs='?', const='true',
                         choices=['true','false'], default='false',
                         help='Exclude testbed information from results file')
+    parser.add_argument('--printArgs', dest='printArgs', nargs='?', const='true',
+                        choices=['true','false'], default='false',
+                        help='Print the benchrun args before running the test.')
     return parser
 
 
@@ -175,7 +178,8 @@ def main():
               str(json.dumps(args.excludeFilter)) + ", " +
               str(args.shard) + ", " +
               str(json.dumps(write_options)) + ", " + 
-              str(args.excludeTestbed) + 
+              str(args.excludeTestbed) + "," + 
+              str(args.printArgs) + 
               ");\n")
     mongo_proc.stdin.write(cmdstr)
     print cmdstr

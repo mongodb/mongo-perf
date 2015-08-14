@@ -3,11 +3,13 @@ if ( typeof(tests) != "object" ) {
 }
 
 var setupTestUncontendedSingleDoc = function( collection ) {
-   collection.drop();
-   for ( var i = 0; i < 4800; i++ ) {
-      collection.insert( { _id : i , x : 0 } );
-   }
-   collection.getDB().getLastError();
+    collection.drop();
+    var docs = [];
+    for ( var i = 0; i < 4800; i++ ) {
+        docs.push( { _id : i , x : 0 } );
+    }
+    collection.insert(docs);
+    collection.getDB().getLastError();
 }
 
 var testUncontendedSingleDoc = [
@@ -22,9 +24,9 @@ var testUncontendedSingleDoc = [
 * Setup: Populate collection with unique integer _id and an integer field X=0
 * Test:  Each thread works in its own range of docs
 *        1. randomly selects one document using _id
-*        2. update one filed X by $inc (with multi=true)
+*        2. update one field X by $inc (with multi=true)
 */
-tests.push( { name: "MultiUpdate.v1.Uncontended.SingleDoc.NoIndex",
+tests.push( { name: "MultiUpdate.Uncontended.SingleDoc.NoIndex",
               tags: ['update'],
               pre: function( collection ) {
                   setupTestUncontendedSingleDoc( collection );
@@ -37,7 +39,7 @@ tests.push( { name: "MultiUpdate.v1.Uncontended.SingleDoc.NoIndex",
 *        Create index on X
 * Test:  Each thread works in its own range of docs
 *        1. randomly selects one document using _id 
-*        2. update the indexed filed X by $inc (with multi=true)
+*        2. update the indexed field X by $inc (with multi=true)
 * Notes: High contention on the index X
 */
 tests.push( { name: "MultiUpdate.Uncontended.SingleDoc.Indexed",
@@ -50,11 +52,13 @@ tests.push( { name: "MultiUpdate.Uncontended.SingleDoc.Indexed",
             } );              
               
 var setupTestUncontendedTwoDocs = function( collection ) {
-   collection.drop();
-   for ( var i = 0; i < 4800; i++ ) {
-      collection.insert( { _id : i , x : 0 } );
-   }
-   collection.getDB().getLastError();
+    collection.drop();
+    var docs = [];
+    for ( var i = 0; i < 4800; i++ ) {
+        docs.push( { _id : i , x : 0 } );
+    }
+    collection.insert(docs);
+    collection.getDB().getLastError();
 };
 
 var testUncontendedTwoDocs = [
@@ -69,7 +73,7 @@ var testUncontendedTwoDocs = [
 * Setup: Populate collection with unique integer _id and an integer field X=0
 * Test:  Each thread works in its own range of docs; 
 *        1. randomly selects two documents using _id
-*        2. update the X filed in documents by $inc (with multi=true)
+*        2. update the X field in documents by $inc (with multi=true)
 */
 tests.push( { name: "MultiUpdate.Uncontended.TwoDocs.NoIndex",
               tags: ['update','core'],
@@ -84,7 +88,7 @@ tests.push( { name: "MultiUpdate.Uncontended.TwoDocs.NoIndex",
 *        Create index on X
 * Test:  Each thread works in its own range of docs; 
 *        1. randomly selects two documents using _id
-*        2. update the indexed X filed in documents by $inc (with multi=true)
+*        2. update the indexed X field in documents by $inc (with multi=true)
 * Notes: High contention on the index X
 */
 tests.push( { name: "MultiUpdate.Uncontended.TwoDocs.Indexed",
@@ -97,11 +101,13 @@ tests.push( { name: "MultiUpdate.Uncontended.TwoDocs.Indexed",
             } );
                             
 var setupTestContendedLow = function( collection ) {
-   collection.drop();
-   for ( var i = 0; i < 4800; i++ ) {
-      collection.insert( { _id : i , x : 0 } );
-   }
-   collection.getDB().getLastError();
+    collection.drop();
+    var docs = [];
+    for ( var i = 0; i < 4800; i++ ) {
+        docs.push( { _id : i , x : 0 } );
+    }
+    collection.insert(docs);
+    collection.getDB().getLastError();
 };                            
 
 var testContendedLow = [
@@ -116,7 +122,7 @@ var testContendedLow = [
 * Setup: Populate collection with unique integer _id and an integer field X=0
 * Test:  1. each thread randomly selects a document from the entire collection 
 *           using _id
-*        2. update filed X by $inc (with multi=true)
+*        2. update field X by $inc (with multi=true)
 */
 tests.push( { name: "MultiUpdate.Contended.Low.NoIndex",
               tags: ['update','core'],
@@ -131,7 +137,7 @@ tests.push( { name: "MultiUpdate.Contended.Low.NoIndex",
 *        Create index on X.
 * Test:  1. each thread randomly selects a document from the entire collection 
 *           using _id
-*        2. update indexed filed X by $inc (with multi=true)
+*        2. update indexed field X by $inc (with multi=true)
 * Notes: High contention on index
 */
 tests.push( { name: "MultiUpdate.Contended.Low.Indexed",
@@ -144,11 +150,13 @@ tests.push( { name: "MultiUpdate.Contended.Low.Indexed",
             } );                    
               
 var setupTestContendedMedium = function( collection ) {
-   collection.drop();
-   for ( var i = 0; i < 4800; i++ ) {
-      collection.insert( { _id : i , x : 0 } );
-   }
-   collection.getDB().getLastError();                               
+    collection.drop();
+    var docs = [];
+    for ( var i = 0; i < 4800; i++ ) {
+        docs.push( { _id : i , x : 0 } );
+    }
+    collection.insert(docs);
+    collection.getDB().getLastError();                               
 }
 
 var testContendedMedium = [ 
@@ -163,7 +171,7 @@ var testContendedMedium = [
 * Setup: Populate collection with unique integer _id and an integer field X=0
 * Test:  1. each thread randomly selects a rnange of documents using _id 
 *           from the entire collection (each batch is ~1200 docs) 
-*        2. update filed X by $inc (with multi=true)
+*        2. update field X by $inc (with multi=true)
 */
 tests.push( { name: "MultiUpdate.Contended.Medium.NoIndex",
               tags: ['update'],
@@ -178,7 +186,7 @@ tests.push( { name: "MultiUpdate.Contended.Medium.NoIndex",
 *        Create index on X.
 * Test:  1. each thread randomly selects a rnange of documents using _id 
 *           from the entire collection (each batch is ~1200 docs) 
-*        2. update indexed filed X by $inc (with multi=true)
+*        2. update indexed field X by $inc (with multi=true)
 * Notes: High contention on index X
 */
 tests.push( { name: "MultiUpdate.Contended.Medium.Indexed",
@@ -191,11 +199,13 @@ tests.push( { name: "MultiUpdate.Contended.Medium.Indexed",
             } );     
 
 var setupTestContendedHot = function( collection ) {
-   collection.drop();
-   for ( var i = 0; i < 4800; i++ ) {
-      collection.insert( { _id : i , x : 0 } );
-   }
-   collection.getDB().getLastError();                               
+    collection.drop();
+    var docs = [];
+    for ( var i = 0; i < 4800; i++ ) {
+        docs.push( { _id : i , x : 0 } );
+    }
+    collection.insert(docs);
+    collection.getDB().getLastError();                               
 }
 
 var testContendedHot = [ 
@@ -225,7 +235,7 @@ tests.push( { name: "MultiUpdate.Contended.Hot.NoIndex",
 * Setup: Populate collection with unique integer _id and an integer field X=0
 *        Create index on X
 * Test:  All threads select the same 20 documents (1590 < _id < 1610)
-*        and update the indexed filed X by $inc (with multi=true)
+*        and update the indexed field X by $inc (with multi=true)
 * Notes: High contention on the 20 documents updated as well as on index X
 */
 tests.push( { name: "MultiUpdate.Contended.Hot.Indexed",
@@ -239,11 +249,13 @@ tests.push( { name: "MultiUpdate.Contended.Hot.Indexed",
             
 
 var setupTestContendedSeqDoc = function( collection ) {
-   collection.drop();
-   for ( var i = 0; i < 4800; i++ ) {
-      collection.insert( { _id : i , x : 0 } );
+    collection.drop();
+    var docs = [];
+    for ( var i = 0; i < 4800; i++ ) {
+        docs.push( { _id : i , x : 0 } );
    }
-   collection.getDB().getLastError();                               
+    collection.insert(docs);
+    collection.getDB().getLastError();                               
 }
 
 var testContendedSeqDoc = [ 
@@ -283,11 +295,13 @@ tests.push( { name: "MultiUpdate.Contended.Doc.Seq.Indexed",
             } );                            
             
 var setupTestContendedRndDoc = function( collection ) {
-   collection.drop();
-   for ( var i = 0; i < 4800; i++ ) {
-      collection.insert( { _id : i , x : 0 } );
-   }
-   collection.getDB().getLastError();                               
+    collection.drop();
+    var docs = [];
+    for ( var i = 0; i < 4800; i++ ) {
+        docs.push( { _id : i , x : 0 } );
+    }
+    collection.insert(docs);
+    collection.getDB().getLastError();                               
 }
 
 var testContendedRndDoc = [ 

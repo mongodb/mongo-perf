@@ -13,9 +13,11 @@ tests.push( { name: "Update.SetWithIndex.Random",
               tags: ['update','core','indexed','regression'],
               pre: function( collection ) {
                   collection.drop();
+                  var docs = [];
                   for ( var i = 0; i < 4800; i++ ) {
-                      collection.insert( { _id : i , x : 0 } );
+                      docs.push( { _id : i , x : 0 } );
                   }
+                  collection.insert(docs);
                   collection.getDB().getLastError();
                   collection.ensureIndex( { x : 1 } );
               },
@@ -37,9 +39,11 @@ tests.push( { name: "Update.SetWithMultiIndex.Random",
               tags: ['update','indexed','regression'],
               pre: function( collection ) {
                   collection.drop();
+                  var docs = [];
                   for ( var i = 0; i < 4800; i++ ) {
-                      collection.insert( { _id : i , x : 0, y : i } );
+                      docs.push( { _id : i , x : 0, y : i } );
                   }
+                  collection.insert(docs);
                   collection.getDB().getLastError();
                   collection.ensureIndex( { x : 1 } );
                   collection.ensureIndex( { y : 1 } );
@@ -62,9 +66,11 @@ tests.push( { name: "Update.SetWithMultiIndex.String",
               tags: ['update','indexed','regression'],
               pre: function( collection ) {
                   collection.drop();
+                  var docs = [];
                   for ( var i = 0; i < 4800; i++ ) {
-                      collection.insert( { _id : i , x : 0, y : generateRandomString(1024) } );
+                      docs.push( { _id : i , x : 0, y : generateRandomString(1024) } );
                   }
+                  collection.insert(docs);
                   collection.getDB().getLastError();
                   collection.ensureIndex( { x : 1 } );
                   collection.ensureIndex( { y : 1 } );

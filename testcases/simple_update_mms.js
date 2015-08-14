@@ -143,7 +143,7 @@ tests.push( { name: "Update.MmsIncDeepDistinctPath3",
 * Test:  Increment three deep fields. The selected fields are at the high indexed
 *        end of the 2nd level array but evenly spreaded in the first level array
 */
-tests.push( { name: "Update.v0.MmsIncDeepDistinctPath4",
+tests.push( { name: "Update.MmsIncDeepDistinctPath4",
               tags: ['update','mms','core','single_threaded'],
               pre: setupMMS,
               ops: [

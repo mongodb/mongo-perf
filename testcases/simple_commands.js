@@ -50,9 +50,11 @@ tests.push( { name: "Commands.CountsFullCollection",
               tags: ['command','regression'],
               pre: function( collection ) {
                   collection.drop();
+                  var docs = [];
                   for ( var i = 0; i < 4800; i++ ) {
-                      collection.insert( { _id : i } );
+                      docs.push( { _id : i } );
                   }
+                  collection.insert(docs);
                   collection.getDB().getLastError();
               },
               ops: [
@@ -68,9 +70,11 @@ tests.push( { name: "Commands.CountsIntIDRange",
               tags: ['command','regression'],
               pre: function( collection ) {
                   collection.drop();
+                  var docs = [];
                   for ( var i = 0; i < 4800; i++ ) {
-                      collection.insert( { _id : i } );
+                      docs.push( { _id : i } );
                   }
+                  collection.insert(docs);
                   collection.getDB().getLastError();
               },
               ops: [
@@ -117,22 +121,26 @@ function genDistinctTest( name, index, query ) {
     if ( index ) {
         doc.pre = function( collection ) {
             collection.drop();
+            var docs = [];
             for ( var i = 0; i < 4800; i++ ) {
-                collection.insert( { x : 1 } );
-                collection.insert( { x : 2 } );
-                collection.insert( { x : 3 } );
+                docs.push( { x : 1 } );
+                docs.push( { x : 2 } );
+                docs.push( { x : 3 } );
             }
+            collection.insert(docs);
             collection.ensureIndex( { x : 1 } );
         };
     }
     else {
         doc.pre = function( collection ) {
             collection.drop();
+            var docs = [];
             for ( var i = 0; i < 4800; i++ ) {
-                collection.insert( { x : 1 } );
-                collection.insert( { x : 2 } );
-                collection.insert( { x : 3 } );
+                docs.push( { x : 1 } );
+                docs.push( { x : 2 } );
+                docs.push( { x : 3 } );
             }
+            collection.insert(docs);
             collection.getDB().getLastError();
         };
     }

@@ -11,9 +11,12 @@ tests.push( { name: "Remove.IntId",
               tags: ['remove','core'],
               pre: function( collection ) {
                   collection.drop();
+                  var docs = [];
                   for ( var i = 0; i < 4800; i++ ) {
-                      collection.insert( { _id : i } );
+                      docs.push( { _id : i } );
                   }
+                  collection.insert(docs);
+                  collection.getDB().getLastError();
               },
               ops: [
                   { op: "let", target: "x", value: {"#RAND_INT_PLUS_THREAD": [0,100]}},
@@ -32,9 +35,12 @@ tests.push( { name: "Remove.IntNonIdNoIndex",
               tags: ['remove','regression'],
               pre: function( collection ) {
                   collection.drop();
+                  var docs = [];
                   for ( var i = 0; i < 4800; i++ ) {
-                      collection.insert( { x : i } );
+                      docs.push( { x : i } );
                   }
+                  collection.insert(docs);
+                  collection.getDB().getLastError();
               },
               ops: [
                   { op: "let", target: "x", value: {"#RAND_INT_PLUS_THREAD": [0,100]}},
@@ -54,9 +60,12 @@ tests.push( { name: "Remove.IntNonIdIndex",
               tags: ['remove','core','indexed'],
               pre: function( collection ) {
                   collection.drop();
+                  var docs = [];
                   for ( var i = 0; i < 4800; i++ ) {
-                      collection.insert( { x : i } );
+                      docs.push( { x : i } );
                   }
+                  collection.insert(docs);
+                  collection.getDB().getLastError();
                   collection.ensureIndex( { x : 1 } );
               },
               ops: [
