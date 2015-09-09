@@ -37,7 +37,7 @@ tests.push( { name : "Inserts.PartialIndex.FilteredRange",
  *       not be indexed.
  */
 tests.push( { name : "Inserts.PartialIndex.NonFilteredRange",
-              tags: ['partial_index','insert','core','indexed','regression'],
+              tags: ['partial_index','insert','indexed'],
               pre: function( collection ) {
                   setupTestFiltered(collection);
               },
@@ -53,7 +53,7 @@ tests.push( { name : "Inserts.PartialIndex.NonFilteredRange",
  *       index. Some of the documents will be indexed (10.4%).
  */
 tests.push( { name : "Inserts.PartialIndex.FullRange",
-              tags: ['partial_index','insert','indexed','regression'],
+              tags: ['partial_index','insert','indexed'],
               pre: function( collection ) {
                   setupTestFiltered(collection);
               },
