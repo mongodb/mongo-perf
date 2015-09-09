@@ -31,17 +31,6 @@ function increasingXGenerator() {
   };
 }
 
-/**
- * Generates a documents containing an array of 10 
- * random numbers between 0 and 100
- */
-function arrayGenerator() {
-    var results = [];
-    for (var j = 0; j < 10; j++) {
-      results.push(Math.floor(Math.random() * 101));
-    }
-    return {"results": results };
-}
 
 /**
  * Generates documents of the form {x: i, y: j}
