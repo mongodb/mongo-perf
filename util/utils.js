@@ -89,7 +89,7 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOption
         }
     });
 
-    // set write concern and write command modes
+    // set crud options
     new_ops.forEach(function (z) {
         //  when true, safe mode calls GLE after every op
         z.safe = (crudOptions.safeGLE.toLowerCase() == 'true' ? true : false)
@@ -97,9 +97,11 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOption
         z.w = crudOptions.writeConcernW
         //  j write concern (boolean)
         z.j = (crudOptions.writeConcernJ.toLowerCase() == 'true' ? true : false)
-        //  use write command in lieu of legacy update, remove or insert op
+        //  use write commands in lieu of legacy update, remove or insert ops
         //  note: only one op will be in the array
         z.writeCmd = (crudOptions.writeCmdMode.toLowerCase() == 'true' ? true : false)
+        //  same as 'writeCmd', but for read commands
+        z.readCmd = (crudOptions.readCmdMode.toLowerCase() == 'true' ? true : false)
     });
 
     // setup an environment to pass to the pre and post
@@ -205,11 +207,11 @@ function getMean(values) {
 
 function getDefaultCrudOptions() {
     var crudOptions = {};
-    // write concern, write command mode
     crudOptions.safeGLE = 'false';
     crudOptions.writeConcernW = 0;
     crudOptions.writeConcernJ = 'false';
     crudOptions.writeCmdMode = 'true';
+    crudOptions.readCmdMode = 'false';
     return crudOptions;
 }
 
@@ -310,7 +312,7 @@ function doExecute(test, includeFilter, excludeFilter) {
  * @param includeFilter - tests/suites to run, default "sanity"
  * @param excludeFilter - tests / suites not to run
  * @param shard - the number of shards the test is run for (defaults to 0)
- * @param crudOptions - the crudOptions to be used with the test (defaults to {safeGLE:false, writeConcernW:0, writeConcernJ:false, writeCmdMode: false}
+ * @param crudOptions - the crudOptions to be used with the test (see getDefaultCrudOptions() for defaults)
  * @param excludeTestbed - Exclude testbed information from results
  * @returns {{}} the results of a run set of tests
  */
@@ -411,7 +413,7 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilt
  * @param includeFilter - tests / suites to run, default "sanity"
  * @param excludeFilter - tests / suites not to run
  * @param shard - the number of shards the test is run for (defaults to 0)
- * @param crudOptions - the crudOptions to be used with the test (defaults to {safeGLE:false, writeConcernW:0, writeConcernJ:false, writeCmdMode: false}
+ * @param crudOptions - the crudOptions to be used with the test (see getDefaultCrudOptions() for defaults)
  * @param excludeTestbed - Exclude testbed information from results
  * @returns {{}} the results of a run set of tests
  */
