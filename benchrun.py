@@ -63,8 +63,12 @@ def parse_arguments():
                         default='false')
     parser.add_argument('--writeCmd', dest='writeCmd',
                         nargs='?', const='true', choices=['true', 'false'],
-                        help='this option turns on use of the write command instead of legacy write operations',
+                        help='this option turns on use of the write commands instead of legacy write operations',
                         default='true')
+    parser.add_argument('--readCmd', dest='readCmd',
+                        nargs='?', const='true', choices=['true', 'false'],
+                        help='this option turns on use of the read commands instead of legacy read operations',
+                        default='false')
 
     parser.add_argument('--includeFilter', dest='includeFilter', nargs='+', action="append",
                         help="Run just the specified tests/suites. Can specify multiple tags per --includeFilter\n"
@@ -166,6 +170,7 @@ def main():
     crud_options["writeConcernJ"] = args.j
     crud_options["writeConcernW"] = args.w
     crud_options["writeCmdMode"] = args.writeCmd
+    crud_options["readCmdMode"] = args.readCmd
 
     # Pipe commands to the mongo shell to kickoff the test.
     cmdstr = ("mongoPerfRunTests(" +

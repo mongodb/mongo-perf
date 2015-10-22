@@ -97,6 +97,8 @@ TEST_TRIALS_COUNT=1
 TEST_TRIALS_TIME=5
 # benchrun write command
 TEST_WRITE_COMMAND=true
+# benchrun read command
+TEST_READ_COMMAND=false
 # compile aguments
 BUILD_ARGS="--64 --release"
 # amount of time between data sync to disk
@@ -170,6 +172,7 @@ fi
 # clean up booleans
 FETCH_BINARIES=$(echo ${FETCH_BINARIES} | tr '[:upper:]' '[:lower:]')
 TEST_WRITE_COMMAND=$(echo ${TEST_WRITE_COMMAND} | tr '[:upper:]' '[:lower:]')
+TEST_READ_COMMAND=$(echo ${TEST_READ_COMMAND} | tr '[:upper:]' '[:lower:]')
 TEST_JOURNAL_CONFIRM=$(echo ${TEST_JOURNAL_CONFIRM} | tr '[:upper:]' '[:lower:]')
 MMS_AUTOMATION=$(echo ${MMS_AUTOMATION} | tr '[:upper:]' '[:lower:]')
 
@@ -381,6 +384,7 @@ function determine_benchrun_options() {
     BENCHRUN_OPTIONS+=" --trialTime ${TEST_TRIALS_TIME}"
     BENCHRUN_OPTIONS+=" --trialCount ${TEST_TRIALS_COUNT}"
     BENCHRUN_OPTIONS+=" --writeCmd ${TEST_WRITE_COMMAND}"
+    BENCHRUN_OPTIONS+=" --readCmd ${TEST_READ_COMMAND}"
     BENCHRUN_OPTIONS+=" --testFilter ${TEST_TAGS_FILTER}"
     BENCHRUN_OPTIONS+=" -w ${TEST_WRITE_CONCERN}"
     BENCHRUN_OPTIONS+=" -j ${TEST_JOURNAL_CONFIRM}"
