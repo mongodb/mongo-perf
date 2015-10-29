@@ -88,13 +88,20 @@ function oplistSingleWord(caseSensitive) {
     Random.srand(13141517);
     for (var i=0; i<numQuery; i++) {
         var c = Random.randInt(dictSize-wordLength);
-        oplist.push({
-            op: "find", 
-            query: {
-                $text: {$search: generatePhraseLowerCase(c,1), 
-                    $caseSensitive: caseSensitive }
-            }
-        });
+        var phrase = generatePhraseLowerCase(c,1);
+        if (caseSensitive) {
+            oplist.push({
+                op: "find", 
+                query: {
+                    $text: {$search: phrase, 
+                            $caseSensitive: caseSensitive }}})
+        }
+        else { // don't include the $caseSensitive part of the query if it's the default value (false)
+            oplist.push({
+                op: "find", 
+                query: {
+                    $text: {$search: phrase}}})
+        }
     }
     return oplist;
 }
@@ -132,16 +139,25 @@ function oplistThreeWord(caseSensitive) {
     oplist=[];
     Random.srand(13141517);
     for (var i=0; i<numQuery; i++) {
-    var p = "";
-    for (var j=0; j<3; j++) {
-        var c = Random.randInt(dictSize-wordLength);
-        p = p.concat(generatePhraseLowerCase(c,1), " ");
-    }
-    oplist.push({
-        op: "find", 
-        query: {$text: {$search: p, $caseSensitive: caseSensitive }
-            }
-        });
+        var p = "";
+        for (var j=0; j<3; j++) {
+            var c = Random.randInt(dictSize-wordLength);
+            p = p.concat(generatePhraseLowerCase(c,1), " ");
+        }
+        if (caseSensitive) {
+            oplist.push({
+                op: "find", 
+                query: {$text: {$search: p, $caseSensitive: caseSensitive }
+                       }
+            });
+        }
+        else {
+            oplist.push({
+                op: "find", 
+                query: {$text: {$search: p}
+                       }
+            });
+        }
     }
     return oplist;
 }
