@@ -108,9 +108,9 @@ function makeDocument(docSize) {
         while(Object.bsonsize(doc) < docSize) {
             doc.fieldName += "x";
         }
-        return doc;
-    }
+    return doc;
 }
+
 doc = makeDocument(docSize);
 var docs = []
 for (var i = 0; i < batchSize; i++) {
