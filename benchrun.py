@@ -167,8 +167,11 @@ def main():
     # put all crud options in a Map
     crud_options = {}
     crud_options["safeGLE"] = args.safeMode
-    crud_options["writeConcernJ"] = args.j
-    crud_options["writeConcernW"] = args.w
+    crud_options["writeConcern"] = {}
+    if (args.j):
+            crud_options["writeConcern"]["j"] = args.j
+    if (args.w):
+            crud_options["writeConcern"]["w"] = args.w
     crud_options["writeCmdMode"] = args.writeCmd
     crud_options["readCmdMode"] = args.readCmd
 

@@ -94,9 +94,10 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOption
         //  when true, safe mode calls GLE after every op
         z.safe = (crudOptions.safeGLE.toLowerCase() == 'true' ? true : false)
         //  w write concern (integer)
-        z.w = crudOptions.writeConcernW
-        //  j write concern (boolean)
-        z.j = (crudOptions.writeConcernJ.toLowerCase() == 'true' ? true : false)
+        z.writeConcern = crudOptions.writeConcern
+        if (typeof(z.writeConcern.j) == "string") {
+            z.writeConcern.j = (z.writeConcern.j.toLowerCase() == 'true' ? true : false)
+        }
         //  use write commands in lieu of legacy update, remove or insert ops
         //  note: only one op will be in the array
         z.writeCmd = (crudOptions.writeCmdMode.toLowerCase() == 'true' ? true : false)
@@ -208,8 +209,7 @@ function getMean(values) {
 function getDefaultCrudOptions() {
     var crudOptions = {};
     crudOptions.safeGLE = 'false';
-    crudOptions.writeConcernW = 0;
-    crudOptions.writeConcernJ = 'false';
+    crudOptions.writeConcern = {};
     crudOptions.writeCmdMode = 'true';
     crudOptions.readCmdMode = 'false';
     return crudOptions;
