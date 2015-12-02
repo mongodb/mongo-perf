@@ -120,6 +120,24 @@ tests.push( { name: "Queries.Text.FindSingle",
         });
 
 /*
+* Setup: Create a text-indexed collection with large documents filled with
+         fake words/phrase
+* Test:  Run case-insensitive single-word text queries against the collection
+*
+* Regression test for SERVER-21690. This test is a duplicate of Queries.Text.FindSingle, except that
+* each document inserted is given 'dictSize' terms instead of 'numTerm' terms. This makes most
+* queries in this test return ~900 large documents; in the other tests in this file, queries usually
+* return <15 small documents.
+*/
+tests.push( { name: "Queries.Text.FindSingleLargeDocuments",
+            tags: ['query','text','core','indexed'],
+            pre: function(collection) {
+                populateCollection(collection, dictSize, dictSize);
+            },
+            ops: oplistSingleWord(false)
+        });
+
+/*
 * Setup: Create a text-indexed collection with documents filled with fake
          words/phrase
 * Test:  Run case-sensitive single-word text queries against the collection
