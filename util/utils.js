@@ -58,9 +58,9 @@ function formatRunDate(now) {
         pad(now.getDate()));
 }
 
-function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOptions, printArgs) {
+function runTest(test, thread, multidb, multicoll, runSeconds, shard, writeOptions, printArgs) {
 
-    if (typeof crudOptions === "undefined") crudOptions = getDefaultCrudOptions();
+    if (typeof writeOptions === "undefined") writeOptions = getDefaultWriteOptions();
     if (typeof shard === "undefined") shard = 0;
     if (typeof includeFilter === "undefined") includeFilter = "sanity";
     if (typeof printArgs === "undefined") printArgs = false;
@@ -92,14 +92,14 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOption
     // set write concern and write command modes
     new_ops.forEach(function (z) {
         //  when true, safe mode calls GLE after every op
-        z.safe = (crudOptions.safeGLE.toLowerCase() == 'true' ? true : false)
+        z.safe = (writeOptions.safeGLE.toLowerCase() == 'true' ? true : false)
         //  w write concern (integer)
-        z.w = crudOptions.writeConcernW
+        z.w = writeOptions.writeConcernW
         //  j write concern (boolean)
-        z.j = (crudOptions.writeConcernJ.toLowerCase() == 'true' ? true : false)
+        z.j = (writeOptions.writeConcernJ.toLowerCase() == 'true' ? true : false)
         //  use write command in lieu of legacy update, remove or insert op
         //  note: only one op will be in the array
-        z.writeCmd = (crudOptions.writeCmdMode.toLowerCase() == 'true' ? true : false)
+        z.writeCmd = (writeOptions.writeCmdMode.toLowerCase() == 'true' ? true : false)
     });
 
     // setup an environment to pass to the pre and post
@@ -203,14 +203,14 @@ function getMean(values) {
     return sum / values.length;
 }
 
-function getDefaultCrudOptions() {
-    var crudOptions = {};
+function getDefaultWriteOptions() {
+    var writeOptions = {};
     // write concern, write command mode
-    crudOptions.safeGLE = 'false';
-    crudOptions.writeConcernW = 0;
-    crudOptions.writeConcernJ = 'false';
-    crudOptions.writeCmdMode = 'true';
-    return crudOptions;
+    writeOptions.safeGLE = 'false';
+    writeOptions.writeConcernW = 0;
+    writeOptions.writeConcernJ = 'false';
+    writeOptions.writeCmdMode = 'true';
+    return writeOptions;
 }
 
 function doCompare(test, compareTo) {
@@ -310,14 +310,14 @@ function doExecute(test, includeFilter, excludeFilter) {
  * @param includeFilter - tests/suites to run, default "sanity"
  * @param excludeFilter - tests / suites not to run
  * @param shard - the number of shards the test is run for (defaults to 0)
- * @param crudOptions - the crudOptions to be used with the test (defaults to {safeGLE:false, writeConcernW:0, writeConcernJ:false, writeCmdMode: false}
+ * @param writeOptions - the writeOptions to be used with the test (defaults to {safeGLE:false, writeConcernW:0, writeConcernJ:false, writeCmdMode: false}
  * @param excludeTestbed - Exclude testbed information from results
  * @returns {{}} the results of a run set of tests
  */
-function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, crudOptions, excludeTestbed, printArgs) {
+function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, writeOptions, excludeTestbed, printArgs) {
 
     if (typeof shard === "undefined") shard = 0;
-    if (typeof crudOptions === "undefined") crudOptions = getDefaultCrudOptions();
+    if (typeof writeOptions === "undefined") writeOptions = getDefaultWriteOptions();
     if (typeof includeFilter === "undefined") includeFilter = "sanity";
     if (typeof excludeTestbed === "undefined") excludeTestbed = false;
     if (typeof printArgs === "undefined") printArgs = false;
@@ -342,7 +342,7 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilt
             basicFields.platform = "Unknown Platform";
         }
         basicFields.version = bi.version;
-        basicFields.crudOptions = crudOptions; // Map
+        basicFields.writeOptions = writeOptions; // Map
         testResults['basicFields'] = basicFields;
     }
 
@@ -364,13 +364,13 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilt
                 var newResults = {};
                 for (var j = 0; j < trials; j++) {
                     try {
-                        results[j] = runTest(test, threadCount, multidb, multicoll, seconds, shard, crudOptions, printArgs);
+                        results[j] = runTest(test, threadCount, multidb, multicoll, seconds, shard, writeOptions, printArgs);
                     }
                     catch(err) {
                         // Error handling to catch exceptions thrown in/by js for error
                         // Not all errors from the mongo shell are put up as js exceptions
                         print("Error running test " + test + ": " + err.message + ":" + err.stack);
-                        errors.push({test: test, trial: j, threadCount: threadCount, multidb: multidb, multicoll: multicoll, shard: shard, crudOptions: crudOptions, error: {message: err.message, code: err.code}})
+                        errors.push({test: test, trial: j, threadCount: threadCount, multidb: multidb, multicoll: multicoll, shard: shard, writeOptions: writeOptions, error: {message: err.message, code: err.code}})
                     }
                 }
                 var values = [];
@@ -411,12 +411,12 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilt
  * @param includeFilter - tests / suites to run, default "sanity"
  * @param excludeFilter - tests / suites not to run
  * @param shard - the number of shards the test is run for (defaults to 0)
- * @param crudOptions - the crudOptions to be used with the test (defaults to {safeGLE:false, writeConcernW:0, writeConcernJ:false, writeCmdMode: false}
+ * @param writeOptions - the writeOptions to be used with the test (defaults to {safeGLE:false, writeConcernW:0, writeConcernJ:false, writeCmdMode: false}
  * @param excludeTestbed - Exclude testbed information from results
  * @returns {{}} the results of a run set of tests
  */
-function mongoPerfRunTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, crudOptions, excludeTestbed, printArgs) {
-    testResults = runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, crudOptions, excludeTestbed, printArgs);
+function mongoPerfRunTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, writeOptions, excludeTestbed, printArgs) {
+    testResults = runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, writeOptions, excludeTestbed, printArgs);
     print("@@@RESULTS_START@@@");
     print(JSON.stringify(testResults));
     print("@@@RESULTS_END@@@");

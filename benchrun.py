@@ -160,12 +160,12 @@ def main():
     for testfile in args.testfiles:
         load_file_in_shell(mongo_proc, testfile)
 
-    # put all crud options in a Map
-    crud_options = {}
-    crud_options["safeGLE"] = args.safeMode
-    crud_options["writeConcernJ"] = args.j
-    crud_options["writeConcernW"] = args.w
-    crud_options["writeCmdMode"] = args.writeCmd
+    # put all write options in a Map
+    write_options = {}
+    write_options["safeGLE"] = args.safeMode
+    write_options["writeConcernJ"] = args.j
+    write_options["writeConcernW"] = args.w
+    write_options["writeCmdMode"] = args.writeCmd
 
     # Pipe commands to the mongo shell to kickoff the test.
     cmdstr = ("mongoPerfRunTests(" +
@@ -177,7 +177,7 @@ def main():
               str(json.dumps(args.includeFilter)) + ", " +
               str(json.dumps(args.excludeFilter)) + ", " +
               str(args.shard) + ", " +
-              str(json.dumps(crud_options)) + ", " + 
+              str(json.dumps(write_options)) + ", " + 
               str(args.excludeTestbed) + "," + 
               str(args.printArgs) + 
               ");\n")

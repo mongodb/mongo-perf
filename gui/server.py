@@ -465,9 +465,9 @@ def get_rows(commit_regex, start_date, end_date, label_regex, version_regex,
         else:
             run_time = None
 
-        crudOptions = False
-        if 'crudOptions' in record.keys():
-            crudOptions = record['crudOptions']
+        writeOptions = False
+        if 'writeOptions' in record.keys():
+            writeOptions = record['writeOptions']
 
 
 
@@ -485,7 +485,7 @@ def get_rows(commit_regex, start_date, end_date, label_regex, version_regex,
                 "timestamp": int(run_date_timestamp)
             },
             "platform": record["platform"],
-            "crudOptions": crudOptions,
+            "writeOptions": writeOptions,
             "run_time": run_time,
             "test_suites": sorted(test_suites),
             "tests": list(sorted(tests)),
