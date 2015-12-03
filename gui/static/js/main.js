@@ -32,18 +32,11 @@ function format(d) {
             safe_class = 'crudOptionFalse';
         }
 
-        var writecmdmode_icon = 'fa-check';
-        var writecmdmode_class = 'crudOptionTrue';
+        var cmdmode_icon = 'fa-check';
+        var cmdmode_class = 'crudOptionTrue';
         if (d.crudOptions.writeCmdMode == 'false') {
-            writecmdmode_icon = 'fa-times';
-            writecmdmode_class = 'crudOptionFalse';
-        }
-
-        var readcmdmode_icon = 'fa-check';
-        var readcmdmode_class = 'crudOptionTrue';
-        if (d.crudOptions.readCmdMode == 'false') {
-            readcmdmode_icon = 'fa-times';
-            readcmdmode_class = 'crudOptionFalse';
+            cmdmode_icon = 'fa-times';
+            cmdmode_class = 'crudOptionFalse';
         }
 
 
@@ -83,8 +76,7 @@ function format(d) {
         '<td>' +
         (!d.crudOptions ? " unavailable " :
         '<div class="crudOptionCell ' + safe_class + '">&nbsp;safe:&nbsp;<i class="fa fa-fw ' + safe_icon + '"></i></div>' +
-        '<div class="crudOptionCell ' + writecmdmode_class + '">&nbsp;write cmd:&nbsp;<i class="fa fa-fw ' + writecmdmode_icon + '"></i></div>' +
-        '<div class="crudOptionCell ' + readcmdmode_class + '">&nbsp;read cmd:&nbsp;<i class="fa fa-fw ' + readcmdmode_icon + '"></i></div>' +
+        '<div class="crudOptionCell ' + cmdmode_class + '">&nbsp;write cmd:&nbsp;<i class="fa fa-fw ' + cmdmode_icon + '"></i></div>' +
         '<div class="crudOptionCell ' + j_class + '">&nbsp;j:&nbsp;<i class="fa fa-fw ' + j_icon + '"></i></div>' +
         '<div class="crudOptionWCell">&nbsp;w:&nbsp;' + d.crudOptions.writeConcernW + '</div>'
         )+
