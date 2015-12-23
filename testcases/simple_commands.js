@@ -146,7 +146,6 @@ function genDistinctTest( name, index, query ) {
     }
 
     var op = { op: "command",
-               tags: ['distinct','command','core'],
                ns : "#B_DB",
                command : { distinct : "#B_COLL",
                            key : "x" } };
