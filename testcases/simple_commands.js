@@ -86,8 +86,8 @@ tests.push( { name: "Commands.CountsIntIDRange",
               ] } );
 
 /*
- * Setup: 
- * Test: Call find and modify with upsert on an integer _id field. The
+ * Setup:
+ * Test: Call findAndModify with upsert on an integer _id field. The
  *       _id field is updated to the existing value. Each thread works
  *       on distinct range of documents.
  */
@@ -99,11 +99,125 @@ tests.push( { name: "Commands.FindAndModifyInserts",
               ops: [
                   { op: "let", target: "x", value: {"#RAND_INT_PLUS_THREAD": [0,100]}},
                   { op: "command",
-                    ns : "#B_DB",
-                    command : { findAndModify : "#B_COLL",
-                                upsert : true,
-                                query : { _id : { "#VARIABLE" : "x" } },
-                                update : { _id : { "#VARIABLE" : "x" } } } }
+                    ns: "#B_DB",
+                    command : { findAndModify: "#B_COLL",
+                                upsert: true,
+                                query: { _id: { "#VARIABLE" : "x" } },
+                                update: { _id: { "#VARIABLE" : "x" } } } }
+              ] } );
+
+/*
+ * Setup: Create collection of documents with a boolean flag set to false, and a random field.
+ * Test: Call findAndModify with a sort on the random field, setting the boolean to true.
+ */
+tests.push( { name: "Commands.FindAndModifySortedUpdate",
+              tags: ["command","regression"],
+              pre: function setUpFindAndModifySortedUpdate( collection ) {
+                  collection.drop();
+                  Random.setRandomSeed(22002);
+                  var nDocs = 5000;
+                  var bulk = collection.initializeUnorderedBulkOp();
+                  for (var i = 0; i < nDocs; i++) {
+                      bulk.insert({ count: 0, rand: Random.rand() });
+                  }
+                  bulk.execute();
+              },
+              ops: [
+                  { op: "command",
+                    ns: "#B_DB",
+                    command: { findAndModify: "#B_COLL",
+                               query: {},
+                               update: { $inc: { count: 1 } },
+                               sort: { count: 1, rand: 1 }
+                    }
+                  }
+              ] } );
+
+/*
+ * Setup: Create collection of documents with a random field.
+ * Test: Call findAndModify with a sort on the random field, deleting the document.
+ */
+tests.push( { name: "Commands.FindAndModifySortedDelete",
+              tags: ["command","regression"],
+              pre: function setUpFindAndModifySortedDelete( collection ) {
+                  collection.drop();
+                  Random.setRandomSeed(22002);
+                  var nDocs = 5000;
+                  var bulk = collection.initializeUnorderedBulkOp();
+                  for (var i = 0; i < nDocs; i++) {
+                      bulk.insert({ ts: new Date() });
+                  }
+                  bulk.execute();
+              },
+              ops: [
+                  { op: "command",
+                    ns: "#B_DB",
+                    command: { findAndModify: "#B_COLL",
+                               query: {},
+                               remove: true,
+                               sort: { ts: 1 }
+                    }
+                  },
+                  { op:  "insert",
+                    doc: { ts : { "#CUR_DATE" : 0 } } }
+              ] } );
+
+/*
+ * Setup: Create collection of documents with a boolean flag set to false, and a random field.
+ * Test: Call findAndModify with a sort on the random field, setting the boolean to true.
+ */
+tests.push( { name: "Commands.FindAndModifySortedUpdateIndexed",
+              tags: ["command","regression"],
+              pre: function setUpFindAndModifySortedUpdate( collection ) {
+                  collection.drop();
+                  Random.setRandomSeed(22002);
+                  var nDocs = 5000;
+                  var bulk = collection.initializeUnorderedBulkOp();
+                  for (var i = 0; i < nDocs; i++) {
+                      bulk.insert({ count: 0, rand: Random.rand() });
+                  }
+                  bulk.execute();
+                  collection.ensureIndex({count: 1, rand: 1});
+              },
+              ops: [
+                  { op: "command",
+                    ns: "#B_DB",
+                    command: { findAndModify: "#B_COLL",
+                               query: {},
+                               update: { $inc: { count: 1 } },
+                               sort: { count: 1, rand: 1 }
+                    }
+                  }
+              ] } );
+
+/*
+ * Setup: Create collection of documents with a random field.
+ * Test: Call findAndModify with a sort on the random field, deleting the document.
+ */
+tests.push( { name: "Commands.FindAndModifySortedDeleteIndexed",
+              tags: ["command","regression"],
+              pre: function setUpFindAndModifySortedDelete( collection ) {
+                  collection.drop();
+                  Random.setRandomSeed(22002);
+                  var nDocs = 5000;
+                  var bulk = collection.initializeUnorderedBulkOp();
+                  for (var i = 0; i < nDocs; i++) {
+                      bulk.insert({ ts: new Date() });
+                  }
+                  bulk.execute();
+                  collection.ensureIndex({ts: 1});
+              },
+              ops: [
+                  { op: "command",
+                    ns: "#B_DB",
+                    command: { findAndModify: "#B_COLL",
+                               query: {},
+                               remove: true,
+                               sort: { ts: 1 }
+                    }
+                  },
+                  { op:  "insert",
+                    doc: { ts : { "#CUR_DATE" : 0 } } }
               ] } );
 
 /*
