@@ -34,8 +34,9 @@ var enPossible = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1";
 var possible = enPossible;
 
 var dictionary = "";
+Random.srand(13141517);
 for (var i = 0; i<dictSize; i++) 
-    dictionary += possible.charAt(Math.floor(Math.random()*possible.length));
+    dictionary += possible.charAt(Random.randInt(possible.length));
 
 function generatePhrase(pos, term) {
     buf="";
@@ -84,15 +85,23 @@ function populateCollection(col, term, entry) {
 // Helper function to create oplist for single-word search
 function oplistSingleWord(caseSensitive) {
     var oplist=[];
+    Random.srand(13141517);
     for (var i=0; i<numQuery; i++) {
-        var c = Math.floor(Math.random()*(dictSize-wordLength));
-        oplist.push({
-            op: "find", 
-            query: {
-                $text: {$search: generatePhraseLowerCase(c,1), 
-                    $caseSensitive: caseSensitive }
-            }
-        });
+        var c = Random.randInt(dictSize-wordLength);
+        var phrase = generatePhraseLowerCase(c,1);
+        if (caseSensitive) {
+            oplist.push({
+                op: "find", 
+                query: {
+                    $text: {$search: phrase, 
+                            $caseSensitive: caseSensitive }}})
+        }
+        else { // don't include the $caseSensitive part of the query if it's the default value (false)
+            oplist.push({
+                op: "find", 
+                query: {
+                    $text: {$search: phrase}}})
+        }
     }
     return oplist;
 }
@@ -106,6 +115,24 @@ tests.push( { name: "Queries.Text.FindSingle",
             tags: ['query','text','core','indexed'],
             pre: function(collection) {
                 populateCollection(collection, numTerm, dictSize);
+            },
+            ops: oplistSingleWord(false)
+        });
+
+/*
+* Setup: Create a text-indexed collection with large documents filled with
+         fake words/phrase
+* Test:  Run case-insensitive single-word text queries against the collection
+*
+* Regression test for SERVER-21690. This test is a duplicate of Queries.Text.FindSingle, except that
+* each document inserted is given 'dictSize' terms instead of 'numTerm' terms. This makes most
+* queries in this test return ~900 large documents; in the other tests in this file, queries usually
+* return <15 small documents.
+*/
+tests.push( { name: "Queries.Text.FindSingleLargeDocuments",
+            tags: ['query','text','core','indexed'],
+            pre: function(collection) {
+                populateCollection(collection, dictSize, dictSize);
             },
             ops: oplistSingleWord(false)
         });
@@ -128,17 +155,27 @@ tests.push( { name: "Queries.Text.FindSingleCaseSensitive",
 // Helper function to create oplist for three-word search (or)
 function oplistThreeWord(caseSensitive) {
     oplist=[];
+    Random.srand(13141517);
     for (var i=0; i<numQuery; i++) {
-    var p = "";
-    for (var j=0; j<3; j++) {
-        var c = Math.floor(Math.random()*(dictSize-wordLength));
-        p = p.concat(generatePhraseLowerCase(c,1), " ");
-    }
-    oplist.push({
-        op: "find", 
-        query: {$text: {$search: p, $caseSensitive: caseSensitive }
-            }
-        });
+        var p = "";
+        for (var j=0; j<3; j++) {
+            var c = Random.randInt(dictSize-wordLength);
+            p = p.concat(generatePhraseLowerCase(c,1), " ");
+        }
+        if (caseSensitive) {
+            oplist.push({
+                op: "find", 
+                query: {$text: {$search: p, $caseSensitive: caseSensitive }
+                       }
+            });
+        }
+        else {
+            oplist.push({
+                op: "find", 
+                query: {$text: {$search: p}
+                       }
+            });
+        }
     }
     return oplist;
 }
@@ -175,8 +212,9 @@ tests.push( { name: "Queries.Text.FindThreeWordsCaseSensitive",
 // Be VERY careful with the escape character "\"
 function oplistPhrase(caseSensitive) {
     oplist=[];
+    Random.srand(13141517);
     for (var i=0; i<numQuery; i++) {
-        var c = Math.floor(Math.random()*(dictSize-wordLength));
+        var c = Random.randInt(dictSize-wordLength);
         var p = "\"";
         p = p.concat(generatePhraseLowerCase(c, numTerm), "\"");
         oplist.push({ 

@@ -63,8 +63,12 @@ def parse_arguments():
                         default='false')
     parser.add_argument('--writeCmd', dest='writeCmd',
                         nargs='?', const='true', choices=['true', 'false'],
-                        help='this option turns on use of the write command instead of legacy write operations',
+                        help='this option turns on use of the write commands instead of legacy write operations',
                         default='true')
+    parser.add_argument('--readCmd', dest='readCmd',
+                        nargs='?', const='true', choices=['true', 'false'],
+                        help='this option turns on use of the read commands instead of legacy read operations',
+                        default='false')
 
     parser.add_argument('--includeFilter', dest='includeFilter', nargs='+', action="append",
                         help="Run just the specified tests/suites. Can specify multiple tags per --includeFilter\n"
@@ -160,12 +164,16 @@ def main():
     for testfile in args.testfiles:
         load_file_in_shell(mongo_proc, testfile)
 
-    # put all write options in a Map
-    write_options = {}
-    write_options["safeGLE"] = args.safeMode
-    write_options["writeConcernJ"] = args.j
-    write_options["writeConcernW"] = args.w
-    write_options["writeCmdMode"] = args.writeCmd
+    # put all crud options in a Map
+    crud_options = {}
+    crud_options["safeGLE"] = args.safeMode
+    crud_options["writeConcern"] = {}
+    if (args.j):
+            crud_options["writeConcern"]["j"] = args.j
+    if (args.w):
+            crud_options["writeConcern"]["w"] = args.w
+    crud_options["writeCmdMode"] = args.writeCmd
+    crud_options["readCmdMode"] = args.readCmd
 
     # Pipe commands to the mongo shell to kickoff the test.
     cmdstr = ("mongoPerfRunTests(" +
@@ -177,7 +185,7 @@ def main():
               str(json.dumps(args.includeFilter)) + ", " +
               str(json.dumps(args.excludeFilter)) + ", " +
               str(args.shard) + ", " +
-              str(json.dumps(write_options)) + ", " + 
+              str(json.dumps(crud_options)) + ", " + 
               str(args.excludeTestbed) + "," + 
               str(args.printArgs) + 
               ");\n")

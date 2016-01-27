@@ -47,9 +47,14 @@
 # TEST_JOURNAL_CONFIRM=false
 
 #############
-# Enable write command for the tests
+# Enable write commands for the tests
 #############
 # TEST_WRITE_COMMAND=true
+
+#############
+# Enable read commands for the tests
+#############
+# TEST_READ_COMMAND=false
 
 #############
 # Enable Multi DB Runs
