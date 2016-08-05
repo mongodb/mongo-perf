@@ -1,22 +1,22 @@
 function prepOp(collection, op) {
 
     function fixString(str) {
-        if (str == "#B_COLL") {
-            return collection.getName();
+        if (str.startsWith("#B_COLL")) {
+            return str.replace("#B_COLL", collection.getName());
         }
-        if (str == "#B_NS") {
-            return collection.getFullName();
+        else if (str.startsWith("#B_NS")) {
+            return str.replace("#B_NS", collection.getFullName());
         }
-        if (str == "#B_DB") {
-            return collection.getDB().getName();
+        else if (str.startsWith("#B_DB")) {
+            return str.replace("#B_DB", collection.getDB().getName());
         }
-        throw "unknown expansion " + str;
+        throw new Error("unknown expansion " + str);
     }
 
     function recurse(doc) {
         for (var key in doc) {
             var val = doc[key];
-            if (typeof(val) == "string" && val.indexOf("#B_") == 0) {
+            if (typeof(val) == "string" && val.startsWith("#B_")) {
                 doc[key] = fixString(val);
             }
             else if (typeof(val) == "object") {
@@ -371,7 +371,7 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilt
                     catch(err) {
                         // Error handling to catch exceptions thrown in/by js for error
                         // Not all errors from the mongo shell are put up as js exceptions
-                        print("Error running test " + test + ": " + err.message + ":" + err.stack);
+                        print("Error running test " + test.name + ": " + err.message + ":\n" + err.stack);
                         errors.push({test: test, trial: j, threadCount: threadCount, multidb: multidb, multicoll: multicoll, shard: shard, crudOptions: crudOptions, error: {message: err.message, code: err.code}})
                     }
                 }
