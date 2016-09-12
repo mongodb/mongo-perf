@@ -209,6 +209,18 @@ tests.push(testCaseGenerator({
 }));
 
 tests.push(testCaseGenerator({
+    name: "Group.OneFieldReferencedOutOfMany",
+    docGenerator: function basicGroupDocGenerator(i) {
+        var doc = {_id: i, _idMod10: i % 10};
+        for (var j = 0; j < 100; j++) {
+            doc["field" + j] = i;
+        }
+        return doc;
+    },
+    pipeline: [{$group: {_id: "$_idMod10"}}]
+}));
+
+tests.push(testCaseGenerator({
     name: "Limit",
     nDocs: 500,
     pipeline: [{$limit: 250}]
