@@ -58,7 +58,7 @@ function formatRunDate(now) {
         pad(now.getDate()));
 }
 
-function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOptions, printArgs) {
+function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOptions, printArgs, username, password) {
 
     if (typeof crudOptions === "undefined") crudOptions = getDefaultCrudOptions();
     if (typeof shard === "undefined") shard = 0;
@@ -155,6 +155,10 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOption
         seconds: runSeconds,
         host: db.getMongo().host,
         parallel: thread };
+    if (username) {
+        benchArgs["username"] = username;
+        benchArgs["password"] = password;
+    }
 
     if (printArgs) {
         print(JSON.stringify(benchArgs));
@@ -316,14 +320,13 @@ function doExecute(test, includeFilter, excludeFilter) {
  * @param excludeTestbed - Exclude testbed information from results
  * @returns {{}} the results of a run set of tests
  */
-function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, crudOptions, excludeTestbed, printArgs) {
+function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, crudOptions, excludeTestbed, printArgs, username, password) {
 
     if (typeof shard === "undefined") shard = 0;
     if (typeof crudOptions === "undefined") crudOptions = getDefaultCrudOptions();
     if (typeof includeFilter === "undefined") includeFilter = "sanity";
     if (typeof excludeTestbed === "undefined") excludeTestbed = false;
     if (typeof printArgs === "undefined") printArgs = false;
-    
 
     var testResults = {};
     testResults.results=[];
@@ -366,13 +369,22 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilt
                 var newResults = {};
                 for (var j = 0; j < trials; j++) {
                     try {
-                        results[j] = runTest(test, threadCount, multidb, multicoll, seconds, shard, crudOptions, printArgs);
+                        results[j] = runTest(test, threadCount, multidb, multicoll, seconds, shard, crudOptions, printArgs, username, password);
                     }
                     catch(err) {
                         // Error handling to catch exceptions thrown in/by js for error
                         // Not all errors from the mongo shell are put up as js exceptions
                         print("Error running test " + test.name + ": " + err.message + ":\n" + err.stack);
-                        errors.push({test: test, trial: j, threadCount: threadCount, multidb: multidb, multicoll: multicoll, shard: shard, crudOptions: crudOptions, error: {message: err.message, code: err.code}})
+                        errors.push({test: test,
+                                     trial: j,
+                                     threadCount: threadCount,
+                                     multidb: multidb,
+                                     multicoll: multicoll,
+                                     shard: shard,
+                                     crudOptions: crudOptions,
+                                     username: username,
+                                     password: password,
+                                     error: {message: err.message, code: err.code}})
                     }
                 }
                 var values = [];
@@ -417,8 +429,8 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilt
  * @param excludeTestbed - Exclude testbed information from results
  * @returns {{}} the results of a run set of tests
  */
-function mongoPerfRunTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, crudOptions, excludeTestbed, printArgs) {
-    testResults = runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, crudOptions, excludeTestbed, printArgs);
+function mongoPerfRunTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, crudOptions, excludeTestbed, printArgs, username, password) {
+    testResults = runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, crudOptions, excludeTestbed, printArgs, username, password);
     print("@@@RESULTS_START@@@");
     print(JSON.stringify(testResults));
     print("@@@RESULTS_END@@@");

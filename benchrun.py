@@ -35,18 +35,24 @@ def parse_arguments():
     parser.add_argument('--trialCount', dest='trials',
                         help='Specify how many trials to run',
                         type=int, default=1)
-    parser.add_argument('--shard', dest='shard',
-                        help='Specify shard cluster the test should use, 0 - no shard, 1 - shard with {_id: hashed}, 2 - shard with {_id: 1}',
-                        type=int, default=0, choices=[0, 1, 2])
     parser.add_argument('--host', dest='hostname',
                         help='hostname of the mongod/mongos under test',
                         default='localhost')
-    parser.add_argument('-p', '--port', dest='port',
+    parser.add_argument('--port', dest='port',
                         help='Port of the mongod/mongos under test',
                         default='27017')
     parser.add_argument('--replset', dest='replica_set',
                         help='replica set name of the mongod/mongos under test',
                         default=None)
+    parser.add_argument('-u', '--username', dest='username',
+                        help='username to use for mongodb authentication',
+                        default=None)
+    parser.add_argument('-p', '--password', dest='password',
+                        help='password to use for mongodb authentication',
+                        default=None)
+    parser.add_argument('--shard', dest='shard',
+                        help='Specify shard cluster the test should use, 0 - no shard, 1 - shard with {_id: hashed}, 2 - shard with {_id: 1}',
+                        type=int, default=0, choices=[0, 1, 2])
     parser.add_argument('-s', '--shell', dest='shellpath',
                         help="Path to the mongo shell executable to use.",
                         default='mongo')
@@ -142,6 +148,15 @@ def main():
         print("shard option must be [0, 2] . Will be set to 2.")
         args.shard = 2
 
+    auth = []
+    using_auth = False
+    if isinstance(args.username, basestring) and isinstance(args.password, basestring):
+        auth = ["-u", args.username, "-p", args.password, "--authenticationDatabase", "admin"]
+        using_auth = True
+    elif isinstance(args.username, basestring) or isinstance(args.password, basestring):
+        print("Warning: You specified one of username or password, but not the other.")
+        print("         Benchrun will continue without authentication.")
+
     if args.includeFilter == [] :
         args.includeFilter = '%'
     elif len(args.includeFilter) == 1 :
@@ -149,16 +164,20 @@ def main():
         if args.includeFilter == ['%'] :
             args.includeFilter = '%'
 
-    # Print version info.
+    if args.username:
+        auth = ["-u", args.username, "-p", args.password, "--authenticationDatabase", "admin"]
+    else:
+        auth = []
+
     call([args.shellpath, "--norc",
           "--host", args.hostname, "--port", args.port,
           "--eval", "print('db version: ' + db.version());"
-          " db.serverBuildInfo().gitVersion;"])
+          " db.serverBuildInfo().gitVersion;"] + auth)
     print("")
 
     # Open a mongo shell subprocess and load necessary files.
     mongo_proc = Popen([args.shellpath, "--norc", "--quiet",
-                       "--host", args.hostname, "--port", args.port],
+                       "--host", args.hostname, "--port", args.port] + auth, 
                        stdin=PIPE, stdout=PIPE)
 
     # load test files
@@ -177,7 +196,10 @@ def main():
     crud_options["writeCmdMode"] = args.writeCmd
     crud_options["readCmdMode"] = args.readCmd
 
-    # Pipe commands to the mongo shell to kickoff the test.
+    authstr = ""
+    if using_auth:
+        authstr = ", '" + args.username + "', '" + args.password + "'"
+
     cmdstr = ("mongoPerfRunTests(" +
               str(args.threads) + ", " +
               str(args.multidb) + ", " +
@@ -188,8 +210,9 @@ def main():
               str(json.dumps(args.excludeFilter)) + ", " +
               str(args.shard) + ", " +
               str(json.dumps(crud_options)) + ", " + 
-              str(args.excludeTestbed) + "," + 
-              str(args.printArgs) + 
+              str(args.excludeTestbed) + ", " +
+              str(args.printArgs) +
+              authstr +
               ");\n")
     mongo_proc.stdin.write(cmdstr)
     print cmdstr
