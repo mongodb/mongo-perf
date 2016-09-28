@@ -33,7 +33,7 @@ var setupTestFiltered = function (collection) {
  */
 var setupTestFilteredNonSelective = function (collection) {
     setupTest(collection);
-    collection.createIndex( { x : 1 }, { partialIndexExpression : { a : { $lt : 4800 } } } );
+    collection.createIndex( { x : 1 }, { partialFilterExpression : { a : { $lt : 4800 } } } );
 }
 
 /*
@@ -131,5 +131,5 @@ tests.push( { name : "Queries.PartialIndex.AllInFilter.FullRange",
 
               ops : [
                   { op: "let", target: "x", value : {"#RAND_INT" : [ 0, 4800 ]}},
-                  { op: "find", query:  { x : {"#VARIABLE" : "x"}, a : {"VARIABLE" : "x"  } } }
+                  { op: "find", query:  { x : {"#VARIABLE" : "x"}, a : {"#VARIABLE": "x" } } }
               ] } );
