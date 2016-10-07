@@ -172,6 +172,138 @@ tests.push( { name: "Queries.TwoInts",
                   }
               ] } );
 
+/*
+ * Setup: Create a collection with a non-simple default collation, and insert indexed strings. We
+ * set several collation options in an attempt to make the collation processing in ICU more
+ * expensive.
+ *
+ * Test: Query for a range of strings using the non-simple default collation.
+ */
+tests.push( { name: "Queries.StringRangeWithNonSimpleCollation",
+              tags: ['query','indexed','collation'],
+              pre: function( collection ) {
+                  var testDB = collection.getDB();
+                  var collName = collection.getName();
+                  collection.drop();
+                  var myCollation = {
+                      locale : "en",
+                      strength : 5,
+                      backwards : true,
+                      normalization : true,
+                  };
+                  testDB.createCollection(collName, { collation: myCollation } );
+                  var docs = [];
+                  for ( var i = 0; i < 4800; i++ ) {
+                      var j = i + (1 * 1000 * 1000 * 1000);
+                      docs.push( { x : j.toString() } );
+                  }
+                  collection.insert(docs);
+                  collection.getDB().getLastError();
+                  collection.ensureIndex( { x : 1 } );
+              },
+              ops : [
+                  { op: "find", query: { x: { $gte: "1000002400", $lt: "1000002404" } } }
+              ] } );
+
+/*
+ * Setup: Create a collection and insert indexed strings.
+ *
+ * Test: Query for a range of strings using the simple collation.
+ *
+ * Comparing this test against StringRangeWithNonSimpleCollation is useful for determining the
+ * performance impact of queries with non-simple collations whose string comparison predicates are
+ * indexed.
+ */
+tests.push( { name: "Queries.StringRangeWithSimpleCollation",
+              tags: ['query','indexed','collation'],
+              pre: function( collection ) {
+                  var testDB = collection.getDB();
+                  var collName = collection.getName();
+                  collection.drop();
+                  testDB.createCollection(collName, { collation: { locale: "simple" } } );
+                  var docs = [];
+                  for ( var i = 0; i < 4800; i++ ) {
+                      var j = i + (1 * 1000 * 1000 * 1000);
+                      docs.push( { x : j.toString() } );
+                  }
+                  collection.insert(docs);
+                  collection.getDB().getLastError();
+                  collection.ensureIndex( { x : 1 } );
+              },
+              ops : [
+                  { op: "find", query: { x: { $gte: "1000002400", $lt: "1000002404" } } }
+              ] } );
+
+/*
+ * Setup: Create a collection with a non-simple default collation and insert a small number of
+ * documents with strings. We set several collation options in an attempt to make the collation
+ * processing in ICU more expensive.
+ *
+ * Test: Issue queries that must perform a collection scan, filtering the documents with an $in
+ * predicate. Request a sort which the query system must satisfy by sorting the documents in memory
+ * according to the collation.
+ */
+tests.push( { name: "Queries.StringUnindexedInPredWithNonSimpleCollation",
+              tags: ['query','regression','collation'],
+              pre: function( collection ) {
+                  var testDB = collection.getDB();
+                  var collName = collection.getName();
+                  collection.drop();
+                  var myCollation = {
+                      locale : "en",
+                      strength : 5,
+                      backwards : true,
+                      normalization : true,
+                  };
+                  testDB.createCollection(collName, { collation: myCollation } );
+                  var docs = [];
+                  for ( var i = 0; i < 10; i++ ) {
+                      docs.push( { x : i.toString() } );
+                  }
+                  collection.insert(docs);
+                  collection.getDB().getLastError();
+              },
+              ops : [
+                  { op: "find",
+                    query: {
+                        $query: { x: { $in: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"] } },
+                        $orderby: { x: 1 },
+                    } }
+              ] } );
+
+/*
+ * Setup: Create a collection with the simple default collation and insert a small number of
+ * documents with strings.
+ *
+ * Test: Issue queries that must perform a collection scan, filtering the documents with an $in
+ * predicate. Request a sort which the query system must satisfy by sorting the documents in memory.
+ *
+ * Comparing this test against StringUnidexedInPredWithNonSimpleCollation is useful for determining
+ * the performance impact of queries with non-simple collations whose string comparison predicates
+ * are unindexed, in addition to the perf impact of an in-memory SORT stage which uses a collator.
+ */
+tests.push( { name: "Queries.StringUnindexedInPredWithSimpleCollation",
+              tags: ['query','regression','collation'],
+              pre: function( collection ) {
+                  var testDB = collection.getDB();
+                  var collName = collection.getName();
+                  collection.drop();
+                  testDB.createCollection(collName, { collation: { locale: "simple" } } );
+                  var docs = [];
+                  for ( var i = 0; i < 10; i++ ) {
+                      docs.push( { x : i.toString() } );
+                  }
+                  collection.insert(docs);
+                  collection.getDB().getLastError();
+              },
+              ops : [
+                  { op: "find",
+                    query: {
+                        $query: { x: { $in: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"] } },
+                        $orderby: { x: 1 },
+                    } }
+              ] } );
+
 // PROJECTION TESTS
 
 /*

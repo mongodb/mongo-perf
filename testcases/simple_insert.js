@@ -213,3 +213,49 @@ tests.push( { name: "Insert.JustNumIndexed",
                         { x: { "#SEQ_INT":
                             { seq_id: 0, start: 0, step: 1, unique: true } } } }
               ] } );
+
+/*
+ * Setup: Create an empty collection with a simple default collation and index field 'a'.
+ *
+ * Test: Repeatedly insert an indexed 10 character string.
+ */
+tests.push( { name: "InsertIndexedStringsSimpleCollation",
+              tags: ['insert','indexed','regression','collation'],
+              pre: function( collection ) {
+                  var testDB = collection.getDB();
+                  var collName = collection.getName();
+                  collection.drop();
+                  testDB.createCollection(collName, { collation: { locale: "simple" } } );
+                  collection.ensureIndex( { a: 1 } );
+              },
+              ops: [
+                  { op: "insert", doc: { a: { "#RAND_STRING": [10] } } }
+              ] } );
+
+/*
+ * Setup: Create an empty collection with a non-simple default collation and index field 'a'. We set
+ * several collation options in an attempt to make the collation processing in ICU more expensive.
+ *
+ * Test: Repeatedly insert an indexed 10 character string.
+ *
+ * Comparing this test against InsertIndexedStringsSimpleCollation should indicate the overhead
+ * associated with generating index keys for an index with a non-simple collation.
+ */
+tests.push( { name: "InsertIndexedStringsNonSimpleCollation",
+              tags: ['insert','indexed','regression','collation'],
+              pre: function( collection ) {
+                  var testDB = collection.getDB();
+                  var collName = collection.getName();
+                  collection.drop();
+                  var myCollation = {
+                      locale : "en",
+                      strength : 5,
+                      backwards : true,
+                      normalization : true,
+                  };
+                  testDB.createCollection(collName, { collation: myCollation } );
+                  collection.ensureIndex( { a: 1 } );
+              },
+              ops: [
+                  { op: "insert", doc: { a: { "#RAND_STRING": [10] } } }
+              ] } );
