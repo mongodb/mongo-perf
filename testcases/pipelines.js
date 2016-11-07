@@ -94,7 +94,7 @@ function testCaseGenerator(options) {
         pipeline.push({$skip: 1e9});
     }
     return {
-        tags: options.tags || ["aggregation", "regression"],
+        tags: ["aggregation", "regression"].concat(options.tags),
         name: "Aggregation." + options.name,
         pre: options.pre || populatorGenerator(nDocs,
                                                options.indices || [],
@@ -226,35 +226,45 @@ tests.push(testCaseGenerator({
     pipeline: [{$limit: 250}]
 }));
 
-// $lookup tests need two collections, so they use their own setup code.
+/**
+ * Data population function used by the 'Lookup' and 'LookupViaGraphLookup' tests.
+ */
+function basicLookupPopulator(sourceCollection) {
+    const lookupCollName = sourceCollection.getName() + "_lookup";
+    let lookupCollection = sourceCollection.getDB()[lookupCollName];
+    const nDocs = 100;
+
+    sourceCollection.drop();
+    lookupCollection.drop();
+
+    let sourceBulk = sourceCollection.initializeUnorderedBulkOp();
+    let lookupBulk = lookupCollection.initializeUnorderedBulkOp();
+    for (let i = 0; i < nDocs; i++) {
+        sourceBulk.insert({_id: i, foreignKey: i});
+        lookupBulk.insert({_id: i});
+    }
+    sourceBulk.execute();
+    lookupBulk.execute();
+}
+
+/**
+ * Data cleanup function used by the 'Lookup' and 'LookupViaGraphLookup' tests.
+ */
+function basicLookupCleanup(sourceCollection) {
+    const lookupCollName = sourceCollection.getName() + "_lookup";
+    let lookupCollection = sourceCollection.getDB()[lookupCollName];
+    sourceCollection.drop();
+    lookupCollection.drop();
+}
+
+// Basic $lookup test. $lookup tests need two collections, so they use their own setup code.
 tests.push(testCaseGenerator({
     name: "Lookup",
     // The setup function is only given one collection, but $lookup needs two. We'll treat the given
     // one as the source collection, and create a second one with the name of the first plus
     // '_lookup', which we'll use to look up from.
-    pre: function lookupPopulator(sourceCollection) {
-        var lookupCollName = sourceCollection.getName() + "_lookup";
-        var lookupCollection = sourceCollection.getDB()[lookupCollName];
-        var nDocs = 500;
-
-        sourceCollection.drop();
-        lookupCollection.drop();
-
-        var sourceBulk = sourceCollection.initializeUnorderedBulkOp();
-        var lookupBulk = lookupCollection.initializeUnorderedBulkOp();
-        for (var i = 0; i < nDocs; i++) {
-            sourceBulk.insert({_id: i, foreignKey: i});
-            lookupBulk.insert({_id: i});
-        }
-        sourceBulk.execute();
-        lookupBulk.execute();
-    },
-    post: function lookupPost(sourceCollection) {
-        var lookupCollName = sourceCollection.getName() + "_lookup";
-        var lookupCollection = sourceCollection.getDB()[lookupCollName];
-        sourceCollection.drop();
-        lookupCollection.drop();
-    },
+    pre: basicLookupPopulator,
+    post: basicLookupCleanup,
     pipeline: [
         {
             $lookup: {
@@ -264,7 +274,27 @@ tests.push(testCaseGenerator({
                 as: "match"
             }
         }
-    ]
+    ],
+    tags: ["lookup"]
+}));
+
+// Mimics the basic 'Lookup' test using $graphLookup for comparison.
+tests.push(testCaseGenerator({
+    name: "LookupViaGraphLookup",
+    pre: basicLookupPopulator,
+    post: basicLookupCleanup,
+    pipeline: [
+        {
+            $graphLookup: {
+                from: "#B_COLL_lookup",
+                startWith: "$foreignKey",
+                connectFromField: "foreignKey",
+                connectToField: "_id",
+                as: "match"
+            }
+        }
+    ],
+    tags: ["lookup"]
 }));
 
 tests.push(testCaseGenerator({
@@ -275,7 +305,7 @@ tests.push(testCaseGenerator({
     pre: function lookupPopulator(ordersCollection) {
         var productCollName = ordersCollection.getName() + "_lookup";
         var productsCollection = ordersCollection.getDB()[productCollName];
-        var nDocs = 500;
+        var nDocs = 20;
 
         productsCollection.drop();
         ordersCollection.drop();
@@ -289,7 +319,7 @@ tests.push(testCaseGenerator({
             productsBulk.insert({_id: i});
 
             // Each order will contain a random number of products in an array.
-            var nProducts = Random.randInt(100);
+            var nProducts = Random.randInt(10);
             var products = [];
             for (var p = 0; p < nProducts; p++) {
                 products.push({_id: Random.randInt(nDocs), quantity: Random.randInt(20)});
@@ -322,7 +352,118 @@ tests.push(testCaseGenerator({
                 as: "product"
             }
         }
-    ]
+    ],
+    tags: ["lookup"]
+}));
+
+tests.push(testCaseGenerator({
+    name: "GraphLookupSocialite",
+    pre: function socialitePopulator(userCollection) {
+        const followerCollName = userCollection.getName() + "_follower";
+        let followerCollection = userCollection.getDB()[followerCollName];
+
+        userCollection.drop();
+        followerCollection.drop();
+
+        const userDocs = [
+            {_id: "djw", fullname: "Darren", country: "Australia"},
+            {_id: "bmw", fullname: "Bob", country: "Germany"},
+            {_id: "jsr", fullname: "Jared", country: "USA"},
+            {_id: "ftr", fullname: "Frank", country: "Canada"},
+            {_id: "jhw", fullname: "James", country: "USA"},
+            {_id: "cxs", fullname: "Charlie", country: "USA"},
+            {_id: "sss", fullname: "Stephen", country: "Australia"},
+            {_id: "ada", fullname: "Adam", country: "Ireland"},
+            {_id: "mar", fullname: "Mark", country: "Ireland"},
+        ];
+
+        let userBulk = userCollection.initializeUnorderedBulkOp();
+        userDocs.forEach(function(userDoc) {
+            userBulk.insert(userDoc);
+        });
+        userBulk.execute();
+
+        const followers = [
+            {_f: "djw", _t: "jsr"},
+            {_f: "jsr", _t: "bmw"},
+            {_f: "ftr", _t: "bmw"},
+            {_f: "jhw", _t: "bmw"},
+            {_f: "sss", _t: "jhw"},
+            {_f: "cxs", _t: "sss"},
+            {_f: "aaa", _t: "cxs"},
+            {_f: "djw", _t: "cxs"},
+            {_f: "djw", _t: "jhw"},
+            {_f: "djw", _t: "sss"},
+            {_f: "djw", _t: "ftr"},
+            {_f: "djw", _t: "bmw"},
+            {_f: "ada", _t: "mar"},
+        ];
+
+        let followerBulk = followerCollection.initializeUnorderedBulkOp();
+        followers.forEach(function(follower) {
+            followerBulk.insert(follower);
+        });
+        followerBulk.execute();
+    },
+    post: function lookupPost(userCollection) {
+        const followerCollName = userCollection.getName() + "_follower";
+        let followerCollection = userCollection.getDB()[followerCollName];
+        userCollection.drop();
+        followerCollection.drop();
+    },
+    pipeline: [
+        {
+           $graphLookup: {
+               from: "#B_COLL_follower",
+               startWith: "$_id",
+               connectFromField: "_t",
+               connectToField: "_f",
+               as: "network"
+           }
+        },
+        {$unwind: "$network"},
+        {$project: {_id: "$network._t"}}
+    ],
+    tags: ["lookup"]
+}));
+
+tests.push(testCaseGenerator({
+    name: "GraphLookupNeighbors",
+    pre: function neighborPopulator(sourceCollection) {
+        const neighborCollName = sourceCollection.getName() + "_neighbor";
+        let neighborCollection = sourceCollection.getDB()[neighborCollName];
+
+        sourceCollection.drop();
+        neighborCollection.drop();
+
+        let bulk = neighborCollection.initializeUnorderedBulkOp();
+        for (var i = 0; i < 100; i++) {
+            bulk.insert({_id: i, neighbors: [i - 1, i + 1]});
+        }
+        bulk.execute();
+
+        sourceCollection.insert({starting: 50});
+    },
+    post: function lookupPost(sourceCollection) {
+        const neighborCollName = sourceCollection.getName() + "_follower";
+        let neighborCollection = sourceCollection.getDB()[neighborCollName];
+        sourceCollection.drop();
+        neighborCollection.drop();
+    },
+    pipeline: [
+        {
+          $graphLookup: {
+              from: "#B_COLL_neighbor",
+              startWith: "$starting",
+              connectFromField: "neighbors",
+              connectToField: "_id",
+              maxDepth: 10,
+              depthField: "distence",
+              as: "integers"
+          }
+        }
+    ],
+    tags: ["lookup"]
 }));
 
 tests.push(testCaseGenerator({
