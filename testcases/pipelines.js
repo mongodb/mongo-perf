@@ -472,10 +472,55 @@ tests.push(testCaseGenerator({
     docGenerator: function simpleMatchDocGenerator(i) {
         return {_id: i};
     },
-    // Add a $project stage before the $match stage to ensure the $match isn't pushed down to the
-    // query layer.
-    pipeline: [{$project: {_id: 0, _idTimes10: {$multiply: ["$_id", 10]}}},
-               {$match: {_idTimes10: {$lt: 2500}}}]
+    // Add a $skip stage before the $match stage to ensure the $match isn't pushed down to the query
+    // layer. A $skip of 0 will be optimized out, so we need to skip at least one.
+    pipeline: [{$skip: 1}, {$match: {_idTimes10: {$lt: 250}}}]
+}));
+
+/**
+ * Makes a document generator which creates a document with 50 fields with the same value, and a
+ * 'predicate' field set to 0 if 'i' is even and 1 otherwise.
+ */
+function docGenerator50FieldsOnePredicate(i) {
+    var doc = {};
+    for (var j = 0; j < 50; j++) {
+        doc["field" + j] = "placeholder kinda big";
+    }
+    doc.predicate = i % 2;
+    return doc;
+}
+
+tests.push(testCaseGenerator({
+    name: "MatchOneFieldFromBigDocument",
+    nDocs: 1000,
+    docGenerator: docGenerator50FieldsOnePredicate,
+    // Add a $skip stage before the $match stage to ensure the $match isn't pushed down to the query
+    // layer. A $skip of 0 will be optimized out, so we need to skip at least one.
+    pipeline: [{$skip: 1}, {$match: {predicate: {$eq: 0}}}]
+}));
+
+tests.push(testCaseGenerator({
+    name: "MatchManyFieldsFromBigDocument",
+    nDocs: 1000,
+    docGenerator: docGenerator50FieldsOnePredicate,
+    // Add a $skip stage before the $match stage to ensure the $match isn't pushed down to the
+    // query layer. A $skip of 0 will be optimized out, so we need to skip at least one.
+    pipeline: [
+        {$skip: 1},
+        {$match: {
+            predicate: {$eq: 0},
+            // The following are present just to increase the number of fields we need to serialize
+            // to BSON to perform the match.
+            field0: {$type: "string"},
+            field1: {$type: "string"},
+            field2: {$type: "string"},
+            field10: {$type: "string"},
+            field25: {$type: "string"},
+            field40: {$type: "string"},
+            field48: {$type: "string"},
+            field49: {$type: "string"},
+        }}
+    ]
 }));
 
 tests.push(testCaseGenerator({
