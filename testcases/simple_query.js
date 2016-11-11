@@ -1,211 +1,270 @@
-if ( typeof(tests) != "object" ) {
+if (typeof(tests) !== "object") {
     tests = [];
 }
 
+/**
+ * Sets up a collection and/or a view with the appropriate documents and indexes.
+ *
+ * @param {Boolean} isView - True if 'collectionOrView' is a view; false otherwise.
+ * @param {Number} nDocs - The number of documents to insert into the collection.
+ * @param {function} docGenerator - A function that takes a document number and returns a document.
+ * @param {Object[]} indexes - A list of index specs to create on the collection.
+ * @param {Object} collectionOptions - Options to use for view/collection creation.
+ */
+function collectionPopulator(isView, nDocs, indexes, docGenerator, collectionOptions) {
+    return function(collectionOrView) {
+        collectionOrView.drop();
 
-/*
- * Setup: Create collection of documents with only OID _id field
+        var db = collectionOrView.getDB();
+        var collection;
+        if (isView) {
+            // 'collectionOrView' is a view, so specify a backing collection to serve as its source
+            // and perform the view creation.
+            var viewName = collectionOrView.getName();
+            var collectionName = viewName + "_BackingCollection";
+            collection = db.getCollection(collectionName);
+            collection.drop();
+
+            var viewCreationSpec = {create: viewName, viewOn: collectionName};
+            assert.commandWorked(db.runCommand(Object.extend(viewCreationSpec, collectionOptions)));
+        } else {
+            collection = collectionOrView;
+        }
+
+        var collectionCreationSpec = {create: collection.getName()};
+        assert.commandWorked(
+            db.runCommand(Object.extend(collectionCreationSpec, collectionOptions)));
+        var bulkOp = collection.initializeUnorderedBulkOp();
+        for (var i = 0; i < nDocs; i++) {
+            bulkOp.insert(docGenerator(i));
+        }
+        bulkOp.execute();
+        indexes.forEach(function(indexSpec) {
+            assert.commandWorked(collection.ensureIndex(indexSpec));
+        });
+    };
+}
+
+/**
+ * Creates test cases and adds them to the global testing array. By default, each test case
+ * specification produces two test cases, one on a regular collection and one on an identity view
+ * passthrough.
+ *
+ * @param {Object} options - Options describing the test case.
+ * @param {String} options.name - The name of the test case. "Queries" is prepended for tests on
+ * regular collections and "Queries.IdentityView" for tests on views.
+ * @param {function} options.docs - A generator function that produces documents to insert into the
+ * collection.
+ * @param {Object[]} options.ops - Operations to perform in benchRun.
+ *
+ * @param {Boolean} {options.createViewsPassthrough=true} - If false, specifies that a views
+ * passthrough test should not be created, generating only one test on a regular collection.
+ * @param {Object[]} {options.indexes=[]} - An array of index specifications to create on the
+ * collection.
+ * @param {String[]} {options.tags=[]} - Additional tags describing this test. The "query" tag is
+ * automatically added to test cases for collections. The tags "views" and "query_identityview" are
+ * added to test cases for views.
+ * @param {Object} {options.collectionOptions={}} - Options to use for view/collection creation.
+ */
+function addTestCase(options) {
+    var isView = true;
+    var indexes = options.indexes || [];
+    var tags = options.tags || [];
+
+    tests.push({
+        tags: ["query"].concat(tags),
+        name: "Queries." + options.name,
+        pre: collectionPopulator(
+            !isView, options.nDocs, indexes, options.docs, options.collectionOptions),
+        post: function(collection) {
+            collection.drop();
+        },
+        ops: options.ops
+    });
+
+    if (options.createViewsPassthrough !== false) {
+        tests.push({
+            tags: ["views", "query_identityview"].concat(tags),
+            name: "Queries.IdentityView." + options.name,
+            pre: collectionPopulator(
+                isView, options.nDocs, indexes, options.docs, options.collectionOptions),
+            post: function(view) {
+                view.drop();
+                var collName = view.getName() + "_BackingCollection";
+                view.getDB().getCollection(collName).drop();
+            },
+            ops: options.ops
+        });
+    }
+}
+
+/**
+ * Setup: Create a collection of documents containing only an ObjectId _id field.
+ *
  * Test: Empty query that returns all documents.
  */
-tests.push( { name : "Queries.Empty",
-              tags: ['query','regression'],
-              pre: function( collection ) {
-                  collection.drop();
-                  var docs = [];
-                  for ( var i = 0; i < 100; i++ ) {
-                      docs.push( {} );
-                  }
-                  collection.insert(docs);
-                  collection.getDB().getLastError();
-              },
-              ops : [
-                  { op: "find", query: {} }
-              ] } );
+addTestCase({
+    name: "Empty",
+    tags: ["regression"],
+    // This generates documents to be inserted into the collection, resulting in 100 documents
+    // with only an _id field.
+    nDocs: 100,
+    docs: function(i) {
+        return {};
+    },
+    ops: [{op: "find", query: {}}]
+});
 
-
-/*
- * Setup:  Create collection of documents with only OID _id field
- * Test: Query for a document that doesn't exist. Scans all documents
- *       using a collection scan and returns no documents
+/**
+ * Setup: Create a collection of documents with only an ObjectID _id field.
+ *
+ * Test: Query for a document that doesn't exist. Scans all documents using a collection scan and
+ * returns no documents.
  */
-tests.push( { name : "Queries.NoMatch",
-              tags: ['query','regression'],
-              pre: function( collection ) {
-                  collection.drop();
-                  var docs = [];
-                  for ( var i = 0; i < 100; i++ ) {
-                      docs.push( {} );
-                  }
-                  collection.insert(docs);
-                  collection.getDB().getLastError();
-              },
-              ops : [
-                  { op: "find", query: { nope : 5 } }
-              ] } );
+addTestCase({
+    name: "NoMatch",
+    tags: ["regression"],
+    nDocs: 100,
+    docs: function(i) {
+        return {};
+    },
+    ops: [{op: "find", query: {nonexistent: 5}}]
+});
 
-
-/*
- * Setup: Create collection of documents with only integer _id field
- * Test: Query for random document based on _id field. Each thread
- *       accesses a distinct range of documents. 
+/**
+ * Setup: Create a collection of documents with only an integer _id field.
+ *
+ * Test: Query for a random document based on _id. Each thread accesses a distinct range of
+ * documents.
  */
-tests.push( { name: "Queries.IntIdFindOne",
-              tags: ['query','regression'],
-              pre: function( collection ) {
-                  collection.drop();
-                  var docs = [];
-                  for ( var i = 0; i < 4800; i++ ) {
-                      docs.push( { _id : i } );
-                  }
-                  collection.insert(docs);
-                  collection.getDB().getLastError();
-              },
-              ops: [
-                  { op: "findOne", query: { _id : {"#RAND_INT_PLUS_THREAD": [0,100]} } }
-              ] } );
+addTestCase({
+    name: "IntIdFindOne",
+    tags: ["regression"],
+    nDocs: 4800,
+    docs: function(i) {
+        return {_id: i};
+    },
+    ops: [{op: "findOne", query: {_id: {"#RAND_INT_PLUS_THREAD": [0, 100]}}}]
+});
 
-/*
- * Setup: Create a collection of documents with indexed integer field x. 
- * Test: Query for random document based on integer field x. Each thread
- *       accesses a distinct range of documents. Query uses the index.
+/**
+ * Setup: Create a collection of documents with an indexed integer field x.
+ *
+ * Test: Query for a random document based on integer field x. Each thread accesses a distinct range
+ * of documents. Query uses the index.
  */
-tests.push( { name: "Queries.IntNonIdFindOne",
-              tags: ['query','core','indexed'],
-              pre: function( collection ) {
-                  collection.drop();
-                  var docs = [];
-                  for ( var i = 0; i < 4800; i++ ) {
-                      docs.push( { x : i } );
-                  }
-                  collection.insert(docs);
-                  collection.getDB().getLastError();
-                  collection.ensureIndex( { x : 1 } );
-              },
-              ops: [
-                  { op: "findOne", query: { x : {"#RAND_INT_PLUS_THREAD": [0,100]} } }
-              ] } );
+addTestCase({
+    name: "IntNonIdFindOne",
+    tags: ["core", "indexed"],
+    nDocs: 4800,
+    docs: function(i) {
+        return {_id: i};
+    },
+    indexes: [{x: 1}],
+    ops: [{op: "findOne", query: {_id: {"#RAND_INT_PLUS_THREAD": [0, 100]}}}]
+});
 
+/**
+ * Setup: Create a collection of documents with only an integer _id field.
+ *
+ * Test: Query for all documents with integer _id in the range (50,100). All threads are returning
+ * the same documents.
+ */
+addTestCase({
+    name: "IntIDRange",
+    tags: ["regression"],
+    nDocs: 4800,
+    docs: function(i) {
+        return {_id: i};
+    },
+    ops: [{op: "find", query: {_id: {$gt: 50, $lt: 100}}}]
+});
 
-/*
- * Setup: Create collection of documents with only integer _id field
- * Test: Query for all documents with integer id in range
- *       (50,100). All threads are returning the same documents.
+/**
+ * Setup: Create a collection of documents with indexed integer field x.
+ *
+ * Test: Query for all documents with x in range (50,100). All threads are returning the same
+ * documents and uses index on x.
  */
-tests.push( { name : "Queries.IntIDRange",
-              tags: ['query','regression'],
-              pre: function( collection ) {
-                  collection.drop();
-                  var docs = [];
-                  for ( var i = 0; i < 4800; i++ ) {
-                      docs.push( { _id : i } );
-                  }
-                  collection.insert(docs);
-                  collection.getDB().getLastError();
-              },
-              ops : [
-                  { op: "find", query: { _id : { $gt : 50, $lt : 100 } } }
-              ] } );
-/*
- * Setup: Create a collection of documents with indexed integer field x. 
- * Test: Query for all documents with x in range (50,100). All threads
- *       are returning the same documents and uses index on x. 
- */
-tests.push( { name : "Queries.IntNonIDRange",
-             tags: ['query','indexed'],
-             pre: function( collection ) {
-                  collection.drop();
-                  var docs = [];
-                  for ( var i = 0; i < 4800; i++ ) {
-                      docs.push( { x : i } );
-                  }
-                  collection.insert(docs);
-                  collection.getDB().getLastError();
-                  collection.ensureIndex( { x : 1 } );
-              },
-              ops : [
-                  { op: "find", query: { x : { $gt : 50, $lt : 100 } } }
-              ] } );
-/*
- * Setup: Create a collection of documents with indexed string field x. 
- * Test: Regex query for document with x starting with 2400. All threads
- *       are returning the same document and uses index on x. 
- */
-tests.push( { name: "Queries.RegexPrefixFindOne",
-              tags: ['query','core','indexed'],
-              pre: function( collection ) {
-                  collection.drop();
-                  var docs = [];
-                  for ( var i = 0; i < 4800; i++ ) {
-                      docs.push( { x : i.toString() } );
-                  }
-                  collection.insert(docs);
-                  collection.getDB().getLastError();
-                  collection.ensureIndex( { x : 1 } );
-              },
-              ops : [
-                  { op: "find", query: { x: /^2400/ } }
-              ] } );
+addTestCase({
+    name: "IntNonIDRange",
+    tags: ["indexed"],
+    nDocs: 4800,
+    docs: function(i) {
+        return {_id: i};
+    },
+    indexes: [{x: 1}],
+    ops: [{op: "find", query: {x: {$gt: 50, $lt: 100}}}]
+});
 
-/*
- * Setup: Collection with documents with two integer fields, both indexed
- * Test: Query for document matching both int fields. Will use one of
- *       the indexes. All the threads access the documents in the same
- *       order
+/**
+ * Setup: Create a collection of documents with indexed string field x.
+ *
+ * Test: Regex query for document with x starting with 2400. All threads are returning the same
+ * document and uses index on x.
  */
-tests.push( { name: "Queries.TwoInts",
-              tags: ['query','core','indexed'],
-              pre: function( collection ) {
-                  collection.drop();
-                  var docs = [];
-                  for ( var i = 0; i < 4800; i++ ) {
-                      docs.push( { x: i, y: 2*i } );
-                  }
-                  collection.insert(docs);
-                  collection.getDB().getLastError();
-                  collection.ensureIndex({x: 1});
-                  collection.ensureIndex({y: 1});
-              },
-              ops : [
-                  { op: "find",
-                    query: { x: { "#SEQ_INT": { seq_id: 0, start: 0, step: 1, mod: 4800 } },
-                             y: { "#SEQ_INT": { seq_id: 1, start: 0, step: 2, mod: 9600 } } }
-                  }
-              ] } );
+addTestCase({
+    name: "RegexPrefixFindOne",
+    tags: ["core", "indexed"],
+    nDocs: 4800,
+    docs: function(i) {
+        return {x: i.toString()};
+    },
+    indexes: [{x: 1}],
+    ops: [{op: "find", query: {x: /^2400/}}]
+});
 
-/*
+/**
+ * Setup: Collection with documents with two integer fields, both indexed.
+ *
+ * Test: Query for document matching both int fields. The query will use one of the indexes. All the
+ * threads access the documents in the same order.
+ */
+addTestCase({
+    name: "TwoInts",
+    tags: ["core", "indexed"],
+    nDocs: 4800,
+    docs: function(i) {
+        return {x: i, y: 2 * i};
+    },
+    indexes: [{x: 1}, {y: 1}],
+    ops: [{
+        op: "find",
+        query: {
+            x: {"#SEQ_INT": {seq_id: 0, start: 0, step: 1, mod: 4800}},
+            y: {"#SEQ_INT": {seq_id: 1, start: 0, step: 2, mod: 9600}}
+        }
+    }]
+});
+
+/**
  * Setup: Create a collection with a non-simple default collation, and insert indexed strings. We
  * set several collation options in an attempt to make the collation processing in ICU more
  * expensive.
  *
  * Test: Query for a range of strings using the non-simple default collation.
  */
-tests.push( { name: "Queries.StringRangeWithNonSimpleCollation",
-              tags: ['query','indexed','collation'],
-              pre: function( collection ) {
-                  var testDB = collection.getDB();
-                  var collName = collection.getName();
-                  collection.drop();
-                  var myCollation = {
-                      locale : "en",
-                      strength : 5,
-                      backwards : true,
-                      normalization : true,
-                  };
-                  testDB.createCollection(collName, { collation: myCollation } );
-                  var docs = [];
-                  for ( var i = 0; i < 4800; i++ ) {
-                      var j = i + (1 * 1000 * 1000 * 1000);
-                      docs.push( { x : j.toString() } );
-                  }
-                  collection.insert(docs);
-                  collection.getDB().getLastError();
-                  collection.ensureIndex( { x : 1 } );
-              },
-              ops : [
-                  { op: "find", query: { x: { $gte: "1000002400", $lt: "1000002404" } } }
-              ] } );
+addTestCase({
+    name: "StringRangeWithNonSimpleCollation",
+    tags: ["indexed", "collation"],
+    collectionOptions: {
+        collation: {
+            locale: "en",
+            strength: 5,
+            backwards: true,
+            normalization: true,
+        }
+    },
+    nDocs: 4800,
+    docs: function(i) {
+        var j = i + (1 * 1000 * 1000 * 1000);
+        return {x: j.toString()};
+    },
+    indexes: [{x: 1}],
+    ops: [{op: "find", query: {x: {$gte: "1000002400", $lt: "1000002404"}}}]
+});
 
-/*
+/**
  * Setup: Create a collection and insert indexed strings.
  *
  * Test: Query for a range of strings using the simple collation.
@@ -214,27 +273,19 @@ tests.push( { name: "Queries.StringRangeWithNonSimpleCollation",
  * performance impact of queries with non-simple collations whose string comparison predicates are
  * indexed.
  */
-tests.push( { name: "Queries.StringRangeWithSimpleCollation",
-              tags: ['query','indexed','collation'],
-              pre: function( collection ) {
-                  var testDB = collection.getDB();
-                  var collName = collection.getName();
-                  collection.drop();
-                  testDB.createCollection(collName, { collation: { locale: "simple" } } );
-                  var docs = [];
-                  for ( var i = 0; i < 4800; i++ ) {
-                      var j = i + (1 * 1000 * 1000 * 1000);
-                      docs.push( { x : j.toString() } );
-                  }
-                  collection.insert(docs);
-                  collection.getDB().getLastError();
-                  collection.ensureIndex( { x : 1 } );
-              },
-              ops : [
-                  { op: "find", query: { x: { $gte: "1000002400", $lt: "1000002404" } } }
-              ] } );
+addTestCase({
+    name: "StringRangeWithSimpleCollation",
+    tags: ["indexed", "collation"],
+    nDocs: 4800,
+    docs: function(i) {
+        var j = i + (1 * 1000 * 1000 * 1000);
+        return {x: j.toString()};
+    },
+    indexes: [{x: 1}],
+    ops: [{op: "find", query: {x: {$gte: "1000002400", $lt: "1000002404"}}}]
+});
 
-/*
+/**
  * Setup: Create a collection with a non-simple default collation and insert a small number of
  * documents with strings. We set several collation options in an attempt to make the collation
  * processing in ICU more expensive.
@@ -243,35 +294,34 @@ tests.push( { name: "Queries.StringRangeWithSimpleCollation",
  * predicate. Request a sort which the query system must satisfy by sorting the documents in memory
  * according to the collation.
  */
-tests.push( { name: "Queries.StringUnindexedInPredWithNonSimpleCollation",
-              tags: ['query','regression','collation'],
-              pre: function( collection ) {
-                  var testDB = collection.getDB();
-                  var collName = collection.getName();
-                  collection.drop();
-                  var myCollation = {
-                      locale : "en",
-                      strength : 5,
-                      backwards : true,
-                      normalization : true,
-                  };
-                  testDB.createCollection(collName, { collation: myCollation } );
-                  var docs = [];
-                  for ( var i = 0; i < 10; i++ ) {
-                      docs.push( { x : i.toString() } );
-                  }
-                  collection.insert(docs);
-                  collection.getDB().getLastError();
-              },
-              ops : [
-                  { op: "find",
-                    query: {
-                        $query: { x: { $in: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"] } },
-                        $orderby: { x: 1 },
-                    } }
-              ] } );
+addTestCase({
+    name: "StringUnindexedInPredWithNonSimpleCollation",
+    tags: ["regression", "collation"],
+    // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+    // sorting when running in read command mode.
+    createViewsPassthrough: false,
+    collectionOptions: {
+        collation: {
+            locale: "en",
+            strength: 5,
+            backwards: true,
+            normalization: true,
+        }
+    },
+    nDocs: 10,
+    docs: function(i) {
+        return {x: i.toString()};
+    },
+    ops: [{
+        op: "find",
+        query: {
+            $query: {x: {$in: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]}},
+            $orderby: {x: 1},
+        }
+    }]
+});
 
-/*
+/**
  * Setup: Create a collection with the simple default collation and insert a small number of
  * documents with strings.
  *
@@ -282,272 +332,238 @@ tests.push( { name: "Queries.StringUnindexedInPredWithNonSimpleCollation",
  * the performance impact of queries with non-simple collations whose string comparison predicates
  * are unindexed, in addition to the perf impact of an in-memory SORT stage which uses a collator.
  */
-tests.push( { name: "Queries.StringUnindexedInPredWithSimpleCollation",
-              tags: ['query','regression','collation'],
-              pre: function( collection ) {
-                  var testDB = collection.getDB();
-                  var collName = collection.getName();
-                  collection.drop();
-                  testDB.createCollection(collName, { collation: { locale: "simple" } } );
-                  var docs = [];
-                  for ( var i = 0; i < 10; i++ ) {
-                      docs.push( { x : i.toString() } );
-                  }
-                  collection.insert(docs);
-                  collection.getDB().getLastError();
-              },
-              ops : [
-                  { op: "find",
-                    query: {
-                        $query: { x: { $in: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"] } },
-                        $orderby: { x: 1 },
-                    } }
-              ] } );
+addTestCase({
+    name: "StringUnindexedInPredWithSimpleCollation",
+    tags: ["regression", "collation"],
+    // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+    // sorting when running in read command mode.
+    createViewsPassthrough: false,
+    nDocs: 10,
+    docs: function(i) {
+        return {x: i.toString()};
+    },
+    ops: [{
+        op: "find",
+        query: {
+            $query: {x: {$in: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]}},
+            $orderby: {x: 1},
+        }
+    }]
+});
 
-// PROJECTION TESTS
+// Projection tests.
 
-/*
- * Setup: Create a collection of documents with indexed integer field x. 
- * Test: Query for random document based on integer field x, and use
- *       projection to return only the field x. Each thread accesses a
- *       distinct range of documents. Query should be a covered index
- *       query.
+/**
+ * Setup: Create a collection of documents with indexed integer field x.
+ *
+ * Test: Query for random document based on integer field x, and use projection to return only the
+ * field x. Each thread accesses a distinct range of documents. Query should be a covered index
+ * query.
  */
-tests.push( { name: "Queries.IntNonIdFindOneProjectionCovered",
-              tags: ['query','core','indexed'],
-              pre: function( collection ) {
-                  collection.drop();
-                  var docs = [];
-                  for ( var i = 0; i < 4800; i++ ) {
-                      docs.push( { x : i } );
-                  }
-                  collection.insert(docs);
-                  collection.getDB().getLastError();
-                  collection.ensureIndex( { x : 1 } );
-              },
-              ops: [
-                  { op: "find",
-                    query: { x : {"#RAND_INT_PLUS_THREAD": [0,100]} },
-                    limit: 1,
-                    filter: { x : 1, _id : 0 } }
-              ] } );
+addTestCase({
+    name: "IntNonIdFindOneProjectionCovered",
+    tags: ["core", "indexed"],
+    nDocs: 4800,
+    docs: function(i) {
+        return {x: i};
+    },
+    indexes: [{x: 1}],
+    ops: [{
+        op: "find",
+        query: {x: {"#RAND_INT_PLUS_THREAD": [0, 100]}},
+        limit: 1,
+        filter: {x: 1, _id: 0}
+    }]
+});
 
-
-/*
- * Setup: Create a collection of documents with indexed integer field x. 
- * Test: Query for random document based on integer field x, and use
- *       projection to return the field x and the _id. Each thread accesses a
- *       distinct range of documents. 
+/**
+ * Setup: Create a collection of documents with indexed integer field x.
+ *
+ * Test: Query for random document based on integer field x, and use projection to return the field
+ * x and the _id. Each thread accesses a distinct range of documents.
  */
-tests.push( { name: "Queries.IntNonIdFindOneProjection",
-              tags: ['query','core','indexed'],
-              pre: function( collection ) {
-                  collection.drop();
-                  var docs = [];
-                  for ( var i = 0; i < 4800; i++ ) {
-                      docs.push( { x : i } );
-                  }
-                  collection.insert(docs);
-                  collection.getDB().getLastError();
-                  collection.ensureIndex( { x : 1 } );
-              },
-              ops: [
-                  { op: "find",
-                    query: { x : {"#RAND_INT_PLUS_THREAD": [0,100]} },
-                    limit: 1,
-                    filter: { x : 1 } }
-              ] } );
+addTestCase({
+    name: "IntNonIdFindOneProjection",
+    tags: ["core", "indexed"],
+    nDocs: 4800,
+    docs: function(i) {
+        return {x: i};
+    },
+    indexes: [{x: 1}],
+    ops: [{
+        op: "find",
+        query: {x: {"#RAND_INT_PLUS_THREAD": [0, 100]}},
+        limit: 1,
+        filter: {x: 1, _id: 0}
+    }]
+});
 
-/*
- * Setup: Create a collection of documents with indexed integer field x. 
- * Test: Query for all documents with x >= 0 (all the documents), and
- *       use projection to return the field x. Each thread accesses
- *       all the documents. Query should be a covered index query.
+/**
+ * Setup: Create a collection of documents with indexed integer field x.
+ *
+ * Test: Query for all documents with x >= 0 (all the documents), and use projection to return the
+ * field x. Each thread accesses all the documents. Query should be a covered index query.
  */
-tests.push( { name: "Queries.IntNonIdFindProjectionCovered",
-              tags: ['query','indexed','regression'],
-              pre: function( collection ) {
-                  collection.drop();
-                  var docs = [];
-                  for ( var i = 0; i < 100; i++ ) {
-                      docs.push( { x : i } );
-                  }
-                  collection.insert(docs);
-                  collection.getDB().getLastError();
-                  collection.ensureIndex( { x : 1 } );
-              },
-              ops: [
-                  { op: "find",
-                    query: { x: { $gte : 0 } },
-                    filter: { x : 1, _id : 0 } }
-              ] } );
+addTestCase({
+    name: "IntNonIdFindProjectionCovered",
+    tags: ["indexed", "regression"],
+    nDocs: 100,
+    docs: function(i) {
+        return {x: i};
+    },
+    indexes: [{x: 1}],
+    ops: [{op: "find", query: {x: {$gte: 0}}, filter: {x: 1, _id: 0}}]
+});
 
-
-/*
- * Setup: Create a collection of documents with indexed integer field x. 
- * Test: Query for all the documents (empty query), and use projection
- *       to return the field x. Each thread accesses all the
- *       documents.
+/**
+ * Setup: Create a collection of documents with indexed integer field x.
+ *
+ * Test: Query for all the documents (empty query), and use projection to return the field x. Each
+ * thread accesses all the documents.
  */
-tests.push( { name: "Queries.FindProjection",
-              tags: ['query','indexed','regression'],
-              pre: function( collection ) {
-                  collection.drop();
-                  var docs = [];
-                  for ( var i = 0; i < 100; i++ ) {
-                      docs.push( { x : i } );
-                  }
-                  collection.insert(docs);
-                  collection.getDB().getLastError();
-                  collection.ensureIndex( { x : 1 } );
-              },
-              ops: [
-                  { op: "find",
-                    query: { },
-                    filter: { x : 1 } }
-              ] } );
+addTestCase({
+    name: "FindProjection",
+    tags: ["regression", "indexed"],
+    nDocs: 100,
+    docs: function(i) {
+        return {x: i};
+    },
+    indexes: [{x: 1}],
+    ops: [{op: "find", query: {}, filter: {x: 1}}]
+});
 
-/*
- * Setup: Create a collection of documents with 26 integer fields. 
- * Test: Query for all the documents (empty query), and use projection
- *       to return the field x. Each thread accesses all the
- *       documents.
+/**
+ * Setup: Create a collection of documents with 26 integer fields.
+ *
+ * Test: Query for all the documents (empty query), and use projection to return the field x. Each
+ * thread accesses all the documents.
  */
-tests.push( { name: "Queries.FindWideDocProjection",
-              tags: ['query','regression'],
-              pre: function( collection ) {
-                  collection.drop();
-                  var docs = [];
-                  for ( var i = 0; i < 100; i++ ) {
-                      docs.push( { a : i, 
-                          b: i, c: i, d: i, e: i,
-                          f: i, g: i, h: i, i: i,
-                          j: i, k: i, l: i, m: i,
-                          n: i, o: i, p: i, q: i,
-                          r: i, s: i, t: i, u: i,
-                          v: i, w: i, x: i, y: i, z: 1
-                      } );
-                  }
-                  collection.insert(docs);
-                  collection.getDB().getLastError();
-              },
-              ops: [
-                  { op: "find",
-                    query: { },
-                    filter: { x : 1 } }
-              ] } );
+addTestCase({
+    name: "FindWideDocProjection",
+    tags: ["regression"],
+    nDocs: 100,
+    docs: function(i) {
+        return {
+            a: i,
+            b: i,
+            c: i,
+            d: i,
+            e: i,
+            f: i,
+            g: i,
+            h: i,
+            i: i,
+            j: i,
+            k: i,
+            l: i,
+            m: i,
+            n: i,
+            o: i,
+            p: i,
+            q: i,
+            r: i,
+            s: i,
+            t: i,
+            u: i,
+            v: i,
+            w: i,
+            x: i,
+            y: i,
+            z: 1
+        };
+    },
+    ops: [{op: "find", query: {}, filter: {x: 1}}]
+});
 
-/*
- * Setup: Create a collection of documents with 3 integer fields and a
- *        compound index on those three fields.
- * Test: Query for random document based on integer field x, and
- *       return the three integer fields. Each thread accesses a
- *       distinct range of documents. Query should be a covered index
- *       scan.
+/**
+ * Setup: Create a collection of documents with 3 integer fields and a compound index on those three
+ * fields.
+ *
+ * Test: Query for random document based on integer field x, and return the three integer fields.
+ * Each thread accesses a distinct range of documents. Query should be a covered index scan.
  */
-tests.push( { name: "Queries.FindProjectionThreeFieldsCovered",
-              tags: ['query','core','indexed'],
-              pre: function( collection ) {
-                  collection.drop();
-                  var docs = [];
-                  for ( var i = 0; i < 4800; i++ ) {
-                      docs.push( { x : i, y: i, z: i } );
-                  }
-                  collection.insert(docs);
-                  collection.getDB().getLastError();
-                  collection.ensureIndex( { x : 1, y : 1, z : 1 } );
-              },
-              ops: [
-                  { op: "find",
-                    query: { x: {"#RAND_INT_PLUS_THREAD": [0,100]} },
-                    filter: { x : 1, y : 1, z : 1, _id : 0 } }
-              ] } );
+addTestCase({
+    name: "FindProjectionThreeFieldsCovered",
+    tags: ["core", "indexed"],
+    nDocs: 4800,
+    docs: function(i) {
+        return {x: i, y: i, z: i};
+    },
+    indexes: [{x: 1, y: 1, z: 1}],
+    ops: [{
+        op: "find",
+        query: {x: {"#RAND_INT_PLUS_THREAD": [0, 100]}},
+        filter: {x: 1, y: 1, z: 1, _id: 0}
+    }]
+});
 
-
-/*
- * Setup: Create a collection of documents with 3 integer fields 
- * Test: Query for all documents (empty query) and return the three
- *       integer fields.
+/**
+ * Setup: Create a collection of documents with 3 integer fields.
+ *
+ * Test: Query for all documents (empty query) and return the three integer fields.
  */
-tests.push( { name: "Queries.FindProjectionThreeFields",
-              tags: ['query','regression'],
-              pre: function( collection ) {
-                  collection.drop();
-                  var docs = [];
-                  for ( var i = 0; i < 100; i++ ) {
-                      docs.push( { x : i, y: i, z: i } );
-                  }
-                  collection.insert(docs);
-                  collection.getDB().getLastError();
-              },
-              ops: [
-                  { op: "find",
-                    query: { },
-                    filter: { x : 1, y : 1, z : 1, _id : 0 } }
-              ] } );
+addTestCase({
+    name: "FindProjectionThreeFields",
+    tags: ["regression"],
+    nDocs: 100,
+    docs: function(i) {
+        return {x: i, y: i, z: i};
+    },
+    ops: [{op: "find", query: {}, filter: {x: 1, y: 1, z: 1, _id: 0}}]
+});
 
-
-/*
- * Setup: Create a collection of documents with integer field x.y. 
- * Test: Query for all documents (empty query) and return just
- *       x.y. Each thread accesses a distinct range of documents.
+/**
+ * Setup: Create a collection of documents with integer field x.y.
+ *
+ * Test: Query for all documents (empty query) and return just x.y. Each thread accesses a distinct
+ * range of documents.
  */
-tests.push( { name: "Queries.FindProjectionDottedField",
-              tags: ['query','regression'],
-              pre: function( collection ) {
-                  collection.drop();
-                  var docs = [];
-                  for ( var i = 0; i < 100; i++ ) {
-                      docs.push( { x : { y: i } } );
-                  }
-                  collection.insert(docs);
-                  collection.getDB().getLastError();
-              },
-              ops: [
-                  { op: "find",
-                    query: { },
-                    filter: { 'x.y' : 1, _id : 0 } }
-              ] } );
+addTestCase({
+    name: "FindProjectionDottedField",
+    tags: ["regression"],
+    nDocs: 100,
+    docs: function(i) {
+        return {x: {y: i}};
+    },
+    ops: [{op: "find", query: {}, filter: {"x.y": 1, _id: 0}}]
+});
 
-/*
- * Setup: Create a collection of documents with integer field x.y. 
- * Test: Query for a random document based on x.y field and return
- *       just x.y. Each thread accesses a distinct range of
- *       documents. The query should be a covered index query.
+/**
+ * Setup: Create a collection of documents with integer field x.y.
+ *
+ * Test: Query for a random document based on x.y field and return just x.y. Each thread accesses a
+ * distinct range of documents. The query should be a covered index query.
 */
-tests.push( { name: "Queries.FindProjectionDottedField.Indexed",
-              tags: ['query','core','indexed'],
-              pre: function( collection ) {
-                  collection.drop();
-                  var docs = [];
-                  for ( var i = 0; i < 4800; i++ ) {
-                      docs.push( { x : { y: i } } );
-                  }
-                  collection.insert(docs);
-                  collection.getDB().getLastError();
-                  collection.ensureIndex( { "x.y" : 1 } );
-              },
-              ops: [
-                  { op: "find",
-                    query: { 'x.y' : {"#RAND_INT_PLUS_THREAD": [0,100]}},
-                    filter: { 'x.y' : 1, _id : 0 } }
-              ] } );
+addTestCase({
+    name: "FindProjectionDottedField.Indexed",
+    tags: ["core", "indexed"],
+    nDocs: 100,
+    docs: function(i) {
+        return {x: {y: i}};
+    },
+    indexes: [{"x.y": 1}],
+    ops: [{
+        op: "find",
+        query: {"x.y": {"#RAND_INT_PLUS_THREAD": [0, 100]}},
+        filter: {"x.y": 1, _id: 0}
+    }]
+});
 
-/*
- * Setup: Insert 100 5mb documents into database
- * Test: Do a table scan
+/**
+ * Large string used for generating documents in the LargeDocs test.
  */
-tests.push( { name: "Queries.LargeDocs",
-              tags: ['query'],
-              pre: function( collection ) {
-                  collection.drop();
-                  var docs = [];
-                  var bigString = new Array(1024*1024*5).toString();
-                  for ( var i = 0; i < 100; i++ ) {
-                      docs.push( { x : bigString } );
-                  }
-                  collection.insert(docs);
-              },
-              ops: [
-                  { op: "find", query: {} }
-              ] } );
+var bigString = new Array(1024 * 1024 * 5).toString();
+
+/**
+ * Setup: Create a collection with one hundred 5 MiB documents.
+ *
+ * Test: Do a table scan.
+ */
+addTestCase({
+    name: "LargeDocs",
+    nDocs: 100,
+    docs: function(i) {
+        return {x: bigString};
+    },
+    ops: [{op: "find", query: {}}]
+});
