@@ -542,6 +542,35 @@ tests.push(testCaseGenerator({
     pipeline: [{$project: {_id: 0, x: 1, y: 1}}]
 }));
 
+// Tests the performance of the ExpressionObject class, which is used to represent object literals.
+// The easiest way to test this is with the $replaceRoot stage.
+tests.push(testCaseGenerator({
+    name: "ExpressionObject",
+    nDocs: 5000,
+    docGenerator: function simpleReplaceRootDocGenerator(i) {
+        return {_id: i, x: i, string: new Array(1024).join("x")};
+    },
+    pipeline: [
+        {$replaceRoot: {
+            newRoot: {
+                a: {$literal: 5},
+                longishNameHere: {$substr: ["$string", 0, 10]},
+                longishNameForNestedDocument: {
+                    doingSomeMath: {$add: ["$x", 1]},
+                    anotherSubDocument: {
+                        literalField: {$literal: "Hello!"},
+                        arrayField: [1, 2, 3, 4],
+                    }
+                }
+            }
+        }},
+        // testCaseGenerator will append a final $skip stage. Add a $match here to prevent that from
+        // being swapped before this stage.
+        {$match: {a: 5}},
+    ],
+}));
+
+
 tests.push(testCaseGenerator({
     name: "Redact",
     docGenerator: function simpleRedactDocGenerator(i) {
