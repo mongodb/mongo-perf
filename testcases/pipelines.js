@@ -230,16 +230,16 @@ tests.push(testCaseGenerator({
  * Data population function used by the 'Lookup' and 'LookupViaGraphLookup' tests.
  */
 function basicLookupPopulator(sourceCollection) {
-    const lookupCollName = sourceCollection.getName() + "_lookup";
-    let lookupCollection = sourceCollection.getDB()[lookupCollName];
-    const nDocs = 100;
+    var lookupCollName = sourceCollection.getName() + "_lookup";
+    var lookupCollection = sourceCollection.getDB()[lookupCollName];
+    var nDocs = 100;
 
     sourceCollection.drop();
     lookupCollection.drop();
 
-    let sourceBulk = sourceCollection.initializeUnorderedBulkOp();
-    let lookupBulk = lookupCollection.initializeUnorderedBulkOp();
-    for (let i = 0; i < nDocs; i++) {
+    var sourceBulk = sourceCollection.initializeUnorderedBulkOp();
+    var lookupBulk = lookupCollection.initializeUnorderedBulkOp();
+    for (var i = 0; i < nDocs; i++) {
         sourceBulk.insert({_id: i, foreignKey: i});
         lookupBulk.insert({_id: i});
     }
@@ -251,8 +251,8 @@ function basicLookupPopulator(sourceCollection) {
  * Data cleanup function used by the 'Lookup' and 'LookupViaGraphLookup' tests.
  */
 function basicLookupCleanup(sourceCollection) {
-    const lookupCollName = sourceCollection.getName() + "_lookup";
-    let lookupCollection = sourceCollection.getDB()[lookupCollName];
+    var lookupCollName = sourceCollection.getName() + "_lookup";
+    var lookupCollection = sourceCollection.getDB()[lookupCollName];
     sourceCollection.drop();
     lookupCollection.drop();
 }
@@ -359,13 +359,13 @@ tests.push(testCaseGenerator({
 tests.push(testCaseGenerator({
     name: "GraphLookupSocialite",
     pre: function socialitePopulator(userCollection) {
-        const followerCollName = userCollection.getName() + "_follower";
-        let followerCollection = userCollection.getDB()[followerCollName];
+        var followerCollName = userCollection.getName() + "_follower";
+        var followerCollection = userCollection.getDB()[followerCollName];
 
         userCollection.drop();
         followerCollection.drop();
 
-        const userDocs = [
+        var userDocs = [
             {_id: "djw", fullname: "Darren", country: "Australia"},
             {_id: "bmw", fullname: "Bob", country: "Germany"},
             {_id: "jsr", fullname: "Jared", country: "USA"},
@@ -377,13 +377,13 @@ tests.push(testCaseGenerator({
             {_id: "mar", fullname: "Mark", country: "Ireland"},
         ];
 
-        let userBulk = userCollection.initializeUnorderedBulkOp();
+        var userBulk = userCollection.initializeUnorderedBulkOp();
         userDocs.forEach(function(userDoc) {
             userBulk.insert(userDoc);
         });
         userBulk.execute();
 
-        const followers = [
+        var followers = [
             {_f: "djw", _t: "jsr"},
             {_f: "jsr", _t: "bmw"},
             {_f: "ftr", _t: "bmw"},
@@ -399,15 +399,15 @@ tests.push(testCaseGenerator({
             {_f: "ada", _t: "mar"},
         ];
 
-        let followerBulk = followerCollection.initializeUnorderedBulkOp();
+        var followerBulk = followerCollection.initializeUnorderedBulkOp();
         followers.forEach(function(follower) {
             followerBulk.insert(follower);
         });
         followerBulk.execute();
     },
     post: function lookupPost(userCollection) {
-        const followerCollName = userCollection.getName() + "_follower";
-        let followerCollection = userCollection.getDB()[followerCollName];
+        var followerCollName = userCollection.getName() + "_follower";
+        var followerCollection = userCollection.getDB()[followerCollName];
         userCollection.drop();
         followerCollection.drop();
     },
@@ -430,13 +430,13 @@ tests.push(testCaseGenerator({
 tests.push(testCaseGenerator({
     name: "GraphLookupNeighbors",
     pre: function neighborPopulator(sourceCollection) {
-        const neighborCollName = sourceCollection.getName() + "_neighbor";
-        let neighborCollection = sourceCollection.getDB()[neighborCollName];
+        var neighborCollName = sourceCollection.getName() + "_neighbor";
+        var neighborCollection = sourceCollection.getDB()[neighborCollName];
 
         sourceCollection.drop();
         neighborCollection.drop();
 
-        let bulk = neighborCollection.initializeUnorderedBulkOp();
+        var bulk = neighborCollection.initializeUnorderedBulkOp();
         for (var i = 0; i < 100; i++) {
             bulk.insert({_id: i, neighbors: [i - 1, i + 1]});
         }
@@ -445,8 +445,8 @@ tests.push(testCaseGenerator({
         sourceCollection.insert({starting: 50});
     },
     post: function lookupPost(sourceCollection) {
-        const neighborCollName = sourceCollection.getName() + "_follower";
-        let neighborCollection = sourceCollection.getDB()[neighborCollName];
+        var neighborCollName = sourceCollection.getName() + "_follower";
+        var neighborCollection = sourceCollection.getDB()[neighborCollName];
         sourceCollection.drop();
         neighborCollection.drop();
     },
