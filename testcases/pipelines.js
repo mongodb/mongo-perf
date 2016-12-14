@@ -149,7 +149,7 @@ function generateTestCase(options) {
                                                options.indices || [],
                                                options.docGenerator || defaultDocGenerator),
         post: options.post || function(view) {
-            let collection = view.getDB()[view.getName() + "_backing"];
+            var collection = view.getDB()[view.getName() + "_backing"];
             view.drop();
             collection.drop();
         },
