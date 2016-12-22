@@ -782,7 +782,7 @@ generateTestCase({
             smallString: getStringOfLength(10)
         };
     },
-    pipeline: [{$unwind: {path: "$array"}}, {$match: {array: 5}}]
+    pipeline: [{$unwind: "$array"}, {$match: {array: 5}}]
 });
 
 /**
@@ -804,11 +804,11 @@ function simpleSmallDocUnwindGenerator(i) {
 generateTestCase({
     name: "UnwindThenSort",
     docGenerator: simpleSmallDocUnwindGenerator,
-    pipeline: [{$unwind: {path: "$array"}}, {$sort: {array: -1}}]
+    pipeline: [{$unwind: "$array"}, {$sort: {array: -1}}]
 });
 
 generateTestCase({
     name: "UnwindThenSkip",
     docGenerator: simpleSmallDocUnwindGenerator,
-    pipeline: [{$unwind: {path: "$array"}}, {$skip: 10}]
+    pipeline: [{$unwind: "$array"}, {$skip: 10}]
 });
