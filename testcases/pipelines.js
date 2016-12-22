@@ -759,12 +759,9 @@ generateTestCase({
 
 generateTestCase({
     name: "UnwindThenGroup",
-    // TODO (PERF-805): When the throughput of this test has improved, re-tag it back into the
-    // regression suite.
-    noRegression: true,
     docGenerator: function simpleUnwindDocGenerator(i) {
         var largeArray = [];
-        for (var j = 0; j < 1000; j++) {
+        for (var j = 0; j < 50; j++) {
             largeArray.push(getStringOfLength(10) + j);
         }
         return {
@@ -774,4 +771,53 @@ generateTestCase({
         };
     },
     pipeline: [{$unwind: "$array"}, {$group: {_id: "$array", count: {$sum: 1}}}]
+});
+
+generateTestCase({
+    name: "UnwindThenMatch",
+    docGenerator: function simpleUnwindDocGenerator(i) {
+        var valArray = [];
+        for (var j = 0; j < 30; j++) {
+            valArray.push(j%10);
+        }
+        return {
+            _id: i,
+            array: valArray,
+            smallString: getStringOfLength(10)
+        };
+    },
+    pipeline: [{$unwind: {path: "$array"}}, {$match: {array: 5}}]
+});
+
+
+generateTestCase({
+    name: "UnwindThenSort",
+    docGenerator: function simpleUnwindDocGenerator(i) {
+        var valArray = [];
+        for (var j = 0; j < 10; j++) {
+            valArray.push(getStringOfLength(10) + j);
+        }
+        return {
+            _id: i,
+            array: valArray,
+            smallString: getStringOfLength(10)
+        };
+    },
+    pipeline: [{$unwind: {path: "$array"}}, {$sort: {array: -1}}]
+});
+
+generateTestCase({
+    name: "UnwindThenSkip",
+    docGenerator: function simpleUnwindDocGenerator(i) {
+        var valArray = [];
+        for (var j = 0; j < 10; j++) {
+            valArray.push(getStringOfLength(10) + j);
+        }
+        return {
+            _id: i,
+            array: valArray,
+            smallString: getStringOfLength(10)
+        };
+    },
+    pipeline: [{$unwind: {path: "$array"}}, {$skip: 10}]
 });
