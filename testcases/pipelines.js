@@ -785,6 +785,10 @@ generateTestCase({
     pipeline: [{$unwind: {path: "$array"}}, {$match: {array: 5}}]
 });
 
+/**
+ * Data population function used by 'UnwindThenSort' and 'UnwindThenSkip' tests. Geared towards
+ * unwind tests that require/benefit from small documents.
+ */
 function simpleSmallDocUnwindGenerator(i) {
     var valArray = [];
     for (var j = 0; j < 10; j++) {
