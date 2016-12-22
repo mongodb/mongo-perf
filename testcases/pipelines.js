@@ -104,23 +104,19 @@ function populatorGenerator(isView, nDocs, indices, docGenerator) {
  * @param {function} [options.post=drop] - A function run after the test completes, intended to
  * clean up any state on the server it may have created during setup or execution. If 'pipeline'
  * uses more than one collection, this will need to drop the other collection(s) involved.
- * @param {Boolean} [options.noRegression=false] - If true, do not include this test in the
- * regression suite.
  */
 function generateTestCase(options) {
     var isView = true;  // Constant for use when calling populatorGenerator().
     var nDocs = options.nDocs || 500;
     var pipeline = options.pipeline;
     var tags = options.tags || [];
-    if (options.noRegression !== true) {
-        tags.push("regression");
-    }
+
     if (pipeline.length > 0 && !pipeline[pipeline.length - 1].hasOwnProperty("$out")) {
         pipeline.push({$skip: 1e9});
     }
 
     tests.push({
-        tags: ["aggregation"].concat(tags),
+        tags: ["aggregation", "regression"].concat(tags),
         name: "Aggregation." + options.name,
         pre: (options.pre !== undefined) ? options.pre(!isView) : populatorGenerator(!isView,
                                                nDocs,
@@ -142,7 +138,7 @@ function generateTestCase(options) {
         ]
     });
     tests.push({
-        tags: ["views", "aggregation_identityview"].concat(tags),
+        tags: ["views", "aggregation_identityview", "regression"].concat(tags),
         name: "Aggregation.IdentityView." + options.name,
         pre: (options.pre !== undefined) ? options.pre(isView) : populatorGenerator(isView,
                                                nDocs,
@@ -759,7 +755,7 @@ generateTestCase({
 
 generateTestCase({
     name: "UnwindThenGroup",
-    docGenerator: function simpleUnwindDocGenerator(i) {
+    docGenerator: function simpleUnwindLargeDocGenerator(i) {
         var largeArray = [];
         for (var j = 0; j < 50; j++) {
             largeArray.push(getStringOfLength(10) + j);
@@ -775,7 +771,7 @@ generateTestCase({
 
 generateTestCase({
     name: "UnwindThenMatch",
-    docGenerator: function simpleUnwindDocGenerator(i) {
+    docGenerator: function simpleUnwindAndMatchDocGenerator(i) {
         var valArray = [];
         for (var j = 0; j < 30; j++) {
             valArray.push(j%10);
@@ -789,35 +785,26 @@ generateTestCase({
     pipeline: [{$unwind: {path: "$array"}}, {$match: {array: 5}}]
 });
 
+function simpleSmallDocUnwindGenerator(i) {
+    var valArray = [];
+    for (var j = 0; j < 10; j++) {
+        valArray.push(getStringOfLength(10) + j);
+    }
+    return {
+        _id: i,
+        array: valArray,
+        smallString: getStringOfLength(10)
+    };
+}
 
 generateTestCase({
     name: "UnwindThenSort",
-    docGenerator: function simpleUnwindDocGenerator(i) {
-        var valArray = [];
-        for (var j = 0; j < 10; j++) {
-            valArray.push(getStringOfLength(10) + j);
-        }
-        return {
-            _id: i,
-            array: valArray,
-            smallString: getStringOfLength(10)
-        };
-    },
+    docGenerator: simpleSmallDocUnwindGenerator,
     pipeline: [{$unwind: {path: "$array"}}, {$sort: {array: -1}}]
 });
 
 generateTestCase({
     name: "UnwindThenSkip",
-    docGenerator: function simpleUnwindDocGenerator(i) {
-        var valArray = [];
-        for (var j = 0; j < 10; j++) {
-            valArray.push(getStringOfLength(10) + j);
-        }
-        return {
-            _id: i,
-            array: valArray,
-            smallString: getStringOfLength(10)
-        };
-    },
+    docGenerator: simpleSmallDocUnwindGenerator,
     pipeline: [{$unwind: {path: "$array"}}, {$skip: 10}]
 });
