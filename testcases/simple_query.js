@@ -46,16 +46,72 @@ function collectionPopulator(isView, nDocs, indexes, docGenerator, collectionOpt
 }
 
 /**
+ * Rewrites a query op in benchRun format to the equivalent aggregation command op, also in benchRun
+ * format.
+ */
+function rewriteQueryOpAsAgg(op) {
+    var newOp = {
+        op: "command",
+        ns: "#B_DB",
+        command: {
+            aggregate: "#B_COLL",
+            pipeline: [],
+            cursor: {}
+        }
+    };
+    var pipeline = newOp.command.pipeline;
+
+    // Special case handling for legacy OP_QUERY find $query syntax. This is used as a workaround to
+    // test queries with sorts in a fashion supported by benchRun.
+    //
+    // TODO SERVER-5722: adding full-blown sort support in benchRun should prevent us from requiring
+    // this hack.
+    if (op.query && op.query.$query) {
+        pipeline.push({$match: op.query.$query});
+
+        if (op.query.$orderby) {
+            pipeline.push({$sort: op.query.$orderby});
+        }
+
+        return newOp;
+    }
+
+    if (op.query) {
+        pipeline.push({$match: op.query});
+    }
+
+    if (op.skip) {
+        pipeline.push({$skip: op.skip});
+    }
+
+    if (op.limit) {
+        pipeline.push({$limit: op.limit});
+    } else if (op.op === "findOne") {
+        pipeline.push({$limit: 1});
+    }
+
+    // Confusingly, benchRun uses the name "filter" to refer to the projection (*not* the query
+    // predicate).
+    if (op.filter) {
+        pipeline.push({$project: op.filter});
+    }
+
+    return newOp;
+}
+
+/**
  * Creates test cases and adds them to the global testing array. By default, each test case
- * specification produces two test cases, one on a regular collection and one on an identity view
- * passthrough.
+ * specification produces several test cases:
+ *  - A find on a regular collection.
+ *  - A find on an identity view.
+ *  - The equivalent aggregation operation on a regular collection.
  *
  * @param {Object} options - Options describing the test case.
  * @param {String} options.name - The name of the test case. "Queries" is prepended for tests on
  * regular collections and "Queries.IdentityView" for tests on views.
  * @param {function} options.docs - A generator function that produces documents to insert into the
  * collection.
- * @param {Object[]} options.ops - Operations to perform in benchRun.
+ * @param {Object[]} options.op - The operations to perform in benchRun.
  *
  * @param {Boolean} {options.createViewsPassthrough=true} - If false, specifies that a views
  * passthrough test should not be created, generating only one test on a regular collection.
@@ -79,7 +135,7 @@ function addTestCase(options) {
         post: function(collection) {
             collection.drop();
         },
-        ops: options.ops
+        ops: [options.op]
     });
 
     if (options.createViewsPassthrough !== false) {
@@ -93,9 +149,21 @@ function addTestCase(options) {
                 var collName = view.getName() + "_BackingCollection";
                 view.getDB().getCollection(collName).drop();
             },
-            ops: options.ops
+            ops: [options.op]
         });
     }
+
+    // Generate a test which is the aggregation equivalent of this find operation.
+    tests.push({
+        tags: ["agg_query_comparison"].concat(tags),
+        name: "Aggregation." + options.name,
+        pre: collectionPopulator(
+            !isView, options.nDocs, indexes, options.docs, options.collectionOptions),
+        post: function(collection) {
+            collection.drop();
+        },
+        ops: [rewriteQueryOpAsAgg(options.op)]
+    });
 }
 
 /**
@@ -112,7 +180,7 @@ addTestCase({
     docs: function(i) {
         return {};
     },
-    ops: [{op: "find", query: {}}]
+    op: {op: "find", query: {}}
 });
 
 /**
@@ -128,7 +196,7 @@ addTestCase({
     docs: function(i) {
         return {};
     },
-    ops: [{op: "find", query: {nonexistent: 5}}]
+    op: {op: "find", query: {nonexistent: 5}}
 });
 
 /**
@@ -144,7 +212,7 @@ addTestCase({
     docs: function(i) {
         return {_id: i};
     },
-    ops: [{op: "findOne", query: {_id: {"#RAND_INT_PLUS_THREAD": [0, 100]}}}]
+    op: {op: "findOne", query: {_id: {"#RAND_INT_PLUS_THREAD": [0, 100]}}}
 });
 
 /**
@@ -161,7 +229,7 @@ addTestCase({
         return {_id: i};
     },
     indexes: [{x: 1}],
-    ops: [{op: "findOne", query: {_id: {"#RAND_INT_PLUS_THREAD": [0, 100]}}}]
+    op: {op: "findOne", query: {_id: {"#RAND_INT_PLUS_THREAD": [0, 100]}}}
 });
 
 /**
@@ -177,7 +245,7 @@ addTestCase({
     docs: function(i) {
         return {_id: i};
     },
-    ops: [{op: "find", query: {_id: {$gt: 50, $lt: 100}}}]
+    op: {op: "find", query: {_id: {$gt: 50, $lt: 100}}}
 });
 
 /**
@@ -194,7 +262,7 @@ addTestCase({
         return {_id: i};
     },
     indexes: [{x: 1}],
-    ops: [{op: "find", query: {x: {$gt: 50, $lt: 100}}}]
+    op: {op: "find", query: {x: {$gt: 50, $lt: 100}}}
 });
 
 /**
@@ -211,7 +279,7 @@ addTestCase({
         return {x: i.toString()};
     },
     indexes: [{x: 1}],
-    ops: [{op: "find", query: {x: /^2400/}}]
+    op: {op: "find", query: {x: /^2400/}}
 });
 
 /**
@@ -228,13 +296,13 @@ addTestCase({
         return {x: i, y: 2 * i};
     },
     indexes: [{x: 1}, {y: 1}],
-    ops: [{
+    op: {
         op: "find",
         query: {
             x: {"#SEQ_INT": {seq_id: 0, start: 0, step: 1, mod: 4800}},
             y: {"#SEQ_INT": {seq_id: 1, start: 0, step: 2, mod: 9600}}
         }
-    }]
+    }
 });
 
 /**
@@ -261,7 +329,7 @@ addTestCase({
         return {x: j.toString()};
     },
     indexes: [{x: 1}],
-    ops: [{op: "find", query: {x: {$gte: "1000002400", $lt: "1000002404"}}}]
+    op: {op: "find", query: {x: {$gte: "1000002400", $lt: "1000002404"}}}
 });
 
 /**
@@ -282,7 +350,7 @@ addTestCase({
         return {x: j.toString()};
     },
     indexes: [{x: 1}],
-    ops: [{op: "find", query: {x: {$gte: "1000002400", $lt: "1000002404"}}}]
+    op: {op: "find", query: {x: {$gte: "1000002400", $lt: "1000002404"}}}
 });
 
 /**
@@ -312,13 +380,13 @@ addTestCase({
     docs: function(i) {
         return {x: i.toString()};
     },
-    ops: [{
+    op: {
         op: "find",
         query: {
             $query: {x: {$in: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]}},
             $orderby: {x: 1},
         }
-    }]
+    }
 });
 
 /**
@@ -342,13 +410,13 @@ addTestCase({
     docs: function(i) {
         return {x: i.toString()};
     },
-    ops: [{
+    op: {
         op: "find",
         query: {
             $query: {x: {$in: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]}},
             $orderby: {x: 1},
         }
-    }]
+    }
 });
 
 // Projection tests.
@@ -368,12 +436,12 @@ addTestCase({
         return {x: i};
     },
     indexes: [{x: 1}],
-    ops: [{
+    op: {
         op: "find",
         query: {x: {"#RAND_INT_PLUS_THREAD": [0, 100]}},
         limit: 1,
         filter: {x: 1, _id: 0}
-    }]
+    }
 });
 
 /**
@@ -390,12 +458,12 @@ addTestCase({
         return {x: i};
     },
     indexes: [{x: 1}],
-    ops: [{
+    op: {
         op: "find",
         query: {x: {"#RAND_INT_PLUS_THREAD": [0, 100]}},
         limit: 1,
         filter: {x: 1, _id: 0}
-    }]
+    }
 });
 
 /**
@@ -412,7 +480,7 @@ addTestCase({
         return {x: i};
     },
     indexes: [{x: 1}],
-    ops: [{op: "find", query: {x: {$gte: 0}}, filter: {x: 1, _id: 0}}]
+    op: {op: "find", query: {x: {$gte: 0}}, filter: {x: 1, _id: 0}}
 });
 
 /**
@@ -429,7 +497,7 @@ addTestCase({
         return {x: i};
     },
     indexes: [{x: 1}],
-    ops: [{op: "find", query: {}, filter: {x: 1}}]
+    op: {op: "find", query: {}, filter: {x: 1}}
 });
 
 /**
@@ -472,7 +540,7 @@ addTestCase({
             z: 1
         };
     },
-    ops: [{op: "find", query: {}, filter: {x: 1}}]
+    op: {op: "find", query: {}, filter: {x: 1}}
 });
 
 /**
@@ -490,11 +558,11 @@ addTestCase({
         return {x: i, y: i, z: i};
     },
     indexes: [{x: 1, y: 1, z: 1}],
-    ops: [{
+    op: {
         op: "find",
         query: {x: {"#RAND_INT_PLUS_THREAD": [0, 100]}},
         filter: {x: 1, y: 1, z: 1, _id: 0}
-    }]
+    }
 });
 
 /**
@@ -509,7 +577,7 @@ addTestCase({
     docs: function(i) {
         return {x: i, y: i, z: i};
     },
-    ops: [{op: "find", query: {}, filter: {x: 1, y: 1, z: 1, _id: 0}}]
+    op: {op: "find", query: {}, filter: {x: 1, y: 1, z: 1, _id: 0}}
 });
 
 /**
@@ -525,7 +593,7 @@ addTestCase({
     docs: function(i) {
         return {x: {y: i}};
     },
-    ops: [{op: "find", query: {}, filter: {"x.y": 1, _id: 0}}]
+    op: {op: "find", query: {}, filter: {"x.y": 1, _id: 0}}
 });
 
 /**
@@ -542,11 +610,11 @@ addTestCase({
         return {x: {y: i}};
     },
     indexes: [{"x.y": 1}],
-    ops: [{
+    op: {
         op: "find",
         query: {"x.y": {"#RAND_INT_PLUS_THREAD": [0, 100]}},
         filter: {"x.y": 1, _id: 0}
-    }]
+    }
 });
 
 /**
@@ -565,5 +633,5 @@ addTestCase({
     docs: function(i) {
         return {x: bigString};
     },
-    ops: [{op: "find", query: {}}]
+    op: {op: "find", query: {}}
 });
