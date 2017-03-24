@@ -85,11 +85,12 @@ function populatorGenerator(isView, nDocs, indices, docGenerator) {
  *
  * @param {Object} options - Options describing the test case.
  * @param {String} options.name - The name of the test case. "Aggregation." will be prepended.
- * @param {Object[]} options.pipeline - The aggregation pipeline to run. If the final stage is not
- * an $out stage (which needs to be the last stage in the pipeline), a final $skip stage, skipping
- * 1,000,000,000 documents, will be added to avoid the overhead of BSON serialization, focusing the
- * test on the stages themselves.
+ * @param {Object[]} options.pipeline - The aggregation pipeline to run.
  *
+ * @param {Bool} [options.addSkipStage=true] - Indicates whether a final $skip stage, skipping 1
+ * billion documents, should be added to the end of the pipeline. This is useful, and true by
+ * default, because it avoids the overhead of BSON serialization, which helps to better qualify the
+ * performance of the agg stages themselves.
  * @param {String[]} [options.tags=["aggregation", "regression"]] - The tags describing what type of
  * test this is.
  * @param {Object[]} [options.indices=[]] - An array of index specifications to create on the
@@ -111,7 +112,12 @@ function generateTestCase(options) {
     var pipeline = options.pipeline;
     var tags = options.tags || [];
 
-    if (pipeline.length > 0 && !pipeline[pipeline.length - 1].hasOwnProperty("$out")) {
+    var addSkipStage = options.addSkipStage;
+    if (addSkipStage === undefined) {
+        addSkipStage = true;
+    }
+
+    if (pipeline.length > 0 && addSkipStage) {
         pipeline.push({$skip: 1e9});
     }
 
@@ -646,7 +652,8 @@ generateTestCase({
         outCollection.drop();
         backingCollection.drop();
     },
-    pipeline: [{$out: "#B_COLL_tmp_out"}]
+    pipeline: [{$out: "#B_COLL_tmp_out"}],
+    addSkipStage: false
 });
 
 generateTestCase({
@@ -719,7 +726,8 @@ generateTestCase({
 generateTestCase({
     name: "Skip",
     nDocs: 500,
-    pipeline: [{$skip: 250}]
+    pipeline: [{$skip: 250}],
+    addSkipStage: false
 });
 
 generateTestCase({
@@ -811,4 +819,90 @@ generateTestCase({
     name: "UnwindThenSkip",
     docGenerator: simpleSmallDocUnwindGenerator,
     pipeline: [{$unwind: "$array"}, {$skip: 10}]
+});
+
+//
+// Count operations expressed as aggregations.
+//
+
+generateTestCase({
+    name: "CountsFullCollection",
+    tags: ["agg_query_comparison"],
+    nDocs: 4800,
+    docGenerator: function(i) {
+        return {_id: i};
+    },
+    pipeline: [{$count: "n"}],
+    addSkipStage: false,
+});
+
+generateTestCase({
+    name: "CountsIntIDRange",
+    tags: ["agg_query_comparison"],
+    nDocs: 4800,
+    docGenerator: function(i) {
+        return {_id: i};
+    },
+    pipeline: [{$match: {_id: {$gt: 10, $lt: 100}}}, {$count: "n"}],
+    addSkipStage: false,
+});
+
+//
+// Distinct operations expressed as aggregations.
+//
+
+function distinctTestDocGenerator(i) {
+    return {x: (i % 3) + 1};
+}
+
+generateTestCase({
+    name: "DistinctWithIndex",
+    tags: ["distinct", "agg_query_comparison"],
+    nDocs: 14400,
+    docGenerator: distinctTestDocGenerator,
+    indices: [{x: 1}],
+    pipeline: [
+        {$unwind: {path: "$x", preserveNullAndEmptyArrays: true}},
+        {$group: {_id: null, distinct: {$addToSet: "$x"}}}
+    ],
+    addSkipStage: false,
+});
+
+generateTestCase({
+    name: "DistinctWithIndexAndQuery",
+    tags: ["distinct", "agg_query_comparison"],
+    nDocs: 14400,
+    docGenerator: distinctTestDocGenerator,
+    indices: [{x: 1}],
+    pipeline: [
+        {$match: {x: 1}},
+        {$unwind: {path: "$x", preserveNullAndEmptyArrays: true}},
+        {$group: {_id: null, distinct: {$addToSet: "$x"}}}
+    ],
+    addSkipStage: false,
+});
+
+generateTestCase({
+    name: "DistinctWithoutIndex",
+    tags: ["distinct", "agg_query_comparison"],
+    nDocs: 14400,
+    docGenerator: distinctTestDocGenerator,
+    pipeline: [
+        {$unwind: {path: "$x", preserveNullAndEmptyArrays: true}},
+        {$group: {_id: null, distinct: {$addToSet: "$x"}}}
+    ],
+    addSkipStage: false,
+});
+
+generateTestCase({
+    name: "DistinctWithoutIndexAndQuery",
+    tags: ["distinct", "agg_query_comparison"],
+    nDocs: 14400,
+    docGenerator: distinctTestDocGenerator,
+    pipeline: [
+        {$match: {x: 1}},
+        {$unwind: {path: "$x", preserveNullAndEmptyArrays: true}},
+        {$group: {_id: null, distinct: {$addToSet: "$x"}}}
+    ],
+    addSkipStage: false,
 });
