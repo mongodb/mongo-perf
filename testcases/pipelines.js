@@ -863,7 +863,7 @@ generateTestCase({
     indices: [{x: 1}],
     pipeline: [
         {$unwind: {path: "$x", preserveNullAndEmptyArrays: true}},
-        {$group: {_id: null, distinct: {$addToSet: "$x"}}}
+        {$group: {_id: 1, distinct: {$addToSet: "$x"}}}
     ],
     addSkipStage: false,
 });
@@ -877,7 +877,7 @@ generateTestCase({
     pipeline: [
         {$match: {x: 1}},
         {$unwind: {path: "$x", preserveNullAndEmptyArrays: true}},
-        {$group: {_id: null, distinct: {$addToSet: "$x"}}}
+        {$group: {_id: 1, distinct: {$addToSet: "$x"}}}
     ],
     addSkipStage: false,
 });
@@ -889,7 +889,7 @@ generateTestCase({
     docGenerator: distinctTestDocGenerator,
     pipeline: [
         {$unwind: {path: "$x", preserveNullAndEmptyArrays: true}},
-        {$group: {_id: null, distinct: {$addToSet: "$x"}}}
+        {$group: {_id: 1, distinct: {$addToSet: "$x"}}}
     ],
     addSkipStage: false,
 });
@@ -902,7 +902,7 @@ generateTestCase({
     pipeline: [
         {$match: {x: 1}},
         {$unwind: {path: "$x", preserveNullAndEmptyArrays: true}},
-        {$group: {_id: null, distinct: {$addToSet: "$x"}}}
+        {$group: {_id: 1, distinct: {$addToSet: "$x"}}}
     ],
     addSkipStage: false,
 });
