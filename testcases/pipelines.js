@@ -121,8 +121,15 @@ function generateTestCase(options) {
         pipeline.push({$skip: 1e9});
     }
 
+    var tagsForTest = ["regression"].concat(tags);
+    // Tests get tagged as "aggregation" automatically, unless they are specially tagged as
+    // "agg_query_comparison".
+    if (tagsForTest.indexOf("agg_query_comparison") < 0) {
+        tagsForTest = tagsForTest.concat("aggregation");
+    }
+
     tests.push({
-        tags: ["aggregation", "regression"].concat(tags),
+        tags: tagsForTest,
         name: "Aggregation." + options.name,
         pre: (options.pre !== undefined) ? options.pre(!isView) : populatorGenerator(!isView,
                                                nDocs,
@@ -143,8 +150,17 @@ function generateTestCase(options) {
             }
         ]
     });
+
+    var tagsForViewsTest = ["views", "regression", "aggregation_identityview"].concat(tags);
+
+    // Identity view tests should not participate in the agg to query comparison suite, so they
+    // should not get tagged as such.
+    tagsForViewsTest = tagsForViewsTest.filter(function(curTag) {
+        return curTag !== "agg_query_comparison";
+    });
+
     tests.push({
-        tags: ["views", "aggregation_identityview", "regression"].concat(tags),
+        tags: tagsForViewsTest,
         name: "Aggregation.IdentityView." + options.name,
         pre: (options.pre !== undefined) ? options.pre(isView) : populatorGenerator(isView,
                                                nDocs,
