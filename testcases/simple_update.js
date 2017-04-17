@@ -2,12 +2,12 @@ if ( typeof(tests) != "object" ) {
     tests = [];
 }
 
-/*
-* Setup: Populate a collection with an integer field X set to 0
-*        and integer _id field
-* Test:  Each thread works in a range of 100 documents; randomly selects a 
-*        document based on the integer _id field and increments X
-*/
+/**
+ * Setup: Populate a collection with an integer field X set to 0
+ *        and integer _id field
+ * Test:  Each thread works in a range of 100 documents; randomly selects a 
+ *        document based on the integer _id field and increments X
+ */
 tests.push( { name: "Update.IncNoIndex",
               tags: ['update','regression'],
               pre: function( collection ) {
@@ -25,13 +25,13 @@ tests.push( { name: "Update.IncNoIndex",
                     update: { $inc : { x : 1 } } },
               ] } );
 
-/*
-* Setup: Populate a collection with an integer field X set to 0
-*        and integer _id field. Create index on X
-* Test:  Each thread works in a range of 100 documents; randomly selects a 
-*        document using _id and increments X; there will be contention on
-*        updating the index key  
-*/
+/**
+ * Setup: Populate a collection with an integer field X set to 0
+ *        and integer _id field. Create index on X
+ * Test:  Each thread works in a range of 100 documents; randomly selects a 
+ *        document using _id and increments X; there will be contention on
+ *        updating the index key  
+ */
 tests.push( { name: "Update.IncWithIndex",
               tags: ['update','core','indexed'],
               pre: function( collection ) {
@@ -50,11 +50,11 @@ tests.push( { name: "Update.IncWithIndex",
                     update: { $inc : { x : 1 } } },
               ] } );
 
-/*
-* Setup: Starts with an empty collection
-* Test:  Each thread works in a range of 100 documents; randomly selects a 
-*        document using _id and upserts(increment) X
-*/
+/**
+ * Setup: Starts with an empty collection
+ * Test:  Each thread works in a range of 100 documents; randomly selects a 
+ *        document using _id and upserts(increment) X
+ */
 tests.push( { name: "Update.IncNoIndexUpsert",
               tags: ['update','core'],
               pre: function( collection ) {
@@ -67,11 +67,11 @@ tests.push( { name: "Update.IncNoIndexUpsert",
                     update: { $inc : { x : 1 } } },
               ] } );
 
-/*
-* Setup: Starts with an empty collection; creates index on integer field X
-* Test:  Each thread works in a range of 100 documents; randomly selects a 
-*        document using _id and upserts(increment) X
-*/
+/**
+ * Setup: Starts with an empty collection; creates index on integer field X
+ * Test:  Each thread works in a range of 100 documents; randomly selects a 
+ *        document using _id and upserts(increment) X
+ */
 tests.push( { name: "Update.IncWithIndexUpsert",
               tags: ['update','core','indexed'],
               pre: function( collection ) {
@@ -92,18 +92,18 @@ var shortFieldNames =
    "ri", "si", "ti", "ui", "vi", "wi", "xi", "yi", "zi", "aj",
    "xm", "ym", "zm", "an", "bn", "cn", "dn", "en", "fn", "gn"];
 
-/*
-* Setup: Populate the collection with 100 documents, each has 20 integer
-*        fields with a two charater field name and an integer _id field
-* Test:  All threads work on the same 100 documents. Each thread progresses
-*        sequentially through the collection by _id field, and increments 
-*        the same 5 of the 20 integer fields in the document. 
-*/
+/**
+ * Setup: Populate the collection with 100 documents, each has 20 integer
+ *        fields with a two character field name and an integer _id field
+ * Test:  All threads work on the same 100 documents. Each thread progresses
+ *        sequentially through the collection by _id field, and increments 
+ *        the same 5 of the 20 integer fields in the document. 
+ */
 tests.push( { name: "Update.IncFewSmallDoc",
               tags: ['update','core'],
               pre: function( collection ) {
                   collection.drop();
-                  
+
                   var docs = [];
                   for (var i = 0; i < 100; i++) {
                       var toInsert = {_id: i};
@@ -126,18 +126,18 @@ tests.push( { name: "Update.IncFewSmallDoc",
                                        ta : 1 } } }
               ] } );
 
-/*
-* Setup: Populate the collection with 100 documents, each has 50 integer
-*        fields with a two charater field name plus an integer _id field
-* Test:  All threads work on the same 100 documents. Each thread progresses
-*        sequentially through the collection by _id field, and increments
-*        the same 5 of the 20 integer fields in the document. 
-*/
+/**
+ * Setup: Populate the collection with 100 documents, each has 50 integer
+ *        fields with a two character field name plus an integer _id field
+ * Test:  All threads work on the same 100 documents. Each thread progresses
+ *        sequentially through the collection by _id field, and increments
+ *        the same 5 of the 20 integer fields in the document. 
+ */
 tests.push( { name: "Update.IncFewLargeDoc",
               tags: ['update','regression'],
               pre: function( collection ) {
                   collection.drop();
-                  
+
                   var docs = [];
                   for (var i = 0; i < 100; i++) {
                       var toInsert = {_id: i};
@@ -171,13 +171,13 @@ var longFieldNames =
      "dosiyispnf", "nvtaemdwtp", "vzojziqbkj", "kbtfmcjlgl", "ialgxzuhnq", "djqfxvmycc",
      "ocrpwmeqyb", "tcrrliflby"];
 
-/*
-* Setup: Populate the collection with 100 documents, each has 20 integer
-*        fields with a ten charater field name plus an integer _id field
-* Test:  All threads work on the same 100 documents. Each thread progresses
-*        sequentially through the collection by _id field, and increments
-*        the same 5 of the 20 integer fields in the document. 
-*/
+/**
+ * Setup: Populate the collection with 100 documents, each has 20 integer
+ *        fields with a ten character field name plus an integer _id field
+ * Test:  All threads work on the same 100 documents. Each thread progresses
+ *        sequentially through the collection by _id field, and increments
+ *        the same 5 of the 20 integer fields in the document. 
+ */
 tests.push( { name: "Update.IncFewSmallDocLongFields",
               tags: ['update','regression'],
               pre: function( collection ) {
@@ -204,13 +204,13 @@ tests.push( { name: "Update.IncFewSmallDocLongFields",
                                        "elcgijivrt": 1 } } }
               ] } );
 
-/*
-* Setup: Populate the collection with 100 documents, each has 50 integer
-*        fields with a ten charater field name plus an integer _id field
-* Test:  All threads work on the same 100 documents. Each thread progresses 
-*        sequentially through the collection by _id field, and increments 
-*        the same 5 of the 20 integer fields in the document. 
-*/
+/**
+ * Setup: Populate the collection with 100 documents, each has 50 integer
+ *        fields with a ten character field name plus an integer _id field
+ * Test:  All threads work on the same 100 documents. Each thread progresses 
+ *        sequentially through the collection by _id field, and increments 
+ *        the same 5 of the 20 integer fields in the document. 
+ */
 tests.push( { name: "Update.IncFewLargeDocLongFields",
               tags: ['update','regression'],
               pre: function( collection ) {
@@ -238,13 +238,13 @@ tests.push( { name: "Update.IncFewLargeDocLongFields",
                                        "elcgijivrt": 1 } } }
               ] } );
 
-/*
-* Setup: Populate the collection with documents that have 512 fields with 
-*        a single character "a" and an integer _id field
-* Test:  Each thread works on a range of 100 documents; randomly selects a
-*        document by _id and set the middle field (256 out of 512) to "a" 
-*        then immediately update the same field to "b"
-*/
+/**
+ * Setup: Populate the collection with documents that have 512 fields with 
+ *        a single character "a" and an integer _id field
+ * Test:  Each thread works on a range of 100 documents; randomly selects a
+ *        document by _id and set the middle field (256 out of 512) to "a" 
+ *        then immediately update the same field to "b"
+ */
 tests.push( { name: "Update.SingleDocFieldAtOffset",
               tags: ['update','regression'],
               pre: function( collection ) {
@@ -279,13 +279,13 @@ tests.push( { name: "Update.SingleDocFieldAtOffset",
                   }
               ] } );
 
-/*
-* Setup: Populate the collection with 100 documents that have 512 fields with 
-*        a single character "a" 
-* Test:  Each thread does two multi updates on all documents
-*        First change a_256 to "a", then to "aa" 
-*        High contention on the documents as a result from the multi-updates
-*/
+/**
+ * Setup: Populate the collection with 100 documents that have 512 fields with 
+ *        a single character "a" 
+ * Test:  Each thread does two multi updates on all documents
+ *        First change a_256 to "a", then to "aa" 
+ *        High contention on the documents as a result from the multi-updates
+ */
 tests.push( { name: "Update.FieldAtOffset",
               tags: ['update','regression'],
               pre: function( collection ) {
@@ -298,7 +298,7 @@ tests.push( { name: "Update.FieldAtOffset",
                   for (var i = 0; i < kFieldCount; i++) {
                       toInsert["a_" + i.toString()] = "a";
                   }
-                  
+
                   var docs = [];
                   for (var i = 0; i < 100; i++) {
                       docs.push(toInsert);
@@ -319,3 +319,91 @@ tests.push( { name: "Update.FieldAtOffset",
                   }
               ] } );
 
+/**
+ * Setup: Populate the collection with documents that have a single field which is a large array
+ *        with 200 elements, each of which has three fields.
+ * Test:  Each thread works on a range of 100 documents. It randomly selects a document by _id and
+ *        sets each of the fields in each of the array elements to a random number.
+ */
+function buildManyElementUpdate() {
+    var update = {$set: {}};
+    for (var i = 0; i < 200; i++) {
+        // Use a random number to prevent the updates from becoming no-ops.
+        update.$set['array.' + i + '.x'] = {"#RAND_INT": [0, 100]};
+        update.$set['array.' + i + '.y'] = {"#RAND_INT": [0, 100]};
+        update.$set['array.' + i + '.z'] = {"#RAND_INT": [0, 100]};
+    }
+    return update;
+}
+
+tests.push( { name: "Update.ManyElementsWithinArray",
+              tags: ['update','regression'],
+              pre: function( collection ) {
+                  collection.drop();
+
+                  var templateDoc = {array: []};
+                  for (var i = 0; i < 200; i++) {
+                      templateDoc.array.push({x: 0, y: 0, z: 0});
+                  }
+
+                  var bulk = collection.initializeUnorderedBulkOp();
+                  for (var i = 0; i < 4800; ++i) {
+                      bulk.insert(Object.merge({_id: i}, templateDoc));
+                  }
+                  assert.writeOK(bulk.execute());
+              },
+              ops: [
+                  { op:  "update",
+                    query: {_id: {"#RAND_INT_PLUS_THREAD": [0, 100]}},
+                    update: buildManyElementUpdate(),
+                  },
+              ] } );
+
+/**
+ * Setup: Populate the collection with documents that have a single field which is a large array
+ *        with 200 elements, each of which has twenty fields.
+ * Test:  Each thread works on a range of 100 documents. It randomly selects a document by _id and
+ *        selects a random element from the array, then sets 10 of the fields in the matched array
+ *        element to a random number.
+ */
+tests.push( { name: "Update.MatchedElementWithinArray",
+              tags: ['update','regression'],
+              pre: function( collection ) {
+                  collection.drop();
+
+                  var templateDoc = {array: []};
+                  for (var i = 0; i < 200; ++i) {
+                      var arrayElt = {elt_id: i};
+                      for (var j = 0; j < 20; ++j)  {
+                          arrayElt["field_" + j] = 0;
+                      }
+                      templateDoc.array.push(arrayElt);
+                  }
+
+                  var bulk = collection.initializeUnorderedBulkOp();
+                  for (var i = 0; i < 4800; ++i) {
+                      bulk.insert(Object.merge({_id: i}, templateDoc));
+                  }
+                  assert.writeOK(bulk.execute());
+              },
+              ops: [
+                  { op:  "update",
+                    query: {
+                        _id: {"#RAND_INT_PLUS_THREAD": [0, 100]},
+                        "array.elt_id": {"#RAND_INT": [0, 200]}
+                    },
+                    update: {$set: {
+                        // Use a random number to prevent the update from being a no-op.
+                        "array.$.field_0": {"#RAND_INT": [0, 99]},
+                        "array.$.field_1": {"#RAND_INT": [0, 99]},
+                        "array.$.field_2": {"#RAND_INT": [0, 99]},
+                        "array.$.field_3": {"#RAND_INT": [0, 99]},
+                        "array.$.field_4": {"#RAND_INT": [0, 99]},
+                        "array.$.field_15": {"#RAND_INT": [0, 99]},
+                        "array.$.field_16": {"#RAND_INT": [0, 99]},
+                        "array.$.field_17": {"#RAND_INT": [0, 99]},
+                        "array.$.field_18": {"#RAND_INT": [0, 99]},
+                        "array.$.field_19": {"#RAND_INT": [0, 99]},
+                    }}
+                  },
+              ] } );
