@@ -296,9 +296,9 @@ generateTestCase({
 });
 
 /**
- * Data population function used by the 'Lookup' and 'LookupViaGraphLookup' tests.
+ * Data population functions used by the 'Lookup' and 'LookupViaGraphLookup' tests.
  */
-function basicLookupPopulator(isView) {
+function basicLookupPopulatorImpl(isView, localDocGen, foreignDocGen) {
     return function(collectionOrView) {
         var db = collectionOrView.getDB();
         var lookupCollName = collectionOrView.getName() + "_lookup";
@@ -323,12 +323,48 @@ function basicLookupPopulator(isView) {
         var sourceBulk = sourceCollection.initializeUnorderedBulkOp();
         var lookupBulk = lookupCollection.initializeUnorderedBulkOp();
         for (var i = 0; i < nDocs; i++) {
-            sourceBulk.insert({_id: i, foreignKey: i});
-            lookupBulk.insert({_id: i});
+            sourceBulk.insert(localDocGen(i));
+            lookupBulk.insert(foreignDocGen(i));
         }
         sourceBulk.execute();
         lookupBulk.execute();
     };
+}
+
+function basicLookupPopulator(isView) {
+    function localDocGen(val) {
+        return {_id: val, foreignKey: val};
+    }
+
+    function foreignDocGen(val) {
+        return {_id: val};
+    }
+
+    return basicLookupPopulatorImpl(isView, localDocGen, foreignDocGen);
+}
+
+function basicArrayLookupPopulator(isView) {
+    function localDocGen(val) {
+        return {_id: val, foreignKey: [val-1,val,val+1]};
+    }
+
+    function foreignDocGen(val) {
+        return {_id: val};
+    }
+
+    return basicLookupPopulatorImpl(isView, localDocGen, foreignDocGen);
+}
+
+function basicArrayOfObjectLookupPopulator(isView) {
+    function localDocGen(val) {
+        return {_id: val, foreignKey: [{x: val-1}, {x: val}, {x: val+1}]};
+    }
+
+    function foreignDocGen(val) {
+        return {_id: {x: val}};
+    }
+
+    return basicLookupPopulatorImpl(isView, localDocGen, foreignDocGen);
 }
 
 /**
@@ -357,6 +393,48 @@ generateTestCase({
             $lookup: {
                 from: "#B_COLL_lookup",
                 localField: "foreignKey",
+                foreignField: "_id",
+                as: "match"
+            }
+        }
+    ],
+    tags: ["lookup"]
+});
+
+// $lookup with a 'localField' being an array of numeric values.
+generateTestCase({
+    name: "LookupWithLocalArray",
+    // The setup function is only given one collection, but $lookup needs two. We'll treat the given
+    // one as the source collection, and create a second one with the name of the first plus
+    // '_lookup', which we'll use to look up from.
+    pre: basicArrayLookupPopulator,
+    post: basicLookupCleanup,
+    pipeline: [
+        {
+            $lookup: {
+                from: "#B_COLL_lookup",
+                localField: "foreignKey",
+                foreignField: "_id",
+                as: "match"
+            }
+        }
+    ],
+    tags: ["lookup"]
+});
+
+// $lookup with a 'localField' being an array of objects.
+generateTestCase({
+    name: "LookupWithLocalArrayOfObject",
+    // The setup function is only given one collection, but $lookup needs two. We'll treat the given
+    // one as the source collection, and create a second one with the name of the first plus
+    // '_lookup', which we'll use to look up from.
+    pre: basicArrayOfObjectLookupPopulator,
+    post: basicLookupCleanup,
+    pipeline: [
+        {
+            $lookup: {
+                from: "#B_COLL_lookup",
+                localField: "foreignKey.x",
                 foreignField: "_id",
                 as: "match"
             }
