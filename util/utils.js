@@ -58,6 +58,33 @@ function formatRunDate(now) {
         pad(now.getDate()));
 }
 
+function checkForDroppedCollections(database){
+    // Check for any collections in 'drop-pending' state. The collection name should be of the
+    // format "system.drop.<optime>.<collectionName>", where 'optime' is the optime of the
+    // collection drop operation, encoded as a string, and 'collectionName' is the original
+    // collection name.
+    var pendingDropRegex = new RegExp("system\.drop\..*\.");
+    collections = database.runCommand("listCollections", {includePendingDrops: true}).cursor.firstBatch;
+    collection = collections.find(c => pendingDropRegex.test(c.name));
+    return collection;
+}
+
+function checkForDroppedCollectionsTestDBs(db, multidb){
+    // Check for any collections in 'drop-pending' state in any test
+    // database. The test databases have name testN, where N is 0 to
+    // multidb - 1;
+    for (var i = 0; i < multidb; i++) {
+        var sibling_db = db.getSiblingDB('test' + i);
+        var retries = 0;
+        while (checkForDroppedCollections(sibling_db) && retries < 1000) {
+            print("Sleeping 1 second while waiting for collection to finish dropping")
+            retries += 1;
+            sleep(1000);
+        }
+        assert(retries < 1000, "Timeout on waiting for collections to drop");
+    }
+}
+
 function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOptions, printArgs, username, password) {
 
     if (typeof crudOptions === "undefined") crudOptions = getDefaultCrudOptions();
@@ -163,6 +190,13 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOption
     if (printArgs) {
         print(JSON.stringify(benchArgs));
     }
+
+    // Make sure the system is queisced
+    // Check for dropped collections
+    checkForDroppedCollectionsTestDBs(db, multidb)
+    db.adminCommand({fsync: 1});
+
+
     // invoke the built-in mongo shell function
     var result = benchRun(benchArgs);
 
@@ -199,6 +233,9 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOption
         }
     }
 
+    // Make sure all collections have been dropped
+    checkForDroppedCollectionsTestDBs(db, multidb)
+
     return { ops_per_sec: total, error_count : result["errCount"]};
 }
 
@@ -221,7 +258,7 @@ function getDefaultCrudOptions() {
 
 function doCompare(test, compareTo) {
     var tags = test.tags;
-    
+
     if ( Array.isArray(compareTo) ) {
         for (var i = 0;i < compareTo.length; i++) {
             if ( tags.indexOf(compareTo[i]) > -1 || test.name == compareTo[i]) {
@@ -240,7 +277,7 @@ function doCompare(test, compareTo) {
 
 function doCompareExclude(test, compareTo) {
     var tags = test.tags;
-    
+
     if ( Array.isArray(compareTo) ) {
         for (var i = 0;i < compareTo.length; i++) {
             if (!( tags.indexOf(compareTo[i]) > -1 || test.name == compareTo[i])) {
@@ -258,7 +295,7 @@ function doCompareExclude(test, compareTo) {
 }
 
 function doExecute(test, includeFilter, excludeFilter) {
-    
+
     var include = false;
     // Use % to indicate all tests
     if ( !Array.isArray(includeFilter) ) {
@@ -266,12 +303,12 @@ function doExecute(test, includeFilter, excludeFilter) {
             include = true;
         }
     }
-    
+
     // If we have a textFilter but no tags, then bail
     else if ( !Array.isArray(test.tags) ) {
         return false;
     }
-    
+
     if ( !include && Array.isArray(includeFilter) ) {
         if (Array.isArray(includeFilter[0])) {
             // lists of lists of filters. Must match all lists
@@ -335,7 +372,7 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilt
     if (!excludeTestbed) {
         var basicFields = {};
         var bi = db.runCommand("buildInfo");
-        
+
         basicFields.commit = bi.gitVersion;
         if (bi.sysInfo) {
             basicFields.platform = bi.sysInfo.split(" ")[0];
