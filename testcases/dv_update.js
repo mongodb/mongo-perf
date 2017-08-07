@@ -3,7 +3,7 @@ if ( typeof(tests) != "object" ) {
 }
 
 /*
-* Setup: Populate the collection with 4800 documents with interger
+* Setup: Populate the collection with 4800 documents with integer
 *        _id ranging from 0 to 4799, and a numerical field "a" set to 0
 * Test: Each thread works in its range of 100 documents (separated by _id),
 *       randomly selects a document and increments field "a" by 1
@@ -31,7 +31,7 @@ tests.push( {   name: "Update.DocValidation.OneNum.Compare",
 ]});
 
 /*
-* Setup: Populate the collection with 4800 documents with interger
+* Setup: Populate the collection with 4800 documents with integer
 *        _id ranging from 0 to 4799, and a numerical field "a" set to 0.
 *        Set up a validator for the field "a" to check for its existence
 *        and type (double).
@@ -66,7 +66,7 @@ tests.push( {   name: "Update.DocValidation.OneNum",
 
 
 /*
-* Setup: Populate the collection with 4800 documents with interger
+* Setup: Populate the collection with 4800 documents with integer
 *        _id ranging from 0 to 4799, and ten numerical fields set to 0
 * Test: Each thread works in its range of 100 documents (separated by _id),
 *       randomly selects a document and increments the integer fields by 1
@@ -100,7 +100,7 @@ tests.push( {   name: "Update.DocValidation.TenNum.Compare",
 ]});
 
 /*
-* Setup: Populate the collection with 4800 documents with interger
+* Setup: Populate the collection with 4800 documents with integer
 *        _id ranging from 0 to 4799, and ten numerical fields set to 0.
 *        Set up a validator for the ten numberical fields to check for their
 *        existence and type (double).
@@ -162,7 +162,7 @@ tests.push( {   name: "Update.DocValidation.TenNum",
 
 
 /*
-* Setup: Populate the collection with 4800 documents with interger
+* Setup: Populate the collection with 4800 documents with integer
 *        _id ranging from 0 to 4799, and twenty numerical fields set to 0
 * Test: Each thread works in its range of 100 documents (separated by _id),
 *       randomly selects a document and increments the integer fields by 1
@@ -199,7 +199,7 @@ tests.push( {   name: "Update.DocValidation.TenNum",
 ]});
 
 /*
-* Setup: Populate the collection with 4800 documents with interger
+* Setup: Populate the collection with 4800 documents with integer
 *        _id ranging from 0 to 4799, and ten numerical fields set to 0.
 *        Set up a validator for the twenty numberical fields to check for their
 *        existence and type (double).
