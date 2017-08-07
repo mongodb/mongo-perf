@@ -13,6 +13,8 @@ if (typeof(tests) !== "object") {
  */
 function collectionPopulator(isView, nDocs, indexes, docGenerator, collectionOptions) {
     return function(collectionOrView) {
+        Random.setRandomSeed(258);
+
         collectionOrView.drop();
 
         var db = collectionOrView.getDB();
@@ -416,6 +418,57 @@ addTestCase({
             $query: {x: {$in: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]}},
             $orderby: {x: 1},
         }
+    }
+});
+
+/**
+ * Large array used for large $in queries in UnindexedLargeInMatching and
+ * UnindexedLargeInNonMatching containing all even integers in the range [0, 2000).
+ */
+var largeArray = [];
+for (var i = 0; i < 1000; i++) {
+    largeArray.push(i * 2);
+}
+
+/**
+ * Setup: Create a collection and insert a small number of documents with a random even integer
+ * field x in the range [0, 2000).
+ *
+ * Test: Issue queries that must perform a collection scan, filtering the documents with an $in
+ * predicate with a large number of elements. All documents will match the predicate, since the $in
+ * array contains all even integers in the range [0, 2000).
+ */
+addTestCase({
+    name: "UnindexedLargeInMatching",
+    tags: ["regression"],
+    nDocs: 10,
+    docs: function(i) {
+        return {x: 2 * Random.randInt(1000)};
+    },
+    op: {
+        op: "find",
+        query: {x: {$in: largeArray}}
+    }
+});
+
+/**
+ * Setup: Create a collection and insert a small number of documents with a random odd integer
+ * field x in the range [0, 2000).
+ *
+ * Test: Issue queries that must perform a collection scan, filtering the documents with an $in
+ * predicate with a large number of elements. No documents will match the predicate, since the $in
+ * array contains all even integers in the range [0, 2000).
+ */
+addTestCase({
+    name: "UnindexedLargeInNonMatching",
+    tags: ["regression"],
+    nDocs: 10,
+    docs: function(i) {
+        return {x: 2 * Random.randInt(1000) + 1};
+    },
+    op: {
+        op: "find",
+        query: {x: {$in: largeArray}}
     }
 });
 
