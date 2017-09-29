@@ -4,12 +4,13 @@ if (typeof(tests) != "object") {
 
 /**
  * Creates a document validation insertion performance test named 'name' that inserts the document
- * 'doc' into a collection with document validator 'validator'. Also generates a "comparison" test
- * that does not use the validator to serve as a benchmark for the overhead of document validation.
+ * 'doc' into a collection with document validator 'validator' or 'jsonSchema'. Also generates a
+ * "comparison" test that does not use the validator to serve as a benchmark for the overhead of
+ * document validation.
  *
- * If 'jsonSchema' exists, additionally generates a third test with a validator using the schema
- * wrapped in $jsonSchema. The schema should be semantically equivalent to 'validator' and is
- * intended to test the overhead of $jsonSchema.
+ * If both 'validator' and 'jsonSchema' are specified, the two should be semantically equivalent,
+ * such that the test compares the performance of JSON Schema against normal MongoDB match
+ * expressions.
  */
 function createDocValidationTest(name, doc, validator, jsonSchema) {
     var baseTags = ["insert", "DocValidation"];
@@ -24,24 +25,27 @@ function createDocValidationTest(name, doc, validator, jsonSchema) {
     });
 
     // Add a test that inserts 'doc' into a collection with validator 'validator'.
-    tests.push({
-        name: name,
-        tags: ["regression"].concat(baseTags),
-        pre: function(collection) {
-            collection.drop();
-            collection.runCommand("create", {validator: validator});
-        },
-        ops: [{op: "insert", doc: doc}]
-    });
+    if (validator !== undefined) {
+        tests.push({
+            name: name,
+            tags: ["regression"].concat(baseTags),
+            pre: function(collection) {
+                collection.drop();
+                assert.commandWorked(collection.runCommand("create", {validator: validator}));
+            },
+            ops: [{op: "insert", doc: doc}]
+        });
+    }
 
-    // Add a test that inserts 'doc' into a collection with validator 'jsonSchema', if requested.
+    // Add a test that inserts 'doc' into a collection with validator 'jsonSchema'.
     if (jsonSchema !== undefined) {
         tests.push({
             name: name + ".JSONSchema",
             tags: ["regression", "jsonschema"].concat(baseTags),
             pre: function(collection) {
                 collection.drop();
-                collection.runCommand("create", {validator: {$jsonSchema: jsonSchema}});
+                assert.commandWorked(
+                    collection.runCommand("create", {validator: {$jsonSchema: jsonSchema}}));
             },
             ops: [{op: "insert", doc: doc}]
         });
@@ -179,36 +183,35 @@ doc = {
     s: {value: -10},
     t: {}
 };
-validator = {
-    $jsonSchema: {
-        minProperties: 15,
-        maxProperties: 21,
-        properties: {
-            a: {type: "number"},
-            b: {bsonType: "number"},
-            c: {bsonType: "double"},
-            d: {type: ["number", "string"]},
-            e: {minimum: 0},
-            f: {type: "string"},
-            g: {bsonType: "string"},
-            h: {type: ["string", "array"]},
-            i: {minLength: 1},
-            j: {maxLength: 1},
-            k: {type: "array"},
-            l: {bsonType: "array"},
-            m: {bsonType: ["array", "object"]},
-            n: {minItems: 1},
-            o: {maxItems: 10},
-            p: {type: "object"},
-            q: {bsonType: "object"},
-            r: {type: ["object", "string"]},
-            s: {minProperties: 1},
-            t: {maxProperties: 15}
-        },
-        required: ["_id", "a", "b", "f", "g", "k", "l", "p", "q"]
-    }
+validator = undefined;
+jsonSchema = {
+    minProperties: 15,
+    maxProperties: 21,
+    properties: {
+        a: {type: "number"},
+        b: {bsonType: "number"},
+        c: {bsonType: "double"},
+        d: {type: ["number", "string"]},
+        e: {minimum: 0},
+        f: {type: "string"},
+        g: {bsonType: "string"},
+        h: {type: ["string", "array"]},
+        i: {minLength: 1},
+        j: {maxLength: 1},
+        k: {type: "array"},
+        l: {bsonType: "array"},
+        m: {bsonType: ["array", "object"]},
+        n: {minItems: 1},
+        o: {maxItems: 10},
+        p: {type: "object"},
+        q: {bsonType: "object"},
+        r: {type: ["object", "string"]},
+        s: {minProperties: 1},
+        t: {maxProperties: 15}
+    },
+    required: ["_id", "a", "b", "f", "g", "k", "l", "p", "q"]
 };
-createDocValidationTest("Insert.DocValidation.JSONSchema.Variety", doc, validator);
+createDocValidationTest("Insert.DocValidation.Variety", doc, validator, jsonSchema);
 
 /**
  * Tests a JSON Schema that enforces constraints on an array containing thirty items.
@@ -247,48 +250,47 @@ doc = {
         [1600, "Pennsylvania Avenue"],
     ]
 };
-validator = {
-    $jsonSchema: {
-        properties: {
-            a: {
-                type: ["array"],
-                uniqueItems: true,
-                minItems: 10,
-                maxItems: 30,
-                items: [
-                    {enum: ["Lorem ipsum dolor sit amet, consectetur adipiscing elit"]},
-                    {type: "string"},
-                    {type: ["string"]},
-                    {type: "string"},
-                    {minLength: 5},
-                    {maxLength: 90},
-                    {pattern: "[a-zA-Z .,]+"},
-                    {type: "object"},
-                    {minProperties: 1},
-                    {maxProperties: 3},
-                    {properties: {b: {type: "number"}}},
-                    {patternProperties: {c: {type: "number"}}},
-                    {required: ["b", "c"]},
-                    {properties: {b: {}, c: {}}, additionalProperties: false},
-                    {type: "number"},
-                    {type: ["number"]},
-                    {bsonType: "number"},
-                    {bsonType: ["int", "long", "number"]},
-                    {minimum: 0},
-                    {maximum: 10},
-                    {multipleOf: 2}
-                ],
-                additionalItems: {
-                    type: "array",
-                    oneOf: [
-                        {items: [{type: "number"}, {type: "string"}]},
-                        {items: [{type: "string"}, {type: "number"}]},
-                        {items: [{type: "string"}, {type: "string"}]}
-                    ]
-                }
+validator = undefined;
+jsonSchema = {
+    properties: {
+        a: {
+            type: ["array"],
+            uniqueItems: true,
+            minItems: 10,
+            maxItems: 30,
+            items: [
+                {enum: ["Lorem ipsum dolor sit amet, consectetur adipiscing elit"]},
+                {type: "string"},
+                {type: ["string"]},
+                {type: "string"},
+                {minLength: 5},
+                {maxLength: 90},
+                {pattern: "[a-zA-Z .,]+"},
+                {type: "object"},
+                {minProperties: 1},
+                {maxProperties: 3},
+                {properties: {b: {type: "number"}}},
+                {patternProperties: {c: {type: "number"}}},
+                {required: ["b", "c"]},
+                {properties: {b: {}, c: {}}, additionalProperties: false},
+                {type: "number"},
+                {type: ["number"]},
+                {bsonType: "number"},
+                {bsonType: ["int", "long", "number"]},
+                {minimum: 0},
+                {maximum: 10},
+                {multipleOf: 2}
+            ],
+            additionalItems: {
+                type: "array",
+                oneOf: [
+                    {items: [{type: "number"}, {type: "string"}]},
+                    {items: [{type: "string"}, {type: "number"}]},
+                    {items: [{type: "string"}, {type: "string"}]}
+                ]
             }
-        },
-        required: ["a"]
-    }
+        }
+    },
+    required: ["a"]
 };
-createDocValidationTest("Insert.DocValidation.JSONSchema.Array", doc, validator);
+createDocValidationTest("Insert.DocValidation.Array", doc, validator, jsonSchema);
