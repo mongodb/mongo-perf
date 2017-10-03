@@ -66,133 +66,140 @@ function createDocValidationTest(name, generator, update, validator, jsonSchema)
 }
 
 /**
+ * Helper function which, given an integer 'n', produces a function that generates documents. The
+ * function takes a single input '_id', and generates a document of the form
+ *
+ *  {
+ *      _id: _id,
+ *      k1: 0,
+ *      k2: 0
+ *      ...
+ *  }
+ *
+ * for 'n' fields "k1" through "kn".
+ */
+function generateDocumentGeneratorWithDoubleFields(n) {
+    var obj = {};
+    for (var i = 1; i <= n; ++i) {
+        obj["k" + i] = 0;
+    }
+
+    return function(i) {
+        return Object.extend({_id: i}, obj);
+    };
+}
+
+/**
+ * Helper function which, given an integer 'n', generates a document of the form
+ *
+ *  {
+ *      $inc: {
+ *          k1: 1,
+ *          k2: 1,
+ *          ...
+ *      }
+ *  }
+ *
+ * for 'n' fields "k1" through "kn".
+ */
+function generateUpdateIncrementDoubleFields(n) {
+    var increments = {};
+    for (var i = 1; i <= n; ++i) {
+        increments["k" + i] = 1;
+    }
+    return {$inc: increments};
+}
+
+/**
+ * Helper function which, given an integer 'n', generates a document of the form
+ *
+ *  {
+ *      $and: [
+ *          {k1: {$exists: true}}, {k1: {$type: 1}},
+ *          {k2: {$exists: true}}, {k2: {$type: 1}},
+ *          ...
+ *      ]
+ *  }
+ *
+ * for 'n' fields "k1" through "kn".
+ */
+function generateValidatorWithDoubleFields(n) {
+    var clauses = [];
+    for (var i = 1; i <= n; ++i) {
+        var fieldname = "k" + i;
+        clauses.push({[fieldname]: {$exists: true}});
+        clauses.push({[fieldname]: {$type: 1}});
+    }
+    return {$and: clauses};
+}
+
+/**
+ * Helper function which, given an integer 'n', generates a document of the form
+ *
+ *  {
+ *      properties: {
+ *          k1: {bsonType: "double"},
+ *          k2: {bsonType: "double"},
+ *          ...
+ *      },
+ *      required: [
+ *          "k1",
+ *          "k2",
+ *          ...
+ *      ]
+ *  }
+ *
+ * for 'n' fields "k1" through "kn".
+ */
+function generateJSONSchemaWithDoubleFields(n) {
+    var properties = {};
+    var required = [];
+    for (var i = 1; i <= n; ++i) {
+        var fieldname = "k" + i;
+        properties[fieldname] = {bsonType: "double"};
+        required.push(fieldname);
+    }
+    return {properties: properties, required: required};
+}
+
+/**
  * Tests updating documents with a field which must exist and be a double. This targets the use of
  * $type and $exists on a single field. Also generates a comparison JSON Schema test.
  */
-var generator = function(i) {
-    return {_id: i, a: 0};
-};
-var update = {$inc: {a: 1}};
-var validator = {$and: [{a: {$exists: true}}, {a: {$type: 1}}]};
-var jsonSchema = {properties: {a: {bsonType: "double"}}, required: ["a"]};
+var generator = generateDocumentGeneratorWithDoubleFields(1);
+var update = generateUpdateIncrementDoubleFields(1);
+var validator = generateValidatorWithDoubleFields(1);
+var jsonSchema = generateJSONSchemaWithDoubleFields(1);
 createDocValidationTest("Update.DocValidation.OneNum", generator, update, validator, jsonSchema);
 
 /**
- * Like the "OneNum" test, but validates that ten fields exist and are integers.
+ * Like the "OneNum" test, but validates that ten fields exist and are doubles.
  */
-generator = function(i) {
-    return {_id: i, a: 0, b: 0, c: 0, d: 0, e: 0, f: 0, g: 0, h: 0, i: 0, j: 0};
-};
-update = {
-    $inc: {a: 1, b: 1, c: 1, d: 1, e: 1, f: 1, g: 1, h: 1, i: 1, j: 1}
-};
-validator = {
-    $and: [
-        {a: {$exists: true}}, {a: {$type: 1}}, {b: {$exists: true}}, {b: {$type: 1}},
-        {c: {$exists: true}}, {c: {$type: 1}}, {d: {$exists: true}}, {d: {$type: 1}},
-        {e: {$exists: true}}, {e: {$type: 1}}, {f: {$exists: true}}, {f: {$type: 1}},
-        {g: {$exists: true}}, {g: {$type: 1}}, {h: {$exists: true}}, {h: {$type: 1}},
-        {i: {$exists: true}}, {i: {$type: 1}}, {j: {$exists: true}}, {j: {$type: 1}},
-    ]
-};
+generator = generateDocumentGeneratorWithDoubleFields(10);
+update = generateUpdateIncrementDoubleFields(10);
+validator = generateValidatorWithDoubleFields(10);
 createDocValidationTest("Update.DocValidation.TenNum", generator, update, validator);
 
 /**
- * Like the "OneNum" test, but validates that twenty fields exist and are integers. Also generates a
+ * Like the "OneNum" test, but validates that twenty fields exist and are doubles. Also generates a
  * comparison JSON Schema test.
  */
-generator = function(i) {
-    return {
-        _id: i,
-        a: 0,
-        b: 0,
-        c: 0,
-        d: 0,
-        e: 0,
-        f: 0,
-        g: 0,
-        h: 0,
-        i: 0,
-        j: 0,
-        k: 0,
-        l: 0,
-        m: 0,
-        n: 0,
-        o: 0,
-        p: 0,
-        q: 0,
-        r: 0,
-        s: 0,
-        t: 0
-    };
-};
-update = {
-    $inc: {
-        a: 1,
-        b: 1,
-        c: 1,
-        d: 1,
-        e: 1,
-        f: 1,
-        g: 1,
-        h: 1,
-        i: 1,
-        j: 1,
-        k: 1,
-        l: 1,
-        m: 1,
-        n: 1,
-        o: 1,
-        p: 1,
-        q: 1,
-        r: 1,
-        s: 1,
-        t: 1
-    }
-};
-validator = {
-    $and: [
-        {a: {$exists: true}}, {a: {$type: 1}}, {b: {$exists: true}}, {b: {$type: 1}},
-        {c: {$exists: true}}, {c: {$type: 1}}, {d: {$exists: true}}, {d: {$type: 1}},
-        {e: {$exists: true}}, {e: {$type: 1}}, {f: {$exists: true}}, {f: {$type: 1}},
-        {g: {$exists: true}}, {g: {$type: 1}}, {h: {$exists: true}}, {h: {$type: 1}},
-        {i: {$exists: true}}, {i: {$type: 1}}, {j: {$exists: true}}, {j: {$type: 1}},
-        {k: {$exists: true}}, {k: {$type: 1}}, {l: {$exists: true}}, {l: {$type: 1}},
-        {m: {$exists: true}}, {m: {$type: 1}}, {n: {$exists: true}}, {n: {$type: 1}},
-        {o: {$exists: true}}, {o: {$type: 1}}, {p: {$exists: true}}, {p: {$type: 1}},
-        {q: {$exists: true}}, {q: {$type: 1}}, {r: {$exists: true}}, {r: {$type: 1}},
-        {s: {$exists: true}}, {s: {$type: 1}}, {t: {$exists: true}}, {t: {$type: 1}},
-    ]
-};
-jsonSchema = {
-    properties: {
-        a: {bsonType: "double"},
-        b: {bsonType: "double"},
-        c: {bsonType: "double"},
-        d: {bsonType: "double"},
-        e: {bsonType: "double"},
-        f: {bsonType: "double"},
-        g: {bsonType: "double"},
-        h: {bsonType: "double"},
-        i: {bsonType: "double"},
-        j: {bsonType: "double"},
-        k: {bsonType: "double"},
-        l: {bsonType: "double"},
-        m: {bsonType: "double"},
-        n: {bsonType: "double"},
-        o: {bsonType: "double"},
-        p: {bsonType: "double"},
-        q: {bsonType: "double"},
-        r: {bsonType: "double"},
-        s: {bsonType: "double"},
-        t: {bsonType: "double"},
-    },
-    required: [
-        "a", "b", "c", "d", "e", "f", "g", "h", "i", "j",
-        "k", "l", "m", "n", "o", "p", "q", "r", "s", "t"
-    ]
-};
+generator = generateDocumentGeneratorWithDoubleFields(20);
+update = generateUpdateIncrementDoubleFields(20);
+validator = generateValidatorWithDoubleFields(20);
+jsonSchema = generateJSONSchemaWithDoubleFields(20);
 createDocValidationTest("Update.DocValidation.TwentyNum", generator, update, validator, jsonSchema);
+
+/**
+ * Like the "OneNum" test, but validates that 150 fields exist and are doubles. Also generates a
+ * comparison JSON Schema test.
+ */
+generator = generateDocumentGeneratorWithDoubleFields(150);
+update = generateUpdateIncrementDoubleFields(150);
+validator = generateValidatorWithDoubleFields(150);
+jsonSchema = generateJSONSchemaWithDoubleFields(150);
+createDocValidationTest(
+    "Update.DocValidation.OneFiftyNum", generator, update, validator, jsonSchema);
 
 /**
  * Tests updates in the face of a JSON Schema validator that enforces a variety of constraints on
@@ -342,3 +349,97 @@ jsonSchema = {
     required: ["a"]
 };
 createDocValidationTest("Update.DocValidation.Array", generator, update, validator, jsonSchema);
+
+/**
+ * Helper function for generating nested documents. Not for public consumption; use
+ * 'generateNestedDocumentGeneratorWithDepth()' instead.
+ */
+function generateNestedDocumentOfDepth(n) {
+    if (n == 0) {
+        return {sku: "123", price: 3.14, country: "fr", stock: 1000, name: "widget"};
+    }
+
+    return {["k" + n]: generateNestedDocumentOfDepth(n - 1)};
+}
+
+/**
+ * Helper function which, given an integer 'n', returns a function that generates documents. The
+ * function takes a single argument, '_id', and generates documents of the form
+ *
+ *  {
+ *      _id: _id,
+ *      kn: {
+ *          k(n-1): {
+ *              ...
+ *          }
+ *      }
+ *  }
+ *
+ * that is 'n' levels deep, with field names "kn" through "k1". The deepest level is augmented with
+ * some arbitrary string fields "sku", "country" and "name", and numeric fields "price" and "stock".
+ */
+function generateNestedDocumentGeneratorWithDepth(n) {
+    return function(i) {
+        return Object.extend({_id: i}, generateNestedDocumentOfDepth(n));
+    };
+}
+
+/**
+ * Helper function which, given an integer 'n', generates a nested JSON Schema
+ *
+ *  {
+ *      properties: {
+ *          kn: {
+ *              type: "object",
+ *              properties: {
+ *                  k(n-1): {
+ *                      type: "object",
+ *                      properties: {
+ *                          ...
+ *                      }
+ *                  }
+ *              }
+ *          }
+ *      }
+ *  }
+ *
+ * that is 'n' levels deep, with property names "kn" through "k1". The deepest level adds
+ * constraints on the fields "sku", "country", "name", "price" and "stock".
+ *
+ * Due to the recursive nature of this function and limitations of the mongo shell, do not exceed a
+ * depth of 150 levels of nesting.
+ */
+function generateNestedJSONSchemaOfDepth(n) {
+    if (n == 0) {
+        return {
+            properties: {
+                sku: {type: "string"},
+                price: {type: "number", minimum: 0, maximum: 10.0},
+                country: {enum: ["fr", "es"]},
+                stock: {type: "number", minimum: 0, multipleOf: 1},
+                name: {type: "string"}
+            }
+        };
+    }
+
+    var fieldname = "k" + n;
+    var schema = {properties: {[fieldname]: {type: "object"}}};
+    Object.extend(schema["properties"][fieldname], generateNestedJSONSchemaOfDepth(n - 1));
+    return schema;
+}
+
+/**
+ * Tests a JSON Schema that enforces constraints on a document nested thirty levels deep.
+ */
+generator = generateNestedDocumentGeneratorWithDepth(30);
+update = {
+    $inc: {
+        "k30.k29.k28.k27.k26.k25.k24.k23.k22.k21.k20.k19.k18.k17.k16.k15.k14.k13.k12.k11.k10.k9.k8.k7.k6.k5.k4.k3.k2.k1.price":
+            1,
+        "k30.k29.k28.k27.k26.k25.k24.k23.k22.k21.k20.k19.k18.k17.k16.k15.k14.k13.k12.k11.k10.k9.k8.k7.k6.k5.k4.k3.k2.k1.stock":
+            1,
+    }
+};
+validator = undefined;
+jsonSchema = generateNestedJSONSchemaOfDepth(30);
+createDocValidationTest("Update.DocValidation.Nested", generator, update, validator, jsonSchema);

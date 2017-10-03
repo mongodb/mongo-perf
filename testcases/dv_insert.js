@@ -53,109 +53,109 @@ function createDocValidationTest(name, doc, validator, jsonSchema) {
 }
 
 /**
+ * Helper function which, given an integer 'n', generates a document of the form
+ *
+ *  {
+ *      k1: {"#RAND_INT": [0, 10000]},
+ *      k2: {"#RAND_INT": [0, 10000]},
+ *      ...
+ *  }
+ *
+ * for 'n' fields "k1" through "kn".
+ */
+function generateDocumentWithIntegerFields(n) {
+    var obj = {};
+    for (var i = 1; i <= n; ++i) {
+        obj["k" + i] = {"#RAND_INT": [0, 10000]};
+    }
+    return obj;
+}
+
+/**
+ * Helper function which, given an integer 'n', generates a document of the form
+ *
+ *  {
+ *      $and: [
+ *          {k1: {$exists: true}}, {k1: {$type: 16}},
+ *          {k2: {$exists: true}}, {k2: {$type: 16}},
+ *          ...
+ *      ]
+ *  }
+ *
+ * for 'n' fields "k1" through "kn".
+ */
+function generateValidatorWithIntegerFields(n) {
+    var clauses = [];
+    for (var i = 1; i <= n; ++i) {
+        var fieldname = "k" + i;
+        clauses.push({[fieldname]: {$exists: true}});
+        clauses.push({[fieldname]: {$type: 16}});
+    }
+    return {$and: clauses};
+}
+
+/**
+ * Helper function which, given an integer 'n', generates a document of the form
+ *
+ *  {
+ *      properties: {
+ *          k1: {bsonType: "int"},
+ *          k2: {bsonType: "int"},
+ *          ...
+ *      },
+ *      required: [
+ *          "k1",
+ *          "k2",
+ *          ...
+ *      ]
+ *  }
+ *
+ * for 'n' fields "k1" through "kn".
+ */
+function generateJSONSchemaWithIntegerFields(n) {
+    var properties = {};
+    var required = [];
+    for (var i = 1; i <= n; ++i) {
+        var fieldname = "k" + i;
+        properties[fieldname] = {bsonType: "int"};
+        required.push(fieldname);
+    }
+    return {properties: properties, required: required};
+}
+
+/**
  * Tests inserting documents with a field which must exist and be an integer. This targets the use
  * of $type and $exists on a single field. Also generates a comparison JSON Schema test.
  */
-var doc = {a: {"#RAND_INT": [0, 10000]}};
-var validator = {$and: [{a: {$exists: true}}, {a: {$type: 16}}]};
-var jsonSchema = {properties: {a: {bsonType: "integer"}}, required: ["a"]};
+var doc = generateDocumentWithIntegerFields(1);
+var validator = generateValidatorWithIntegerFields(1);
+var jsonSchema = generateJSONSchemaWithIntegerFields(1);
 createDocValidationTest("Insert.DocValidation.OneInt", doc, validator, jsonSchema);
 
 /**
  * Like the "OneInt" test, but validates that ten fields exist and are integers.
  */
-doc = {
-    a: {"#RAND_INT": [0, 10000]},
-    b: {"#RAND_INT": [0, 10000]},
-    c: {"#RAND_INT": [0, 10000]},
-    d: {"#RAND_INT": [0, 10000]},
-    e: {"#RAND_INT": [0, 10000]},
-    f: {"#RAND_INT": [0, 10000]},
-    g: {"#RAND_INT": [0, 10000]},
-    h: {"#RAND_INT": [0, 10000]},
-    i: {"#RAND_INT": [0, 10000]},
-    j: {"#RAND_INT": [0, 10000]}
-};
-validator = {
-    $and: [
-        {a: {$exists: true}}, {a: {$type: 16}}, {b: {$exists: true}}, {b: {$type: 16}},
-        {c: {$exists: true}}, {c: {$type: 16}}, {d: {$exists: true}}, {d: {$type: 16}},
-        {e: {$exists: true}}, {e: {$type: 16}}, {f: {$exists: true}}, {f: {$type: 16}},
-        {g: {$exists: true}}, {g: {$type: 16}}, {h: {$exists: true}}, {h: {$type: 16}},
-        {i: {$exists: true}}, {i: {$type: 16}}, {j: {$exists: true}}, {j: {$type: 16}},
-    ]
-};
+doc = generateDocumentWithIntegerFields(10);
+validator = generateValidatorWithIntegerFields(10);
 createDocValidationTest("Insert.DocValidation.TenInt", doc, validator);
 
 /**
  * Like the "OneInt" test, but validates that twenty fields exist and are integers. Also generates a
  * comparison JSON Schema test.
-*/
-doc = {
-    a: {"#RAND_INT": [0, 10000]},
-    b: {"#RAND_INT": [0, 10000]},
-    c: {"#RAND_INT": [0, 10000]},
-    d: {"#RAND_INT": [0, 10000]},
-    e: {"#RAND_INT": [0, 10000]},
-    f: {"#RAND_INT": [0, 10000]},
-    g: {"#RAND_INT": [0, 10000]},
-    h: {"#RAND_INT": [0, 10000]},
-    i: {"#RAND_INT": [0, 10000]},
-    j: {"#RAND_INT": [0, 10000]},
-    k: {"#RAND_INT": [0, 10000]},
-    l: {"#RAND_INT": [0, 10000]},
-    m: {"#RAND_INT": [0, 10000]},
-    n: {"#RAND_INT": [0, 10000]},
-    o: {"#RAND_INT": [0, 10000]},
-    p: {"#RAND_INT": [0, 10000]},
-    q: {"#RAND_INT": [0, 10000]},
-    r: {"#RAND_INT": [0, 10000]},
-    s: {"#RAND_INT": [0, 10000]},
-    t: {"#RAND_INT": [0, 10000]}
-};
-validator = {
-    $and: [
-        {a: {$exists: true}}, {a: {$type: 16}}, {b: {$exists: true}}, {b: {$type: 16}},
-        {c: {$exists: true}}, {c: {$type: 16}}, {d: {$exists: true}}, {d: {$type: 16}},
-        {e: {$exists: true}}, {e: {$type: 16}}, {f: {$exists: true}}, {f: {$type: 16}},
-        {g: {$exists: true}}, {g: {$type: 16}}, {h: {$exists: true}}, {h: {$type: 16}},
-        {i: {$exists: true}}, {i: {$type: 16}}, {j: {$exists: true}}, {j: {$type: 16}},
-        {k: {$exists: true}}, {k: {$type: 16}}, {l: {$exists: true}}, {l: {$type: 16}},
-        {m: {$exists: true}}, {m: {$type: 16}}, {n: {$exists: true}}, {n: {$type: 16}},
-        {o: {$exists: true}}, {o: {$type: 16}}, {p: {$exists: true}}, {p: {$type: 16}},
-        {q: {$exists: true}}, {q: {$type: 16}}, {r: {$exists: true}}, {r: {$type: 16}},
-        {s: {$exists: true}}, {s: {$type: 16}}, {t: {$exists: true}}, {t: {$type: 16}},
-    ]
-};
-jsonSchema = {
-    properties: {
-        a: {bsonType: "int"},
-        b: {bsonType: "int"},
-        c: {bsonType: "int"},
-        d: {bsonType: "int"},
-        e: {bsonType: "int"},
-        f: {bsonType: "int"},
-        g: {bsonType: "int"},
-        h: {bsonType: "int"},
-        i: {bsonType: "int"},
-        j: {bsonType: "int"},
-        k: {bsonType: "int"},
-        l: {bsonType: "int"},
-        m: {bsonType: "int"},
-        n: {bsonType: "int"},
-        o: {bsonType: "int"},
-        p: {bsonType: "int"},
-        q: {bsonType: "int"},
-        r: {bsonType: "int"},
-        s: {bsonType: "int"},
-        t: {bsonType: "int"},
-    },
-    required: [
-        "a", "b", "c", "d", "e", "f", "g", "h", "i", "j",
-        "k", "l", "m", "n", "o", "p", "q", "r", "s", "t"
-    ]
-};
+ */
+doc = generateDocumentWithIntegerFields(20);
+validator = generateValidatorWithIntegerFields(20);
+jsonSchema = generateJSONSchemaWithIntegerFields(20);
 createDocValidationTest("Insert.DocValidation.TwentyInt", doc, validator, jsonSchema);
+
+/**
+ * Like the "OneInt" test, but validates that 150 fields exist and are integers. Also generates a
+ * comparison JSON Schema test.
+ */
+doc = generateDocumentWithIntegerFields(150);
+validator = generateValidatorWithIntegerFields(150);
+jsonSchema = generateJSONSchemaWithIntegerFields(150);
+createDocValidationTest("Insert.DocValidation.OneFiftyInt", doc, validator, jsonSchema);
 
 /**
  * Tests a JSON Schema that enforces a variety of constraints on twenty fields (not including the
@@ -294,3 +294,77 @@ jsonSchema = {
     required: ["a"]
 };
 createDocValidationTest("Insert.DocValidation.Array", doc, validator, jsonSchema);
+
+/**
+ * Helper function which, given an integer 'n', generates a nested object
+ *
+ *  {
+ *      kn: {
+ *          k(n-1): {
+ *              ...
+ *          }
+ *      }
+ *  }
+ *
+ * that is 'n' levels deep, with field names "kn" through "k1". The deepest level is augmented with
+ * some arbitrary string fields "sku", "country" and "name", and numeric fields "price" and "stock".
+ */
+function generateNestedDocumentOfDepth(n) {
+    if (n == 0) {
+        return {sku: "123", price: 3.14, country: "fr", stock: 1000, name: "widget"};
+    }
+
+    return {["k" + n]: generateNestedDocumentOfDepth(n - 1)};
+}
+
+/**
+ * Helper function which, given an integer 'n', generates a nested JSON Schema
+ *
+ *  {
+ *      properties: {
+ *          kn: {
+ *              type: "object",
+ *              properties: {
+ *                  k(n-1): {
+ *                      type: "object",
+ *                      properties: {
+ *                          ...
+ *                      }
+ *                  }
+ *              }
+ *          }
+ *      }
+ *  }
+ *
+ * that is 'n' levels deep, with property names "kn" through "k1". The deepest level adds
+ * constraints on the fields "sku", "country", "name", "price" and "stock".
+ *
+ * Due to the recursive nature of this function and limitations of the mongo shell, do not exceed a
+ * depth of 150 levels of nesting.
+ */
+function generateNestedJSONSchemaOfDepth(n) {
+    if (n == 0) {
+        return {
+            properties: {
+                sku: {type: "string"},
+                price: {type: "number", minimum: 0, maximum: 10.0},
+                country: {enum: ["fr", "es"]},
+                stock: {type: "number", minimum: 0, multipleOf: 1},
+                name: {type: "string"}
+            }
+        };
+    }
+
+    var fieldname = "k" + n;
+    var schema = {properties: {[fieldname]: {type: "object"}}};
+    Object.extend(schema["properties"][fieldname], generateNestedJSONSchemaOfDepth(n - 1));
+    return schema;
+}
+
+/**
+ * Tests a JSON Schema that enforces constraints on a document nested thirty levels deep.
+ */
+doc = generateNestedDocumentOfDepth(30);
+validator = undefined;
+jsonSchema = generateNestedJSONSchemaOfDepth(30);
+createDocValidationTest("Insert.DocValidation.Nested", doc, validator, jsonSchema);
