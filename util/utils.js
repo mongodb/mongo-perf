@@ -65,14 +65,37 @@ function checkForDroppedCollections(database){
     // collection name.
     var pendingDropRegex = new RegExp("system\.drop\..*\.");
     collections = database.runCommand("listCollections", {includePendingDrops: true}).cursor.firstBatch;
-    collection = collections.find(c => pendingDropRegex.test(c.name));
+    collection = collections.find(function(c){pendingDropRegex.test(c.name)});
     return collection;
+}
+
+/*
+ * Cast a string number to an integer, and throw an exception if it fails.
+ */
+function toInt(string_number){
+    var number = parseInt(string_number);
+    if (isNaN(number)) {
+        throw "parseInt returned NaN";
+    }
+    return number;
 }
 
 function checkForDroppedCollectionsTestDBs(db, multidb){
     // Check for any collections in 'drop-pending' state in any test
     // database. The test databases have name testN, where N is 0 to
     // multidb - 1;
+
+    // The checks only matter for versions 3.5 and later.
+    // The shell has some issues with the checks before 3.2
+    var serverVersion = db.version().split(".");
+    var clientVersion = version().split(".");
+
+    if ( toInt(serverVersion[0]) < 3 || (toInt(serverVersion[0]) == 3 && toInt(serverVersion[1]) < 5 )) {
+        return;
+    }
+    if ( toInt(clientVersion[0]) < 3 || (toInt(clientVersion[0]) == 3 && toInt(clientVersion[1]) < 2 )) {
+        return;
+    }
     for (var i = 0; i < multidb; i++) {
         var sibling_db = db.getSiblingDB('test' + i);
         var retries = 0;
