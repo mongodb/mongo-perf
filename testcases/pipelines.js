@@ -467,7 +467,7 @@ generateTestCase({
             }
         }
     ],
-    tags: ["lookup"]
+    tags: ["lookup", ">=3.5"]
 });
 
 /**
@@ -495,7 +495,7 @@ generateTestCase({
             }
         }
     ],
-    tags: ["lookup"]
+    tags: ["lookup", ">=3.5"]
 });
 
 /**
@@ -518,7 +518,7 @@ generateTestCase({
             }
         }
     ],
-    tags: ["lookup"]
+    tags: ["lookup", ">=3.5"]
 });
 
 /**
@@ -546,7 +546,7 @@ generateTestCase({
             }
         }
     ],
-    tags: ["lookup"]
+    tags: ["lookup", ">=3.5"]
 });
 
 /**
@@ -569,7 +569,7 @@ generateTestCase({
             }
         }
     ],
-    tags: ["lookup"]
+    tags: ["lookup", ">=3.5"]
 });
 
 /**
@@ -597,7 +597,7 @@ generateTestCase({
             }
         }
     ],
-    tags: ["lookup"]
+    tags: ["lookup", ">=3.5"]
 });
 
 /**
@@ -620,7 +620,7 @@ generateTestCase({
             }
         }
     ],
-    tags: ["lookup"]
+    tags: ["lookup", ">=3.5"]
 });
 
 /**
@@ -644,7 +644,7 @@ generateTestCase({
             }
         }
     ],
-    tags: ["lookup"]
+    tags: ["lookup", ">=3.5"]
 });
 
 /**
@@ -679,7 +679,7 @@ generateTestCase({
             }
         }
     ],
-    tags: ["lookup"]
+    tags: ["lookup", ">=3.5"]
 });
 
 /**
@@ -715,7 +715,7 @@ generateTestCase({
             }
         }
     ],
-    tags: ["lookup"]
+    tags: ["lookup", ">=3.5"]
 });
 
 /**
@@ -736,7 +736,7 @@ generateTestCase({
             }
         }
     ],
-    tags: ["lookup"]
+    tags: ["lookup", ">=3.5"]
 });
 
 generateTestCase({

@@ -41,7 +41,7 @@ function createDocValidationTest(name, doc, validator, jsonSchema) {
     if (jsonSchema !== undefined) {
         tests.push({
             name: name + ".JSONSchema",
-            tags: ["regression", "jsonschema"].concat(baseTags),
+            tags: ["regression", "jsonschema", ">=3.5"].concat(baseTags),
             pre: function(collection) {
                 collection.drop();
                 assert.commandWorked(
