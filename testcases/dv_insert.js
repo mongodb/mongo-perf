@@ -88,8 +88,12 @@ function generateValidatorWithIntegerFields(n) {
     var clauses = [];
     for (var i = 1; i <= n; ++i) {
         var fieldname = "k" + i;
-        clauses.push({[fieldname]: {$exists: true}});
-        clauses.push({[fieldname]: {$type: 16}});
+        var clause1 = {};
+        clause1[fieldname] = {$exists: true};
+        clauses.push(clause1);
+        var clause2 = {};
+        clause2[fieldname] = {$type: 16};
+        clauses.push(clause2);
     }
     return {$and: clauses};
 }
@@ -313,8 +317,9 @@ function generateNestedDocumentOfDepth(n) {
     if (n == 0) {
         return {sku: "123", price: 3.14, country: "fr", stock: 1000, name: "widget"};
     }
-
-    return {["k" + n]: generateNestedDocumentOfDepth(n - 1)};
+    var document = {};
+    document["k" + n] =  generateNestedDocumentOfDepth(n - 1);
+    return document;
 }
 
 /**
@@ -356,7 +361,9 @@ function generateNestedJSONSchemaOfDepth(n) {
     }
 
     var fieldname = "k" + n;
-    var schema = {properties: {[fieldname]: {type: "object"}}};
+    var embedded_object = {};
+    embedded_object[fieldname] = {type: "object"};
+    var schema = {properties: embedded_object};
     Object.extend(schema["properties"][fieldname], generateNestedJSONSchemaOfDepth(n - 1));
     return schema;
 }
