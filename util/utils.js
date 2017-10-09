@@ -317,6 +317,33 @@ function doCompareExclude(test, compareTo) {
     return true;
 }
 
+/*
+ * Check to see if this test should run against current version of the server. Tests may be
+ * annotated with a MINVERSION-N.M tag, to indicate that the test should only be run if the server
+ * version is greated than N.M. Note the tag can have 1 to 3 elements to the version string. If it
+ * only has 1 element, the comparison will stop after the major version comparison.
+*/
+function doVersionExclude(test) {
+    var tags = test.tags;
+    for (var i = 0; i < tags.length; i++) {
+        var tag = tags[i];
+        if (tag.indexOf(">=") == 0)
+        {
+            // Check the tagtags
+            var serverVersion = db.version().split(".");
+            var minVersion = tag.split("=")[1].split(".");
+            for (var j = 0; j < minVersion.length; j++) {
+                if (toInt(serverVersion[j]) < toInt(minVersion[j])) {
+                    print("Skipping test ", test.name, " because server does not meet minimum");
+                    print("server version ", tag);
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
 function doExecute(test, includeFilter, excludeFilter) {
 
     var include = false;
@@ -359,6 +386,10 @@ function doExecute(test, includeFilter, excludeFilter) {
                 }
             }
         }
+    }
+    // Can this test run against this version of the shell?
+    if (doVersionExclude(test)) {
+        return false;
     }
     return true;
 }

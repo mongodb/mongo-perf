@@ -16,6 +16,13 @@ var getStringOfLength = function() {
     };
 }();
 
+var kDefaultDocumentSourceLookupCacheSize = 100 * 1024 * 1024;
+var setDocumentSourceLookupCacheSize = function(sizeInBytes) {
+    assert.commandWorked(
+            db.adminCommand({setParameter: 1,
+                             internalDocumentSourceLookupCacheSizeBytes: sizeInBytes}));
+}
+
 /**
  * Generates a generic document to use in aggregation pipelines that don't care what the data looks
  * like. These documents are at least 12 KB in size.
@@ -296,9 +303,9 @@ generateTestCase({
 });
 
 /**
- * Data population function used by the 'Lookup' and 'LookupViaGraphLookup' tests.
+ * Data population functions used by the 'Lookup' and 'LookupViaGraphLookup' tests.
  */
-function basicLookupPopulator(isView) {
+function basicLookupPopulatorImpl(isView, localDocGen, foreignDocGen, nDocs, disableCache) {
     return function(collectionOrView) {
         var db = collectionOrView.getDB();
         var lookupCollName = collectionOrView.getName() + "_lookup";
@@ -318,18 +325,106 @@ function basicLookupPopulator(isView) {
         } else {
             sourceCollection = collectionOrView;
         }
-        var nDocs = 100;
 
         var sourceBulk = sourceCollection.initializeUnorderedBulkOp();
         var lookupBulk = lookupCollection.initializeUnorderedBulkOp();
         for (var i = 0; i < nDocs; i++) {
-            sourceBulk.insert({_id: i, foreignKey: i});
-            lookupBulk.insert({_id: i});
+            sourceBulk.insert(localDocGen(i));
+            lookupBulk.insert(foreignDocGen(i));
         }
         sourceBulk.execute();
         lookupBulk.execute();
+
+        var cacheSize = kDefaultDocumentSourceLookupCacheSize;
+        if (disableCache) {
+            cacheSize = 0;
+        }
+
+        setDocumentSourceLookupCacheSize(cacheSize);
     };
 }
+
+/**
+ * Creates a basic $lookup data set, allowing for join across simple fields.
+ */
+function basicLookupPopulator(isView) {
+    function localDocGen(val) {
+        return {_id: val, foreignKey: val};
+    }
+
+    function foreignDocGen(val) {
+        return {_id: val};
+    }
+
+    var nDocs = 100;
+    var disableCache = false;
+    return basicLookupPopulatorImpl(isView, localDocGen, foreignDocGen, nDocs, disableCache);
+}
+
+/**
+ * Creates a $lookup data set with the local collection containing array of values which can be
+ * joined with simple foreign collections values.
+ */
+function basicArrayLookupPopulator(isView) {
+    function localDocGen(val) {
+        return {_id: val, foreignKey: [val-1,val,val+1]};
+    }
+
+    function foreignDocGen(val) {
+        return {_id: val};
+    }
+
+    var nDocs = 100;
+    var disableCache = false;
+    return basicLookupPopulatorImpl(isView, localDocGen, foreignDocGen, nDocs, disableCache);
+}
+
+/**
+ * Creates a $lookup data set with the local collection documents containing an array of objects
+ * which can be joined with a foreign collection object.
+ */
+function basicArrayOfObjectLookupPopulator(isView) {
+    function localDocGen(val) {
+        return {_id: val, foreignKey: [{x: val-1}, {x: val}, {x: val+1}]};
+    }
+
+    function foreignDocGen(val) {
+        return {_id: {x: val}};
+    }
+
+    var nDocs = 50;
+    var disableCache = false;
+    return basicLookupPopulatorImpl(isView, localDocGen, foreignDocGen, nDocs, disableCache);
+}
+
+/**
+ * Creates a minimal $lookup data set for uncorrelated (and uncorrelated prefix) join via $lookup.
+ */
+function basicUncorrelatedPipelineLookupPopulator(isView, disableCache) {
+    function localDocGen(val) {
+        return {_id: val};
+    }
+
+    function foreignDocGen(val) {
+        return {_id: val};
+    }
+
+    var nDocs = 50;
+    if (disableCache === undefined) {
+        disableCache = false;
+    }
+    return basicLookupPopulatorImpl(isView, localDocGen, foreignDocGen, nDocs, disableCache);
+}
+
+/**
+ * Same as 'basicUncorrelatedPipelineLookupPopulator' but disables $lookup caching for uncorrelated
+ * pipeline prefix.
+ */
+function basicUncorrelatedPipelineLookupPopulatorDisableCache(isView) {
+    var disableCache = true;
+    return basicUncorrelatedPipelineLookupPopulator(isView, disableCache);
+}
+
 
 /**
  * Data cleanup function used by the 'Lookup', 'LookupViaGraphLookup' and 'LookupOrders' tests.
@@ -344,7 +439,17 @@ function basicLookupCleanup(sourceCollection) {
     backingCollection.drop();
 }
 
-// Basic $lookup test. $lookup tests need two collections, so they use their own setup code.
+/**
+ * Same as 'basicLookupCleanup' but reenables $lookup caching for uncorrelated pipeline prefix.
+ */
+function basicLookupCleanupEnableCache(sourceCollection) {
+    setDocumentSourceLookupCacheSize(kDefaultDocumentSourceLookupCacheSize);
+    basicLookupCleanup(sourceCollection);
+}
+
+/**
+ * Basic $lookup test. $lookup tests need two collections, so they use their own setup code.
+ */
 generateTestCase({
     name: "Lookup",
     // The setup function is only given one collection, but $lookup needs two. We'll treat the given
@@ -362,10 +467,260 @@ generateTestCase({
             }
         }
     ],
-    tags: ["lookup"]
+    tags: ["lookup", ">=3.5"]
 });
 
-// Mimics the basic 'Lookup' test using $graphLookup for comparison.
+/**
+ * Same as the 'Lookup' test but written with let/pipeline syntax.
+ */
+generateTestCase({
+    name: "Lookup.Pipeline",
+    pre: basicLookupPopulator,
+    post: basicLookupCleanup,
+    pipeline: [
+        {
+            $lookup: {
+                from: "#B_COLL_lookup",
+                let: {
+                    foreignKey: "$foreignKey",
+                },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {$eq: ["$$foreignKey", "$_id"]}
+                        }
+                    },
+                ],
+                as: "match"
+            }
+        }
+    ],
+    tags: ["lookup", ">=3.5"]
+});
+
+/**
+ * $lookup with a 'localField' being an array of numeric values.
+ */
+generateTestCase({
+    name: "Lookup.LocalArray",
+    // The setup function is only given one collection, but $lookup needs two. We'll treat the given
+    // one as the source collection, and create a second one with the name of the first plus
+    // '_lookup', which we'll use to look up from.
+    pre: basicArrayLookupPopulator,
+    post: basicLookupCleanup,
+    pipeline: [
+        {
+            $lookup: {
+                from: "#B_COLL_lookup",
+                localField: "foreignKey",
+                foreignField: "_id",
+                as: "match"
+            }
+        }
+    ],
+    tags: ["lookup", ">=3.5"]
+});
+
+/**
+ * Same as the 'LookupWithLocalArray' test but written with let/pipeline syntax.
+ */
+generateTestCase({
+    name: "Lookup.LocalArray.Pipeline",
+    pre: basicArrayLookupPopulator,
+    post: basicLookupCleanup,
+    pipeline: [
+        {
+            $lookup: {
+                from: "#B_COLL_lookup",
+                let: {
+                    foreignKey: "$foreignKey",
+                },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {$in: ["$_id", "$$foreignKey"]}
+                        }
+                    },
+                ],
+                as: "match"
+            }
+        }
+    ],
+    tags: ["lookup", ">=3.5"]
+});
+
+/**
+ * $lookup with a 'localField' being an array of objects.
+ */
+generateTestCase({
+    name: "Lookup.LocalArrayOfObject",
+    // The setup function is only given one collection, but $lookup needs two. We'll treat the given
+    // one as the source collection, and create a second one with the name of the first plus
+    // '_lookup', which we'll use to look up from.
+    pre: basicArrayOfObjectLookupPopulator,
+    post: basicLookupCleanup,
+    pipeline: [
+        {
+            $lookup: {
+                from: "#B_COLL_lookup",
+                localField: "foreignKey.x",
+                foreignField: "_id.x",
+                as: "match"
+            }
+        }
+    ],
+    tags: ["lookup", ">=3.5"]
+});
+
+/**
+ * Same as the 'LookupWithLocalArrayOfObject' test but written with let/pipeline syntax.
+ */
+generateTestCase({
+    name: "Lookup.LocalArrayOfObject.Pipeline",
+    pre: basicArrayOfObjectLookupPopulator,
+    post: basicLookupCleanup,
+    pipeline: [
+        {
+            $lookup: {
+                from: "#B_COLL_lookup",
+                let: {
+                    foreignKey: "$foreignKey.x",
+                },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {$in: ["$_id.x", "$$foreignKey"]}
+                        }
+                    },
+                ],
+                as: "match"
+            }
+        }
+    ],
+    tags: ["lookup", ">=3.5"]
+});
+
+/**
+ * $lookup with an uncorrelated join on foreign collection.
+ */
+generateTestCase({
+    name: "Lookup.UncorrelatedJoin",
+    pre: basicUncorrelatedPipelineLookupPopulator,
+    post: basicLookupCleanup,
+    pipeline: [
+        {
+            $lookup: {
+                from: "#B_COLL_lookup",
+                pipeline: [
+                    {
+                        $match: {}
+                    },
+                ],
+                as: "match"
+            }
+        }
+    ],
+    tags: ["lookup", ">=3.5"]
+});
+
+/**
+ * Same as 'Lookup.UncorrelatedJoin' but disables caching of uncorrelated pipeline prefix for the
+ * duration of the test.
+ */
+generateTestCase({
+    name: "Lookup.UncorrelatedJoin.NoCache",
+    pre: basicUncorrelatedPipelineLookupPopulatorDisableCache,
+    post: basicLookupCleanupEnableCache,
+    pipeline: [
+        {
+            $lookup: {
+                from: "#B_COLL_lookup",
+                pipeline: [
+                    {
+                        $match: {}
+                    },
+                ],
+                as: "match"
+            }
+        }
+    ],
+    tags: ["lookup", ">=3.5"]
+});
+
+/**
+ * $lookup where the prefix of the foreign collection join is uncorrelated.
+ */
+generateTestCase({
+    name: "Lookup.UncorrelatedPrefixJoin",
+    pre: basicUncorrelatedPipelineLookupPopulator,
+    post: basicLookupCleanup,
+    pipeline: [
+        {
+            $lookup: {
+                from: "#B_COLL_lookup",
+                let: {
+                    foreignKey: "$_id",
+                },
+                pipeline: [
+                    {
+                        $addFields: {
+                            newField: { $mod: ["$_id", 5] }
+                        }
+                    },
+                    {
+                        $match: {
+                            $expr: {
+                                $eq: ["$newField", {$mod: ["$$foreignKey", 5] }]
+                            }
+                        }
+                    }
+                ],
+                as: "match"
+            }
+        }
+    ],
+    tags: ["lookup", ">=3.5"]
+});
+
+/**
+ * Same as 'Lookup.UncorrelatedPrefixJoin' but disables caching of uncorrelated pipeline prefix for
+ * the duration of the test.
+ */
+generateTestCase({
+    name: "Lookup.UncorrelatedPrefixJoin.NoCache",
+    pre: basicUncorrelatedPipelineLookupPopulatorDisableCache,
+    post: basicLookupCleanupEnableCache,
+    pipeline: [
+        {
+            $lookup: {
+                from: "#B_COLL_lookup",
+                let: {
+                    foreignKey: "$_id",
+                },
+                pipeline: [
+                    {
+                        $addFields: {
+                            newField: { $mod: ["$_id", 5] }
+                        }
+                    },
+                    {
+                        $match: {
+                            $expr: {
+                                $eq: ["$newField", {$mod: ["$$foreignKey", 5] }]
+                            }
+                        }
+                    }
+                ],
+                as: "match"
+            }
+        }
+    ],
+    tags: ["lookup", ">=3.5"]
+});
+
+/**
+ * Mimics the basic 'Lookup' test using $graphLookup for comparison.
+ */
 generateTestCase({
     name: "LookupViaGraphLookup",
     pre: basicLookupPopulator,
@@ -381,7 +736,7 @@ generateTestCase({
             }
         }
     ],
-    tags: ["lookup"]
+    tags: ["lookup", ">=3.5"]
 });
 
 generateTestCase({
