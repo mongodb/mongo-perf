@@ -44,7 +44,7 @@ function generatePhrase(pos, term) {
         // Adding a stop word for every 3 fake words; can be modified to 
         // increase or lower the frequency 
         if ( i%3==1) {
-            buf = buf.concat("the")
+            buf = buf.concat("the");
                 }
         else {
             var p = (pos + i*wordDistance) % (dictSize - wordLength);
@@ -94,13 +94,13 @@ function oplistSingleWord(caseSensitive) {
                 op: "find", 
                 query: {
                     $text: {$search: phrase, 
-                            $caseSensitive: caseSensitive }}})
+                            $caseSensitive: caseSensitive }}});
         }
         else { // don't include the $caseSensitive part of the query if it's the default value (false)
             oplist.push({
                 op: "find", 
                 query: {
-                    $text: {$search: phrase}}})
+                    $text: {$search: phrase}}});
         }
     }
     return oplist;
