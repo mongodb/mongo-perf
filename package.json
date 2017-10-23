@@ -1,0 +1,23 @@
+{
+  "name": "mongo-perf",
+  "version": "1.0.0",
+  "description": "Mongo-perf (not to be confused with mongoperf) is a micro benchmarking tool for the MongoDB server. It measures throughput of commands with regards to the number of threads.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mongodb/mongo-perf.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mongodb/mongo-perf/issues"
+  },
+  "homepage": "https://github.com/mongodb/mongo-perf#readme",
+  "devDependencies": {
+    "eslint": "^4.9.0"
+  }
+}
