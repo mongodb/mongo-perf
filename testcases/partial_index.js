@@ -15,7 +15,7 @@ var setupTest = function (collection) {
     collection.insert(docs);
     collection.getDB().getLastError();
  
-}
+};
 
 /*
  * Create a collection with documents with identical integer fields x
@@ -24,7 +24,7 @@ var setupTest = function (collection) {
 var setupTestFiltered = function (collection) {
     setupTest(collection);
     collection.createIndex( { x : 1 }, { partialFilterExpression : { a : { $lt : 500 } } } );
-}
+};
 
 /*
  * Create a collection with documents with identical integer fields x
@@ -34,7 +34,7 @@ var setupTestFiltered = function (collection) {
 var setupTestFilteredNonSelective = function (collection) {
     setupTest(collection);
     collection.createIndex( { x : 1 }, { partialFilterExpression : { a : { $lt : 4800 } } } );
-}
+};
 
 /*
  * Create a collection with documents with identical integer fields x
@@ -43,7 +43,7 @@ var setupTestFilteredNonSelective = function (collection) {
 var setupTestIndexed = function (collection) {
     setupTest(collection);
     collection.createIndex( { x : 1 });
-}
+};
 
 /* 
  * Setup: Create collection with documents with integer

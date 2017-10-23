@@ -4,7 +4,7 @@ if ( typeof(tests) != "object" ) {
 
 var setupTest = function (collection) {
     collection.drop();
-}
+};
 
 /*
  * Create a selective partial index for tests
@@ -12,7 +12,7 @@ var setupTest = function (collection) {
 var setupTestFiltered = function (collection) {
     setupTest(collection);
     collection.createIndex( { x : 1 }, { partialFilterExpression : { a : { $lt : 500 } } } );
-}
+};
 
 /*
  * Setup: Create a partial index for a < 500 

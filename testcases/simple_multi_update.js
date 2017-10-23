@@ -10,7 +10,7 @@ var setupTestUncontendedSingleDoc = function( collection ) {
     }
     collection.insert(docs);
     collection.getDB().getLastError();
-}
+};
 
 var testUncontendedSingleDoc = [
    { op:  "update",
@@ -18,7 +18,7 @@ var testUncontendedSingleDoc = [
      query: { _id : { "#RAND_INT_PLUS_THREAD" : [ 0, 100 ] } },
      update: { $inc : { x : 1 } }
    },
-]
+];
 
 /*
 * Setup: Populate collection with unique integer _id and an integer field X=0
@@ -157,7 +157,7 @@ var setupTestContendedMedium = function( collection ) {
     }
     collection.insert(docs);
     collection.getDB().getLastError();                               
-}
+};
 
 var testContendedMedium = [ 
    { op:  "update",
@@ -165,7 +165,7 @@ var testContendedMedium = [
      query: { _id : { $gt: {"#RAND_INT": [0,2600]}, $lt: {"#RAND_INT": [2200,4800]} } },
      update: { $inc : { x : 1 } }
    }, 
-]
+];
 
 /*
 * Setup: Populate collection with unique integer _id and an integer field X=0
@@ -206,7 +206,7 @@ var setupTestContendedHot = function( collection ) {
     }
     collection.insert(docs);
     collection.getDB().getLastError();                               
-}
+};
 
 var testContendedHot = [ 
    { op:  "update",
@@ -214,7 +214,7 @@ var testContendedHot = [
      query: { _id : { $gt: 1590, $lt: 1610 } },
      update: { $inc : { x : 1 } }
    }, 
-]
+];
 
 
 /*
@@ -256,7 +256,7 @@ var setupTestContendedSeqDoc = function( collection ) {
    }
     collection.insert(docs);
     collection.getDB().getLastError();                               
-}
+};
 
 var testContendedSeqDoc = [ 
    { op:  "update",
@@ -264,7 +264,7 @@ var testContendedSeqDoc = [
      query: { _id : 1600 },
      update: { $inc : { x : 1 } }
    }, 
-]
+];
 
 /*
 * Setup: Populate collection with unique integer _id and an integer field X=0
@@ -302,7 +302,7 @@ var setupTestContendedRndDoc = function( collection ) {
     }
     collection.insert(docs);
     collection.getDB().getLastError();                               
-}
+};
 
 var testContendedRndDoc = [ 
    { op:  "update",
@@ -310,7 +310,7 @@ var testContendedRndDoc = [
      query: { _id : 4800 },
      update: { $set : { x: {"#RAND_INT": [0,4800]} } }
    }, 
-]
+];
 
 /*
 * Setup: Populate collection with unique integer _id and an integer field X=0
