@@ -1,0 +1,6 @@
+{
+  "name": "mongo-perf",
+  "devDependencies": {
+    "eslint": "^4.9.0"
+  }
+}

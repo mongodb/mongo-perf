@@ -78,9 +78,9 @@ tests.push( { name: "Insert.JustID",
 // variables for vector insert test
 // 100 documents per insert
 var batchSize = 100;
-var docs = []
+var docs = [];
 for (var i = 0; i < batchSize; i++) {
-    docs.push( {x: 1} )
+    docs.push( {x: 1} );
 }
 
 /*
@@ -112,9 +112,9 @@ function makeDocument(docSize) {
 }
 
 doc = makeDocument(docSize);
-var docs = []
+var docs = [];
 for (var i = 0; i < batchSize; i++) {
-    docs.push(doc)
+    docs.push(doc);
 }
 
 

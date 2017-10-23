@@ -16,7 +16,7 @@ function generateDocs(nDocs, generator) {
           docs.push(generator());
         }
         collection.insert(docs, {'ordered': false});
-    }
+    };
  }
 
 /**

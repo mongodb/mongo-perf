@@ -17,7 +17,7 @@ var insertData = function(collection, threads) {
       bulk.insert( { _id: i, a: i, b: i, c: "foo", d: i } );
     }
     bulk.execute();
-}
+};
 
 /*
  * Setup: Create collection with documents of shape {_id: i, a: i, b: i, c: "foo", d: i}.
