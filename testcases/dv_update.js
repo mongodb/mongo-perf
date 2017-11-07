@@ -420,7 +420,7 @@ function generateNestedJSONSchemaOfDepth(n) {
         return {
             properties: {
                 sku: {type: "string"},
-                price: {type: "number", minimum: 0, maximum: 10.0},
+                price: {type: "number", minimum: 0},
                 country: {enum: ["fr", "es"]},
                 stock: {type: "number", minimum: 0, multipleOf: 1},
                 name: {type: "string"}
