@@ -442,6 +442,9 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilt
         testResults['basicFields'] = basicFields;
     }
 
+    // Save storage engine information
+    testResults['storageEngine'] = db.runCommand("serverStatus").storageEngine.name;
+
     print("@@@START@@@");
     testResults['start'] = new Date();
 
