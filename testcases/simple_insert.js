@@ -260,3 +260,76 @@ tests.push( { name: "Insert.LargeDocVector",
                     doc: docs }
               ] } );
 
+/*
+ * Setup: Create an empty collection and a unique index on a field.
+ * Test: Insert documents into collection using sequential int for the indexed
+ *            field.
+ * Notes: Let mongod create missing _id field
+ *
+ */
+tests.push( { name: "Insert.UniqueIndex",
+              tags: ['insert','uniqueidx', 'regression'],
+              pre: function( collection ) {
+	          var testDB = collection.getDB();
+                  var collName = collection.getName();
+                  collection.drop();
+		  testDB.createCollection( collName );
+                  collection.ensureIndex( { a: 1 }, { unique: true } );
+              },
+              ops: [
+                  { op:  "insert",
+                    doc:
+                        { a: { "#SEQ_INT":
+                            { seq_id: 0, start: 0, step: 1, unique: true } } } }
+              ] } );
+
+/*
+ * Setup: Create an empty collection and a unique compound index on two fields.
+ * Test: Insert documents into collection using sequential int for the indexed
+ *            fields.
+ * Notes: Let mongod create missing _id field
+ *
+ */
+tests.push( { name: "Insert.UniqueIndexCompound",
+              tags: ['insert','uniqueidx','regression'],
+              pre: function( collection ) {
+	          var testDB = collection.getDB();
+                  var collName = collection.getName();
+                  collection.drop();
+		  testDB.createCollection( collName );
+                  collection.ensureIndex( { a: 1, b: 1 }, { unique: true } );
+              },
+              ops: [
+                  { op:  "insert",
+                    doc:
+                        { a: { "#SEQ_INT":
+                            { seq_id: 0, start: 0, step: 1, unique: true } },
+                        b: { "#SEQ_INT":
+                            { seq_id: 0, start: 0, step: 1, unique: true } } } }
+              ] } );
+
+/*
+ * Setup: Create an empty collection and a unique compound index on two fields,
+ *            with different ordering for both the fields.
+ * Test: Insert documents into collection using sequential int for the indexed
+ *            fields.
+ * Notes: Let mongod create missing _id field
+ *
+ */
+tests.push( { name: "Insert.UniqueIndexCompoundReverse",
+              tags: ['insert','uniqueidx','regression'],
+              pre: function( collection ) {
+	          var testDB = collection.getDB();
+                  var collName = collection.getName();
+                  collection.drop();
+		  testDB.createCollection( collName );
+                  collection.ensureIndex( { a: 1, b: -1 }, { unique: true } );
+              },
+              ops: [
+                  { op:  "insert",
+                    doc:
+                        { a: { "#SEQ_INT":
+                            { seq_id: 0, start: 0, step: 1, unique: true } },
+                        b: { "#SEQ_INT":
+                            { seq_id: 0, start: 0, step: 1, unique: true } } } }
+              ] } );

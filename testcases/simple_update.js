@@ -407,3 +407,52 @@ tests.push( { name: "Update.MatchedElementWithinArray",
                     }}
                   },
               ] } );
+
+/**
+ * Setup: Populate a collection with an integer field X set to 0 and an
+ *        incrementing integer field A. Create a unique index on A.
+ * Test:  Each thread works in a range of 100 documents; randomly selects a
+ *        document using field A and increments X.
+ */
+tests.push( { name: "Update.UniqueIndex",
+              tags: ['update','uniqueidx','regression'],
+              pre: function( collection ) {
+                  collection.drop();
+                  var docs = [];
+                  for ( var i = 0; i < 4800; i++ ) {
+                      docs.push( { a : i, x : 0 } );
+                  }
+                  collection.insert(docs);
+                  collection.getDB().getLastError();
+                  collection.ensureIndex( { a: 1 }, { unique: true } );
+              },
+              ops: [
+                  { op:  "update",
+                    query: { a : { "#RAND_INT_PLUS_THREAD" : [ 0, 100 ] } },
+                    update: { $inc : { x : 1 } } },
+              ] } );
+
+/**
+ * Setup: Populate a collection with an integer field X set to 0 and two
+ *        incrementing integer fields A, B. Create a unique compound index on
+ *        fields A and B, with reverse ordering for A than B.
+ * Test:  Each thread works in a range of 100 documents; randomly selects a
+ *        document using field A and increments X.
+ */
+tests.push( { name: "Update.UniqueIndexCompoundReverse",
+              tags: ['update','uniqueidx','regression'],
+              pre: function( collection ) {
+                  collection.drop();
+                  var docs = [];
+                  for ( var i = 0; i < 4800; i++ ) {
+                      docs.push( { a : i, b : i, x : 0 } );
+                  }
+                  collection.insert(docs);
+                  collection.getDB().getLastError();
+                  collection.ensureIndex( { a: -1, b: 1 }, { unique: true } );
+              },
+              ops: [
+                  { op:  "update",
+                    query: { a : { "#RAND_INT_PLUS_THREAD" : [ 0, 100 ] } },
+                    update: { $inc : { x : 1 } } },
+              ] } );
