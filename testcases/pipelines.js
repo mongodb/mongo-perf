@@ -1064,7 +1064,7 @@ generateTestCase({
 });
 
 generateTestCase({
-  name: "filterOptimized",
+  name: "arrayElemFilter",
   nDocs: 50,
   docGenerator: function endFilterDocGenerator(i) {
     var arr = [];
@@ -1091,12 +1091,12 @@ generateTestCase({
       }
     }
   ],
-  tags: ["filterOptimized"]
+  tags: ["arrayElemFilter"]
 });
 
 
 generateTestCase({
-  name: "sliceOptimized",
+  name: "sliceFilter",
   nDocs: 50,
   docGenerator: function endFilterDocGenerator(i) {
     var arr = [];
@@ -1124,7 +1124,7 @@ generateTestCase({
       }
     }
   ],
-  tags: ["sliceOptimized"]
+  tags: ["sliceFilter"]
 });
 
 generateTestCase({
