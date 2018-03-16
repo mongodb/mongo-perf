@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -eou pipefail
+
+root="$(dirname "$0")/.."
+pushd "$root" >/dev/null
+    root="$(pwd -P)"
+popd >/dev/null
+
+pushd "$root" >/dev/null
+    npm install
+    ./node_modules/.bin/eslint \
+        --config "$root/.eslintrc.yml" \
+        --fix \
+        ./testcases
+    eslint_out="$?"
+popd >/dev/null
+
+exit "$eslint_out"

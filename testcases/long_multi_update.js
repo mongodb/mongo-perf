@@ -8,7 +8,7 @@ var setupTestBigAllDocs = function( collection ) {
       collection.insert( { _id : i , x : 0 } );
    }
    collection.getDB().getLastError();  
-}
+};
 
 var testBigAllDocs = [
    { op:  "update",
@@ -16,7 +16,7 @@ var testBigAllDocs = [
      query: { },
      update: { $inc : { x : 1 } }
    },
-]
+];
 
 /*
  * Setup: Create a collection with 100k documents with integer _id,
@@ -52,7 +52,7 @@ var setupTestBigAllDocsMultiChange = function( collection ) {
       collection.insert( { _id : i , x : 0, y : "a" } );
    }
    collection.getDB().getLastError();  
-}
+};
 
 var testBigAllDocsMultiChange = [
    { op:  "update",
@@ -60,7 +60,7 @@ var testBigAllDocsMultiChange = [
      query: { },
      update: { $inc: { x : 1 }, $set: { y: "b" } }
    },
-]
+];
 
 /*
  * Setup: Create a collection with 100k documents with integer _id,
@@ -98,7 +98,7 @@ var setupTestContendedAllDocs = function( collection ) {
       collection.insert( { _id : i , x : 0 } );
    }
    collection.getDB().getLastError();
-}
+};
 
 var testContendedAllDocs = [
    { op:  "update",
@@ -106,7 +106,7 @@ var testContendedAllDocs = [
      query: { },
      update: { $inc : { x : 1 } }
    },
-]
+];
               
 /*
  * Setup: Create a collection with 3200 documents with integer _id,
@@ -116,7 +116,7 @@ var testContendedAllDocs = [
 tests.push( { name: "MultiUpdate.Contended.AllDocs.NoIndex",
               tags: ['update','slow'],
               pre: function( collection ) {
-                  setupTestContendedAllDocs( collection )
+                  setupTestContendedAllDocs( collection );
               },
               ops: testContendedAllDocs,
             } );   

@@ -21,7 +21,7 @@ var setDocumentSourceLookupCacheSize = function(sizeInBytes) {
     assert.commandWorked(
             db.adminCommand({setParameter: 1,
                              internalDocumentSourceLookupCacheSizeBytes: sizeInBytes}));
-}
+};
 
 /**
  * Generates a generic document to use in aggregation pipelines that don't care what the data looks

@@ -15,14 +15,14 @@ if ( typeof(tests) != "object" ) {
 //               wordLength long. By doing this, we can be sure that the 
 //               "phrase queries" can have an exact match.
 var language = "english"; 
-const dictSize = 2400;      // total doc count is 4800 to match other mongo-perf tests
-const wordLength = 5;
-const wordDistance = 100;
-const numTerm = 5;
+var dictSize = 2400;      // total doc count is 4800 to match other mongo-perf tests
+var wordLength = 5;
+var wordDistance = 100;
+var numTerm = 5;
 
 // number of queries to use in query tests; idea is to spread the hits 
 // across the tree
-const numQuery = 50;
+var numQuery = 50;
 
 // ============
 // Some Helper functions that are used to create the dictionary and phrases
@@ -44,7 +44,7 @@ function generatePhrase(pos, term) {
         // Adding a stop word for every 3 fake words; can be modified to 
         // increase or lower the frequency 
         if ( i%3==1) {
-            buf = buf.concat("the")
+            buf = buf.concat("the");
                 }
         else {
             var p = (pos + i*wordDistance) % (dictSize - wordLength);
@@ -94,13 +94,13 @@ function oplistSingleWord(caseSensitive) {
                 op: "find", 
                 query: {
                     $text: {$search: phrase, 
-                            $caseSensitive: caseSensitive }}})
+                            $caseSensitive: caseSensitive }}});
         }
         else { // don't include the $caseSensitive part of the query if it's the default value (false)
             oplist.push({
                 op: "find", 
                 query: {
-                    $text: {$search: phrase}}})
+                    $text: {$search: phrase}}});
         }
     }
     return oplist;
