@@ -1063,69 +1063,29 @@ generateTestCase({
     ],
 });
 
-generateTestCase({
-  name: "arrayElemFilter",
-  nDocs: 50,
-  docGenerator: function endFilterDocGenerator(i) {
-    var arr = [];
-    for (var ind = 0; ind < 1024; ind++) {
-      arr.push({ index: ind });
+function largeConstantArrayGenerator() {
+    var valArray = [];
+    for (var i = 0; i < 1000; i++) {
+        valArray.push(i);
     }
-    return { _id: i, name: i, string: arr };
-  },
-  pipeline: [
-    {
-      $project: {
-        singleElement: {
-          $arrayElemAt: [
-            {
-              $filter: {
-                input: "$string",
-                as: "id",
-                cond: { $gte: ["$$id.index", 50] }
-              }
-            },
-            1
-          ]
-        }
-      }
-    }
-  ],
-  tags: ["arrayElemFilter"]
-});
-
+    return valArray;
+}
 
 generateTestCase({
-  name: "sliceFilter",
-  nDocs: 50,
-  docGenerator: function endFilterDocGenerator(i) {
-    var arr = [];
-    for (var ind = 0; ind < 1024; ind++) {
-      arr.push({ index: ind });
-    }
-    return { _id: i, name: i, string: arr };
-  },
-  pipeline: [
-    {
-      $project: {
-        slicedArray: {
-          $slice: [
-            {
-              $filter: {
-                input: "$string",
-                as: "id",
-                cond: { $gte: ["$$id.index", 2] }
-              }
-            },
-            2,
-            20
-          ]
+    name: "indexOfArray",
+    nDocs: 30000,
+    docGenerator: function emptyDocGenerator(i) {
+      return { _id: i};
+    },
+    pipeline: [
+      {
+        $project: {
+            index: { $indexOfArray: [ largeConstantArrayGenerator(), 700] },
         }
       }
-    }
-  ],
-  tags: ["sliceFilter"]
-});
+    ],
+    tags: ["indexOfArray"]
+  }); 
 
 generateTestCase({
     name: "Redact",
