@@ -1063,7 +1063,69 @@ generateTestCase({
     ],
 });
 
-
+generateTestCase({
+    name: "filterOptimized",
+    nDocs: 50,
+    docGenerator: function endFilterDocGenerator(i) {
+      var arr = [];
+      for (var ind = 0; ind < 1024; ind++) {
+        arr.push({ index: ind });
+      }
+      return { _id: i, name: i, aa: arr };
+    },
+    pipeline: [
+      {
+        $project: {
+          singleElement: {
+            $arrayElemAt: [
+              {
+                $filter: {
+                  input: "$aa",
+                  as: "id",
+                  cond: { $gte: ["$$id.index", 4] }
+                }
+              },
+              7
+            ]
+          }
+        }
+      }
+    ],
+    tags: ["arrayElemAtOptimized"]
+  });
+  
+  
+  generateTestCase({
+    name: "sliceOptimized",
+    nDocs: 50,
+    docGenerator: function endSliceDocGenerator(i) {
+      var arr = [];
+      for (var ind = 0; ind < 1024; ind++) {
+        arr.push({ index: ind });
+      }
+      return { _id: i, aa: arr };
+    },
+    pipeline: [
+      {
+        $project: {
+          slicedArray: {
+            $slice: [
+              {
+                $filter: {
+                  input: "$aa",
+                  as: "id",
+                  cond: { $gte: ["$$id.index", 2] }
+                }
+              },
+              2,
+              20
+            ]
+          }
+        }
+      }
+    ],
+    tags: ["sliceOptimized"]
+  });
 generateTestCase({
     name: "Redact",
     docGenerator: function simpleRedactDocGenerator(i) {
