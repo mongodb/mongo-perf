@@ -1084,7 +1084,6 @@ generateTestCase({
         }
       }
     ],
-    tags: ["indexOfArray"]
   }); 
 
 generateTestCase({
