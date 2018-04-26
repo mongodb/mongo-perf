@@ -1064,14 +1064,14 @@ generateTestCase({
 });
 
 generateTestCase({
-    name: "filterOptimized",
+    name: "arrayElemAtOptimized",
     nDocs: 50,
     docGenerator: function endFilterDocGenerator(i) {
       var arr = [];
       for (var ind = 0; ind < 1024; ind++) {
         arr.push({ index: ind });
       }
-      return { _id: i, name: i, aa: arr };
+      return { _id: i, name: i, idArray: arr };
     },
     pipeline: [
       {
@@ -1080,7 +1080,7 @@ generateTestCase({
             $arrayElemAt: [
               {
                 $filter: {
-                  input: "$aa",
+                  input: "$idArray",
                   as: "id",
                   cond: { $gte: ["$$id.index", 4] }
                 }
@@ -1103,7 +1103,7 @@ generateTestCase({
       for (var ind = 0; ind < 1024; ind++) {
         arr.push({ index: ind });
       }
-      return { _id: i, aa: arr };
+      return { _id: i, idArray: arr };
     },
     pipeline: [
       {
@@ -1112,7 +1112,7 @@ generateTestCase({
             $slice: [
               {
                 $filter: {
-                  input: "$aa",
+                  input: "$idArray",
                   as: "id",
                   cond: { $gte: ["$$id.index", 2] }
                 }
@@ -1126,6 +1126,7 @@ generateTestCase({
     ],
     tags: ["sliceOptimized"]
   });
+  
 generateTestCase({
     name: "Redact",
     docGenerator: function simpleRedactDocGenerator(i) {
