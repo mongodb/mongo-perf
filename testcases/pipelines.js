@@ -1062,9 +1062,10 @@ generateTestCase({
         {$match: {a: 5}},
     ],
 });
-
+// Test the performace of $arrayElemAt when passed a $filter as its input array.
+// $arrayElemAt should optimize by setting a limit on $filter.
 generateTestCase({
-    name: "arrayElemAtOptimized",
+    name: "arrayElemAtSetsLimitOnFilter",
     nDocs: 50,
     docGenerator: function endFilterDocGenerator(i) {
       var arr = [];
@@ -1091,12 +1092,12 @@ generateTestCase({
         }
       }
     ],
-    tags: ["arrayElemAtOptimized"]
   });
   
-  
+// Test the performance of $slice when passed a $filter as its input array.
+// $slice optimize by setting a limit on $filter.
   generateTestCase({
-    name: "sliceOptimized",
+    name: "sliceSetsLimitOnFilter",
     nDocs: 50,
     docGenerator: function endSliceDocGenerator(i) {
       var arr = [];
@@ -1124,7 +1125,6 @@ generateTestCase({
         }
       }
     ],
-    tags: ["sliceOptimized"]
   });
   
 generateTestCase({
