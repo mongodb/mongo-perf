@@ -1078,6 +1078,9 @@ generateTestCase({
       {
         $project: {
           singleElement: {
+            // Since $arrayElemAt wants only the element at the seventh index,during the
+            // optimize stage $arrayElemAt should set a limit on $filter. $filter should only
+            // return an array of eight elements the eighth beening the element that is beening asked for.
             $arrayElemAt: [
               {
                 $filter: {
@@ -1110,6 +1113,9 @@ generateTestCase({
       {
         $project: {
           slicedArray: {
+            // Since $slice wants only the first 20 elements after the second index, during the optimize stage, $slice
+            // should set a limit on $filter. $filter should only return an array of the first 'position' + 'n' elements.
+            // In the example below $filter will return an array of 22 elements.
             $slice: [
               {
                 $filter: {
