@@ -1067,7 +1067,7 @@ generateTestCase({
 generateTestCase({
     name: "arrayElemAtSetsLimitOnFilter",
     nDocs: 50,
-    docGenerator: function endFilterDocGenerator(i) {
+    docGenerator: function ArrayElemAtDocGenerator(i) {
       var arr = [];
       for (var ind = 0; ind < 1024; ind++) {
         arr.push({ index: ind });
@@ -1095,11 +1095,11 @@ generateTestCase({
   });
   
 // Test the performance of $slice when passed a $filter as its input array.
-// $slice optimize by setting a limit on $filter.
+// $slice should optimize by setting a limit on $filter.
   generateTestCase({
     name: "sliceSetsLimitOnFilter",
     nDocs: 50,
-    docGenerator: function endSliceDocGenerator(i) {
+    docGenerator: function SliceDocGenerator(i) {
       var arr = [];
       for (var ind = 0; ind < 1024; ind++) {
         arr.push({ index: ind });
