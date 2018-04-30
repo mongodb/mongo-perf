@@ -1072,7 +1072,7 @@ generateTestCase({
       for (var ind = 0; ind < 1024; ind++) {
         arr.push({ index: ind });
       }
-      return { _id: i, name: i, idArray: arr };
+      return { _id: i, idArray: arr };
     },
     pipeline: [
       {
