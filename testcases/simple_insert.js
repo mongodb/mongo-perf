@@ -247,20 +247,6 @@ tests.push( { name: "InsertIndexedStringsNonSimpleCollation",
               ] } );
 
 /*
- * Setup:
- * Test: Insert a vector of large documents. Each document contains a long string
- * Notes: Generates the _id field on the client
- *        
- */
-tests.push( { name: "Insert.LargeDocVector",
-              tags: ['insert','regression'],
-              pre: function( collection ) { collection.drop(); },
-              ops: [
-                  { op:  "insert",
-                    doc: docs }
-              ] } );
-
-/*
  * Setup: Create an empty collection and a unique index on a field.
  * Test: Insert documents into collection using sequential int for the indexed
  *            field.
@@ -333,3 +319,22 @@ tests.push( { name: "Insert.UniqueIndexCompoundReverse",
                         b: { "#SEQ_INT":
                             { seq_id: 0, start: 0, step: 1, unique: true } } } }
               ] } );
+
+/*
+ * Setup:
+ * Test: Insert a vector of large documents. Each document contains a long string
+ * Notes: Generates the _id field on the client. This test should remain the last test in the file. 
+ *        
+ */
+tests.push( { name: "Insert.LargeDocVector",
+              tags: ['insert','regression'],
+              pre: function( collection ) { collection.drop(); },
+              ops: [
+                  { op:  "insert",
+                    doc: docs }
+              ] } );
+
+
+/*
+ * Note: Please do not add tests after Insert.LargeDocVector. Add new tests before it. 
+ */
