@@ -1070,9 +1070,10 @@ function largeConstantArrayGenerator() {
     }
     return valArray;
 }
-
+// Tests the performance of $indexOfArray when passed a constant array, the expression should
+// optimize the the array into a hashtable.
 generateTestCase({
-    name: "indexOfArray",
+    name: "IndexOfArrayWithConstantArray",
     nDocs: 30000,
     docGenerator: function emptyDocGenerator(i) {
       return { _id: i};
@@ -1080,7 +1081,7 @@ generateTestCase({
     pipeline: [
       {
         $project: {
-            index: { $indexOfArray: [ largeConstantArrayGenerator(), 700] },
+            index: { $indexOfArray: [ largeConstantArrayGenerator(), "$_id"] },
         }
       }
     ],
