@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from argparse import ArgumentParser, RawTextHelpFormatter
-from subprocess import Popen, PIPE, call
+from subprocess import Popen, PIPE, check_call
+from tempfile import NamedTemporaryFile
 import datetime
 import sys
 import json
@@ -106,17 +107,6 @@ def parse_arguments():
     return parser
 
 
-def load_file_in_shell(subproc, file, echo=True):
-    cmd = "load('%s')\n" % file
-    if echo:
-        print(cmd)
-    subproc.stdin.write(cmd)
-    line = subproc.stdout.readline().strip()
-    if line != "true":
-        raise MongoShellCommandError("unable to load file %s message was %s"
-                                     % (file, line))
-
-
 def main():
     parser = parse_arguments()
     args = parser.parse_args()
@@ -169,21 +159,19 @@ def main():
     else:
         auth = []
 
-    call([args.shellpath, "--norc",
+    check_call([args.shellpath, "--norc",
           "--host", args.hostname, "--port", args.port,
           "--eval", "print('db version: ' + db.version());"
           " db.serverBuildInfo().gitVersion;"] + auth)
     print("")
 
-    # Open a mongo shell subprocess and load necessary files.
-    mongo_proc = Popen([args.shellpath, "--norc", "--quiet",
-                       "--host", args.hostname, "--port", args.port] + auth, 
-                       stdin=PIPE, stdout=PIPE)
+    commands = []
 
     # load test files
-    load_file_in_shell(mongo_proc, 'util/utils.js')
-    for testfile in args.testfiles:
-        load_file_in_shell(mongo_proc, testfile)
+    for testfile in ['util/utils.js'] + args.testfiles:
+        if not os.path.exists(testfile):
+            raise MongoShellCommandError("test file %s doesn't exist" % testfile)
+        commands.append("load('%s');" % testfile)
 
     # put all crud options in a Map
     crud_options = {}
@@ -200,7 +188,7 @@ def main():
     if using_auth:
         authstr = ", '" + args.username + "', '" + args.password + "'"
 
-    cmdstr = ("mongoPerfRunTests(" +
+    commands.append("mongoPerfRunTests(" +
               str(args.threads) + ", " +
               str(args.multidb) + ", " +
               str(args.multicoll) + ", " +
@@ -209,39 +197,48 @@ def main():
               str(json.dumps(args.includeFilter)) + ", " +
               str(json.dumps(args.excludeFilter)) + ", " +
               str(args.shard) + ", " +
-              str(json.dumps(crud_options)) + ", " + 
+              str(json.dumps(crud_options)) + ", " +
               str(args.excludeTestbed) + ", " +
               str(args.printArgs) +
               authstr +
-              ");\n")
-    mongo_proc.stdin.write(cmdstr)
-    print cmdstr
-    mongo_proc.stdin.close()
+              ");")
 
-    # Read test output.
-    readout = False
-    getting_results = False
-    got_results = False
-    line_results = ""
-    for line in iter(mongo_proc.stdout.readline, ''):
-        line = line.strip()
-        if line == "@@@START@@@":
-            readout = True
-            getting_results = False
-        elif line == "@@@END@@@":
-            readout = False
-            getting_results = False
-        elif line == "@@@RESULTS_START@@@":
-            readout = False
-            getting_results = True
-        elif line == "@@@RESULTS_END@@@":
-            readout = False
-            got_results = True
-            getting_results = False
-        elif readout:
-            print line
-        elif not got_results and getting_results:
-            line_results += line
+    commands = '\n'.join(commands)
+    print commands
+
+    with NamedTemporaryFile(suffix='.js') as js_file:
+        js_file.write(commands)
+        js_file.flush()
+
+        # Open a mongo shell subprocess and load necessary files.
+        mongo_proc = Popen([args.shellpath, "--norc", "--quiet", js_file.name,
+                           "--host", args.hostname, "--port", args.port] + auth,
+                           stdout=PIPE)
+
+        # Read test output.
+        readout = False
+        getting_results = False
+        got_results = False
+        line_results = ""
+        for line in iter(mongo_proc.stdout.readline, ''):
+            line = line.strip()
+            if line == "@@@START@@@":
+                readout = True
+                getting_results = False
+            elif line == "@@@END@@@":
+                readout = False
+                getting_results = False
+            elif line == "@@@RESULTS_START@@@":
+                readout = False
+                getting_results = True
+            elif line == "@@@RESULTS_END@@@":
+                readout = False
+                got_results = True
+                getting_results = False
+            elif readout:
+                print line
+            elif not got_results and getting_results:
+                line_results += line
 
     print("Finished Testing.")
     results_parsed = json.loads(line_results)
@@ -256,7 +253,7 @@ if __name__ == '__main__':
     try:
         main()
     except Exception as e:
-        sys.stderr.write(str(e))
+        sys.stderr.write('Error: %s\n' % e)
         sys.exit(1)
     sys.exit(0)
 
