@@ -320,8 +320,8 @@ function doCompareExclude(test, compareTo) {
 /*
  * Check to see if this test should run against current version of the server. Tests may be
  * annotated with a MINVERSION-N.M tag, to indicate that the test should only be run if the server
- * version is greated than N.M. Note the tag can have 1 to 3 elements to the version string. If it
- * only has 1 element, the comparison will stop after the major version comparison.
+ * version is greated than or equal to N.M. Note the tag can have 1 to 3 elements to the version
+ * string. If it only has 1 element, the comparison will stop after the major version comparison.
 */
 function doVersionExclude(test) {
     var tags = test.tags;
@@ -338,6 +338,9 @@ function doVersionExclude(test) {
                     print("server version ", tag);
                     return true;
                 }
+                // Don't check minor version if major is above the threshold.
+                if (toInt(serverVersion[j]) > toInt(minVersion[j]))
+                    break;
             }
         }
     }
