@@ -230,7 +230,10 @@ generateTestCase({
                     boolFilter: true
                 }
             }
-        }
+        },
+        // For $geoNear, we limit the number of results to 100 documents, to match the default
+        // behavior the $geoNear stage prior to 4.2.
+        {$limit: 100},
     ]
 });
 
@@ -259,7 +262,10 @@ generateTestCase({
                 },
                 spherical: true
             }
-        }
+        },
+        // For $geoNear, we limit the number of results to 100 documents, to match the default
+        // behavior the $geoNear stage prior to 4.2.
+        {$limit: 100},
     ]
 });
 
