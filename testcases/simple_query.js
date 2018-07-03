@@ -2,6 +2,8 @@ if (typeof(tests) !== "object") {
     tests = [];
 }
 
+Random.setRandomSeed(258);
+
 /**
  * Sets up a collection and/or a view with the appropriate documents and indexes.
  *
@@ -422,33 +424,74 @@ addTestCase({
 });
 
 /**
- * Large array used for large $in queries in UnindexedLargeInMatching and
- * UnindexedLargeInNonMatching containing all even integers in the range [0, 2000).
+ * Large arrays used for $in queries in the subsequent test cases.
  */
-var largeArray = [];
-for (var i = 0; i < 1000; i++) {
-    largeArray.push(i * 2);
+var nLargeArrayElements = 1000;
+var largeArrayRandom = [];
+for (var i = 0; i < nLargeArrayElements; i++) {
+    largeArrayRandom.push(Random.randInt(nLargeArrayElements));
+}
+
+var largeArraySorted = [];
+for (var i = 0; i < nLargeArrayElements; i++) {
+    largeArraySorted.push(i * 2);
 }
 
 /**
  * Setup: Create a collection and insert a small number of documents with a random even integer
- * field x in the range [0, 2000).
+ * field x in the range [0, nLargeArrayElements * 2).
  *
  * Test: Issue queries that must perform a collection scan, filtering the documents with an $in
  * predicate with a large number of elements. All documents will match the predicate, since the $in
- * array contains all even integers in the range [0, 2000).
+ * array contains all even integers in the range [0, nLargeArrayElements * 2).
  */
-addTestCase({
+function addInTestCase({name, largeInArray}) {
+    addTestCase({
+        name: name,
+        tags: ["regression"],
+        nDocs: 10,
+        docs: function(i) {
+            return {x: 2 * Random.randInt(largeInArray.length)};
+        },
+        op: {
+            op: "find",
+            query: {x: {$in: largeInArray}}
+        }
+    });
+};
+
+addInTestCase({
     name: "UnindexedLargeInMatching",
-    tags: ["regression"],
-    nDocs: 10,
-    docs: function(i) {
-        return {x: 2 * Random.randInt(1000)};
-    },
-    op: {
-        op: "find",
-        query: {x: {$in: largeArray}}
-    }
+    largeInArray: largeArraySorted,
+});
+
+addInTestCase({
+    name: "UnindexedLargeInUnsortedMatching",
+    largeInArray: largeArrayRandom,
+});
+
+/**
+ * Repeat the same test as above, increasing the number of elements in the $in array to 10000.
+ */
+var nVeryLargeArrayElements = 10000;
+var veryLargeArrayRandom = [];
+for (var i = 0; i < nVeryLargeArrayElements; i++) {
+    veryLargeArrayRandom.push(Random.randInt(nVeryLargeArrayElements));
+}
+
+var veryLargeArraySorted = [];
+for (var i = 0; i < nVeryLargeArrayElements; i++) {
+    veryLargeArraySorted.push(i * 2);
+}
+
+addInTestCase({
+    name: "UnindexedVeryLargeInSortedMatching",
+    largeInArray: veryLargeArraySorted,
+});
+
+addInTestCase({
+    name: "UnindexedVeryLargeInUnsortedMatching",
+    largeInArray: veryLargeArrayRandom,
 });
 
 /**
@@ -468,7 +511,23 @@ addTestCase({
     },
     op: {
         op: "find",
-        query: {x: {$in: largeArray}}
+        query: {x: {$in: largeArraySorted}}
+    }
+});
+
+/**
+ * Repeat the same test as above, except using the $in array of unsorted elements.
+ */
+addTestCase({
+    name: "UnindexedLargeInUnsortedNonMatching",
+    tags: ["regression"],
+    nDocs: 10,
+    docs: function(i) {
+        return {x: 2 * Random.randInt(1000) + 1};
+    },
+    op: {
+        op: "find",
+        query: {x: {$in: largeArrayRandom}}
     }
 });
 
