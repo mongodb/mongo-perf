@@ -26,7 +26,7 @@ tests.push( { name: "Insert.Empty",
  *        Need at least 683 inserts to roll the capped collection.
  */
 tests.push( { name: "Insert.EmptyCapped",
-              tags: ['insert','regression'],
+              tags: ['insert','regression', 'capped'],
               pre: function( collection ) {
                   collection.drop();
                   collection.runCommand( "create", { capped : true,
@@ -45,7 +45,7 @@ tests.push( { name: "Insert.EmptyCapped",
  *            at least 2048 inserts to roll the capped collection.
  */
 tests.push( { name: "Insert.EmptyCapped.SeqIntID",
-              tags: ['insert','regression'],
+              tags: ['insert','regression', 'capped'],
               pre: function( collection ) {
                   collection.drop();
                   collection.runCommand( "create", { capped : true,

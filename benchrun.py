@@ -104,6 +104,11 @@ def parse_arguments():
     parser.add_argument('--printArgs', dest='printArgs', nargs='?', const='true',
                         choices=['true','false'], default='false',
                         help='Print the benchrun args before running the test.')
+    parser.add_argument('--generateMongoeBenchConfigFiles', dest='mongoebench_config_dir',
+                        help='Changes the behavior of this script to write JSON config files\n'
+                        'equivalent to the operations performed in the list of specified JS test\n'
+                        'files without actually running the test cases. A mongod process must\n'
+                        'still be running while the JSON config files are being generated.')
     return parser
 
 
@@ -184,6 +189,17 @@ def main():
     crud_options["writeCmdMode"] = args.writeCmd
     crud_options["readCmdMode"] = args.readCmd
 
+    mongoebench_options = {"traceOnly": False}
+    if args.mongoebench_config_dir is not None:
+        mongoebench_options["directory"] = os.path.abspath(args.mongoebench_config_dir)
+        mongoebench_options["traceOnly"] = True
+
+        try:
+            os.makedirs(args.mongoebench_config_dir)
+        except OSError:
+            # The directory already exists.
+            pass
+
     authstr = ""
     if using_auth:
         authstr = ", '" + args.username + "', '" + args.password + "'"
@@ -199,7 +215,8 @@ def main():
               str(args.shard) + ", " +
               str(json.dumps(crud_options)) + ", " +
               str(args.excludeTestbed) + ", " +
-              str(args.printArgs) +
+              str(args.printArgs) + ", " +
+              str(json.dumps(mongoebench_options)) +
               authstr +
               ");")
 

@@ -108,7 +108,143 @@ function checkForDroppedCollectionsTestDBs(db, multidb){
     }
 }
 
-function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOptions, printArgs, username, password) {
+/**
+ * A utility for capturing the arguments to the Mongo.prototype.runCommand() and benchRun()
+ * functions and writing them as a JSON config file that can later be run by the mongoebench binary.
+ *
+ * It expects to have its methods called in the following order:
+ *
+ *   beginPre() --> beginOps() --> beginPost() --> done()
+ *
+ * @param {string} testName - The name of the test case to run. The test case's name is
+ *                            automatically converted into the basename of the JSON config file.
+ *
+ * @param {Object} options
+ * @param {string} options.directory - The directory of where to save the JSON config file.
+ */
+function CommandTracer(testName, options) {
+    var State = {
+        init: "init",
+        runningPre: "running pre() function",
+        runningOps: "running benchRun ops",
+        runningPost: "running post() function",
+        done: "done",
+    };
+
+    var mongoRunCommandOriginal = Mongo.prototype.runCommand;
+    var benchRunOriginal = benchRun;
+
+    var pre = [];
+    var ops;
+    var post = [];
+    var state = State.init;
+
+    function assertState(expectedState) {
+        if (state !== expectedState) {
+            throw new Error("Expected state to be '" + expectedState + "' but was '" + state + "'");
+        }
+    }
+
+    this.beginPre = function beginPre() {
+        assertState(State.init);
+        state = State.runningPre;
+
+        // We skip sending the command to the server to speed up generating the JSON config files.
+        Mongo.prototype.runCommand = function runCommandSpy(dbName, commandObj, options) {
+            pre.push({op: "command", ns: dbName, command: commandObj});
+            return {ok: 1};
+        };
+    };
+
+    this.beginOps = function beginOps() {
+        assertState(State.runningPre);
+        state = State.runningOps;
+
+        Mongo.prototype.runCommand = mongoRunCommandOriginal;
+
+        // We skip running the workload to speed up generating the JSON config files.
+        benchRun = function benchRunSpy(benchArgs) {
+            ops = benchArgs.ops;
+            return {"totalOps/s": 0, errCount: NumberLong(0)};
+        }
+    };
+
+    this.beginPost = function beginPost() {
+        assertState(State.runningOps);
+        state = State.runningPost;
+
+        benchRun = benchRunOriginal;
+
+        // We skip sending the command to the server to speed up generating the JSON config files.
+        Mongo.prototype.runCommand = function runCommandSpy(dbName, commandObj, options) {
+            post.push({op: "command", ns: dbName, command: commandObj});
+            return {ok: 1};
+        };
+    };
+
+    this.done = function done() {
+        assertState(State.runningPost);
+        state = State.done;
+
+        Mongo.prototype.runCommand = mongoRunCommandOriginal;
+
+        // The contents of the post() function are really things we'd want to run before the test
+        // case. It's possible that we'll end up duplicating the cleanup by putting them before the
+        // contents of the pre() function.
+        pre = post.concat(pre);
+
+        // Some test cases cannot be written out as a JSON file because they insert very large
+        // documents that when combined together into an array of operations exceeds the maximum
+        // BSON document size limit.
+        var config;
+        try {
+            // We first try to use tojson() rather than tojsononeline() so the config file has the
+            // possibility of being more readable for humans. The 16MB document size limit applies
+            // to arguments of JavaScript functions implemented in C++ (because they are converted
+            // to BSON) so all the additional whitespace can unnecessarily put us over the limit.
+            //
+            // We also call Object.bsonsize() on the JavaScript object itself to see if we shouldn't
+            // spend any time serializing it to JSON because the resulting BSON document would be
+            // over the 16MB size limit.
+            Object.bsonsize({pre: pre, ops: ops});
+
+            try {
+                config = tojson({pre: pre, ops: ops});
+                Object.bsonsize({_: config});
+            } catch (e) {
+                config = tojsononeline({pre: pre, ops: ops});
+                Object.bsonsize({_: config});
+            }
+        } catch (e) {
+            print("Skipping " + testName + " because it results in a config file larger than 16MB" +
+                  " and therefore cannot be deserialized as a single BSON document: " + e.message);
+            return;
+        }
+
+        // We convert the test name from its upper camel case form to a snake case form by making a
+        // similar set of substitutions to what https://stackoverflow.com/a/1176023 describes.
+        var basename = testName.replace(/\./g, "_");
+        basename = basename.replace(/(.)([A-Z][a-z]+)/g, function(match, p1, p2) {
+            return p1 + "_" + p2;
+        });
+        basename = basename.replace(/([a-z0-9])([A-Z])/g, function (match, p1, p2) {
+            return p1 + "_" + p2;
+        });
+        basename = basename.replace(/_+/g, "_");
+        basename = basename.toLowerCase();
+
+        var directory = options.directory || "./mongoebench";
+        var filename = directory + "/" + basename + ".json";
+        var fileExisted = removeFile(filename);
+
+        var prefix = fileExisted ? "Regenerating" : "Generating";
+        print(prefix + " config file for " + testName + " as " + filename);
+
+        writeFile(filename, config);
+    }
+}
+
+function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOptions, printArgs, mongoeBenchOptions, username, password) {
 
     if (typeof crudOptions === "undefined") crudOptions = getDefaultCrudOptions();
     if (typeof shard === "undefined") shard = 0;
@@ -116,6 +252,16 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOption
     if (typeof printArgs === "undefined") printArgs = false;
 
     var collections = [];
+
+    var realTracer = new CommandTracer(test.name, mongoeBenchOptions);
+    var fakeTracer = {};
+    Object.keys(realTracer).forEach(function(methodName) {
+        // We copy all the properties defined on 'realTracer' as no-op functions.
+        fakeTracer[methodName] = Function.prototype;
+    });
+
+    var tracer = mongoeBenchOptions.traceOnly ? realTracer : fakeTracer;
+    tracer.beginPre();
 
     for (var i = 0; i < multidb; i++) {
         var sibling_db = db.getSiblingDB('test' + i);
@@ -198,6 +344,8 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOption
         }
     }
 
+    tracer.beginOps();
+
     // build a json document with arguments.
     // these will become a BSONObj when we pass
     // control to the built-in mongo shell function, benchRun()
@@ -241,6 +389,8 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOption
         error_string = "There were errors: " + result["errCount"];
     print("\t" + thread + "\t" + total + "\t" + error_string);
 
+    tracer.beginPost();
+
     if ("post" in test) {
         for (var i = 0; i < multidb; i++) {
             for (var j = 0; j < multicoll; j++) {
@@ -248,6 +398,8 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOption
             }
         }
     }
+
+    tracer.done();
 
     // drop all the collections created by this case
     for (var i = 0; i < multidb; i++) {
@@ -414,7 +566,7 @@ function doExecute(test, includeFilter, excludeFilter) {
  * @param excludeTestbed - Exclude testbed information from results
  * @returns {{}} the results of a run set of tests
  */
-function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, crudOptions, excludeTestbed, printArgs, username, password) {
+function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, crudOptions, excludeTestbed, printArgs, mongoeBenchOptions, username, password) {
 
     if (typeof shard === "undefined") shard = 0;
     if (typeof crudOptions === "undefined") crudOptions = getDefaultCrudOptions();
@@ -466,7 +618,7 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilt
                 var newResults = {};
                 for (var j = 0; j < trials; j++) {
                     try {
-                        results[j] = runTest(test, threadCount, multidb, multicoll, seconds, shard, crudOptions, printArgs, username, password);
+                        results[j] = runTest(test, threadCount, multidb, multicoll, seconds, shard, crudOptions, printArgs, mongoeBenchOptions, username, password);
                     }
                     catch(err) {
                         // Error handling to catch exceptions thrown in/by js for error
@@ -526,8 +678,8 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilt
  * @param excludeTestbed - Exclude testbed information from results
  * @returns {{}} the results of a run set of tests
  */
-function mongoPerfRunTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, crudOptions, excludeTestbed, printArgs, username, password) {
-    testResults = runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, crudOptions, excludeTestbed, printArgs, username, password);
+function mongoPerfRunTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, crudOptions, excludeTestbed, printArgs, mongoeBenchOptions, username, password) {
+    testResults = runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, crudOptions, excludeTestbed, printArgs, mongoeBenchOptions, username, password);
     print("@@@RESULTS_START@@@");
     print(JSON.stringify(testResults));
     print("@@@RESULTS_END@@@");
