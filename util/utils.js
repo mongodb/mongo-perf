@@ -198,21 +198,23 @@ function CommandTracer(testName, options) {
         // BSON document size limit.
         var config;
         try {
-            // We first try to use tojson() rather than tojsononeline() so the config file has the
-            // possibility of being more readable for humans. The 16MB document size limit applies
-            // to arguments of JavaScript functions implemented in C++ (because they are converted
-            // to BSON) so all the additional whitespace can unnecessarily put us over the limit.
+            // We first try to use prettyPrint=true so the config file has the possibility of being
+            // more readable for humans. The 16MB document size limit applies to arguments of
+            // JavaScript functions implemented in C++ (because they are converted to BSON) so all
+            // the additional whitespace can unnecessarily put us over the limit.
             //
             // We also call Object.bsonsize() on the JavaScript object itself to see if we shouldn't
             // spend any time serializing it to JSON because the resulting BSON document would be
             // over the 16MB size limit.
             Object.bsonsize({pre: pre, ops: ops});
 
+            var prettyPrint = true;
             try {
-                config = tojson({pre: pre, ops: ops});
+                config = tostrictjson({pre: pre, ops: ops}, prettyPrint);
                 Object.bsonsize({_: config});
             } catch (e) {
-                config = tojsononeline({pre: pre, ops: ops});
+                prettyPrint = false;
+                config = tostrictjson({pre: pre, ops: ops}, prettyPrint);
                 Object.bsonsize({_: config});
             }
         } catch (e) {
