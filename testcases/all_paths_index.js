@@ -7,25 +7,22 @@ if ((typeof tests === "undefined" ? "undefined" : typeof(tests)) != "object") {
 
 /*
  * Inserts value at the location specified by path (using dot notation) in object.
- * If there's a common non-object field name this function overrites the previous values.
+ * If there's a common non-object field name this function overwrites the previous values.
  */
 function setDottedFieldToValue(object, path, value) {
-    if (path != undefined) {
+    if (typeof path === "string") {
         var fields = path.split(".");
         if (fields.length == 1) {
             object[path] = value;
-            return object;
         } else {
             if (typeof(object[fields[0]]) !== "object") {
                 object[fields[0]] = {};
             }
             setDottedFieldToValue(
                 object[fields[0]], path.slice(fields[0].length + 1, path.length), value);
-            return object;
         }
-    } else {
-        return object;
     }
+    return object;
 }
 
 /**
@@ -47,19 +44,24 @@ function setDottedFieldToValue(object, path, value) {
 function addTest(options) {
     tests.push({
         name: options.type + ".AllPathsIndex." + options.name,
-        tags: ["all_paths", "regression", "indexed"].concat(options.tags),
+        tags: ["all_paths", "indexed"].concat(options.tags),
         pre: options.pre,
         ops: options.ops
     });
 }
 
-/*
- * 200 arbitrary field names
- */
-var FIELD_NAMES = [];
-for (var i = 0; i < 200; i++) {
-    FIELD_NAMES.push("field-" + i);
+function getNFieldNames(n) {
+    var fieldNames = [];
+    for (var i = 0; i < n; i++) {
+        fieldNames.push("field-" + i);
+    }
+    return fieldNames;
 }
+
+/*
+ * Arbitrary field names.
+ */
+var FIELD_NAMES = getNFieldNames(200);
 
 /*
  * Constant used as a parameter for test cases.
@@ -77,13 +79,6 @@ var setNFields = function setNFields(object, fieldNamesArray, offset, values, n)
     }
     return object;
 };
-
-/*
- * Add NUMBER_FOR_RANGE values to an object.
- */
-function addNumberForRangeValuesTopLevel(object, fieldNamesArray, offset, values) {
-    return setNFields(object, fieldNamesArray, offset, values, NUMBER_FOR_RANGE);
-}
 
 /*
  * Helper function that has been exposed to allow for the use of the algebra later to compute
@@ -136,14 +131,6 @@ function addNNestedFields(object, fieldNamesArray, offset, maxDepth, currentDept
 }
 
 /*
- * Adds NUMBER_FOR_RANGE nested fields to object in (drawn from fieldNamesArray w/ offset specified)
- * the value specified.
- */
-function addNumberForRangeNestedFields(object, fieldNamesArray, offset, value) {
-    return addNNestedFields(object, fieldNamesArray, offset, (NUMBER_FOR_RANGE - 1), 0, [value], 1);
-}
-
-/*
  * Helper function that has been exposed to allow for the use of the algebra later to compute
  * indexes of fields.
  */
@@ -152,179 +139,134 @@ function uniqueSkipHelper(index, length) {
 }
 
 /*
- * Add documents where none of the documents share a path to a value.
+ * Get a docGenerator for producing documents where the documents will very rarely (depending on
+ * fieldNamesArr) share paths to a value (After roughly (fieldNamesArr.length^2) / 2 calls, it will
+ * return duplicates, but for our purposes this isn't a problem).
  */
-function insertDocumentsWithUniqueLeaves(collection) {
-    collection.drop();
-    var docs = [];
-    for (var i = 0; i < 4800; i++) {
-        docs.push(addNNestedFieldsWithSkip(
-            {},           // object
-            FIELD_NAMES,  // field names array
-            i,            // offset
-            1,            // maxDepth
-            0,            // currentDepth
-            [i],          // values
-            2,            // n -- the deepest level documents will have two fields
-            uniqueSkipHelper(i, FIELD_NAMES.length)  // skip
-            ));
-    }
-    collection.insert(docs);
+function getDocGeneratorForUniqueLeaves(fieldNamesArr) {
+    return function(seed) {
+        return addNNestedFieldsWithSkip({},             // object
+                                        fieldNamesArr,  // field names array
+                                        seed,           // offset
+                                        1,              // maxDepth
+                                        0,              // currentDepth
+                                        [seed],         // values
+                                        2,  // n -- the deepest level documents will have two fields
+                                        uniqueSkipHelper(seed, fieldNamesArr.length)  // skip
+                                        );
+    };
 }
 
-/*
- * Creates a collection of documents with values all in a two fields at the top level.
- * Since the standrad tests require that there be two fields (because it requires a compound index
- * query).
+/**
+ * Returns a function, that when called will produce a document with top level fields
+ * from 'fieldNameArr'.
  */
-function insertTwoFieldsDocs(collection) {
-    collection.drop();
-    var docs = [];
-    for (var i = 0; i < 4800; i++) {
-        docs.push({a: i, b: i});
-    }
-    assert.commandWorked(collection.insert(docs));
+function getDocGeneratorForTopLevelFields(fieldNameArr) {
+    return function(seed) {
+        return setNFields({}, fieldNameArr, 0, [seed], fieldNameArr.length);
+    };
 }
 
-/*
- * Creates a collection of documents with NUMBER_FOR_RANGE values at the top
- * level.
+function getDocGeneratorForDeeplyNestedFields(fieldNameArr, documentDepth, nFieldsInLeaf) {
+    return function(seed) {
+        return addNNestedFields({},             // object
+                                fieldNameArr,   // field names array
+                                seed,           // offset
+                                documentDepth,  // maxDepth
+                                0,              // currentDepth
+                                [seed],         // values
+                                nFieldsInLeaf   // n
+                                );
+    };
+}
+
+function getSetupFunctionForTargetedIndex(fieldsToIndex) {
+    return function(collection) {
+        collection.drop();
+        // Instead of creating an allPaths index, creating a normal index for each top-level
+        // field used. This way, the same number of index entries are created, regardless of
+        // whether we use an allPaths index, or a targeted index.
+        for (var i = 0; i < fieldsToIndex.length; i++) {
+            var fieldName = fieldsToIndex[i];
+            assert.commandWorked(collection.createIndex(
+                setDottedFieldToValue({}, fieldsToIndex[i], 1), {sparse: true}));
+        }
+    };
+}
+
+/**
+ * Returns a function, which when called, will drop the given collection and create a $** index on
+ * 'fieldsToIndex'. If 'fieldsToIndex' is empty, it will create a $** index on all fields.
  */
-function insertMultipleFieldsDocs(collection) {
-    collection.drop();
-    var docs = [];
-    for (var i = 0; i < 4800; i++) {
-        docs.push(addNumberForRangeValuesTopLevel({}, FIELD_NAMES, i, [i]));
-    }
-    assert.commandWorked(collection.insert(docs));
+function getSetupFunctionWithAllPathsIndex(fieldsToIndex) {
+    return function(collection) {
+        collection.drop();
+        var proj = {};
+        for (var i = 0; i < fieldsToIndex.length; i++) {
+            proj[fieldsToIndex[i]] = 1;
+        }
+        var indexOptions = undefined;
+        if (fieldsToIndex.length > 0) {
+            indexOptions = {starPathsTempName: proj};
+        }
+        assert.commandWorked(collection.createIndex({"$**": 1}, indexOptions));
+    };
 }
 
-/*
- * Create a collection of documents with values 16 fields in to the document.
- */
-function insertDeeplyNestedDocs(collection) {
-    collection.drop();
-    var docs = [];
-    for (var i = 0; i < 4800; i++) {
-        docs.push(addNNestedFields({},                    // object
-                                   FIELD_NAMES,           // field names array
-                                   i,                     // offset
-                                   NUMBER_FOR_RANGE - 1,  // maxDepth
-                                   0,                     // currentDepth
-                                   [i],                   // values
-                                   NUMBER_FOR_RANGE       // n
-                                   ));
-    }
-    assert.commandWorked(collection.insert(docs));
-}
+var kInsertTags = ["insert"];
 
-function setupDocumentsWithUniqueLeavesIndexed(collection) {
-    insertDocumentsWithUniqueLeaves(collection);
-    collection.createIndex({"$**": 1});
-}
-
-function setupTestTwoFieldsDocsIndexed(collection) {
-    insertTwoFieldsDocs(collection);
-    collection.createIndex({"$**": 1});
-}
-
-function setupTestMultipleFieldsDocsIndexed(collection) {
-    insertMultipleFieldsDocs(collection);
-    collection.createIndex({"$**": 1});
-}
-
-function setupDeeplyNestedDocsIndexed(collection) {
-    insertDeeplyNestedDocs(collection);
-    collection.createIndex({"$**": 1});
-}
-
-function setupTestMultipleFieldsDocsAllExcludedIndexed(collection) {
-    insertMultipleFieldsDocs(collection);
-    // There are no documents with a field "nonexistent" therefore this ensures that no part of a
-    // docuemnt is indexed.
-    collection.createIndex({"nonexistent.$**": 1});
-}
-
-var insertTags = ["insert"];
+// TODO: SERVER-36214 make read-path tests which include compound & range queries.
 
 /*
  * Make a test that inserts doc.
  */
-function makeInsertTest(name, pre, doc) {
+function makeInsertTestForDocType(name, pre, documentGenerator, additionalTags) {
+    if (typeof(additionalTags) === "undefined") {
+        additionalTags = [];
+    }
+
+    var opsList = [];
+    for (var i = 0; i < 1000; i++) {
+        opsList.push({op: "insert", doc: documentGenerator(i)});
+    }
     addTest({
         type: "Insert",
         name: name + ".InsertDoc",
         pre: pre,
-        ops: [{op: "insert", doc: doc}],
-        tags: insertTags
+        ops: opsList,
+        tags: kInsertTags.concat(additionalTags)
     });
 }
 
-/*
- * Makes the standard set of tests for a given scenario.
- * We take the "standard set of tests" to be this set of queries/updates/etc. that we run accross
- * each collection with certain document shapes.
- * Note: the range here is (lowerRange, upperRange].
- *
- * secondaryField and lowerRange are currently unused. They will be used for compound queries and
- * range queries respectively.
- * TODO: SERVER-36214 make compound & range queries so that these fields are used.
- */
-function makeStandardTests(name, preIndexed, primaryField, secondaryField, lowerRange, upperRange) {
-    makeInsertTest(name, preIndexed, setDottedFieldToValue({}, primaryField, upperRange));
+makeInsertTestForDocType("MultipleFieldsAllExcluded",
+                         getSetupFunctionWithAllPathsIndex(["nonexistent"]),
+                         getDocGeneratorForTopLevelFields(getNFieldNames(16)),
+                         ["regression"]);
+makeInsertTestForDocType("AllDiffFields",
+                         getSetupFunctionWithAllPathsIndex([]),
+                         getDocGeneratorForUniqueLeaves(getNFieldNames(200)),
+                         ["regression"]);
+makeInsertTestForDocType("DeeplyNested",
+                         getSetupFunctionWithAllPathsIndex([]),
+                         getDocGeneratorForDeeplyNestedFields(
+                             getNFieldNames(200), NUMBER_FOR_RANGE, NUMBER_FOR_RANGE - 1),
+                         ["regression"]);
+
+// Comparison tests which use a standard index.
+
+function makeComparisonWriteTest(name, fieldsToIndex, documentGenerator) {
+    makeInsertTestForDocType(name + ".AllPathsIndex",
+                             getSetupFunctionWithAllPathsIndex(fieldsToIndex),
+                             documentGenerator,
+                             ["core"]);
+    makeInsertTestForDocType(name + ".StandardIndex",
+                             getSetupFunctionForTargetedIndex(fieldsToIndex),
+                             documentGenerator,
+                             ["core"]);
 }
 
-makeStandardTests("TwoFields",
-                  setupTestTwoFieldsDocsIndexed,
-                  "a",
-                  "b",
-                  INDEX_FOR_QUERIES - NUMBER_FOR_RANGE,
-                  INDEX_FOR_QUERIES);
-
-makeStandardTests("MultipleFields",
-                  setupTestMultipleFieldsDocsIndexed,
-                  FIELD_NAMES[INDEX_FOR_QUERIES % FIELD_NAMES.length],
-                  FIELD_NAMES[(INDEX_FOR_QUERIES + 1) % FIELD_NAMES.length],
-                  INDEX_FOR_QUERIES - NUMBER_FOR_RANGE,
-                  INDEX_FOR_QUERIES);
-
-makeStandardTests("MultipleFieldsAllExcluded",
-                  setupTestMultipleFieldsDocsAllExcludedIndexed,
-                  FIELD_NAMES[INDEX_FOR_QUERIES % FIELD_NAMES.length],
-                  FIELD_NAMES[(INDEX_FOR_QUERIES + 1) % FIELD_NAMES.length],
-                  INDEX_FOR_QUERIES - NUMBER_FOR_RANGE,
-                  INDEX_FOR_QUERIES);
-
-/*
- * To get the primary and secondary fields that have value INDEX_FOR_QUERIES we use the helpers used
- * by insertDocumentsWithUniqueLeaves to create the documents.
- */
-var skip = uniqueSkipHelper(INDEX_FOR_QUERIES, FIELD_NAMES.length);
-makeStandardTests(
-    "AllDiffFields",
-    setupDocumentsWithUniqueLeavesIndexed,
-    FIELD_NAMES[INDEX_FOR_QUERIES % FIELD_NAMES.length] + "." +
-        FIELD_NAMES[getNextFieldNameIndexForNestedDocument(INDEX_FOR_QUERIES, 1, 2, skip) %
-                    FIELD_NAMES.length],
-    FIELD_NAMES[INDEX_FOR_QUERIES % FIELD_NAMES.length] + "." +
-        FIELD_NAMES[(getNextFieldNameIndexForNestedDocument(INDEX_FOR_QUERIES, 1, 2, skip) + 1) %
-                    FIELD_NAMES.length],
-    INDEX_FOR_QUERIES - NUMBER_FOR_RANGE,
-    INDEX_FOR_QUERIES);
-
-function getPathToJthDeeplyNestedField(fieldNamesArray, offset, maxDepth, currentDepth, j) {
-    if (currentDepth < maxDepth) {
-        return fieldNamesArray[(offset + currentDepth) % fieldNamesArray.length] + "." +
-            getPathToJthDeeplyNestedField(fieldNamesArray, offset, maxDepth, currentDepth + 1, j);
-    } else {
-        return fieldNamesArray[(offset + currentDepth + j) % fieldNamesArray.length];
-    }
+for (var i = 1; i <= 16; i *= 2) {
+    var fieldNameArr = getNFieldNames(i);
+    var name = "TopLevelFields-" + i;
+    makeComparisonWriteTest(name, fieldNameArr, getDocGeneratorForTopLevelFields(fieldNameArr));
 }
-
-makeStandardTests(
-    "DeeplyNested",
-    setupDeeplyNestedDocsIndexed,
-    getPathToJthDeeplyNestedField(FIELD_NAMES, INDEX_FOR_QUERIES, NUMBER_FOR_RANGE - 1, 0, 0),
-    getPathToJthDeeplyNestedField(FIELD_NAMES, INDEX_FOR_QUERIES, NUMBER_FOR_RANGE - 1, 0, 1),
-    110,
-    INDEX_FOR_QUERIES);
