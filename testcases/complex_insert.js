@@ -158,3 +158,19 @@ tests.push( { name: "Insert.MultiKeyIndex.Contested.Rnd",
                   }
               ] } );
 
+/**
+ * Setup: Create an index field x
+ * Test: Insert documents with big values (string with 20,000 characters) on
+ * field x. Each value needs to be indexed.
+ */
+tests.push( { name: "Insert.BigKeyIndex",
+              tags: ['insert', 'indexed', 'regression'],
+              pre: function(collection) {
+                  collection.drop();
+                  collection.ensureIndex({x: 1});
+              },
+              ops: [
+                  { op: "insert",
+                    doc: { x: { "#RAND_STRING": [20000] } }
+                  }
+              ] } );
