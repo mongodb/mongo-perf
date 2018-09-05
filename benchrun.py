@@ -45,6 +45,8 @@ def parse_arguments():
     parser.add_argument('--port', dest='port',
                         help='Port of the mongod/mongos under test',
                         default=DEFAULT_PORT)
+    # todo:- remove or implement properly - doesn't actually seem to get used anywhere!
+    # if you need to connect to a replicaset, use the mongo_url parameter
     parser.add_argument('--replset', dest='replica_set',
                         help='replica set name of the mongod/mongos under test',
                         default=None)
@@ -114,7 +116,9 @@ def parse_arguments():
                              'files without actually running the test cases. A mongod process must\n'
                              'still be running while the JSON config files are being generated.')
     parser.add_argument('--mongo_url', dest='mongo_url',
-                        help='supply a mongo url with all required host/ip/port/credential/db/replicaset as applicable')
+                        help='supply a mongo url with all required host/ip/port/credential/db/replicaset as applicable'
+                             'e.g. \n'
+                             'mongodb://<username>:<pw>@<node1>:<port>,<node n>:<port>/<db>?replicaSet=<repl_set name>')
     return parser
 
 
@@ -184,11 +188,14 @@ def main():
     #        "--eval", "print('db version: ' + db.version());"
     #        " db.serverBuildInfo().gitVersion;"] + auth)
 
-    check_call([args.shellpath] + auth + ["--norc",
-                                          # args.mongo_url,
-                                          "--eval", "print('db version: ' + db.version());"
-                                                    " db.serverBuildInfo().gitVersion;"
-                                          ])
+    # check_call([args.shellpath] + auth + ["--norc",
+    #                                       # args.mongo_url,
+    #                                       "--eval", "print('db version: ' + db.version());"
+    #                                                 " db.serverBuildInfo().gitVersion;"
+    #                                       ])
+    check_call(set_shell_command_and_args(args=args, auth=auth, quiet=False,
+                                          eval_expr="print('db version: ' + db.version());"
+                                                    "db.serverBuildInfo().gitVersion;"))
     print("")
 
     commands = []
@@ -285,13 +292,17 @@ def main():
         print json.dumps(results_parsed, indent=4, separators=(',', ': '))
 
 
-def set_shell_command_and_args(args=None, auth=None, quiet=False, js_file=None):
+def set_shell_command_and_args(args=None, auth=None, quiet=False, js_file=None, eval_expr=None):
     shell_cmd = [args.shellpath]
     if auth:
         shell_cmd.extend(auth)
+    if not args.mongo_url:
+        shell_cmd.extend(["--host", args.hostname, "--port", args.port])
     shell_cmd.append("--norc")
     if quiet:
         shell_cmd.append("--quiet")
+    if eval_expr:
+        shell_cmd.extend(['--eval', eval_expr])
     if js_file:
         shell_cmd.append(js_file.name)
     return shell_cmd
