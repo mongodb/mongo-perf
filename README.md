@@ -40,6 +40,11 @@ core on 1, 2, and 4 threads, for 10
 seconds each using the basic mongo shell:  
 `python benchrun.py -f testcases/* -t 1 2 4 --includeFilter insert update --includeFilter core --trialTime 10`
 
+To run a test against a mongo cluster:
+```bash
+python benchrun.py -f testcases/simple_update.js -t 1 --mongo_url=mongodb://user:password@node_one_ip_or_fqdn:27017,node_two_ip_or_fqdn:27017,node_three_ip_or_fqdn:27017/db_name?replicaSet=replica_set_name
+```
+
 For a complete list of options :  
 `python benchrun.py --help`
 

@@ -178,21 +178,6 @@ def main():
         if args.includeFilter == ['%']:
             args.includeFilter = '%'
 
-    # if args.username:
-    #     auth = ["-u", args.username, "-p", args.password, "--authenticationDatabase", "admin"]
-    # else:
-    #     auth = []
-
-    # check_call([args.shellpath, "--norc",
-    #        "--host", args.hostname, "--port", args.port,
-    #        "--eval", "print('db version: ' + db.version());"
-    #        " db.serverBuildInfo().gitVersion;"] + auth)
-
-    # check_call([args.shellpath] + auth + ["--norc",
-    #                                       # args.mongo_url,
-    #                                       "--eval", "print('db version: ' + db.version());"
-    #                                                 " db.serverBuildInfo().gitVersion;"
-    #                                       ])
     check_call(set_shell_command_and_args(args=args, auth=auth, quiet=False,
                                           eval_expr="print('db version: ' + db.version());"
                                                     "db.serverBuildInfo().gitVersion;"))
@@ -252,9 +237,6 @@ def main():
         js_file.flush()
 
         # Open a mongo shell subprocess and load necessary files.
-        # mongo_proc = Popen([args.shellpath, "--norc", "--quiet", js_file.name,
-        #                     "--host", args.hostname, "--port", args.port] + auth,
-        #                    stdout=PIPE)
         mongo_proc = Popen(set_shell_command_and_args(args=args, auth=auth, quiet=True, js_file=js_file), stdout=PIPE)
 
         # Read test output.
