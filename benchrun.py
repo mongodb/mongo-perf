@@ -6,6 +6,9 @@ from argparse import ArgumentParser, RawTextHelpFormatter
 from subprocess import Popen, PIPE, check_call
 from tempfile import NamedTemporaryFile
 
+DEFAULT_PORT = '27017'
+DEFAULT_HOST = 'localhost'
+
 
 class MongoShellCommandError(Exception):
     """ Raised when the mongo shell comes back with an unexpected error
@@ -13,7 +16,8 @@ class MongoShellCommandError(Exception):
 
 
 def parse_arguments():
-    usage = "python benchrun.py -f <list of test files> -t <list of thread counts>\n       run with --help for argument descriptions"
+    usage = "python benchrun.py -f <list of test files> -t <list of thread counts>" \
+            "\n       run with --help for argument descriptions"
     parser = ArgumentParser(description="mongo-perf micro-benchmark utility", usage=usage,
                             formatter_class=RawTextHelpFormatter)
 
@@ -37,10 +41,10 @@ def parse_arguments():
                         type=int, default=1)
     parser.add_argument('--host', dest='hostname',
                         help='hostname of the mongod/mongos under test',
-                        default='localhost')
+                        default=DEFAULT_HOST)
     parser.add_argument('--port', dest='port',
                         help='Port of the mongod/mongos under test',
-                        default='27017')
+                        default=DEFAULT_PORT)
     parser.add_argument('--replset', dest='replica_set',
                         help='replica set name of the mongod/mongos under test',
                         default=None)
@@ -51,7 +55,8 @@ def parse_arguments():
                         help='password to use for mongodb authentication',
                         default=None)
     parser.add_argument('--shard', dest='shard',
-                        help='Specify shard cluster the test should use, 0 - no shard, 1 - shard with {_id: hashed}, 2 - shard with {_id: 1}',
+                        help='Specify shard cluster the test should use, '
+                             '0 - no shard, 1 - shard with {_id: hashed}, 2 - shard with {_id: 1}',
                         type=int, default=0, choices=[0, 1, 2])
     parser.add_argument('-s', '--shell', dest='shellpath',
                         help="Path to the mongo shell executable to use.",
@@ -90,8 +95,8 @@ def parse_arguments():
                         help="Exclude tests matching all of the tags included.\n"
                              "Can specify multiple --excludeFilter flags on the command line. A test\n"
                              "matching any --excludeFilter clauses will not be run.\n"
-                             "A test that is both included according to --includeFilter and excluded by --excludeFilter,\n"
-                             "will not be run.\n\n"
+                             "A test that is both included according to --includeFilter and excluded by --excludeFilter"
+                             ",\nwill not be run.\n\n"
                              "Ex: --excludeFilter slow old --excludeFilter broken \n"
                              "     will exclude all tests tagged with (\"slow\" AND \"old\") OR (\"broken\").",
                         default=[])
@@ -147,7 +152,15 @@ def main():
     auth = []
     using_auth = False
     # noinspection PyTypeChecker
-    if isinstance(args.username, basestring) and isinstance(args.password, basestring):
+    if isinstance(args.mongo_url, basestring):
+        auth = [args.mongo_url]
+        # noinspection PyTypeChecker
+        if isinstance(args.username, basestring) or isinstance(args.password, basestring) \
+                or isinstance(args.replica_set, basestring) or args.hostname != DEFAULT_HOST \
+                or args.port != DEFAULT_PORT:
+            print ("Warning: you specified a mongo url and at least one of username, password, host, port, replset."
+                   " only the mongo_url values will be used")
+    elif isinstance(args.username, basestring) and isinstance(args.password, basestring):
         auth = ["-u", args.username, "-p", args.password, "--authenticationDatabase", "admin"]
         using_auth = True
     elif isinstance(args.username, basestring) or isinstance(args.password, basestring):
@@ -161,21 +174,21 @@ def main():
         if args.includeFilter == ['%']:
             args.includeFilter = '%'
 
-    if args.username:
-        auth = ["-u", args.username, "-p", args.password, "--authenticationDatabase", "admin"]
-    else:
-        auth = []
+    # if args.username:
+    #     auth = ["-u", args.username, "-p", args.password, "--authenticationDatabase", "admin"]
+    # else:
+    #     auth = []
 
     # check_call([args.shellpath, "--norc",
     #        "--host", args.hostname, "--port", args.port,
     #        "--eval", "print('db version: ' + db.version());"
     #        " db.serverBuildInfo().gitVersion;"] + auth)
 
-    check_call([args.shellpath, "--norc",
-                args.mongo_url,
-                "--eval", "print('db version: ' + db.version());"
-                          " db.serverBuildInfo().gitVersion;"
-                ])
+    check_call([args.shellpath] + auth + ["--norc",
+                                          # args.mongo_url,
+                                          "--eval", "print('db version: ' + db.version());"
+                                                    " db.serverBuildInfo().gitVersion;"
+                                          ])
     print("")
 
     commands = []
@@ -187,12 +200,10 @@ def main():
         commands.append("load('%s');" % testfile)
 
     # put all crud options in a Map
-    crud_options = {}
-    crud_options["safeGLE"] = args.safeMode
-    crud_options["writeConcern"] = {}
-    if (args.j):
+    crud_options = {"safeGLE": args.safeMode, "writeConcern": {}}
+    if args.j:
         crud_options["writeConcern"]["j"] = args.j
-    if (args.w):
+    if args.w:
         crud_options["writeConcern"]["w"] = args.w
     crud_options["writeCmdMode"] = args.writeCmd
     crud_options["readCmdMode"] = args.readCmd
@@ -208,9 +219,7 @@ def main():
             # The directory already exists.
             pass
 
-    authstr = ""
-    if using_auth:
-        authstr = ", '" + args.username + "', '" + args.password + "'"
+    auth_str = ", '" + args.username + "', '" + args.password + "'" if using_auth else ""
 
     commands.append("mongoPerfRunTests(" +
                     str(args.threads) + ", " +
@@ -225,7 +234,7 @@ def main():
                     str(args.excludeTestbed) + ", " +
                     str(args.printArgs) + ", " +
                     str(json.dumps(mongoebench_options)) +
-                    authstr +
+                    auth_str +
                     ");")
 
     commands = '\n'.join(commands)
@@ -239,10 +248,7 @@ def main():
         # mongo_proc = Popen([args.shellpath, "--norc", "--quiet", js_file.name,
         #                     "--host", args.hostname, "--port", args.port] + auth,
         #                    stdout=PIPE)
-        mongo_proc = Popen([args.shellpath, "--norc",
-                            args.mongo_url,
-                            "--quiet", js_file.name],
-                           stdout=PIPE)
+        mongo_proc = Popen(set_shell_command_and_args(args=args, auth=auth, quiet=True, js_file=js_file), stdout=PIPE)
 
         # Read test output.
         readout = False
@@ -277,6 +283,18 @@ def main():
         out.close()
     else:
         print json.dumps(results_parsed, indent=4, separators=(',', ': '))
+
+
+def set_shell_command_and_args(args=None, auth=None, quiet=False, js_file=None):
+    shell_cmd = [args.shellpath]
+    if auth:
+        shell_cmd.extend(auth)
+    shell_cmd.append("--norc")
+    if quiet:
+        shell_cmd.append("--quiet")
+    if js_file:
+        shell_cmd.append(js_file.name)
+    return shell_cmd
 
 
 if __name__ == '__main__':
