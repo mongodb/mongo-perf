@@ -155,10 +155,8 @@ def main():
 
     auth = []
     using_auth = False
-    # noinspection PyTypeChecker
     if isinstance(args.mongo_url, basestring):
         auth = [args.mongo_url]
-        # noinspection PyTypeChecker
         if isinstance(args.username, basestring) or isinstance(args.password, basestring) \
                 or isinstance(args.replica_set, basestring) or args.hostname != DEFAULT_HOST \
                 or args.port != DEFAULT_PORT:
