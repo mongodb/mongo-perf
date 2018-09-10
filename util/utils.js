@@ -131,6 +131,8 @@ function CommandTracer(testName, options) {
         done: "done",
     };
 
+    TestData = TestData || {};
+    var testDataDisableImplicitSessionsOriginal = TestData.disableImplicitSessions;
     var mongoRunCommandOriginal = Mongo.prototype.runCommand;
     var benchRunOriginal = benchRun;
 
@@ -145,22 +147,42 @@ function CommandTracer(testName, options) {
         }
     }
 
+    function overrideRunCommandWithSpy(commandObjArr) {
+        // We disable implicit sessions to avoid having the mongo shell automatically specify a
+        // logical session id in all command requests. After the changes from SERVER-35180, the
+        // "lsid" field in the operations being run by mongoebench via DBDirectClient is no longer
+        // silently ignored.
+        TestData.disableImplicitSessions = true;
+
+        // We skip sending the command to the server to speed up generating the JSON config files.
+        Mongo.prototype.runCommand = function runCommandSpy(dbName, commandObj, options) {
+            if (commandObj.hasOwnProperty("lsid")) {
+                throw new Error("Cowardly refusing to generate a config file for " + testName +
+                                " because it requires the use of sessions");
+            }
+
+            commandObjArr.push({op: "command", ns: dbName, command: commandObj});
+            return {ok: 1};
+        };
+    }
+
+    function restoreOriginalRunCommand() {
+        TestData.disableImplicitSessions = testDataDisableImplicitSessionsOriginal;
+        Mongo.prototype.runCommand = mongoRunCommandOriginal;
+    }
+
     this.beginPre = function beginPre() {
         assertState(State.init);
         state = State.runningPre;
 
-        // We skip sending the command to the server to speed up generating the JSON config files.
-        Mongo.prototype.runCommand = function runCommandSpy(dbName, commandObj, options) {
-            pre.push({op: "command", ns: dbName, command: commandObj});
-            return {ok: 1};
-        };
+        overrideRunCommandWithSpy(pre);
     };
 
     this.beginOps = function beginOps() {
         assertState(State.runningPre);
         state = State.runningOps;
 
-        Mongo.prototype.runCommand = mongoRunCommandOriginal;
+        restoreOriginalRunCommand();
 
         // We skip running the workload to speed up generating the JSON config files.
         benchRun = function benchRunSpy(benchArgs) {
@@ -174,19 +196,14 @@ function CommandTracer(testName, options) {
         state = State.runningPost;
 
         benchRun = benchRunOriginal;
-
-        // We skip sending the command to the server to speed up generating the JSON config files.
-        Mongo.prototype.runCommand = function runCommandSpy(dbName, commandObj, options) {
-            post.push({op: "command", ns: dbName, command: commandObj});
-            return {ok: 1};
-        };
+        overrideRunCommandWithSpy(post);
     };
 
     this.done = function done() {
         assertState(State.runningPost);
         state = State.done;
 
-        Mongo.prototype.runCommand = mongoRunCommandOriginal;
+        restoreOriginalRunCommand();
 
         // The contents of the post() function are really things we'd want to run before the test
         // case. It's possible that we'll end up duplicating the cleanup by putting them before the
