@@ -1,6 +1,3 @@
-// TODO: Remove in SERVER-36198.
-assert.commandWorked(db.adminCommand({setParameter: 1, internalQueryAllowAllPathsIndexes: true}));
-
 if ((typeof tests === "undefined" ? "undefined" : typeof(tests)) != "object") {
     tests = [];
 }
@@ -38,13 +35,12 @@ function setDottedFieldToValue(object, path, value) {
  * @param {Object[]} options.ops - The operations to perform in benchRun.
  * @param {function} options.pre - A function that sets up for the test case.
  * @param {String[]} {options.tags=[]} - Additional tags describing this test.
- * The "all_paths" and
- * "indexed" tags are automatically added to test cases for collections.
+ * The "all_paths", "indexed", and ">=4.1.3" tags are added automatically.
  */
 function addTest(options) {
     tests.push({
         name: options.type + ".AllPathsIndex." + options.name,
-        tags: ["all_paths", "indexed"].concat(options.tags),
+        tags: ["all_paths", "indexed", ">=4.1.3"].concat(options.tags),
         pre: options.pre,
         ops: options.ops
     });
