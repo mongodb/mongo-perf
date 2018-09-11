@@ -441,6 +441,40 @@ function getMean(values) {
     return sum / values.length;
 }
 
+function getNFieldNames(numFields) {
+    var fieldNames = [];
+    for (var i = 0; i < numFields; i++) {
+        fieldNames.push("field-" + i);
+    }
+    return fieldNames;
+}
+
+/**
+ * Inserts value at the location specified by path (using dot notation) in object.
+ * If there's a common non-object field name this function overwrites the previous values.
+ */
+function setDottedFieldToValue(object, path, value) {
+    assert(typeof path === "string");
+
+    var pathAsArray = path.split(".");
+    setFieldPathArrayToValue(object, pathAsArray, value);
+
+    return object;
+}
+
+function setFieldPathArrayToValue(object, pathAsArray, value) {
+    if (pathAsArray.length == 1) {
+        object[pathAsArray[0]] = value;
+    } else {
+        if (typeof(object[pathAsArray[0]]) !== "object") {
+            object[pathAsArray[0]] = {};
+        }
+        var subObject = object[pathAsArray[0]];
+        pathAsArray.shift();
+        setFieldPathArrayToValue(subObject, pathAsArray, value);
+    }
+}
+
 function getDefaultCrudOptions() {
     var crudOptions = {};
     crudOptions.safeGLE = 'false';

@@ -2,68 +2,27 @@ if ((typeof tests === "undefined" ? "undefined" : typeof(tests)) != "object") {
     tests = [];
 }
 
-/*
- * Inserts value at the location specified by path (using dot notation) in object.
- * If there's a common non-object field name this function overwrites the previous values.
- */
-function setDottedFieldToValue(object, path, value) {
-    if (typeof path === "string") {
-        var fields = path.split(".");
-        if (fields.length == 1) {
-            object[path] = value;
-        } else {
-            if (typeof(object[fields[0]]) !== "object") {
-                object[fields[0]] = {};
-            }
-            setDottedFieldToValue(
-                object[fields[0]], path.slice(fields[0].length + 1, path.length), value);
-        }
-    }
-    return object;
-}
-
 /**
- * Creates test cases and adds them to the global testing array. By default,
- * each test case
- * specification produces several test cases:
+ * Creates test cases and adds them to the global testing array.
  *
  * @param {Object} options - Options describing the test case.
  * @param {String} options.type - The name of the type of test case. It is
  * prepended to the test name.
  * @param {String} options.name - The name of the test case.
- * `${type}.AllPathsIndex.` is prepended.
+ * `${type}.WildCardIndex.` is prepended.
  * @param {Object[]} options.ops - The operations to perform in benchRun.
  * @param {function} options.pre - A function that sets up for the test case.
  * @param {String[]} {options.tags=[]} - Additional tags describing this test.
- * The "all_paths", "indexed", and ">=4.1.3" tags are added automatically.
+ * The "wildcard", "indexed", and ">=4.1.3" tags are added automatically.
  */
 function addTest(options) {
     tests.push({
-        name: options.type + ".AllPathsIndex." + options.name,
-        tags: ["all_paths", "indexed", ">=4.1.3"].concat(options.tags),
+        name: options.type + ".WildCardIndex." + options.name,
+        tags: ["wildcard_write", "indexed", /*">=4.1.3"*/].concat(options.tags),
         pre: options.pre,
         ops: options.ops
     });
 }
-
-function getNFieldNames(n) {
-    var fieldNames = [];
-    for (var i = 0; i < n; i++) {
-        fieldNames.push("field-" + i);
-    }
-    return fieldNames;
-}
-
-/*
- * Arbitrary field names.
- */
-var FIELD_NAMES = getNFieldNames(200);
-
-/*
- * Constant used as a parameter for test cases.
- */
-var INDEX_FOR_QUERIES = 3111;
-var NUMBER_FOR_RANGE = 16;
 
 /*
  * Adds n fields (from fieldNamesArray with offset offset) and assigns values from values.
@@ -179,9 +138,9 @@ function getDocGeneratorForDeeplyNestedFields(fieldNameArr, documentDepth, nFiel
 function getSetupFunctionForTargetedIndex(fieldsToIndex) {
     return function(collection) {
         collection.drop();
-        // Instead of creating an allPaths index, creating a normal index for each top-level
+        // Instead of creating a wildcard index, creating a normal index for each top-level
         // field used. This way, the same number of index entries are created, regardless of
-        // whether we use an allPaths index, or a targeted index.
+        // whether we use an wildcard index, or a targeted index.
         for (var i = 0; i < fieldsToIndex.length; i++) {
             var fieldName = fieldsToIndex[i];
             assert.commandWorked(collection.createIndex(
@@ -194,7 +153,7 @@ function getSetupFunctionForTargetedIndex(fieldsToIndex) {
  * Returns a function, which when called, will drop the given collection and create a $** index on
  * 'fieldsToIndex'. If 'fieldsToIndex' is empty, it will create a $** index on all fields.
  */
-function getSetupFunctionWithAllPathsIndex(fieldsToIndex) {
+function getSetupFunctionWithWildCardIndex(fieldsToIndex) {
     return function(collection) {
         collection.drop();
         var proj = {};
@@ -209,9 +168,7 @@ function getSetupFunctionWithAllPathsIndex(fieldsToIndex) {
     };
 }
 
-var kInsertTags = ["insert"];
-
-// TODO: SERVER-36214 make read-path tests which include compound & range queries.
+var kInsertTags = ["wildcard_insert"];
 
 /*
  * Make a test that inserts doc.
@@ -235,15 +192,16 @@ function makeInsertTestForDocType(name, pre, documentGenerator, additionalTags) 
 }
 
 makeInsertTestForDocType("MultipleFieldsAllExcluded",
-                         getSetupFunctionWithAllPathsIndex(["nonexistent"]),
+                         getSetupFunctionWithWildCardIndex(["nonexistent"]),
                          getDocGeneratorForTopLevelFields(getNFieldNames(16)),
                          ["regression"]);
 makeInsertTestForDocType("AllDiffFields",
-                         getSetupFunctionWithAllPathsIndex([]),
+                         getSetupFunctionWithWildCardIndex([]),
                          getDocGeneratorForUniqueLeaves(getNFieldNames(200)),
                          ["regression"]);
+var NUMBER_FOR_RANGE = 16;
 makeInsertTestForDocType("DeeplyNested",
-                         getSetupFunctionWithAllPathsIndex([]),
+                         getSetupFunctionWithWildCardIndex([]),
                          getDocGeneratorForDeeplyNestedFields(
                              getNFieldNames(200), NUMBER_FOR_RANGE, NUMBER_FOR_RANGE - 1),
                          ["regression"]);
@@ -251,8 +209,8 @@ makeInsertTestForDocType("DeeplyNested",
 // Comparison tests which use a standard index.
 
 function makeComparisonWriteTest(name, fieldsToIndex, documentGenerator) {
-    makeInsertTestForDocType(name + ".AllPathsIndex",
-                             getSetupFunctionWithAllPathsIndex(fieldsToIndex),
+    makeInsertTestForDocType(name + ".WildCardIndex",
+                             getSetupFunctionWithWildCardIndex(fieldsToIndex),
                              documentGenerator,
                              ["core"]);
     makeInsertTestForDocType(name + ".StandardIndex",
