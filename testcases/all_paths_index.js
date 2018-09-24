@@ -203,7 +203,7 @@ function getSetupFunctionWithAllPathsIndex(fieldsToIndex) {
         }
         var indexOptions = undefined;
         if (fieldsToIndex.length > 0) {
-            indexOptions = {starPathsTempName: proj};
+            indexOptions = {wildcardProjection: proj};
         }
         assert.commandWorked(collection.createIndex({"$**": 1}, indexOptions));
     };
