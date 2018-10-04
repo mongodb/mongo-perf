@@ -122,17 +122,17 @@ function getSetupFunctionForTargetedIndex(fieldsToIndex, documentGenerator, docu
 /**
  * Populates a collection with test data and creates a $** index.
  */
-function getSetupFunctionWithWildcardIndex(fieldsToIndex, documentGenerator, documentCount) {
+function getSetupFunctionWithWildcardIndex(projectionFields, documentGenerator, documentCount) {
     return function(collection) {
         collection.drop();
         populateCollection(documentGenerator, collection, documentCount);
 
         var proj = {};
-        for (var i = 0; i < fieldsToIndex.length; ++i) {
-            proj[fieldsToIndex[i]] = 1;
+        for (var i = 0; i < projectionFields.length; ++i) {
+            proj[projectionFields[i]] = 1;
         }
         var indexOptions = undefined;
-        if (fieldsToIndex.length > 0) {
+        if (projectionFields.length > 0) {
             indexOptions = {wildcardProjection: proj};
         }
         assert.commandWorked(collection.createIndex({"$**": 1}, indexOptions));
@@ -278,6 +278,16 @@ makeComparisonReadTest("PointQueryOnMultipleFields",
                        getMultiFieldPathToIntegerDocumentGenerator(fieldList),
                        kNumDocuments);
 
+fieldList = getNFieldNames(10);
+var kEmptyProjection = [];
+addReadTest({
+    name: "PointQueryOnMultipleFields.WildcardIndexWithNoProjection",
+    tags: ["regression"],
+    pre: getSetupFunctionWithWildcardIndex(
+        kEmptyProjection, getMultiFieldPathToIntegerDocumentGenerator(fieldList), kNumDocuments),
+    ops: getPointQueryList(fieldList, kNumDocuments)
+});
+
 fieldList = getNFieldNames(1);
 makeComparisonReadTest("PointQueryOnSingleArrayField",
                        fieldList,
@@ -333,7 +343,7 @@ fieldList = getNFieldNames(1);
 makeComparisonReadTest("RangeQueryWithSortOnSingleArrayField",
                        fieldList,
                        getRangeSortQueryList(fieldList, kNumDocuments),
-                       getTopLevelArrayMultiFieldDocumentGenerator(fieldList, kDefaultArraySize),
+                       getTopLevelArrayMultiFieldDocumentGenerator(fieldList, 20 /* array size */),
                        kNumDocuments);
 
 //

@@ -18,7 +18,7 @@ if ((typeof tests === "undefined" ? "undefined" : typeof(tests)) != "object") {
 function addTest(options) {
     tests.push({
         name: options.type + ".WildCardIndex." + options.name,
-        tags: ["wildcard_write", "indexed", /*">=4.1.3"*/].concat(options.tags),
+        tags: ["wildcard_write", "indexed", ">=4.1.3"].concat(options.tags),
         pre: options.pre,
         ops: options.ops
     });
@@ -153,15 +153,15 @@ function getSetupFunctionForTargetedIndex(fieldsToIndex) {
  * Returns a function, which when called, will drop the given collection and create a $** index on
  * 'fieldsToIndex'. If 'fieldsToIndex' is empty, it will create a $** index on all fields.
  */
-function getSetupFunctionWithWildCardIndex(fieldsToIndex) {
+function getSetupFunctionWithWildCardIndex(projectionFields) {
     return function(collection) {
         collection.drop();
         var proj = {};
-        for (var i = 0; i < fieldsToIndex.length; i++) {
-            proj[fieldsToIndex[i]] = 1;
+        for (var i = 0; i < projectionFields.length; i++) {
+            proj[projectionFields[i]] = 1;
         }
         var indexOptions = undefined;
-        if (fieldsToIndex.length > 0) {
+        if (projectionFields.length > 0) {
             indexOptions = {wildcardProjection: proj};
         }
         assert.commandWorked(collection.createIndex({"$**": 1}, indexOptions));
@@ -211,6 +211,10 @@ makeInsertTestForDocType("DeeplyNested",
 function makeComparisonWriteTest(name, fieldsToIndex, documentGenerator) {
     makeInsertTestForDocType(name + ".WildCardIndex",
                              getSetupFunctionWithWildCardIndex(fieldsToIndex),
+                             documentGenerator,
+                             ["core"]);
+    makeInsertTestForDocType(name + ".WildCardIndexNoProjection",
+                             getSetupFunctionWithWildCardIndex([]),
                              documentGenerator,
                              ["core"]);
     makeInsertTestForDocType(name + ".StandardIndex",
