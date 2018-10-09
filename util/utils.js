@@ -534,7 +534,7 @@ function doVersionExclude(test) {
         var tag = tags[i];
         if (tag.indexOf(">=") == 0)
         {
-            // Check the tags
+            // Check the tags.
             if (db.version() === "0.0.0") {
                 print("Skipping server version check for unversioned binary");
                 return false;
@@ -544,7 +544,7 @@ function doVersionExclude(test) {
             var minVersion = tag.split("=")[1].split(".");
             for (var j = 0; j < minVersion.length; j++) {
                 if (toInt(serverVersion[j]) < toInt(minVersion[j])) {
-                    print("Skipping test " + test.name 
+                    print("Skipping test " + test.name
                           + ". Server does not meet minimum required version: "
                           + db.version() + " < " + tag.split("=")[1]);
                     return true;
