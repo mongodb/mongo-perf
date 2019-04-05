@@ -441,6 +441,40 @@ function getMean(values) {
     return sum / values.length;
 }
 
+function getNFieldNames(numFields) {
+    var fieldNames = [];
+    for (var i = 0; i < numFields; i++) {
+        fieldNames.push("field-" + i);
+    }
+    return fieldNames;
+}
+
+/**
+ * Inserts value at the location specified by path (using dot notation) in object.
+ * If there's a common non-object field name this function overwrites the previous values.
+ */
+function setDottedFieldToValue(object, path, value) {
+    assert(typeof path === "string");
+
+    var pathAsArray = path.split(".");
+    setFieldPathArrayToValue(object, pathAsArray, value);
+
+    return object;
+}
+
+function setFieldPathArrayToValue(object, pathAsArray, value) {
+    if (pathAsArray.length == 1) {
+        object[pathAsArray[0]] = value;
+    } else {
+        if (typeof(object[pathAsArray[0]]) !== "object") {
+            object[pathAsArray[0]] = {};
+        }
+        var subObject = object[pathAsArray[0]];
+        pathAsArray.shift();
+        setFieldPathArrayToValue(subObject, pathAsArray, value);
+    }
+}
+
 function getDefaultCrudOptions() {
     var crudOptions = {};
     crudOptions.safeGLE = 'false';
@@ -500,13 +534,19 @@ function doVersionExclude(test) {
         var tag = tags[i];
         if (tag.indexOf(">=") == 0)
         {
-            // Check the tagtags
+            // Check the tags.
+            if (db.version() === "0.0.0") {
+                print("Skipping server version check for unversioned binary");
+                return false;
+            }
+
             var serverVersion = db.version().split(".");
             var minVersion = tag.split("=")[1].split(".");
             for (var j = 0; j < minVersion.length; j++) {
                 if (toInt(serverVersion[j]) < toInt(minVersion[j])) {
-                    print("Skipping test ", test.name, " because server does not meet minimum");
-                    print("server version ", tag);
+                    print("Skipping test " + test.name
+                          + ". Server does not meet minimum required version: "
+                          + db.version() + " < " + tag.split("=")[1]);
                     return true;
                 }
                 // Don't check minor version if major is above the threshold.

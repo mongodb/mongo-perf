@@ -1019,21 +1019,6 @@ generateTestCase({
 });
 
 generateTestCase({
-    name: "Out",
-    post: function outCleanup(sourceCollection) {
-        var outCollName = sourceCollection.getName() + "_tmp_out";
-        var outCollection = sourceCollection.getDB()[outCollName];
-        var backingCollName = sourceCollection.getName() + "_backing";
-        var backingCollection = sourceCollection.getDB()[backingCollName];
-        sourceCollection.drop();
-        outCollection.drop();
-        backingCollection.drop();
-    },
-    pipeline: [{$out: "#B_COLL_tmp_out"}],
-    addSkipStage: false
-});
-
-generateTestCase({
     name: "Project",
     docGenerator: function simpleProjectionDocGenerator(i) {
         return {_id: i, w: i, x: i, y: i, z: i};
