@@ -138,7 +138,7 @@ tests.push( { name: "Commands.FindAndModifySortedUpdate",
  * pipeline-style update to increment the count field.
  */
 tests.push( { name: "Commands.FindAndModifySortedUpdateWithPipeline",
-              tags: ["command","regression"],
+              tags: ["command","regression","pipeline-updates"],
               pre: function setUpFindAndModifySortedUpdateWithPipeline( collection ) {
                   collection.drop();
                   Random.setRandomSeed(22002);
@@ -224,7 +224,7 @@ tests.push( { name: "Commands.FindAndModifySortedUpdateIndexed",
  * pipeline-style update to increment the count field.
  */
 tests.push( { name: "Commands.FindAndModifySortedUpdateIndexedWithPipeline",
-              tags: ["command","regression"],
+              tags: ["command","regression","pipeline-updates"],
               pre: function setUpFindAndModifySortedUpdate( collection ) {
                   collection.drop();
                   Random.setRandomSeed(22002);
@@ -325,7 +325,7 @@ function addExtraCreditPipeline() {
  * grade, returning the new total grade.
  */
 tests.push( { name: "Commands.FindAndModifyGradeAdjustment",
-              tags: ["command","regression"],
+              tags: ["command","regression","pipeline-updates"],
               pre: function setUpFindAndModifyGradeAdjustment( collection ) {
                   collection.drop();
                   Random.setRandomSeed(22002);
@@ -366,7 +366,7 @@ tests.push( { name: "Commands.FindAndModifyGradeAdjustment",
  * the student's total grade, returning the new total grade.
  */
 tests.push( { name: "Commands.FindAndModifyGradeAdjustmentSorted",
-              tags: ["command","regression"],
+              tags: ["command","regression","pipeline-updates"],
               pre: function setUpFindAndModifyGradeAdjustmentSorted( collection ) {
                   collection.drop();
                   Random.setRandomSeed(22002);
