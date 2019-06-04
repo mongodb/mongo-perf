@@ -280,6 +280,7 @@ tests.push( { name: "Commands.FindAndModifySortedDeleteIndexed",
               ] } );
 
 function addExtraCreditPipeline() {
+    // Chooses a random assignment in the 'grades' array and adds 5 points to its score.
     return [
         {
           $set: {
@@ -316,16 +317,16 @@ function addExtraCreditPipeline() {
         },
         {$set: {overall_grade: {$avg: '$grades.grade'}}},
     ];
-};
+}
 
 /*
- * Setup: Create collection of documents with grades for a particular student.
+ * Setup: Create collection where each document represents the grades for a particular student.
  * Test: Call findAndModify to add extra credit to an assignment and re-compute the student's total
  * grade, returning the new total grade.
  */
 tests.push( { name: "Commands.FindAndModifyGradeAdjustment",
-              tags: ["command","regression", "charlie"],
-              pre: function setUpFindAndModifySortedDelete( collection ) {
+              tags: ["command","regression"],
+              pre: function setUpFindAndModifyGradeAdjustment( collection ) {
                   collection.drop();
                   Random.setRandomSeed(22002);
                   var nDocs = 5000;
@@ -360,13 +361,13 @@ tests.push( { name: "Commands.FindAndModifyGradeAdjustment",
               ] } );
 
 /*
- * Setup: Create collection of documents with grades for a particular student.
+ * Setup: Create collection where each document represents the grades for a particular student.
  * Test: Call findAndModify to add extra credit to the student with the lowest grade and re-compute
  * the student's total grade, returning the new total grade.
  */
-tests.push( { name: "Commands.FindAndModifyGradeAdjustment",
-              tags: ["command","regression", "charlie"],
-              pre: function setUpFindAndModifySortedDelete( collection ) {
+tests.push( { name: "Commands.FindAndModifyGradeAdjustmentSorted",
+              tags: ["command","regression"],
+              pre: function setUpFindAndModifyGradeAdjustmentSorted( collection ) {
                   collection.drop();
                   Random.setRandomSeed(22002);
                   var nDocs = 5000;
@@ -484,3 +485,4 @@ tests.push( genDistinctTest( "Commands.DistinctWithoutIndex", false, false ) );
  *       documents to compute the distinct values
  */
 tests.push( genDistinctTest( "Commands.DistinctWithoutIndexAndQuery", false, true ) );
+
