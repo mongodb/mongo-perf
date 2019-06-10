@@ -432,57 +432,60 @@ tests.push({
  * Semantically equivalent to FindAndModifySortedUpdate except uses a
  * pipeline-style update to increment the count field.
  */
-tests.push( { name: "Commands.FindAndModifySortedUpdateWithPipeline",
-              tags: ["command","regression","pipeline-updates"],
-              pre: function setUpFindAndModifySortedUpdateWithPipeline( collection ) {
-                  collection.drop();
-                  Random.setRandomSeed(22002);
-                  var nDocs = 5000;
-                  var bulk = collection.initializeUnorderedBulkOp();
-                  for (var i = 0; i < nDocs; i++) {
-                      bulk.insert({ count: 0, rand: Random.rand() });
-                  }
-                  bulk.execute();
-              },
-              ops: [
-                  { op: "command",
-                    ns: "#B_DB",
-                    command: { findAndModify: "#B_COLL",
-                               query: {},
-                               update: [{$set: {count: {$add: ["$count", 1]}}}],
-                               sort: { count: 1, rand: 1 }
-                    }
-                  }
-              ] } );
+tests.push({
+    name: "Commands.FindAndModifySortedUpdateWithPipeline",
+    tags: ["command", "regression", "pipeline-updates"],
+    pre: function setUpFindAndModifySortedUpdateWithPipeline(collection) {
+        collection.drop();
+        Random.setRandomSeed(22002);
+        var nDocs = 5000;
+        var bulk = collection.initializeUnorderedBulkOp();
+        for (var i = 0; i < nDocs; i++) {
+            bulk.insert({count: 0, rand: Random.rand()});
+        }
+        bulk.execute();
+    },
+    ops: [{
+        op: "command",
+        ns: "#B_DB",
+        command: {
+            findAndModify: "#B_COLL",
+            query: {},
+            update: [{$set: {count: {$add: ["$count", 1]}}}],
+            sort: {count: 1, rand: 1}
+        }
+    }]
+});
 
 /**
  * Semantically equivalent to FindAndModifySortedUpdateIndexed except uses a
  * pipeline-style update to increment the count field.
  */
-tests.push( { name: "Commands.FindAndModifySortedUpdateIndexedWithPipeline",
-              tags: ["command","regression","pipeline-updates"],
-              pre: function setUpFindAndModifySortedUpdate( collection ) {
-                  collection.drop();
-                  Random.setRandomSeed(22002);
-                  var nDocs = 5000;
-                  var bulk = collection.initializeUnorderedBulkOp();
-                  for (var i = 0; i < nDocs; i++) {
-                      bulk.insert({ count: 0, rand: Random.rand() });
-                  }
-                  bulk.execute();
-                  collection.ensureIndex({count: 1, rand: 1});
-              },
-              ops: [
-                  { op: "command",
-                    ns: "#B_DB",
-                    command: { findAndModify: "#B_COLL",
-                               query: {},
-                               update: [{$set: {count: {$add: ["$count", 1]}}}],
-                               sort: { count: 1, rand: 1 }
-                    }
-                  }
-              ] } );
-
+tests.push({
+    name: "Commands.FindAndModifySortedUpdateIndexedWithPipeline",
+    tags: ["command", "regression", "pipeline-updates"],
+    pre: function setUpFindAndModifySortedUpdate(collection) {
+        collection.drop();
+        Random.setRandomSeed(22002);
+        var nDocs = 5000;
+        var bulk = collection.initializeUnorderedBulkOp();
+        for (var i = 0; i < nDocs; i++) {
+            bulk.insert({count: 0, rand: Random.rand()});
+        }
+        bulk.execute();
+        collection.ensureIndex({count: 1, rand: 1});
+    },
+    ops: [{
+        op: "command",
+        ns: "#B_DB",
+        command: {
+            findAndModify: "#B_COLL",
+            query: {},
+            update: [{$set: {count: {$add: ["$count", 1]}}}],
+            sort: {count: 1, rand: 1}
+        }
+    }]
+});
 
 function addExtraCreditPipeline() {
     // Chooses a random assignment in the 'grades' array and adds 5 points to its score.
@@ -497,10 +500,10 @@ function addExtraCreditPipeline() {
                               if: {
                                   $eq: [
                                       '$$this._id',
-                                      {$concat: [
-                                          'assignment_',
-                                          {$toString: {"#RAND_INT": [0, 50]}}
-                                      ]}
+                                      {
+                                        $concat:
+                                            ['assignment_', {$toString: {"#RAND_INT": [0, 50]}}]
+                                      }
                                   ]
                               },
                               then: {
@@ -529,81 +532,89 @@ function addExtraCreditPipeline() {
  * Test: Call findAndModify to add extra credit to an assignment and re-compute the student's total
  * grade, returning the new total grade.
  */
-tests.push( { name: "Commands.FindAndModifyGradeAdjustment",
-              tags: ["command","regression","pipeline-updates"],
-              pre: function setUpFindAndModifyGradeAdjustment( collection ) {
-                  collection.drop();
-                  Random.setRandomSeed(22002);
-                  var nDocs = 5000;
-                  var bulk = collection.initializeUnorderedBulkOp();
-                  for (var i = 0; i < nDocs; i++) {
-                      var grades = [];
-                      var total_score = 0;
-                      for (var j = 0; j < 50; j++) {
-                          score = 50 + Random.randInt(50);  // Between 50 and 100.
-                          grades.push({_id: "assignment_" + j, grade: score});
-                          total_score += score;
-                      }
-                      bulk.insert({
-                          _id: i,
-                          student_name: "placeholder name",
-                          overall_grade: total_score / 50,
-                          grades: grades
-                      });
-                  }
-                  bulk.execute();
-              },
-              ops: [
-                  { op: "command",
-                    ns: "#B_DB",
-                    command: { findAndModify: "#B_COLL",
-                               query: {_id: {"#RAND_INT": [0, 5000]}},
-                               update: addExtraCreditPipeline(),
-                               new: true,
-                               fields: {overall_grade: 1}
-                    }
-                  },
-              ] } );
+tests.push({
+    name: "Commands.FindAndModifyGradeAdjustment",
+    tags: ["command", "regression", "pipeline-updates"],
+    pre: function setUpFindAndModifyGradeAdjustment(collection) {
+        collection.drop();
+        Random.setRandomSeed(22002);
+        var nDocs = 5000;
+        var bulk = collection.initializeUnorderedBulkOp();
+        for (var i = 0; i < nDocs; i++) {
+            var grades = [];
+            var total_score = 0;
+            for (var j = 0; j < 50; j++) {
+                score = 50 + Random.randInt(50);  // Between 50 and 100.
+                grades.push({_id: "assignment_" + j, grade: score});
+                total_score += score;
+            }
+            bulk.insert({
+                _id: i,
+                student_name: "placeholder name",
+                overall_grade: total_score / 50,
+                grades: grades
+            });
+        }
+        bulk.execute();
+    },
+    ops: [
+        {
+          op: "command",
+          ns: "#B_DB",
+          command: {
+              findAndModify: "#B_COLL",
+              query: {_id: {"#RAND_INT": [0, 5000]}},
+              update: addExtraCreditPipeline(),
+              new: true,
+              fields: {overall_grade: 1}
+          }
+        },
+    ]
+});
 
 /*
  * Setup: Create collection where each document represents the grades for a particular student.
  * Test: Call findAndModify to add extra credit to the student with the lowest grade and re-compute
  * the student's total grade, returning the new total grade.
  */
-tests.push( { name: "Commands.FindAndModifyGradeAdjustmentSorted",
-              tags: ["command","regression","pipeline-updates"],
-              pre: function setUpFindAndModifyGradeAdjustmentSorted( collection ) {
-                  collection.drop();
-                  Random.setRandomSeed(22002);
-                  var nDocs = 5000;
-                  var bulk = collection.initializeUnorderedBulkOp();
-                  for (var i = 0; i < nDocs; i++) {
-                      var grades = [];
-                      var total_score = 0;
-                      for (var j = 0; j < 50; j++) {
-                          score = 50 + Random.randInt(50);  // Between 50 and 100.
-                          grades.push({_id: "assginment_" + j, grade: score});
-                          total_score += score;
-                      }
-                      bulk.insert({
-                          _id: i,
-                          student_name: "placeholder name",
-                          overall_grade: total_score / 50,
-                          grades: grades
-                      });
-                  }
-                  bulk.execute();
-              },
-              ops: [
-                  { op: "command",
-                    ns: "#B_DB",
-                    command: { findAndModify: "#B_COLL",
-                               query: {},
-                               update: addExtraCreditPipeline(),
-                               new: true,
-                               fields: {overall_grade: 1},
-                               sort: {overall_grade: -1}
-                    }
-                  },
-              ] } );
+tests.push({
+    name: "Commands.FindAndModifyGradeAdjustmentSorted",
+    tags: ["command", "regression", "pipeline-updates"],
+    pre: function setUpFindAndModifyGradeAdjustmentSorted(collection) {
+        collection.drop();
+        Random.setRandomSeed(22002);
+        var nDocs = 5000;
+        var bulk = collection.initializeUnorderedBulkOp();
+        for (var i = 0; i < nDocs; i++) {
+            var grades = [];
+            var total_score = 0;
+            for (var j = 0; j < 50; j++) {
+                score = 50 + Random.randInt(50);  // Between 50 and 100.
+                grades.push({_id: "assginment_" + j, grade: score});
+                total_score += score;
+            }
+            bulk.insert({
+                _id: i,
+                student_name: "placeholder name",
+                overall_grade: total_score / 50,
+                grades: grades
+            });
+        }
+        bulk.execute();
+    },
+    ops: [
+        {
+          op: "command",
+          ns: "#B_DB",
+          command: {
+              findAndModify: "#B_COLL",
+              query: {},
+              update: addExtraCreditPipeline(),
+              new: true,
+              fields: {overall_grade: 1},
+              sort: {overall_grade: -1}
+          }
+        },
+    ]
+});
 
