@@ -9,7 +9,7 @@ if (typeof(tests) != "object") {
  * increments X; there will be contention on updating the index key.
  */
 tests.push({
-    name: "Update.IncWithIndex",
+    name: "PipelineUpdate.IncWithIndex",
     tags: ["update", "core", "indexed", "pipeline-update", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
@@ -36,7 +36,7 @@ tests.push({
  * upserts(increment) X.
  */
 tests.push({
-    name: "Update.IncWithIndexUpsert",
+    name: "PipelineUpdate.IncWithIndexUpsert",
     tags: ["update", "core", "indexed", "pipeline-update", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
@@ -71,7 +71,7 @@ var longFieldNames = [
  * collection by _id field, and increments the same 5 of the 20 integer fields in the document.
  */
 tests.push({
-    name: "Update.IncFewLargeDocLongFields",
+    name: "PipelineUpdate.IncFewLargeDocLongFields",
     tags: ["update", "regression", "pipeline-update", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
@@ -118,7 +118,7 @@ tests.push({
  * distinct range of documents.
  */
 tests.push({
-    name: "Update.SetWithMultiIndex.String",
+    name: "PipelineUpdate.SetWithMultiIndex.String",
     tags: ["update", "indexed", "regression", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
@@ -169,7 +169,7 @@ tests.push({
  * Test: Increment deep fields, some of which share a prefix, some of which do not.
  */
 tests.push({
-    name: "Update.MmsSetDeepDistinctPaths",
+    name: "PipelineUpdate.MmsSetDeepDistinctPaths",
     tags: ["update", "mms", "core", "single_threaded", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
@@ -215,7 +215,7 @@ tests.push({
  * Notes: High contention on the 20 documents updated as well as on index X.
  */
 tests.push({
-    name: "MultiUpdate.Contended.Hot.Indexed",
+    name: "PipelineUpdate.Multi.Contended.Hot.Indexed",
     tags: ["update", "indexed", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
@@ -242,7 +242,7 @@ tests.push({
  * Test: Simultaneously update each array and its size so they remain in sync.
  */
 tests.push({
-    name: "Update.FieldsSimultaneously",
+    name: "PipelineUpdate.FieldsSimultaneously",
     tags: ["update", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
@@ -280,7 +280,7 @@ tests.push({
  * operation.
  */
 tests.push({
-    name: "Update.ArrayFieldInTwoDifferentWays",
+    name: "PipelineUpdate.ArrayFieldInTwoDifferentWays",
     tags: ["update", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
@@ -336,7 +336,7 @@ tests.push({
  * Test: Update the dates to add a day while reining in those outside a certain maximum.
  */
 tests.push({
-    name: "Update.ConditionalUpdate",
+    name: "PipelineUpdate.ConditionalUpdate",
     tags: ["update", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
@@ -375,7 +375,7 @@ tests.push({
  * array for each type if it doesn't exist already. Then update the integers.
  */
 tests.push({
-    name: "Update.MaintainHistory",
+    name: "PipelineUpdate.MaintainHistory",
     tags: ["update", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
@@ -434,7 +434,7 @@ tests.push({
  * field.
  */
 tests.push({
-    name: "FindAndModify.SortedUpdate",
+    name: "PipelineUpdate.FindAndModify.SortedUpdate",
     tags: ["command", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function setUpFindAndModifySortedUpdateWithPipeline(collection) {
         collection.drop();
@@ -464,7 +464,7 @@ tests.push({
  * count field.
  */
 tests.push({
-    name: "FindAndModify.SortedUpdateIndexed",
+    name: "PipelineUpdate.FindAndModify.SortedUpdateIndexed",
     tags: ["command", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function setUpFindAndModifySortedUpdate(collection) {
         collection.drop();
@@ -535,7 +535,7 @@ function addExtraCreditPipeline() {
  * grade, returning the new total grade.
  */
 tests.push({
-    name: "FindAndModify.GradeAdjustment",
+    name: "PipelineUpdate.FindAndModify.GradeAdjustment",
     tags: ["command", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function setUpFindAndModifyGradeAdjustment(collection) {
         collection.drop();
@@ -580,7 +580,7 @@ tests.push({
  * the student's total grade, returning the new total grade.
  */
 tests.push({
-    name: "FindAndModify.GradeAdjustmentSorted",
+    name: "PipelineUpdate.FindAndModify.GradeAdjustmentSorted",
     tags: ["command", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function setUpFindAndModifyGradeAdjustmentSorted(collection) {
         collection.drop();
