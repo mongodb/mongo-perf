@@ -10,7 +10,7 @@ if (typeof(tests) != "object") {
  */
 tests.push({
     name: "PipelineUpdate.IncWithIndex",
-    tags: ["update", "core", "indexed", "pipeline-update", "regression", ">=4.2.0"],
+    tags: ["indexed", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
         var docs = [];
@@ -37,7 +37,7 @@ tests.push({
  */
 tests.push({
     name: "PipelineUpdate.IncWithIndexUpsert",
-    tags: ["update", "core", "indexed", "pipeline-update", "regression", ">=4.2.0"],
+    tags: ["indexed", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
         collection.ensureIndex({x: 1});
@@ -72,7 +72,7 @@ var longFieldNames = [
  */
 tests.push({
     name: "PipelineUpdate.IncFewLargeDocLongFields",
-    tags: ["update", "regression", "pipeline-update", "regression", ">=4.2.0"],
+    tags: ["regression", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
 
@@ -119,7 +119,7 @@ tests.push({
  */
 tests.push({
     name: "PipelineUpdate.SetWithMultiIndex.String",
-    tags: ["update", "indexed", "regression", "pipeline-updates", "regression", ">=4.2.0"],
+    tags: ["indexed", "regression", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
         var docs = [];
@@ -170,7 +170,7 @@ tests.push({
  */
 tests.push({
     name: "PipelineUpdate.MmsSetDeepDistinctPaths",
-    tags: ["update", "mms", "core", "single_threaded", "pipeline-updates", "regression", ">=4.2.0"],
+    tags: ["mms", "single_threaded", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
 
@@ -216,7 +216,7 @@ tests.push({
  */
 tests.push({
     name: "PipelineUpdate.Multi.Contended.Hot.Indexed",
-    tags: ["update", "indexed", "pipeline-updates", "regression", ">=4.2.0"],
+    tags: ["indexed", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
         var docs = [];
@@ -243,7 +243,7 @@ tests.push({
  */
 tests.push({
     name: "PipelineUpdate.FieldsSimultaneously",
-    tags: ["update", "pipeline-updates", "regression", ">=4.2.0"],
+    tags: ["pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
         var docs = [];
@@ -281,7 +281,7 @@ tests.push({
  */
 tests.push({
     name: "PipelineUpdate.ArrayFieldInTwoDifferentWays",
-    tags: ["update", "pipeline-updates", "regression", ">=4.2.0"],
+    tags: ["pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
         var array = [];
@@ -337,7 +337,7 @@ tests.push({
  */
 tests.push({
     name: "PipelineUpdate.ConditionalUpdate",
-    tags: ["update", "pipeline-updates", "regression", ">=4.2.0"],
+    tags: ["pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
         var docs = [];
@@ -376,7 +376,7 @@ tests.push({
  */
 tests.push({
     name: "PipelineUpdate.MaintainHistory",
-    tags: ["update", "pipeline-updates", "regression", ">=4.2.0"],
+    tags: ["pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
         var docs = [];
