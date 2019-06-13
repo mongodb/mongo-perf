@@ -9,8 +9,8 @@ if (typeof(tests) != "object") {
  * increments X; there will be contention on updating the index key.
  */
 tests.push({
-    name: 'Update.IncWithIndex',
-    tags: ['update', 'core', 'indexed', 'pipeline-update', '>=4.2.0'],
+    name: "PipelineUpdate.IncWithIndex",
+    tags: ["indexed", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
         var docs = [];
@@ -23,9 +23,9 @@ tests.push({
     },
     ops: [
         {
-          op: 'update',
-          query: {_id: {'#RAND_INT_PLUS_THREAD': [0, 100]}},
-          update: [{$set: {x: {$add: ['$x', 1]}}}],
+          op: "update",
+          query: {_id: {"#RAND_INT_PLUS_THREAD": [0, 100]}},
+          update: [{$set: {x: {$add: ["$x", 1]}}}],
         },
     ],
 });
@@ -36,32 +36,32 @@ tests.push({
  * upserts(increment) X.
  */
 tests.push({
-    name: 'Update.IncWithIndexUpsert',
-    tags: ['update', 'core', 'indexed', 'pipeline-update', '>=4.2.0'],
+    name: "PipelineUpdate.IncWithIndexUpsert",
+    tags: ["indexed", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
         collection.ensureIndex({x: 1});
     },
     ops: [
         {
-          op: 'update',
+          op: "update",
           upsert: true,
-          query: {_id: {'#RAND_INT_PLUS_THREAD': [0, 100]}},
-          update: [{$set: {x: {$add: ['$x', 1]}}}],
+          query: {_id: {"#RAND_INT_PLUS_THREAD": [0, 100]}},
+          update: [{$set: {x: {$add: ["$x", 1]}}}],
         },
     ],
 });
 
 var longFieldNames = [
-    'kbgcslcybg', 'kfexqflvce', 'yitljbmriy', 'vjhgznppgw', 'ksnqrkckgm', 'bxzrekmanf',
-    'wgjptieoho', 'miohmkbzvv', 'iyymqfqfte', 'nbbxrjspyu', 'ftdmqxfvfo', 'sqoccqelhp',
-    'phbgzfvlvm', 'ygvlusahma', 'elcgijivrt', 'qdwzjpugsr', 'dhwgzxijck', 'ezbztosivn',
-    'gqnevrxtke', 'jyzymmhtxc', 'iqzleodwcl', 'uvcbevobia', 'fmsaehzaax', 'hvekxgvche',
-    'mudggeguxy', 'jkpwpdfjjq', 'ziujorptwj', 'zygklvogup', 'rtxpmvlegv', 'nfzarcgpmf',
-    'nlvbsgscbz', 'yanwvoxeov', 'ylqapkyfxn', 'evlwtlejoe', 'xvkejgtiuc', 'sjkwfnrwpf',
-    'gobpjhjrck', 'ltpkggsgpb', 'jzaathnsra', 'uqiutzbcoa', 'zwivxvtmgi', 'glaibvnhix',
-    'dosiyispnf', 'nvtaemdwtp', 'vzojziqbkj', 'kbtfmcjlgl', 'ialgxzuhnq', 'djqfxvmycc',
-    'ocrpwmeqyb', 'tcrrliflby',
+    "kbgcslcybg", "kfexqflvce", "yitljbmriy", "vjhgznppgw", "ksnqrkckgm", "bxzrekmanf",
+    "wgjptieoho", "miohmkbzvv", "iyymqfqfte", "nbbxrjspyu", "ftdmqxfvfo", "sqoccqelhp",
+    "phbgzfvlvm", "ygvlusahma", "elcgijivrt", "qdwzjpugsr", "dhwgzxijck", "ezbztosivn",
+    "gqnevrxtke", "jyzymmhtxc", "iqzleodwcl", "uvcbevobia", "fmsaehzaax", "hvekxgvche",
+    "mudggeguxy", "jkpwpdfjjq", "ziujorptwj", "zygklvogup", "rtxpmvlegv", "nfzarcgpmf",
+    "nlvbsgscbz", "yanwvoxeov", "ylqapkyfxn", "evlwtlejoe", "xvkejgtiuc", "sjkwfnrwpf",
+    "gobpjhjrck", "ltpkggsgpb", "jzaathnsra", "uqiutzbcoa", "zwivxvtmgi", "glaibvnhix",
+    "dosiyispnf", "nvtaemdwtp", "vzojziqbkj", "kbtfmcjlgl", "ialgxzuhnq", "djqfxvmycc",
+    "ocrpwmeqyb", "tcrrliflby",
 ];
 
 /**
@@ -71,8 +71,8 @@ var longFieldNames = [
  * collection by _id field, and increments the same 5 of the 20 integer fields in the document.
  */
 tests.push({
-    name: 'Update.IncFewLargeDocLongFields',
-    tags: ['update', 'regression', 'pipeline-update', '>=4.2.0'],
+    name: "PipelineUpdate.IncFewLargeDocLongFields",
+    tags: ["regression", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
 
@@ -89,20 +89,20 @@ tests.push({
     },
     ops: [
         {
-          op: 'update',
+          op: "update",
           query: {
               _id: {
-                  '#SEQ_INT': {seq_id: 0, start: 0, step: 1, mod: 100},
+                  "#SEQ_INT": {seq_id: 0, start: 0, step: 1, mod: 100},
               },
           },
           update: [
               {
                 $set: {
-                    kbgcslcybg: ['$kbgcslcybg', 1],
-                    vjhgznppgw: ['$vjhgznppgw', 1],
-                    jzaathnsra: ['$jzaathnsra', 1],
-                    miohmkbzvv: ['$miohmkbzvv', 1],
-                    elcgijivrt: ['$elcgijivrt', 1],
+                    kbgcslcybg: ["$kbgcslcybg", 1],
+                    vjhgznppgw: ["$vjhgznppgw", 1],
+                    jzaathnsra: ["$jzaathnsra", 1],
+                    miohmkbzvv: ["$miohmkbzvv", 1],
+                    elcgijivrt: ["$elcgijivrt", 1],
                 },
               },
           ],
@@ -118,8 +118,8 @@ tests.push({
  * distinct range of documents.
  */
 tests.push({
-    name: "Update.SetWithMultiIndex.String",
-    tags: ['update', 'indexed', 'regression', 'pipeline-updates', '>=4.2.0'],
+    name: "PipelineUpdate.SetWithMultiIndex.String",
+    tags: ["indexed", "regression", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
         var docs = [];
@@ -169,8 +169,8 @@ tests.push({
  * Test: Increment deep fields, some of which share a prefix, some of which do not.
  */
 tests.push({
-    name: "Update.MmsSetDeepDistinctPaths",
-    tags: ['update', 'mms', 'core', 'single_threaded', 'pipeline-updates', '>=4.2.0'],
+    name: "PipelineUpdate.MmsSetDeepDistinctPaths",
+    tags: ["mms", "single_threaded", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
 
@@ -215,8 +215,8 @@ tests.push({
  * Notes: High contention on the 20 documents updated as well as on index X.
  */
 tests.push({
-    name: "MultiUpdate.Contended.Hot.Indexed",
-    tags: ['update', 'indexed', 'pipeline-updates', '>=4.2.0'],
+    name: "PipelineUpdate.Multi.Contended.Hot.Indexed",
+    tags: ["indexed", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
         var docs = [];
@@ -232,7 +232,7 @@ tests.push({
           op: "update",
           multi: true,
           query: {_id: {$gt: 1590, $lt: 1610}},
-          update: [{$set: {x: {$add: ['$x', 1]}}}]
+          update: [{$set: {x: {$add: ["$x", 1]}}}]
         },
     ]
 });
@@ -242,8 +242,8 @@ tests.push({
  * Test: Simultaneously update each array and its size so they remain in sync.
  */
 tests.push({
-    name: "Update.FieldsSimultaneously",
-    tags: ['update', 'pipeline-updates', '>=4.2.0'],
+    name: "PipelineUpdate.FieldsSimultaneously",
+    tags: ["pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
         var docs = [];
@@ -267,7 +267,7 @@ tests.push({
           update: [{
               $set: {
                   tags: {$concatArrays: ["$tags", ["new string"]]},
-                  tagsSize: {$add: ['$tagsSize', 1]}
+                  tagsSize: {$add: ["$tagsSize", 1]}
               }
           }]
         },
@@ -280,8 +280,8 @@ tests.push({
  * operation.
  */
 tests.push({
-    name: "Update.ArrayFieldInTwoDifferentWays",
-    tags: ['update', 'pipeline-updates', '>=4.2.0'],
+    name: "PipelineUpdate.ArrayFieldInTwoDifferentWays",
+    tags: ["pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
         var array = [];
@@ -336,8 +336,8 @@ tests.push({
  * Test: Update the dates to add a day while reining in those outside a certain maximum.
  */
 tests.push({
-    name: "Update.ConditionalUpdate",
-    tags: ['update', 'pipeline-updates', '>=4.2.0'],
+    name: "PipelineUpdate.ConditionalUpdate",
+    tags: ["pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
         var docs = [];
@@ -375,8 +375,8 @@ tests.push({
  * array for each type if it doesn't exist already. Then update the integers.
  */
 tests.push({
-    name: "Update.MaintainHistory",
-    tags: ['update', 'pipeline-updates', '>=4.2.0'],
+    name: "PipelineUpdate.MaintainHistory",
+    tags: ["pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
         var docs = [];
@@ -427,3 +427,196 @@ tests.push({
         ]
     }]
 });
+
+/**
+ * Semantically equivalent to an existing workload which uses the "classic" update language called
+ * 'FindAndModifySortedUpdate' except this uses a pipeline-style update to increment the count
+ * field.
+ */
+tests.push({
+    name: "PipelineUpdate.FindAndModify.SortedUpdate",
+    tags: ["command", "pipeline-updates", "regression", ">=4.2.0"],
+    pre: function setUpFindAndModifySortedUpdateWithPipeline(collection) {
+        collection.drop();
+        Random.setRandomSeed(22002);
+        var nDocs = 5000;
+        var bulk = collection.initializeUnorderedBulkOp();
+        for (var i = 0; i < nDocs; i++) {
+            bulk.insert({count: 0, rand: Random.rand()});
+        }
+        bulk.execute();
+    },
+    ops: [{
+        op: "command",
+        ns: "#B_DB",
+        command: {
+            findAndModify: "#B_COLL",
+            query: {},
+            update: [{$set: {count: {$add: ["$count", 1]}}}],
+            sort: {count: 1, rand: 1}
+        }
+    }]
+});
+
+/**
+ * Semantically equivalent to an existing workload which uses the "classic" update language called
+ * 'FindAndModifySortedUpdateIndexed' except this uses a pipeline-style update to increment the
+ * count field.
+ */
+tests.push({
+    name: "PipelineUpdate.FindAndModify.SortedUpdateIndexed",
+    tags: ["command", "pipeline-updates", "regression", ">=4.2.0"],
+    pre: function setUpFindAndModifySortedUpdate(collection) {
+        collection.drop();
+        Random.setRandomSeed(22002);
+        var nDocs = 5000;
+        var bulk = collection.initializeUnorderedBulkOp();
+        for (var i = 0; i < nDocs; i++) {
+            bulk.insert({count: 0, rand: Random.rand()});
+        }
+        bulk.execute();
+        collection.ensureIndex({count: 1, rand: 1});
+    },
+    ops: [{
+        op: "command",
+        ns: "#B_DB",
+        command: {
+            findAndModify: "#B_COLL",
+            query: {},
+            update: [{$set: {count: {$add: ["$count", 1]}}}],
+            sort: {count: 1, rand: 1}
+        }
+    }]
+});
+
+function addExtraCreditPipeline() {
+    // Chooses a random assignment in the 'grades' array and adds 5 points to its score.
+    return [
+        {
+          $set: {
+              grades: {
+                  $map: {
+                      input: "$grades",
+                      in : {
+                          $cond: {
+                              if: {
+                                  $eq: [
+                                      "$$this._id",
+                                      {
+                                        $concat:
+                                            ["assignment_", {$toString: {"#RAND_INT": [0, 50]}}]
+                                      }
+                                  ]
+                              },
+                              then: {
+                                  $mergeObjects: [
+                                      "$$this",
+                                      {
+                                        grade: {
+                                            $add: ["$$this.grade", 5],
+                                        },
+                                      },
+                                  ],
+                              },
+                              else: "$$this",
+                          },
+                      },
+                  },
+              },
+          },
+        },
+        {$set: {overall_grade: {$avg: "$grades.grade"}}},
+    ];
+}
+
+/*
+ * Setup: Create collection where each document represents the grades for a particular student.
+ * Test: Call findAndModify to add extra credit to an assignment and re-compute the student's total
+ * grade, returning the new total grade.
+ */
+tests.push({
+    name: "PipelineUpdate.FindAndModify.GradeAdjustment",
+    tags: ["command", "pipeline-updates", "regression", ">=4.2.0"],
+    pre: function setUpFindAndModifyGradeAdjustment(collection) {
+        collection.drop();
+        Random.setRandomSeed(22002);
+        var nDocs = 5000;
+        var bulk = collection.initializeUnorderedBulkOp();
+        for (var i = 0; i < nDocs; i++) {
+            var grades = [];
+            var total_score = 0;
+            for (var j = 0; j < 50; j++) {
+                score = 50 + Random.randInt(50);  // Between 50 and 100.
+                grades.push({_id: "assignment_" + j, grade: score});
+                total_score += score;
+            }
+            bulk.insert({
+                _id: i,
+                student_name: "placeholder name",
+                overall_grade: total_score / 50,
+                grades: grades
+            });
+        }
+        bulk.execute();
+    },
+    ops: [
+        {
+          op: "command",
+          ns: "#B_DB",
+          command: {
+              findAndModify: "#B_COLL",
+              query: {_id: {"#RAND_INT": [0, 5000]}},
+              update: addExtraCreditPipeline(),
+              new: true,
+              fields: {overall_grade: 1}
+          }
+        },
+    ]
+});
+
+/*
+ * Setup: Create collection where each document represents the grades for a particular student.
+ * Test: Call findAndModify to add extra credit to the student with the lowest grade and re-compute
+ * the student's total grade, returning the new total grade.
+ */
+tests.push({
+    name: "PipelineUpdate.FindAndModify.GradeAdjustmentSorted",
+    tags: ["command", "pipeline-updates", "regression", ">=4.2.0"],
+    pre: function setUpFindAndModifyGradeAdjustmentSorted(collection) {
+        collection.drop();
+        Random.setRandomSeed(22002);
+        var nDocs = 5000;
+        var bulk = collection.initializeUnorderedBulkOp();
+        for (var i = 0; i < nDocs; i++) {
+            var grades = [];
+            var total_score = 0;
+            for (var j = 0; j < 50; j++) {
+                score = 50 + Random.randInt(50);  // Between 50 and 100.
+                grades.push({_id: "assginment_" + j, grade: score});
+                total_score += score;
+            }
+            bulk.insert({
+                _id: i,
+                student_name: "placeholder name",
+                overall_grade: total_score / 50,
+                grades: grades
+            });
+        }
+        bulk.execute();
+    },
+    ops: [
+        {
+          op: "command",
+          ns: "#B_DB",
+          command: {
+              findAndModify: "#B_COLL",
+              query: {},
+              update: addExtraCreditPipeline(),
+              new: true,
+              fields: {overall_grade: 1},
+              sort: {overall_grade: -1}
+          }
+        },
+    ]
+});
+
