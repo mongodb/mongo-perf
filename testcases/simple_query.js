@@ -747,3 +747,81 @@ addTestCase({
     },
     op: {op: "find", query: {}}
 });
+
+/**
+ * Setup: Create a collection with an array of scalars x:[...].
+ *
+ * Test: Sort the collection by the x (array) field.
+ */
+addTestCase({
+    name: "SortByArrayOfScalars",
+    tags: ["core", "sort"],
+    nDocs: 1000,
+    docs: function(i) {
+        var nArrayElements = 10;
+        var arrayRandom = [];
+        for (var i = 0; i < nArrayElements; i++) {
+            arrayRandom.push(Random.randInt(10000));
+        }
+        return {x: arrayRandom};
+    },
+    op: {op: "find", query: {$query:{}, $orderby: {x: 1}}}
+});
+
+/**
+ * Setup: Create a collection with an array of documents arr:[x:{...},...].
+ *
+ * Test: Sort the collection by the nested arr.x field.
+ */
+addTestCase({
+    name: "SortByArrayOfNestedDocuments",
+    tags: ["core", "sort"],
+    nDocs: 1000,
+    docs: function(i) {
+        var nArrayElements = 10;
+        var arrayRandom = [];
+        for (var i = 0; i < nArrayElements; i++) {
+            arrayRandom.push({x:Random.randInt(10000)});
+        }
+        return {arr: arrayRandom};
+    },
+    op: {op: "find", query: {$query:{}, $orderby: {"arr.x": 1}}}
+});
+
+/**
+ * Setup: Create a collection with a scalar field x and an index on x.
+ *
+ * Test: Sort the collection by the x field.
+ */
+addTestCase({
+    name: "CoveredNonBlockingSort",
+    tags: ["core", "sort", "indexed"],
+    nDocs: 1000,
+    docs: function(i) {
+        return {x: Random.randInt(10000)};
+    },
+    indexes: [{x: 1}],
+    op: {op: "find", query: {$query:{}, $orderby: {x: 1}}, filter: {x: 1, _id: 0}}
+});
+
+/**
+ * Setup: Create a collection with scalar fields x, y and an index on x, y.
+ *
+ * Test: Sort the collection by the y field which is eligible for covering but still requires
+ * a blocking SORT stage.
+ */
+addTestCase({
+    name: "CoveredBlockingSort",
+    tags: ["core", "sort", "indexed"],
+    nDocs: 1000,
+    docs: function(i) {
+        return {x: Random.randInt(10000), y: Random.randInt(10000)};
+    },
+    indexes: [{x: 1,  y: 1}],
+    op: {
+        op: "find",
+        query: {$query:{x: {$gt: 0}, y: {$gt: 0}},
+        $orderby: {y: 1}},
+        filter: {x: 1, y:1, _id: 0}
+    }
+});
