@@ -1,6 +1,6 @@
 {
   "name": "mongo-perf",
   "devDependencies": {
-    "eslint": "^4.9.0"
+    "eslint": "^4.18.2"
   }
 }
