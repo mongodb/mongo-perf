@@ -1268,3 +1268,36 @@ generateTestCase({
     ],
     addSkipStage: false,
 });
+
+generateTestCase({
+    name: "SortByComputedField",
+    tags: ["sort", "agg_query_comparison"],
+    nDocs: 14400,
+    docGenerator: function simpleSortDocGenerator(i) {
+        return {_id: i, x: Random.randInt(200000)};
+    },
+    pipeline: [{$addFields: {y: {$add: ["$x", "$x"]}}}, {$sort: {y: 1}}]
+});
+
+generateTestCase({
+    name: "SortProjectWithBigDocuments",
+    tags: ["sort", "agg_query_comparison"],
+    nDocs: 220,
+    docGenerator: function simpleSortDocGenerator(i) {
+        return {
+            _id: i,
+            x: Random.randInt(200000),
+            y: 10,
+            string1: getStringOfLength(50 * 1024),
+            string2: getStringOfLength(50 * 1024),
+            string3: getStringOfLength(50 * 1024),
+            string4: getStringOfLength(50 * 1024),
+            string5: getStringOfLength(50 * 1024),
+            string6: getStringOfLength(50 * 1024),
+            string7: getStringOfLength(50 * 1024),
+            string8: getStringOfLength(50 * 1024),
+            string9: getStringOfLength(50 * 1024)
+        };
+    },
+    pipeline: [{$sort: {x: 1}}, {$project: {x: 1, y:1}}]
+});
