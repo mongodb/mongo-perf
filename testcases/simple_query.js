@@ -76,11 +76,7 @@ function rewriteQueryOpAsAgg(op) {
         if (op.query.$orderby) {
             pipeline.push({$sort: op.query.$orderby});
         }
-
-        return newOp;
-    }
-
-    if (op.query) {
+    } else if (op.query) {
         pipeline.push({$match: op.query});
     }
 
@@ -820,8 +816,31 @@ addTestCase({
     indexes: [{x: 1,  y: 1}],
     op: {
         op: "find",
-        query: {$query:{x: {$gt: 0}, y: {$gt: 0}},
-        $orderby: {y: 1}},
+        query: {
+            $query: {x: {$gt: 0}, y: {$gt: 0}},
+            $orderby: {y: 1}
+        },
         filter: {x: 1, y:1, _id: 0}
+    }
+});
+
+/**
+ * Setup: Create a collection with scalar fields x, y and an index on x, y.
+ *
+ * Test: Sort the collection by the y field. The sort can be computed based on the index, although a
+ * blocking SORT stage is still required. In addition, the query cannot be covered since there is no
+ * projection.
+ */
+addTestCase({
+    name: "NonCoveredBlockingSortWithIndexToSupportSort",
+    tags: ["core", "sort", "indexed"],
+    nDocs: 1000,
+    docs: function(i) {
+        return {x: Random.randInt(10000), y: Random.randInt(10000)};
+    },
+    indexes: [{x: 1, y: 1}],
+    op: {
+        op: "find",
+        query: {$query: {x: {$gt: 0}, y: {$gt: 0}}, $orderby: {y: 1}},
     }
 });
