@@ -760,6 +760,9 @@ if (typeof(tests) !== "object") {
     addTestCase({
         name: "SortByArrayOfScalars",
         tags: ["core", "sort"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
         nDocs: 1000,
         docs: function(i) {
             var nArrayElements = 10;
@@ -780,6 +783,9 @@ if (typeof(tests) !== "object") {
     addTestCase({
         name: "SortByArrayOfNestedDocuments",
         tags: ["core", "sort"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
         nDocs: 1000,
         docs: function(i) {
             var nArrayElements = 10;
@@ -800,6 +806,9 @@ if (typeof(tests) !== "object") {
     addTestCase({
         name: "CoveredNonBlockingSort",
         tags: ["core", "sort", "indexed"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
         nDocs: 1000,
         docs: function(i) {
             return {x: Random.randInt(10000)};
@@ -817,6 +826,9 @@ if (typeof(tests) !== "object") {
     addTestCase({
         name: "CoveredBlockingSort",
         tags: ["core", "sort", "indexed"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
         nDocs: 1000,
         docs: function(i) {
             return {x: Random.randInt(10000), y: Random.randInt(10000)};
@@ -842,6 +854,9 @@ if (typeof(tests) !== "object") {
     addTestCase({
         name: "NonCoveredBlockingSortWithIndexToSupportSort",
         tags: ["core", "sort", "indexed"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
         nDocs: 1000,
         docs: function(i) {
             return {x: Random.randInt(10000), y: Random.randInt(10000)};
