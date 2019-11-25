@@ -1301,3 +1301,38 @@ generateTestCase({
     },
     pipeline: [{$sort: {x: 1}}, {$project: {x: 1, y:1}}]
 });
+
+function sortGroupBigDocGenerator(i) {
+    return {
+        _id: i,
+        x: Random.randInt(200000),
+        y: 10,
+        z: Random.randInt(50),
+        string1: getStringOfLength(50 * 1024),
+        string2: getStringOfLength(50 * 1024),
+        string3: getStringOfLength(50 * 1024),
+        string4: getStringOfLength(50 * 1024),
+        string5: getStringOfLength(50 * 1024),
+        string6: getStringOfLength(50 * 1024),
+        string7: getStringOfLength(50 * 1024),
+        string8: getStringOfLength(50 * 1024),
+        string9: getStringOfLength(50 * 1024)
+    };
+}
+
+generateTestCase({
+    name: "SortGroupWithBigDocuments",
+    tags: ["sort"],
+    nDocs: 220,
+    docGenerator: sortGroupBigDocGenerator,
+    pipeline: [{$sort: {x: 1}}, {$group: {_id: "$z", x: {$last: "$x"}, y: {$last: "$y"}}}]
+});
+
+generateTestCase({
+    name: "IndexedSortGroupWithBigDocuments",
+    tags: ["sort"],
+    nDocs: 220,
+    indices: [{x: 1}],
+    docGenerator: sortGroupBigDocGenerator,
+    pipeline: [{$sort: {x: 1}}, {$group: {_id: "$z", x: {$last: "$x"}, y: {$last: "$y"}}}]
+});
