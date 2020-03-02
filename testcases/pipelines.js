@@ -272,6 +272,49 @@ generateTestCase({
 });
 
 generateTestCase({
+    name: "Group.TenGroupsWithSumJs",
+    tags: ['js', '>=4.3.4'],
+    nDocs: 10000,
+    docGenerator: function basicGroupDocGenerator(i) {
+        return {_id: i, _idMod10: i % 10};
+    },
+    pipeline: [{$group: {_id: "$_idMod10", sum: {$accumulator:{
+        lang: "js",
+        init: function() { return 0; },
+        accumulateArgs: ["$_id"],
+        accumulate: function(state, value) { return state + value; },
+        merge: function(state1, state2) { return state1 + state2; },
+    }}}}]
+});
+
+generateTestCase({
+    name: "Group.TenGroupsWithAvgJs",
+    tags: ['js', '>=4.3.4'],
+    nDocs: 10000,
+    docGenerator: function basicGroupDocGenerator(i) {
+        return {_id: i, _idMod10: i % 10};
+    },
+    pipeline: [{$group: {_id: "$_idMod10", sum: {$accumulator:{
+        lang: "js",
+        init: function() { return { count: 0, sum: 0 }; },
+        accumulateArgs: ["$_id"],
+        accumulate: function(state, value) {
+            return {
+                count: state.count + 1,
+                sum: state.sum + value,
+            };
+        },
+        merge: function(state1, state2) {
+            return {
+                count: state1.count + state2.count,
+                sum: state1.sum + state2.sum,
+            };
+        },
+        finalize: function(state) { return state.sum / state.count; },
+    }}}}]
+});
+
+generateTestCase({
     name: "Group.OneFieldReferencedOutOfMany",
     docGenerator: function basicGroupDocGenerator(i) {
         var doc = {_id: i, _idMod10: i % 10};
