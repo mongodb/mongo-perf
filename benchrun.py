@@ -30,6 +30,7 @@ def parse_arguments():
     parser.add_argument('-c', '--multicoll', dest='multicoll',
                         help='Specify how many collections the test should use',
                         type=int, default=1)
+    parser.add_argument('--uri', help='Connection string URI (overrides --host and --port)')
     parser.add_argument('--trialTime', dest='seconds',
                         help='Specify how many seconds to run each trial',
                         type=int, default=5)
@@ -146,11 +147,18 @@ def main():
     auth = []
     using_auth = False
     if isinstance(args.username, basestring) and isinstance(args.password, basestring):
-        auth = ["-u", args.username, "-p", args.password, "--authenticationDatabase", "admin"]
+        auth = ["-u", args.username, "-p", args.password]
         using_auth = True
     elif isinstance(args.username, basestring) or isinstance(args.password, basestring):
         print("Warning: You specified one of username or password, but not the other.")
         print("         Benchrun will continue without authentication.")
+
+    if args.uri is not None:
+        conn = [args.uri]
+    else:
+        conn = ['--host', args.hostname, '--port', args.port]
+        auth += ["--authenticationDatabase", "admin"]
+
 
     if args.includeFilter == [] :
         args.includeFilter = '%'
@@ -159,15 +167,9 @@ def main():
         if args.includeFilter == ['%'] :
             args.includeFilter = '%'
 
-    if args.username:
-        auth = ["-u", args.username, "-p", args.password, "--authenticationDatabase", "admin"]
-    else:
-        auth = []
-
     check_call([args.shellpath, "--norc",
-          "--host", args.hostname, "--port", args.port,
           "--eval", "print('db version: ' + db.version());"
-          " db.serverBuildInfo().gitVersion;"] + auth)
+          " db.serverBuildInfo().gitVersion;"] + auth + conn)
     print("")
 
     commands = []
@@ -228,8 +230,8 @@ def main():
         js_file.flush()
 
         # Open a mongo shell subprocess and load necessary files.
-        mongo_proc = Popen([args.shellpath, "--norc", "--quiet", js_file.name,
-                           "--host", args.hostname, "--port", args.port] + auth,
+        mongo_proc = Popen([args.shellpath, "--norc", "--quiet", js_file.name] +\
+                           conn + auth,
                            stdout=PIPE)
 
         # Read test output.
