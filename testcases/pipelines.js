@@ -1,6 +1,9 @@
-if (typeof(tests) != "object") {
+if (typeof (tests) != "object") {
     tests = [];
 }
+
+(function () {
+'use strict';
 
 /**
  * Returns a string of the given size.
@@ -18,9 +21,8 @@ var getStringOfLength = function() {
 
 var kDefaultDocumentSourceLookupCacheSize = 100 * 1024 * 1024;
 var setDocumentSourceLookupCacheSize = function(sizeInBytes) {
-    assert.commandWorked(
-            db.adminCommand({setParameter: 1,
-                             internalDocumentSourceLookupCacheSizeBytes: sizeInBytes}));
+    assert.commandWorked(db.adminCommand(
+        {setParameter: 1, internalDocumentSourceLookupCacheSizeBytes: sizeInBytes}));
 };
 
 /**
@@ -33,13 +35,8 @@ function defaultDocGenerator(i) {
     return {
         _id: new ObjectId(),
         string: getStringOfLength(12 * 1024),  // 12 KB.
-        sub_docs: [
-            {_id: new ObjectId(), x: i, y: i * i}
-        ],
-        metadata: {
-            about: "Used only for performance testing",
-            created: new ISODate()
-        }
+        sub_docs: [{_id: new ObjectId(), x: i, y: i * i}],
+        metadata: {about: "Used only for performance testing", created: new ISODate()}
     };
 }
 
@@ -138,24 +135,21 @@ function generateTestCase(options) {
     tests.push({
         tags: tagsForTest,
         name: "Aggregation." + options.name,
-        pre: (options.pre !== undefined) ? options.pre(!isView) : populatorGenerator(!isView,
-                                               nDocs,
-                                               options.indices || [],
-                                               options.docGenerator || defaultDocGenerator),
-        post: options.post || function(collection) {
-            collection.drop();
-        },
-        ops: [
-            {
-                op: "command",
-                ns: "#B_DB",
-                command: {
-                    aggregate: "#B_COLL",
-                    pipeline: pipeline,
-                    cursor: {}
-                }
-            }
-        ]
+        pre: (options.pre !== undefined)
+            ? options.pre(!isView)
+            : populatorGenerator(!isView,
+                                 nDocs,
+                                 options.indices || [],
+                                 options.docGenerator || defaultDocGenerator),
+        post: options.post ||
+            function(collection) {
+                collection.drop();
+            },
+        ops: [{
+            op: "command",
+            ns: "#B_DB",
+            command: {aggregate: "#B_COLL", pipeline: pipeline, cursor: {}}
+        }]
     });
 
     var tagsForViewsTest = ["views", "regression", "aggregation_identityview"].concat(tags);
@@ -169,26 +163,23 @@ function generateTestCase(options) {
     tests.push({
         tags: tagsForViewsTest,
         name: "Aggregation.IdentityView." + options.name,
-        pre: (options.pre !== undefined) ? options.pre(isView) : populatorGenerator(isView,
-                                               nDocs,
-                                               options.indices || [],
-                                               options.docGenerator || defaultDocGenerator),
-        post: options.post || function(view) {
-            var collection = view.getDB()[view.getName() + "_backing"];
-            view.drop();
-            collection.drop();
-        },
-        ops: [
-            {
-                op: "command",
-                ns: "#B_DB",
-                command: {
-                    aggregate: "#B_COLL",
-                    pipeline: pipeline,
-                    cursor: {}
-                }
-            }
-        ]
+        pre: (options.pre !== undefined)
+            ? options.pre(isView)
+            : populatorGenerator(isView,
+                                 nDocs,
+                                 options.indices || [],
+                                 options.docGenerator || defaultDocGenerator),
+        post: options.post ||
+            function(view) {
+                var collection = view.getDB()[view.getName() + "_backing"];
+                view.drop();
+                collection.drop();
+            },
+        ops: [{
+            op: "command",
+            ns: "#B_DB",
+            command: {aggregate: "#B_COLL", pipeline: pipeline, cursor: {}}
+        }]
     });
 }
 
@@ -196,10 +187,7 @@ function generateTestCase(options) {
 // Empty pipeline.
 //
 
-generateTestCase({
-    name: "Empty",
-    pipeline: []
-});
+generateTestCase({name: "Empty", pipeline: []});
 
 //
 // Single stage pipelines.
@@ -226,9 +214,7 @@ generateTestCase({
                 minDistance: 0,
                 maxDistance: 300,
                 distanceField: "foo",
-                query: {
-                    boolFilter: true
-                }
+                query: {boolFilter: true}
             }
         },
         // For $geoNear, we limit the number of results to 100 documents, to match the default
@@ -245,7 +231,7 @@ generateTestCase({
             _id: i,
             geo: [
                 (Random.rand() * 360) - 180,  // Longitude, in range [-180, 180).
-                (Random.rand() * 180) - 90  // Latitude, in range [-90, 90).
+                (Random.rand() * 180) - 90    // Latitude, in range [-90, 90).
             ],
             boolFilter: i % 2 === 0
         };
@@ -257,9 +243,7 @@ generateTestCase({
                 minDistance: 0,
                 maxDistance: 300,
                 distanceField: "foo",
-                query: {
-                    boolFilter: true
-                },
+                query: {boolFilter: true},
                 spherical: true
             }
         },
@@ -269,10 +253,7 @@ generateTestCase({
     ]
 });
 
-generateTestCase({
-    name: "Group.All",
-    pipeline: [{$group: {_id: "constant"}}]
-});
+generateTestCase({name: "Group.All", pipeline: [{$group: {_id: "constant"}}]});
 
 generateTestCase({
     name: "Group.TenGroups",
@@ -302,11 +283,7 @@ generateTestCase({
     pipeline: [{$group: {_id: "$_idMod10"}}]
 });
 
-generateTestCase({
-    name: "Limit",
-    nDocs: 500,
-    pipeline: [{$limit: 250}]
-});
+generateTestCase({name: "Limit", nDocs: 500, pipeline: [{$limit: 250}]});
 
 /**
  * Data population functions used by the 'Lookup' and 'LookupViaGraphLookup' tests.
@@ -373,7 +350,7 @@ function basicLookupPopulator(isView) {
  */
 function basicArrayLookupPopulator(isView) {
     function localDocGen(val) {
-        return {_id: val, foreignKey: [val-1,val,val+1]};
+        return {_id: val, foreignKey: [val - 1, val, val + 1]};
     }
 
     function foreignDocGen(val) {
@@ -391,7 +368,7 @@ function basicArrayLookupPopulator(isView) {
  */
 function basicArrayOfObjectLookupPopulator(isView) {
     function localDocGen(val) {
-        return {_id: val, foreignKey: [{x: val-1}, {x: val}, {x: val+1}]};
+        return {_id: val, foreignKey: [{x: val - 1}, {x: val}, {x: val + 1}]};
     }
 
     function foreignDocGen(val) {
@@ -431,7 +408,6 @@ function basicUncorrelatedPipelineLookupPopulatorDisableCache(isView) {
     return basicUncorrelatedPipelineLookupPopulator(isView, disableCache);
 }
 
-
 /**
  * Data cleanup function used by the 'Lookup', 'LookupViaGraphLookup' and 'LookupOrders' tests.
  */
@@ -463,16 +439,10 @@ generateTestCase({
     // '_lookup', which we'll use to look up from.
     pre: basicLookupPopulator,
     post: basicLookupCleanup,
-    pipeline: [
-        {
-            $lookup: {
-                from: "#B_COLL_lookup",
-                localField: "foreignKey",
-                foreignField: "_id",
-                as: "match"
-            }
-        }
-    ],
+    pipeline: [{
+        $lookup:
+            {from: "#B_COLL_lookup", localField: "foreignKey", foreignField: "_id", as: "match"}
+    }],
     tags: ["lookup", ">=3.5"]
 });
 
@@ -514,16 +484,10 @@ generateTestCase({
     // '_lookup', which we'll use to look up from.
     pre: basicArrayLookupPopulator,
     post: basicLookupCleanup,
-    pipeline: [
-        {
-            $lookup: {
-                from: "#B_COLL_lookup",
-                localField: "foreignKey",
-                foreignField: "_id",
-                as: "match"
-            }
-        }
-    ],
+    pipeline: [{
+        $lookup:
+            {from: "#B_COLL_lookup", localField: "foreignKey", foreignField: "_id", as: "match"}
+    }],
     tags: ["lookup", ">=3.5"]
 });
 
@@ -565,16 +529,10 @@ generateTestCase({
     // '_lookup', which we'll use to look up from.
     pre: basicArrayOfObjectLookupPopulator,
     post: basicLookupCleanup,
-    pipeline: [
-        {
-            $lookup: {
-                from: "#B_COLL_lookup",
-                localField: "foreignKey.x",
-                foreignField: "_id.x",
-                as: "match"
-            }
-        }
-    ],
+    pipeline: [{
+        $lookup:
+            {from: "#B_COLL_lookup", localField: "foreignKey.x", foreignField: "_id.x", as: "match"}
+    }],
     tags: ["lookup", ">=3.5"]
 });
 
@@ -1002,19 +960,21 @@ generateTestCase({
     // query layer. A $skip of 0 will be optimized out, so we need to skip at least one.
     pipeline: [
         {$skip: 1},
-        {$match: {
-            predicate: {$eq: 0},
-            // The following are present just to increase the number of fields we need to serialize
-            // to BSON to perform the match.
-            field0: {$type: "string"},
-            field1: {$type: "string"},
-            field2: {$type: "string"},
-            field10: {$type: "string"},
-            field25: {$type: "string"},
-            field40: {$type: "string"},
-            field48: {$type: "string"},
-            field49: {$type: "string"},
-        }}
+        {
+            $match: {
+                predicate: {$eq: 0},
+                // The following are present just to increase the number of fields we need to
+                // serialize to BSON to perform the match.
+                field0: {$type: "string"},
+                field1: {$type: "string"},
+                field2: {$type: "string"},
+                field10: {$type: "string"},
+                field25: {$type: "string"},
+                field40: {$type: "string"},
+                field48: {$type: "string"},
+                field49: {$type: "string"},
+            }
+        }
     ]
 });
 
@@ -1035,62 +995,40 @@ generateTestCase({
         return {_id: i, x: i, string: new Array(1024).join("x")};
     },
     pipeline: [
-        {$replaceRoot: {
-            newRoot: {
-                a: {$literal: 5},
-                longishNameHere: {$substr: ["$string", 0, 10]},
-                longishNameForNestedDocument: {
-                    doingSomeMath: {$add: ["$x", 1]},
-                    anotherSubDocument: {
-                        literalField: {$literal: "Hello!"},
-                        arrayField: [1, 2, 3, 4],
+        {
+            $replaceRoot: {
+                newRoot: {
+                    a: {$literal: 5},
+                    longishNameHere: {$substr: ["$string", 0, 10]},
+                    longishNameForNestedDocument: {
+                        doingSomeMath: {$add: ["$x", 1]},
+                        anotherSubDocument: {
+                            literalField: {$literal: "Hello!"},
+                            arrayField: [1, 2, 3, 4],
+                        }
                     }
                 }
             }
-        }},
+        },
         // generateTestCase will append a final $skip stage. Add a $match here to prevent that from
         // being swapped before this stage.
         {$match: {a: 5}},
     ],
 });
 
-
 generateTestCase({
     name: "Redact",
     docGenerator: function simpleRedactDocGenerator(i) {
         return {_id: i, has_permissions: i % 2 === 0};
     },
-    pipeline: [
-        {
-            $redact: {
-                $cond: {
-                    if: "$has_permissions",
-                    then: "$$DESCEND",
-                    else: "$$PRUNE"
-                }
-            }
-        }
-    ]
+    pipeline: [{$redact: {$cond: {if: "$has_permissions", then: "$$DESCEND", else: "$$PRUNE"}}}]
 });
 
-generateTestCase({
-    name: "Sample.SmallSample",
-    nDocs: 500,
-    pipeline: [{$sample: {size: 5}}]
-});
+generateTestCase({name: "Sample.SmallSample", nDocs: 500, pipeline: [{$sample: {size: 5}}]});
 
-generateTestCase({
-    name: "Sample.LargeSample",
-    nDocs: 500,
-    pipeline: [{$sample: {size: 200}}]
-});
+generateTestCase({name: "Sample.LargeSample", nDocs: 500, pipeline: [{$sample: {size: 200}}]});
 
-generateTestCase({
-    name: "Skip",
-    nDocs: 500,
-    pipeline: [{$skip: 250}],
-    addSkipStage: false
-});
+generateTestCase({name: "Skip", nDocs: 500, pipeline: [{$skip: 250}], addSkipStage: false});
 
 generateTestCase({
     name: "Sort",
@@ -1130,11 +1068,7 @@ generateTestCase({
         for (var j = 0; j < 50; j++) {
             largeArray.push(getStringOfLength(10) + j);
         }
-        return {
-            _id: i,
-            array: largeArray,
-            largeString: getStringOfLength(1024 * 1024)
-        };
+        return {_id: i, array: largeArray, largeString: getStringOfLength(1024 * 1024)};
     },
     pipeline: [{$unwind: "$array"}, {$group: {_id: "$array", count: {$sum: 1}}}]
 });
@@ -1144,13 +1078,9 @@ generateTestCase({
     docGenerator: function simpleUnwindAndMatchDocGenerator(i) {
         var valArray = [];
         for (var j = 0; j < 30; j++) {
-            valArray.push(j%10);
+            valArray.push(j % 10);
         }
-        return {
-            _id: i,
-            array: valArray,
-            smallString: getStringOfLength(10)
-        };
+        return {_id: i, array: valArray, smallString: getStringOfLength(10)};
     },
     pipeline: [{$unwind: "$array"}, {$match: {array: 5}}]
 });
@@ -1164,11 +1094,7 @@ function simpleSmallDocUnwindGenerator(i) {
     for (var j = 0; j < 10; j++) {
         valArray.push(getStringOfLength(10) + j);
     }
-    return {
-        _id: i,
-        array: valArray,
-        smallString: getStringOfLength(10)
-    };
+    return {_id: i, array: valArray, smallString: getStringOfLength(10)};
 }
 
 generateTestCase({
@@ -1299,7 +1225,7 @@ generateTestCase({
             string9: getStringOfLength(50 * 1024)
         };
     },
-    pipeline: [{$sort: {x: 1}}, {$project: {x: 1, y:1}}]
+    pipeline: [{$sort: {x: 1}}, {$project: {x: 1, y: 1}}]
 });
 
 function sortGroupBigDocGenerator(i) {
@@ -1336,3 +1262,310 @@ generateTestCase({
     docGenerator: sortGroupBigDocGenerator,
     pipeline: [{$sort: {x: 1}}, {$group: {_id: "$z", x: {$last: "$x"}, y: {$last: "$y"}}}]
 });
+
+/**
+ * test the performance of $function using document shapes similar to $where.
+ */
+generateTestCase({
+    name: "Function.CompareToInt",
+    tags: ['js', '>=4.3.4'],
+    nDocs: 500,
+    docGenerator: increasingXGenerator(),
+    pipeline: [
+        {
+            $match: {
+                $expr: {
+                    $function: {
+                        body: function(x) {
+                            return x == 1;
+                        },
+                        args: ["$x"],
+                        lang: 'js',
+                    }
+                }
+            }
+        },
+    ],
+});
+
+generateTestCase({
+    name: "Function.SimpleNested.FieldPathInArgs",
+    tags: ['js', '>=4.3.4'],
+    nDocs: 13,
+    docGenerator: nestedGenerator(false),
+    pipeline: [
+        {
+            $match: {
+                $expr: {
+                    $function: {
+                        body: function(x) {
+                            return x == 1;
+                        },
+                        args: ["$d.b.c.a"],
+                        lang: 'js',
+                    }
+                }
+            }
+        },
+    ],
+});
+
+generateTestCase({
+    name: "Function.SimpleNested.CurrentInArgs",
+    tags: ['js', '>=4.3.4'],
+    nDocs: 100,
+    docGenerator: nestedGenerator(false),
+    pipeline: [
+        {
+            $match: {
+                $expr: {
+                    $function: {
+                        body: function(doc) {
+                            return doc.d.c.b.a == 1;
+                        },
+                        args: ["$$CURRENT"],
+                        lang: 'js',
+                    }
+                }
+            }
+        },
+    ],
+});
+
+generateTestCase({
+    name: "Function.CompareFields.Eq.CurrentInArgs",
+    tags: ['js', '>=4.3.4'],
+    nDocs: 100,
+    docGenerator: increasingXGenerator(),
+    pipeline: [
+        {
+            $match: {
+                $expr: {
+                    $function: {
+                        body: function(doc) {
+                            return doc.x == doc.y;
+                        },
+                        args: ["$$CURRENT"],
+                        lang: 'js',
+                    }
+                }
+            }
+        },
+    ],
+});
+
+generateTestCase({
+    name: "Function.CompareFields.Eq.TwoArgs",
+    tags: ['js', '>=4.3.4'],
+    nDocs: 100,
+    docGenerator: increasingXGenerator(),
+    pipeline: [
+        {
+            $match: {
+                $expr: {
+                    $function: {
+                        body: function(x, y) {
+                            return x == y;
+                        },
+                        args: ["$x", "$y"],
+                        lang: 'js',
+                    }
+                }
+            }
+        },
+    ],
+});
+
+generateTestCase({
+    name: "Function.CompareFields.Gt.CurrentInArgs",
+    tags: ['js', '>=4.3.4'],
+    nDocs: 200,
+    docGenerator: tupleGenerator(200),
+    pipeline: [
+        {
+            $match: {
+                $expr: {
+                    $function: {
+                        body: function(doc) {
+                            return doc.x > doc.y;
+                        },
+                        args: ["$$CURRENT"],
+                        lang: 'js',
+                    }
+                }
+            }
+        },
+    ],
+});
+
+generateTestCase({
+    name: "Function.CompareFields.Gt.TwoArgs",
+    tags: ['js', '>=4.3.4'],
+    nDocs: 200,
+    docGenerator: tupleGenerator(200),
+    pipeline: [
+        {
+            $match: {
+                $expr: {
+                    $function: {
+                        body: function(x, y) {
+                            return x > y;
+                        },
+                        args: ["$x", "$y"],
+                        lang: 'js',
+                    }
+                }
+            }
+        },
+    ],
+});
+
+generateTestCase({
+    name: "Function.CompareFields.Lt.CurrentInArgs",
+    tags: ['js', '>=4.3.4'],
+    nDocs: 200,
+    docGenerator: tupleGenerator(200),
+    pipeline: [
+        {
+            $match: {
+                $expr: {
+                    $function: {
+                        body: function(doc) {
+                            return doc.x < doc.y;
+                        },
+                        args: ["$$CURRENT"],
+                        lang: 'js',
+                    }
+                }
+            }
+        },
+    ],
+});
+
+generateTestCase({
+    name: "Function.CompareFields.Lt.TwoArgs",
+    tags: ['js', '>=4.3.4'],
+    nDocs: 200,
+    docGenerator: tupleGenerator(200),
+    pipeline: [
+        {
+            $match: {
+                $expr: {
+                    $function: {
+                        body: function(x, y) {
+                            return x < y;
+                        },
+                        args: ["$x", "$y"],
+                        lang: 'js',
+                    }
+                }
+            }
+        },
+    ],
+});
+
+generateTestCase({
+    name: "Function.Mixed",
+    tags: ['js', '>=4.3.4'],
+    nDocs: 200,
+    docGenerator: tupleGenerator(200),
+    pipeline: [{
+        $match: {
+            $or: [
+                {x: 2},
+                {
+                    $expr: {
+                        $function: {
+                            body: function(y) {
+                                return y == 3;
+                            },
+                            args: ["$y"],
+                            lang: 'js',
+                        }
+                    }
+                }
+            ]
+        },
+    }],
+});
+
+generateTestCase({
+    name: "Function.ComplexNested.CurrentInArgs",
+    tags: ['js', '>=4.3.4'],
+    nDocs: 10,
+    docGenerator: nestedGenerator(true),
+    pipeline: [{
+        $match: {
+            $expr: {
+                $function: {
+                    body: function(doc) {
+                        return doc.d.c.b.a == doc.a.b.c.d;
+                    },
+                    args: ["$$CURRENT"],
+                    lang: 'js'
+                }
+            }
+        }
+    }]
+});
+
+generateTestCase({
+    name: "Function.ComplexNested.TwoArgs",
+    tags: ['js', '>=4.3.4'],
+    nDocs: 10,
+    docGenerator: nestedGenerator(true),
+    pipeline: [{
+        $match: {
+            $expr: {
+                $function: {
+                    body: function(x, y) {
+                        return x == y;
+                    },
+                    args: ["$x", "$y"],
+                    lang: 'js'
+                }
+            }
+        }
+    }]
+});
+
+generateTestCase({
+    name: "Function.ReallyBigNestedComparison.CurrentInArgs",
+    tags: ['js', '>=4.3.4'],
+    nDocs: 10,
+    docGenerator: nestedGenerator(true),
+    pipeline: [{
+        $match: {
+            $expr: {
+                $function: {
+                    body: function(doc) {
+                        return doc.a.b.c.d == 1;
+                    },
+                    args: ["$$CURRENT"],
+                    lang: 'js'
+                }
+            }
+        }
+    }]
+});
+
+generateTestCase({
+    name: "Function.ReallyBigNestedComparison.FieldPathInArgs",
+    tags: ['js', '>=4.3.4'],
+    nDocs: 10,
+    docGenerator: nestedGenerator(true),
+    pipeline: [{
+        $match: {
+            $expr: {
+                $function: {
+                    body: function(x) {
+                        return x == 1;
+                    },
+                    args: ["$a.b.c.d"],
+                    lang: 'js'
+                }
+            }
+        }
+    }]
+});
+})();
