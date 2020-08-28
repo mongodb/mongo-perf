@@ -10,12 +10,15 @@ if ( typeof(tests) != "object" ) {
  */
 function generateDocs(nDocs, generator) {
     return function(collection) {
+        print(`Generating docs locally`);
         collection.drop();
         docs = [];
         for (var i = 0; i < nDocs; i++) {
           docs.push(generator());
         }
+        print(`Inserting docs`);
         collection.insert(docs, {'ordered': false});
+        print(`Done generating and inserting docs`);
     };
  }
 
@@ -33,63 +36,15 @@ function increasingXGenerator() {
 
 
 /**
- * Generates documents of the form {x: i, y: j}
- * with increasing values for x and y 
- * y will cycle from 0 to numY.
- */
- function tupleGenerator(numY) {
-    var x = 0;
-    var y = 0;
-    return function() {
-      var doc = { "x" : x, "y": y};
-      if (y++ > numY) {
-        y = 0;
-        x++;
-      }
-      return doc;
-    };
- }
-
-/**
- * Generates documents containing 4-letter strings
- */
-function permutationGenerator() {
-    var strings = [];
-    for (var i = 0; i < 26; i++) {
-        strings.push(String.fromCharCode(97+i));
-    }
-    var i = 0;
-    var j = 0;
-    var k = 0;
-    var l = 0;
-    return function() {
-      var doc = {x: strings[i]+strings[j]+strings[k]+strings[l]};
-      if (++l > 25) {
-        l = 0;
-        if (++k > 25) {
-            k = 0;
-            if (++j > 25) {
-                j = 0;
-                if (++i > 25) {
-                    i = 0;
-                }
-            }
-        }
-      }
-      return doc;
-  };
-}
-
-/**
  * Generates deeply nested documents
  */
-function nestedGenerator(big) {
+function nestedGenerator() {
     var strings = [];
     for (var i = 0; i < 26; i++) {
         strings.push(String.fromCharCode(97+i));
     }
     var i = 0;
-    var levelSize = big ? 26 : 13;
+    var levelSize = 13;
     return function() {
       doc = {};
       for (var j = 0; j < levelSize; j++) {
@@ -110,168 +65,68 @@ function nestedGenerator(big) {
   };
 }
 
-
-// Queries that can be written in query language and using $where
-
 /**
- * Setup: creates a collection with documents of the form {x : i}
- * Test: Finds {x: 1} using query language
+ * Run a tiny function, to help us measure the overhead of calling into JS.
  */
-tests.push({name: "Where.CompareToInt.QueryLanguage",
-            tags: ['compare'],
-            pre: generateDocs(500, increasingXGenerator()),
-            ops: [
-              {op: "find", query: {x : 1}}
-            ]});
-
-/**
- * Setup: creates a collection with documents of the form {x : i}
- * Test: Finds {x: 1} using a $where query with == (weak equality)
- */
-tests.push({name: "Where.CompareToInt.Where.DoubleEquals",
-            tags: ['where','regression'],
-            pre: generateDocs(500, increasingXGenerator()),
-            ops: [
-              {op: "find", query: {$where: function() {return this.x == 1;}}} 
-            ]});
-
-/**
- * Setup: creates a collection with documents of the form {x : i}
- * Test: Finds {x: 1} using a $where query with === (type-safe equality)
- */
-tests.push({name: "Where.CompareToInt.Where.TripleEquals",
+tests.push({name: "Where.Trivial",
             tags: ['where','regression'],
             pre: generateDocs(500, increasingXGenerator()),
             ops: [
               {op: "find", query: {$where: function() {return this.x === 1;}}} 
             ]});
 
-/*
- * Setup: Creates a collection of 13 objects, each with 4 nested levels of 13 fields
- * Test: Find document through match of deeply nested field using $where
- */
-tests.push({name: "Where.SimpleNested.Where",
-            tags: [ 'where','regression'],
-            pre: generateDocs(13, nestedGenerator(false)),
-            ops: [
-              {op:"find", query: {'$where': function() { return this.d.c.b.a === 1; }}}
-            ]   
-            } );
-
-/*
- * Setup: Creates a collection of 13 objects, each with 4 nested levels of 13 fields
- * Test: Find document through match of deeply nested field using Query Language
- */
-tests.push({name: "Where.SimpleNested.QueryLanguage",
-            tags: ['compare'],
-            pre: generateDocs(13, nestedGenerator()),
-            ops: [
-              {op: "find", query: { 'd.c.b.a' : 1 } }
-            ]
-            } );
-
-// Queries that require the use of $where
-
 /**
- * Setup: creates a collection with 40,000 documents of the form {x: i, y: j}
- * Test: Finds all documents where x == y
+ * Runs a tiny function, applied to big nested documents. This helps us measure the overhead
+ * of converting BSON values to JS.
  */
-tests.push({name: "Where.CompareFields.Equals",
-            tags: ['where','regression'],
-            pre: generateDocs(500, increasingXGenerator()),
-            ops: [
-              {op: "find", query: {$where: function() {return this.x == this.y; }}} 
-            ]});
-
-/**
- * Setup: creates a collection with 40,000 documents of the form {x: i, y: j}
- * Test: Finds all documents where x > y
- */
-tests.push({name: "Where.CompareFields.Gt",
-            tags: ['where','regression'],
-            pre: generateDocs(200, tupleGenerator(200)),
-            ops: [
-              {op: "find", query: {$where: function() {return this.x > this.y; }}} 
-            ]});
-
-/**
- * Setup: creates a collection with 40,000 documents of the form {x: i, y: j}
- * Test: Finds all documents where x >= y
- */
-tests.push({name: "Where.CompareFields.Gte",
-            tags: ['where','regression'],
-            pre: generateDocs(200, tupleGenerator(200)),
-            ops: [
-              {op: "find", query: {$where: function() {return this.x >= this.y; }}} 
-            ]});
-
-/**
- * Setup: creates a collection with 40,000 documents of the form {x: i, y: j}
- * Test: Finds all documents where x < y
- */
-tests.push({name: "Where.CompareFields.Lt",
-            tags: ['where','regression'],
-            pre: generateDocs(200, tupleGenerator(200)),
-            ops: [
-              {op: "find", query: {$where: function() {return this.x < this.y; }}}
-            ]});
-
-/**
- * Setup: creates a collection with 40,000 documents of the form {x: i, y: j}
- * Test: Finds all documents where x <= y
- */
-tests.push({name: "Where.CompareFields.Lte",
-            tags: ['where','regression'],
-            pre: generateDocs(200, tupleGenerator(200)),
-            ops: [
-              {op: "find", query: {$where: function() {return this.x <= this.y; }}}
-            ]});
-
-/**
- * Setup: creates a collection with 40,000 documents of the form {x: i, y: j}
- * Test: Finds all documents where x == 2 or y == 3 
- */
-tests.push({name: "Where.Mixed",
-            tags: ['where','regression'],
-            pre: generateDocs(200, tupleGenerator(200)),
-            ops: [
-              {op: "find", query: {$or : [{x: 2}, {$where: function() {return (this.y == 3);}}]}} 
-            ]});
-
-/*
- * Setup: Creates a collection of 13 objects, each with 4 nested levels of 13 fields
- * Test: Find document through match of two deeply nested fields on the same document using $where
- */
-tests.push({name: "Where.ComplexNested",
+tests.push({name: "Where.NestedDocs",
             tags: ['where','regression'],
             pre: generateDocs(10, nestedGenerator(true)),
             ops: [
-              {op: "find", query: {'$where': function() { return this.d.c.b.a === this.a.b.c.d; }}}
-            ]   
+              {op: "find", query: {'$where': function() { return this.a.b.c.d === 1; }}}
+            ]
             } );
 
-// Queries to experiment with document size
-
-/*
- * Setup: Creates a collection of 10 documents, each with 4 nested levels of 26 fields
- * Test: Find document through match of a deeply nested field using $where 
+/**
+ * Runs a longer function, on one document. The function should be slow enough that running the
+ * body is more expensive than the mere overhead of switching in and out of JS.
  */
-tests.push({name: "Where.ReallyBigNestedComparison.Where",
+tests.push({name: "Where.Slow",
             tags: ['where','regression'],
-            pre: generateDocs(10, nestedGenerator(true)),
+            pre: generateDocs(1, nestedGenerator(true)),
             ops: [
-              {op: "find", query: {'$where': function() { return this.a.b.c.d == 1; }}} 
+              {op: "find", query: {'$where': function() {
+                  // Check whether the input document has any Date objects anywhere in it.
+                  // It will always be false, because nestedGenerator only makes numbers.
+                  function containsDate(v, depth) {
+                      if (depth <= 0) {
+                          return false;
+                      } else if (v instanceof Date) {
+                          return true;
+                      } else if (Array.isArray(v)) {
+                          for (const elem of v) {
+                              if (containsDate(elem, depth-1)) {
+                                  return true;
+                              }
+                          }
+                          return false;
+                      } else if (typeof v === 'object') {
+                          if (v === null) {
+                              return false;
+                          }
+                          for (const k of Object.keys(v)) {
+                              if (containsDate(v[k], depth-1)) {
+                                  return true;
+                              }
+                          }
+                          return false;
+                      } else {
+                          // v must be some non-Date scalar.
+                          return false;
+                      }
+                  }
+                  return containsDate(this, 2);
+              }}}
             ]
             } );
 
-/*
- * Setup: Creates a collection of 10 documents, each with 4 nested levels of 26 fields
- * Test: Find document through match of a deeply nested field using query language
- */
-tests.push({name: "Where.ReallyBigNestedComparison.QueryLanguage",
-            tags: ['compare'],
-            pre: generateDocs(10, nestedGenerator(true)),
-            ops: [
-              {op: "find", query: { 'a.b.c.d' : 1 }}
-            ]
-            });
