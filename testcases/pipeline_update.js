@@ -98,11 +98,11 @@ tests.push({
           update: [
               {
                 $set: {
-                    kbgcslcybg: ["$kbgcslcybg", 1],
-                    vjhgznppgw: ["$vjhgznppgw", 1],
-                    jzaathnsra: ["$jzaathnsra", 1],
-                    miohmkbzvv: ["$miohmkbzvv", 1],
-                    elcgijivrt: ["$elcgijivrt", 1],
+                    kbgcslcybg: {$add: ["$kbgcslcybg", 1]},
+                    vjhgznppgw: {$add: ["$vjhgznppgw", 1]},
+                    jzaathnsra: {$add: ["$jzaathnsra", 1]},
+                    miohmkbzvv: {$add: ["$miohmkbzvv", 1]},
+                    elcgijivrt: {$add: ["$elcgijivrt", 1]},
                 },
               },
           ],
