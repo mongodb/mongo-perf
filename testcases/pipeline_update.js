@@ -71,7 +71,7 @@ var longFieldNames = [
  * collection by _id field, and increments the same 5 of the 20 integer fields in the document.
  */
 tests.push({
-    name: "PipelineUpdate.IncFewLargeDocLongFields",
+    name: "PipelineUpdate.IncrementFewKeysLargeDocLongFields",
     tags: ["regression", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
