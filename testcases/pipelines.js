@@ -122,7 +122,9 @@ function generateTestCase(options) {
     }
 
     if (pipeline.length > 0 && addSkipStage) {
-        pipeline.push({$skip: 1e9});
+        // $_internalInhibitOptimization is added before $skip to prevent it from participating in
+        // the query optimization process.
+        pipeline = pipeline.concat([{$_internalInhibitOptimization: {}}, {$skip: 1e9}]);
     }
 
     var tagsForTest = ["regression"].concat(tags);
@@ -352,7 +354,7 @@ function basicMultiCollectionDataPopulator({isView, localDocGen, foreignCollsInf
         const db = collectionOrView.getDB();
         collectionOrView.drop();
         const sourceCollection = getBackingCollection(isView, collectionOrView);
-        
+
         for (let foreignCollInfo of foreignCollsInfo) {
             const foreignCollName = collectionOrView.getName() + foreignCollInfo.suffix;
             const foreignCollection = db[foreignCollName];
@@ -972,9 +974,8 @@ generateTestCase({
     docGenerator: function simpleMatchDocGenerator(i) {
         return {_id: i};
     },
-    // Add a $skip stage before the $match stage to ensure the $match isn't pushed down to the query
-    // layer. A $skip of 0 will be optimized out, so we need to skip at least one.
-    pipeline: [{$skip: 1}, {$match: {_idTimes10: {$lt: 250}}}]
+    // Ensure that $match stage isn't pushed down to the query layer.
+    pipeline: [{$_internalInhibitOptimization: {}}, {$match: {_idTimes10: {$lt: 250}}}]
 });
 
 /**
@@ -994,19 +995,17 @@ generateTestCase({
     name: "MatchOneFieldFromBigDocument",
     nDocs: 1000,
     docGenerator: docGenerator50FieldsOnePredicate,
-    // Add a $skip stage before the $match stage to ensure the $match isn't pushed down to the query
-    // layer. A $skip of 0 will be optimized out, so we need to skip at least one.
-    pipeline: [{$skip: 1}, {$match: {predicate: {$eq: 0}}}]
+    // Ensure that $match stage isn't pushed down to the query layer.
+    pipeline: [{$_internalInhibitOptimization: {}}, {$match: {predicate: {$eq: 0}}}]
 });
 
 generateTestCase({
     name: "MatchManyFieldsFromBigDocument",
     nDocs: 1000,
     docGenerator: docGenerator50FieldsOnePredicate,
-    // Add a $skip stage before the $match stage to ensure the $match isn't pushed down to the
-    // query layer. A $skip of 0 will be optimized out, so we need to skip at least one.
+    // Ensure that $match stage isn't pushed down to the query layer.
     pipeline: [
-        {$skip: 1},
+        {$_internalInhibitOptimization: {}},
         {
             $match: {
                 predicate: {$eq: 0},
@@ -1056,10 +1055,7 @@ generateTestCase({
                     }
                 }
             }
-        },
-        // generateTestCase will append a final $skip stage. Add a $match here to prevent that from
-        // being swapped before this stage.
-        {$match: {a: 5}},
+        }
     ],
 });
 
