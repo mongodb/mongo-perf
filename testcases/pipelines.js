@@ -1248,27 +1248,73 @@ generateTestCase({
     pipeline: [{$addFields: {y: {$add: ["$x", "$x"]}}}, {$sort: {y: 1}}]
 });
 
+function largeDocGenerator(i) {
+    return {
+        _id: i,
+        x: Random.randInt(200000),
+        y: 10,
+        string1: getStringOfLength(50 * 1024),
+        string2: getStringOfLength(50 * 1024),
+        string3: getStringOfLength(50 * 1024),
+        string4: getStringOfLength(50 * 1024),
+        string5: getStringOfLength(50 * 1024),
+        string6: getStringOfLength(50 * 1024),
+        string7: getStringOfLength(50 * 1024),
+        string8: getStringOfLength(50 * 1024),
+        string9: getStringOfLength(50 * 1024)
+    };
+}
+
 generateTestCase({
     name: "SortProjectWithBigDocuments",
     tags: ["sort", "agg_query_comparison"],
     nDocs: 220,
-    docGenerator: function simpleSortDocGenerator(i) {
-        return {
-            _id: i,
-            x: Random.randInt(200000),
-            y: 10,
-            string1: getStringOfLength(50 * 1024),
-            string2: getStringOfLength(50 * 1024),
-            string3: getStringOfLength(50 * 1024),
-            string4: getStringOfLength(50 * 1024),
-            string5: getStringOfLength(50 * 1024),
-            string6: getStringOfLength(50 * 1024),
-            string7: getStringOfLength(50 * 1024),
-            string8: getStringOfLength(50 * 1024),
-            string9: getStringOfLength(50 * 1024)
-        };
-    },
+    docGenerator: largeDocGenerator,
     pipeline: [{$sort: {x: 1}}, {$project: {x: 1, y: 1}}]
+});
+
+// We set 'addSkipStage: false' flag for three workloads below because they already contain $skip
+// stage skipping most of the documents from the input.
+generateTestCase({
+    name: "SortProjectSkipWithBigDocuments",
+    tags: ["sort", "agg_query_comparison"],
+    nDocs: 220,
+    docGenerator: largeDocGenerator,
+    pipeline: [{$sort: {x: 1}}, {$project: {x: 1, y: 1}}, {$skip: 200}],
+    addSkipStage: false
+});
+
+generateTestCase({
+    name: "SortSkipProjectWithBigDocuments",
+    tags: ["sort", "agg_query_comparison"],
+    nDocs: 220,
+    docGenerator: largeDocGenerator,
+    pipeline: [{$sort: {x: 1}}, {$skip: 200}, {$project: {x: 1, y: 1}}],
+    addSkipStage: false
+});
+
+generateTestCase({
+    name: "ProjectSkipWithBigDocuments",
+    tags: ["agg_query_comparison"],
+    nDocs: 220,
+    docGenerator: largeDocGenerator,
+    pipeline: [
+        {
+            $project: {
+                string1: 1,
+                string2: 1,
+                string3: 1,
+                string4: 1,
+                string5: 1,
+                string6: 1,
+                string7: 1,
+                string8: 1,
+                string9: 1
+            }
+        },
+        {$skip: 200}
+    ],
+    addSkipStage: false
 });
 
 function sortGroupBigDocGenerator(i) {
