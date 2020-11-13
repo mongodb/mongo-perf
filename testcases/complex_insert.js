@@ -14,7 +14,7 @@ tests.push( { name: "Insert.SingleIndex.Seq",
               tags: ['insert','indexed','regression'],
               pre: function( collection ) {
                   collection.drop();
-                  collection.ensureIndex({x: 1});
+                  collection.createIndex({x: 1});
               },
               ops: [
                   { op:  "insert",
@@ -33,7 +33,7 @@ tests.push( { name: "Insert.SingleIndex.Uncontested.Rnd",
               tags: ['insert','indexed','regression'],
               pre: function( collection ) {
                   collection.drop();
-                  collection.ensureIndex({x: 1});
+                  collection.createIndex({x: 1});
               },
               ops: [
                   { op:  "insert",
@@ -52,7 +52,7 @@ tests.push( { name: "Insert.SingleIndex.Contested.Rnd",
               tags: ['insert','indexed','regression'],
               pre: function( collection ) {
                   collection.drop();
-                  collection.ensureIndex({x: 1});
+                  collection.createIndex({x: 1});
               },
               ops: [
                   { op:  "insert",
@@ -71,9 +71,9 @@ tests.push( { name: "Insert.MultiIndex.Uncontested.Rnd",
               tags: ['insert','indexed','regression'],
               pre: function( collection ) {
                   collection.drop();
-                  collection.ensureIndex({x: 1});
-                  collection.ensureIndex({y: 1});
-                  collection.ensureIndex({z: 1});
+                  collection.createIndex({x: 1});
+                  collection.createIndex({y: 1});
+                  collection.createIndex({z: 1});
               },
               ops: [
                   { op:  "insert",
@@ -95,9 +95,9 @@ tests.push( { name: "Insert.MultiIndex.Contested.Rnd",
               tags: ['insert','indexed','regression'],
               pre: function( collection ) {
                   collection.drop();
-                  collection.ensureIndex({x: 1});
-                  collection.ensureIndex({y: 1});
-                  collection.ensureIndex({z: 1});
+                  collection.createIndex({x: 1});
+                  collection.createIndex({y: 1});
+                  collection.createIndex({z: 1});
               },
               ops: [
                   { op:  "insert",
@@ -119,7 +119,7 @@ tests.push( { name: "Insert.MultiKeyIndex.Uncontested.Rnd",
               tags: ['insert','indexed','regression'],
               pre: function( collection ) {
                   collection.drop();
-                  collection.ensureIndex({x: 1});
+                  collection.createIndex({x: 1});
               },
               ops: [
                   { op:  "insert",
@@ -144,7 +144,7 @@ tests.push( { name: "Insert.MultiKeyIndex.Contested.Rnd",
               tags: ['insert','indexed','regression'],
               pre: function( collection ) {
                   collection.drop();
-                  collection.ensureIndex({x: 1});
+                  collection.createIndex({x: 1});
               },
               ops: [
                   { op:  "insert",
@@ -167,7 +167,7 @@ tests.push( { name: "Insert.BigKeyIndex",
               tags: ['insert', 'indexed', 'regression'],
               pre: function(collection) {
                   collection.drop();
-                  collection.ensureIndex({x: 1});
+                  collection.createIndex({x: 1});
               },
               ops: [
                   { op: "insert",

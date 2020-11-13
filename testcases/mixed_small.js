@@ -50,8 +50,8 @@ tests.push( { name: "Mixed.FindThenUpdate-50-50",
                   }
                   collection.insert(docs);
                   collection.getDB().getLastError();
-                  collection.ensureIndex( { x : 1 } );
-                  collection.ensureIndex( { y : 1 } );
+                  collection.createIndex( { x : 1 } );
+                  collection.createIndex( { y : 1 } );
               },
               ops: [
                   { op: "let", target: "x", value: {"#RAND_INT_PLUS_THREAD": [0,100]}},

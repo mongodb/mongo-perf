@@ -49,7 +49,7 @@ if (typeof(tests) !== "object") {
             }
             bulkOp.execute();
             indexes.forEach(function(indexSpec) {
-                assert.commandWorked(collection.ensureIndex(indexSpec));
+                assert.commandWorked(collection.createIndex(indexSpec));
             });
         };
     }

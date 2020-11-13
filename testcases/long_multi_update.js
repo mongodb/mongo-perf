@@ -41,7 +41,7 @@ tests.push( { name: "MultiUpdate.BigAllDocs.Indexed",
               tags: ['update','slow','indexed'],
               pre: function( collection ) {
                   setupTestBigAllDocs( collection );
-                  collection.ensureIndex( { x : 1 } );                                    
+                  collection.createIndex( { x : 1 } );                                    
               },
               ops: testBigAllDocs,
             } );   
@@ -86,8 +86,8 @@ tests.push( { name: "MultiUpdate.BigAllDocsMultiChange.Indexed",
               tags: ['update','slow','indexed'],
               pre: function( collection ) {
                   setupTestBigAllDocsMultiChange( collection );
-                  collection.ensureIndex( { x : 1 } );                                    
-                  collection.ensureIndex( { y : 1 } );                                    
+                  collection.createIndex( { x : 1 } );                                    
+                  collection.createIndex( { y : 1 } );                                    
               },
               ops: testBigAllDocsMultiChange,
             } );               
@@ -131,7 +131,7 @@ tests.push( { name: "MultiUpdate.Contended.AllDocs.Indexed",
               tags: ['update','slow','indexed'],
               pre: function( collection ) {
                   setupTestContendedAllDocs( collection );
-                  collection.ensureIndex( { x : 1 } );                                    
+                  collection.createIndex( { x : 1 } );                                    
               },
               ops: testContendedAllDocs,
             } );   

@@ -46,7 +46,7 @@ tests.push( { name: "MultiUpdate.Uncontended.SingleDoc.Indexed",
               tags: ['update','core','indexed'],
               pre: function( collection ) {
                   setupTestUncontendedSingleDoc( collection );
-                  collection.ensureIndex( { x : 1 } );
+                  collection.createIndex( { x : 1 } );
               },
               ops: testUncontendedSingleDoc,
             } );              
@@ -95,7 +95,7 @@ tests.push( { name: "MultiUpdate.Uncontended.TwoDocs.Indexed",
               tags: ['update','core','indexed'],
               pre: function( collection ) {
                   setupTestUncontendedTwoDocs( collection );
-                  collection.ensureIndex( { x : 1 } );                  
+                  collection.createIndex( { x : 1 } );                  
               },
               ops: testUncontendedTwoDocs,
             } );
@@ -144,7 +144,7 @@ tests.push( { name: "MultiUpdate.Contended.Low.Indexed",
               tags: ['update','core','indexed'],
               pre: function( collection ) {
                  setupTestContendedLow( collection );
-                 collection.ensureIndex( { x : 1 } );                                    
+                 collection.createIndex( { x : 1 } );                                    
               },
               ops: testContendedLow,
             } );                    
@@ -193,7 +193,7 @@ tests.push( { name: "MultiUpdate.Contended.Medium.Indexed",
               tags: ['update','indexed'],
               pre: function( collection ) {
                   setupTestContendedMedium( collection );
-                  collection.ensureIndex( { x : 1 } );                                    
+                  collection.createIndex( { x : 1 } );                                    
               },
               ops: testContendedMedium,
             } );     
@@ -242,7 +242,7 @@ tests.push( { name: "MultiUpdate.Contended.Hot.Indexed",
               tags: ['update','indexed'],
               pre: function( collection ) {
                   setupTestContendedHot( collection );
-                  collection.ensureIndex( { x : 1 } );                                    
+                  collection.createIndex( { x : 1 } );                                    
               },
               ops: testContendedHot,
             } );   
@@ -289,7 +289,7 @@ tests.push( { name: "MultiUpdate.Contended.Doc.Seq.Indexed",
               tags: ['update','indexed'],
               pre: function( collection ) {
                   setupTestContendedSeqDoc( collection );
-                  collection.ensureIndex( { x : 1 } );                                    
+                  collection.createIndex( { x : 1 } );                                    
               },
               ops: testContendedSeqDoc,
             } );                            
@@ -335,7 +335,7 @@ tests.push( { name: "MultiUpdate.Contended.Doc.Rnd.Indexed",
               tags: ['update','indexed'],
               pre: function( collection ) {
                   setupTestContendedRndDoc( collection );
-                  collection.ensureIndex( { x : 1 } );                                    
+                  collection.createIndex( { x : 1 } );                                    
               },
               ops: testContendedRndDoc,
             } );        

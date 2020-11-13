@@ -8,7 +8,7 @@ function generateGridMap(collection, x1, y1, x2, y2, indexType, legacy) {
     var step_y = (y2 - y1) / 100.0;
 
     collection.drop(); 
-    collection.ensureIndex({loc: indexType});
+    collection.createIndex({loc: indexType});
 
     var count = 0;
     for( var i = x1; i < x2; ) {

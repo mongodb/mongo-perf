@@ -42,7 +42,7 @@ tests.push( { name: "Update.IncWithIndex",
                   }
                   collection.insert(docs);
                   collection.getDB().getLastError();
-                  collection.ensureIndex( { x : 1 } );
+                  collection.createIndex( { x : 1 } );
               },
               ops: [
                   { op:  "update",
@@ -76,7 +76,7 @@ tests.push( { name: "Update.IncWithIndexUpsert",
               tags: ['update','core','indexed'],
               pre: function( collection ) {
                   collection.drop();
-                  collection.ensureIndex( { x : 1 } );
+                  collection.createIndex( { x : 1 } );
               },
               ops: [
                   { op:  "update",
@@ -424,7 +424,7 @@ tests.push( { name: "Update.UniqueIndex",
                   }
                   collection.insert(docs);
                   collection.getDB().getLastError();
-                  collection.ensureIndex( { a: 1 }, { unique: true } );
+                  collection.createIndex( { a: 1 }, { unique: true } );
               },
               ops: [
                   { op:  "update",
@@ -449,7 +449,7 @@ tests.push( { name: "Update.UniqueIndexCompoundReverse",
                   }
                   collection.insert(docs);
                   collection.getDB().getLastError();
-                  collection.ensureIndex( { a: -1, b: 1 }, { unique: true } );
+                  collection.createIndex( { a: -1, b: 1 }, { unique: true } );
               },
               ops: [
                   { op:  "update",

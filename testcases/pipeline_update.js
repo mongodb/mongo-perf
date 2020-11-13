@@ -19,7 +19,7 @@ tests.push({
         }
         collection.insert(docs);
         collection.getDB().getLastError();
-        collection.ensureIndex({x: 1});
+        collection.createIndex({x: 1});
     },
     ops: [
         {
@@ -40,7 +40,7 @@ tests.push({
     tags: ["indexed", "pipeline-updates", "regression", ">=4.2.0"],
     pre: function(collection) {
         collection.drop();
-        collection.ensureIndex({x: 1});
+        collection.createIndex({x: 1});
     },
     ops: [
         {
@@ -128,8 +128,8 @@ tests.push({
         }
         collection.insert(docs);
         collection.getDB().getLastError();
-        collection.ensureIndex({x: 1});
-        collection.ensureIndex({y: 1});
+        collection.createIndex({x: 1});
+        collection.createIndex({y: 1});
     },
     ops: [
         {
@@ -225,7 +225,7 @@ tests.push({
         }
         collection.insert(docs);
         collection.getDB().getLastError();
-        collection.ensureIndex({x: 1});
+        collection.createIndex({x: 1});
     },
     ops: [
         {
@@ -475,7 +475,7 @@ tests.push({
             bulk.insert({count: 0, rand: Random.rand()});
         }
         bulk.execute();
-        collection.ensureIndex({count: 1, rand: 1});
+        collection.createIndex({count: 1, rand: 1});
     },
     ops: [{
         op: "command",

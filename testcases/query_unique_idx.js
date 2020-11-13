@@ -43,8 +43,8 @@ tests.push( { name: "Queries.UniqueIdx.HaveNonUniqueIndices",
               tags: ['query','uniqueidx','regression'],
               pre: function(collection, env) {
                   insertData(collection, env.threads);
-                  collection.ensureIndex({a: 1});
-                  collection.ensureIndex({c: 1});
+                  collection.createIndex({a: 1});
+                  collection.createIndex({c: 1});
               },
               ops: queryOnAbcOps } );
 
@@ -60,8 +60,8 @@ tests.push( { name: "Queries.UniqueIdx.MultipleUniqueIndices",
               tags: ['query','uniqueidx','regression'],
               pre: function(collection, env) {
                   insertData(collection, env.threads);
-                  collection.ensureIndex({a: 1}, {unique: true});
-                  collection.ensureIndex({c: 1});
+                  collection.createIndex({a: 1}, {unique: true});
+                  collection.createIndex({c: 1});
               },
               ops: queryOnAbcOps } );
 
@@ -81,8 +81,8 @@ tests.push( { name: "Queries.UniqueIdx.MultikeySimple",
                       bulk.insert( { _id : i, a: i, b: [i, (i+1)], c: "foo" } );
                   }
                   bulk.execute();
-                  collection.ensureIndex({a: 1});
-                  collection.ensureIndex({b: 1});
+                  collection.createIndex({a: 1});
+                  collection.createIndex({b: 1});
               },
               ops: [
                   { op: "find", query: { a : 50, b : {$all: [50, 51]} } }
@@ -104,8 +104,8 @@ tests.push( { name: "Queries.UniqueIdx.MultikeyWithUniqueIdx",
                       bulk.insert( { _id: i, a: i, b: [i, (i+1)], c: "foo" } );
                   }
                   bulk.execute();
-                  collection.ensureIndex({a: 1}, {unique: true});
-                  collection.ensureIndex({b: 1});
+                  collection.createIndex({a: 1}, {unique: true});
+                  collection.createIndex({b: 1});
               },
               ops: [
                   { op: "find", query: { a : 50, b : {$all: [50, 51]} } }
@@ -121,10 +121,10 @@ tests.push( { name: "Queries.UniqueIdx.ManyIdxIsect",
               tags: ['query','uniqueidx','regression'],
               pre: function(collection) {
                   insertData(collection, 1);
-                  collection.ensureIndex({a: 1});
-                  collection.ensureIndex({b: 1});
-                  collection.ensureIndex({c: 1});
-                  collection.ensureIndex({d: 1});
+                  collection.createIndex({a: 1});
+                  collection.createIndex({b: 1});
+                  collection.createIndex({c: 1});
+                  collection.createIndex({d: 1});
               },
               ops: [
                   { op: "find", query: { _id : 50, a : 50, b : 50, c : "foo", d : 50 } }
@@ -141,10 +141,10 @@ tests.push( { name: "Queries.UniqueIdx.ManyIdxIsectRangePredicates",
               tags: ['query','uniqueidx','regression'],
               pre: function(collection) {
                   insertData(collection, 1);
-                  collection.ensureIndex({a: 1});
-                  collection.ensureIndex({b: 1});
-                  collection.ensureIndex({c: 1});
-                  collection.ensureIndex({d: 1});
+                  collection.createIndex({a: 1});
+                  collection.createIndex({b: 1});
+                  collection.createIndex({c: 1});
+                  collection.createIndex({d: 1});
               },
               ops: [
                   { op: "find", query: { _id : 50, a : {$gte: 1, $lte: 100},

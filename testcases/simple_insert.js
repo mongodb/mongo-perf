@@ -132,7 +132,7 @@ tests.push( { name: "Insert.SeqIntID.Indexed",
               tags: ['insert','indexed','regression'],
               pre: function( collection ) {
                   collection.drop();
-                  collection.ensureIndex({a: 1});
+                  collection.createIndex({a: 1});
               },
               ops: [
                   { op:  "insert",
@@ -191,7 +191,7 @@ tests.push( { name: "Insert.JustNumIndexed",
               tags: ['insert','indexed','regression'],
               pre: function( collection ) {
                   collection.drop();
-                  collection.ensureIndex({x: 1});
+                  collection.createIndex({x: 1});
               },
               ops: [
                   { op:  "insert",
@@ -212,7 +212,7 @@ tests.push( { name: "InsertIndexedStringsSimpleCollation",
                   var collName = collection.getName();
                   collection.drop();
                   testDB.createCollection(collName, { collation: { locale: "simple" } } );
-                  collection.ensureIndex( { a: 1 } );
+                  collection.createIndex( { a: 1 } );
               },
               ops: [
                   { op: "insert", doc: { a: { "#RAND_STRING": [10] } } }
@@ -240,7 +240,7 @@ tests.push( { name: "InsertIndexedStringsNonSimpleCollation",
                       normalization : true,
                   };
                   testDB.createCollection(collName, { collation: myCollation } );
-                  collection.ensureIndex( { a: 1 } );
+                  collection.createIndex( { a: 1 } );
               },
               ops: [
                   { op: "insert", doc: { a: { "#RAND_STRING": [10] } } }
@@ -260,7 +260,7 @@ tests.push( { name: "Insert.UniqueIndex",
                   var collName = collection.getName();
                   collection.drop();
 		  testDB.createCollection( collName );
-                  collection.ensureIndex( { a: 1 }, { unique: true } );
+                  collection.createIndex( { a: 1 }, { unique: true } );
               },
               ops: [
                   { op:  "insert",
@@ -283,7 +283,7 @@ tests.push( { name: "Insert.UniqueIndexCompound",
                   var collName = collection.getName();
                   collection.drop();
 		  testDB.createCollection( collName );
-                  collection.ensureIndex( { a: 1, b: 1 }, { unique: true } );
+                  collection.createIndex( { a: 1, b: 1 }, { unique: true } );
               },
               ops: [
                   { op:  "insert",
@@ -309,7 +309,7 @@ tests.push( { name: "Insert.UniqueIndexCompoundReverse",
                   var collName = collection.getName();
                   collection.drop();
 		  testDB.createCollection( collName );
-                  collection.ensureIndex( { a: 1, b: -1 }, { unique: true } );
+                  collection.createIndex( { a: 1, b: -1 }, { unique: true } );
               },
               ops: [
                   { op:  "insert",

@@ -66,7 +66,7 @@ tests.push( { name: "Remove.IntNonIdIndex",
                   }
                   collection.insert(docs);
                   collection.getDB().getLastError();
-                  collection.ensureIndex( { x : 1 } );
+                  collection.createIndex( { x : 1 } );
               },
               ops: [
                   { op: "let", target: "x", value: {"#RAND_INT_PLUS_THREAD": [0,100]}},
@@ -92,7 +92,7 @@ tests.push( { name: "Remove.IntNonIdUniqueIndex",
                   }
                   collection.insert(docs);
                   collection.getDB().getLastError();
-                  collection.ensureIndex( { x : 1 }, { unique: true } );
+                  collection.createIndex( { x : 1 }, { unique: true } );
               },
               ops: [
                   { op: "let", target: "x", value: {"#RAND_INT_PLUS_THREAD": [0,100]}},

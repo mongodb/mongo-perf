@@ -181,7 +181,7 @@ tests.push({
             bulk.insert({count: 0, rand: Random.rand()});
         }
         bulk.execute();
-        collection.ensureIndex({count: 1, rand: 1});
+        collection.createIndex({count: 1, rand: 1});
     },
     ops: [{
         op: "command",
@@ -213,7 +213,7 @@ tests.push({
             bulk.insert({ts: new Date()});
         }
         bulk.execute();
-        collection.ensureIndex({ts: 1});
+        collection.createIndex({ts: 1});
     },
     ops: [
         {
@@ -245,7 +245,7 @@ function genDistinctTest(name, index, query) {
                 docs.push({x: 3});
             }
             collection.insert(docs);
-            collection.ensureIndex({x: 1});
+            collection.createIndex({x: 1});
         };
     } else {
         doc.pre = function(collection) {

@@ -79,7 +79,7 @@ function populatorGenerator(isView, nDocs, indices, docGenerator) {
         }
         bulkop.execute();
         indices.forEach(function(indexSpec) {
-            assert.commandWorked(collection.ensureIndex(indexSpec));
+            assert.commandWorked(collection.createIndex(indexSpec));
         });
     };
 }

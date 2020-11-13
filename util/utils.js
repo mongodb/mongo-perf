@@ -345,7 +345,7 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOption
         if (shard == 1) {
             for (var j = 0; j < multicoll; j++) {
                 // when shard is enabled, we want to enable shard
-                collections[(multicoll * i) + j].ensureIndex({ _id: "hashed" });
+                collections[(multicoll * i) + j].createIndex({ _id: "hashed" });
             }
 
             sh.enableSharding("test" + i);
