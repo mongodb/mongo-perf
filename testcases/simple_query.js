@@ -70,18 +70,7 @@ if (typeof(tests) !== "object") {
         };
         var pipeline = newOp.command.pipeline;
 
-        // Special case handling for legacy OP_QUERY find $query syntax. This is used as a
-        // workaround to test queries with sorts in a fashion supported by benchRun.
-        //
-        // TODO SERVER-5722: adding full-blown sort support in benchRun should prevent us from
-        // requiring this hack.
-        if (op.query && op.query.$query) {
-            pipeline.push({$match: op.query.$query});
-
-            if (op.query.$orderby) {
-                pipeline.push({$sort: op.query.$orderby});
-            }
-        } else if (op.query) {
+        if (op.query) {
             pipeline.push({$match: op.query});
         }
 
@@ -387,10 +376,8 @@ if (typeof(tests) !== "object") {
         },
         op: {
             op: "find",
-            query: {
-                $query: {x: {$in: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]}},
-                $orderby: {x: 1},
-            }
+            query: {x: {$in: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]}},
+            sort: {x: 1}
         }
     });
 
@@ -419,10 +406,8 @@ if (typeof(tests) !== "object") {
         },
         op: {
             op: "find",
-            query: {
-                $query: {x: {$in: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]}},
-                $orderby: {x: 1},
-            }
+            query: {x: {$in: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]}},
+            sort: {x: 1}
         }
     });
 
@@ -772,7 +757,7 @@ if (typeof(tests) !== "object") {
             }
             return {x: arrayRandom};
         },
-        op: {op: "find", query: {$query:{}, $orderby: {x: 1}}}
+        op: {op: "find", query:{}, sort: {x: 1}}
     });
 
     /**
@@ -795,7 +780,7 @@ if (typeof(tests) !== "object") {
             }
             return {arr: arrayRandom};
         },
-        op: {op: "find", query: {$query:{}, $orderby: {"arr.x": 1}}}
+        op: {op: "find", query: {}, sort: {"arr.x": 1}}
     });
 
     /**
@@ -814,7 +799,7 @@ if (typeof(tests) !== "object") {
             return {x: Random.randInt(10000)};
         },
         indexes: [{x: 1}],
-        op: {op: "find", query: {$query:{}, $orderby: {x: 1}}, filter: {x: 1, _id: 0}}
+        op: {op: "find", query: {}, sort: {x: 1}, filter: {x: 1, _id: 0}}
     });
 
     /**
@@ -836,11 +821,9 @@ if (typeof(tests) !== "object") {
         indexes: [{x: 1,  y: 1}],
         op: {
             op: "find",
-            query: {
-                $query: {x: {$gt: 0}, y: {$gt: 0}},
-                $orderby: {y: 1}
-            },
-            filter: {x: 1, y:1, _id: 0}
+            query: {x: {$gt: 0}, y: {$gt: 0}},
+            filter: {x: 1, y:1, _id: 0},
+            sort: {y: 1},
         }
     });
 
@@ -864,7 +847,8 @@ if (typeof(tests) !== "object") {
         indexes: [{x: 1, y: 1}],
         op: {
             op: "find",
-            query: {$query: {x: {$gt: 0}, y: {$gt: 0}}, $orderby: {y: 1}},
+            query: {x: {$gt: 0}, y: {$gt: 0}},
+            sort: {y: 1},
         }
     });
 }());
