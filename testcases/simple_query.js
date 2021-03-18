@@ -73,6 +73,9 @@ if (typeof(tests) !== "object") {
         if (op.query) {
             pipeline.push({$match: op.query});
         }
+        if (op.sort) {
+            pipeline.push({$sort: op.sort});
+        }
 
         if (op.skip) {
             pipeline.push({$skip: op.skip});
