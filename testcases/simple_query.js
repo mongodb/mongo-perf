@@ -429,14 +429,17 @@ if (typeof(tests) !== "object") {
     }
 
     /**
-     * Setup: Create a collection and insert a small number of documents with a random even integer
-     * field x in the range [0, nLargeArrayElements * 2).
-     *
-     * Test: Issue queries that must perform a collection scan, filtering the documents with an $in
-     * predicate with a large number of elements. All documents will match the predicate, since the
-     * $in array contains all even integers in the range [0, nLargeArrayElements * 2).
+     * Adds two test cases for a $in query: One a small collection with a $in filter that
+     * includes every document, and another on a larger collection with a selective $in filter.
      */
-    function addInTestCase({name, largeInArray}) {
+    function addInTestCases({name, largeInArray}) {
+        // Setup: Create a collection and insert a small number of documents with a random even
+        // integer field x in the range [0, nLargeArrayElements * 2).
+
+        // Test: Issue queries that must perform a collection scan, filtering the documents with an
+        // $in predicate with a large number of elements. All documents will match the predicate,
+        // since the $in array contains all even integers in the range [0, nLargeArrayElements *
+        // 2).
         addTestCase({
             name: name,
             tags: ["regression"],
@@ -449,14 +452,29 @@ if (typeof(tests) !== "object") {
                 query: {x: {$in: largeInArray}}
             }
         });
+
+        // Similar test to above, but with a larger collection. Only a small fraction (10%)
+        // of the documents will actually match the filter.
+        addTestCase({
+            name: name + "BigCollection",
+            tags: ["regression"],
+            nDocs: 10000,
+            docs: function(i) {
+                return {x: 2 * Random.randInt(largeInArray.length * 10)};
+            },
+            op: {
+                op: "find",
+                query: {x: {$in: largeInArray}}
+            }
+        });
     };
 
-    addInTestCase({
+    addInTestCases({
         name: "UnindexedLargeInMatching",
         largeInArray: largeArraySorted,
     });
 
-    addInTestCase({
+    addInTestCases({
         name: "UnindexedLargeInUnsortedMatching",
         largeInArray: largeArrayRandom,
     });
@@ -475,12 +493,12 @@ if (typeof(tests) !== "object") {
         veryLargeArraySorted.push(i * 2);
     }
 
-    addInTestCase({
+    addInTestCases({
         name: "UnindexedVeryLargeInSortedMatching",
         largeInArray: veryLargeArraySorted,
     });
 
-    addInTestCase({
+    addInTestCases({
         name: "UnindexedVeryLargeInUnsortedMatching",
         largeInArray: veryLargeArrayRandom,
     });
