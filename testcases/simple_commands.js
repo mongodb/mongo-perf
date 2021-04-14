@@ -52,7 +52,6 @@ tests.push({
             docs.push({_id: i});
         }
         collection.insert(docs);
-        collection.getDB().getLastError();
     },
     ops: [{op: "command", ns: "#B_DB", command: {"count": "#B_COLL"}}]
 });
@@ -71,7 +70,6 @@ tests.push({
             docs.push({_id: i});
         }
         collection.insert(docs);
-        collection.getDB().getLastError();
     },
     ops: [{
         op: "command",
@@ -257,7 +255,6 @@ function genDistinctTest(name, index, query) {
                 docs.push({x: 3});
             }
             collection.insert(docs);
-            collection.getDB().getLastError();
         };
     }
 

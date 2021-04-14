@@ -7,7 +7,6 @@ var setupTestBigAllDocs = function( collection ) {
    for ( var i = 0; i < 100000; i++ ) {
       collection.insert( { _id : i , x : 0 } );
    }
-   collection.getDB().getLastError();  
 };
 
 var testBigAllDocs = [
@@ -51,7 +50,6 @@ var setupTestBigAllDocsMultiChange = function( collection ) {
    for ( var i = 0; i < 100000; i++ ) {
       collection.insert( { _id : i , x : 0, y : "a" } );
    }
-   collection.getDB().getLastError();  
 };
 
 var testBigAllDocsMultiChange = [
@@ -97,7 +95,6 @@ var setupTestContendedAllDocs = function( collection ) {
    for ( var i = 0; i < 3200; i++ ) {
       collection.insert( { _id : i , x : 0 } );
    }
-   collection.getDB().getLastError();
 };
 
 var testContendedAllDocs = [

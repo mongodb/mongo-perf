@@ -17,7 +17,6 @@ tests.push( { name: "Update.IncNoIndex",
                       docs.push( { _id : i , x : 0 } );
                   }
                   collection.insert(docs);
-                  collection.getDB().getLastError();
               },
               ops: [
                   { op:  "update",
@@ -41,7 +40,6 @@ tests.push( { name: "Update.IncWithIndex",
                       docs.push( { _id : i , x : 0 } );
                   }
                   collection.insert(docs);
-                  collection.getDB().getLastError();
                   collection.createIndex( { x : 1 } );
               },
               ops: [
@@ -113,7 +111,6 @@ tests.push( { name: "Update.IncFewSmallDoc",
                       docs.push(toInsert);
                  }
                   collection.insert(docs);
-                  collection.getDB().getLastError();
               },
               ops: [
                   { op:  "update",
@@ -147,7 +144,6 @@ tests.push( { name: "Update.IncFewLargeDoc",
                       docs.push(toInsert);
                   }
                   collection.insert(docs);
-                  collection.getDB().getLastError();
               },
               ops: [
                   { op:  "update",
@@ -191,7 +187,6 @@ tests.push( { name: "Update.IncFewSmallDocLongFields",
                       docs.push(toInsert);
                   }
                   collection.insert(docs);
-                  collection.getDB().getLastError();
               },
               ops: [
                   { op:  "update",
@@ -225,7 +220,6 @@ tests.push( { name: "Update.IncFewLargeDocLongFields",
                       docs.push(toInsert);
                   }
                   collection.insert(docs);
-                  collection.getDB().getLastError();
               },
               ops: [
                   { op:  "update",
@@ -263,7 +257,6 @@ tests.push( { name: "Update.SingleDocFieldAtOffset",
                       docs.push(toInsert);
                   }
                   collection.insert(docs);
-                  collection.getDB().getLastError();
               },
               ops: [
                   { op: "let", target: "x", value: {"#RAND_INT_PLUS_THREAD": [0,100]}},
@@ -304,7 +297,6 @@ tests.push( { name: "Update.FieldAtOffset",
                       docs.push(toInsert);
                   }
                   collection.insert(docs);
-                  collection.getDB().getLastError();
               },
               ops: [
                   { op:  "update",
@@ -423,7 +415,6 @@ tests.push( { name: "Update.UniqueIndex",
                       docs.push( { a : i, x : 0 } );
                   }
                   collection.insert(docs);
-                  collection.getDB().getLastError();
                   collection.createIndex( { a: 1 }, { unique: true } );
               },
               ops: [
@@ -448,7 +439,6 @@ tests.push( { name: "Update.UniqueIndexCompoundReverse",
                       docs.push( { a : i, b : i, x : 0 } );
                   }
                   collection.insert(docs);
-                  collection.getDB().getLastError();
                   collection.createIndex( { a: -1, b: 1 }, { unique: true } );
               },
               ops: [

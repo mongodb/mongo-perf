@@ -9,7 +9,6 @@ var setupTestUncontendedSingleDoc = function( collection ) {
         docs.push( { _id : i , x : 0 } );
     }
     collection.insert(docs);
-    collection.getDB().getLastError();
 };
 
 var testUncontendedSingleDoc = [
@@ -58,7 +57,6 @@ var setupTestUncontendedTwoDocs = function( collection ) {
         docs.push( { _id : i , x : 0 } );
     }
     collection.insert(docs);
-    collection.getDB().getLastError();
 };
 
 var testUncontendedTwoDocs = [
@@ -107,7 +105,6 @@ var setupTestContendedLow = function( collection ) {
         docs.push( { _id : i , x : 0 } );
     }
     collection.insert(docs);
-    collection.getDB().getLastError();
 };                            
 
 var testContendedLow = [
@@ -156,7 +153,6 @@ var setupTestContendedMedium = function( collection ) {
         docs.push( { _id : i , x : 0 } );
     }
     collection.insert(docs);
-    collection.getDB().getLastError();                               
 };
 
 var testContendedMedium = [ 
@@ -205,7 +201,6 @@ var setupTestContendedHot = function( collection ) {
         docs.push( { _id : i , x : 0 } );
     }
     collection.insert(docs);
-    collection.getDB().getLastError();                               
 };
 
 var testContendedHot = [ 
@@ -255,7 +250,6 @@ var setupTestContendedSeqDoc = function( collection ) {
         docs.push( { _id : i , x : 0 } );
    }
     collection.insert(docs);
-    collection.getDB().getLastError();                               
 };
 
 var testContendedSeqDoc = [ 
@@ -301,7 +295,6 @@ var setupTestContendedRndDoc = function( collection ) {
         docs.push( { _id : i , x : 0 } );
     }
     collection.insert(docs);
-    collection.getDB().getLastError();                               
 };
 
 var testContendedRndDoc = [ 

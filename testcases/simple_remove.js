@@ -16,7 +16,6 @@ tests.push( { name: "Remove.IntId",
                       docs.push( { _id : i } );
                   }
                   collection.insert(docs);
-                  collection.getDB().getLastError();
               },
               ops: [
                   { op: "let", target: "x", value: {"#RAND_INT_PLUS_THREAD": [0,100]}},
@@ -40,7 +39,6 @@ tests.push( { name: "Remove.IntNonIdNoIndex",
                       docs.push( { x : i } );
                   }
                   collection.insert(docs);
-                  collection.getDB().getLastError();
               },
               ops: [
                   { op: "let", target: "x", value: {"#RAND_INT_PLUS_THREAD": [0,100]}},
@@ -65,7 +63,6 @@ tests.push( { name: "Remove.IntNonIdIndex",
                       docs.push( { x : i } );
                   }
                   collection.insert(docs);
-                  collection.getDB().getLastError();
                   collection.createIndex( { x : 1 } );
               },
               ops: [
@@ -91,7 +88,6 @@ tests.push( { name: "Remove.IntNonIdUniqueIndex",
                       docs.push( { x : i } );
                   }
                   collection.insert(docs);
-                  collection.getDB().getLastError();
                   collection.createIndex( { x : 1 }, { unique: true } );
               },
               ops: [

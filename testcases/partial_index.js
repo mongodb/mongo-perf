@@ -13,7 +13,6 @@ var setupTest = function (collection) {
         docs.push( { x : i, a : i } );
     }
     collection.insert(docs);
-    collection.getDB().getLastError();
  
 };
 

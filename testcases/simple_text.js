@@ -75,7 +75,6 @@ if ( typeof(tests) != "object" ) {
             docs.push({ x: generatePhraseLowerCase(i, term) });
         }
         col.insert(docs);
-        col.getDB().getLastError();
     }
 
 

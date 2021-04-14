@@ -18,7 +18,6 @@ tests.push( { name: "Update.SetWithIndex.Random",
                       docs.push( { _id : i , x : 0 } );
                   }
                   collection.insert(docs);
-                  collection.getDB().getLastError();
                   collection.createIndex( { x : 1 } );
               },
               ops: [
@@ -44,7 +43,6 @@ tests.push( { name: "Update.SetWithMultiIndex.Random",
                       docs.push( { _id : i , x : 0, y : i } );
                   }
                   collection.insert(docs);
-                  collection.getDB().getLastError();
                   collection.createIndex( { x : 1 } );
                   collection.createIndex( { y : 1 } );
               },
@@ -71,7 +69,6 @@ tests.push( { name: "Update.SetWithMultiIndex.String",
                       docs.push( { _id : i , x : 0, y : generateRandomString(1024) } );
                   }
                   collection.insert(docs);
-                  collection.getDB().getLastError();
                   collection.createIndex( { x : 1 } );
                   collection.createIndex( { y : 1 } );
               },

@@ -19,7 +19,6 @@ tests.push( { name: "Mixed.FindOneUpdateIntId-50-50",
                       docs.push( { _id : i , x : 0 } );
                   }
                   collection.insert(docs);
-                  collection.getDB().getLastError();
               },
               ops: [
                   { op: "let", target: "x", value: {"#RAND_INT_PLUS_THREAD": [0,100]}},
@@ -49,7 +48,6 @@ tests.push( { name: "Mixed.FindThenUpdate-50-50",
                       docs.push( { x : i, y : generateRandomString(1024) } );
                   }
                   collection.insert(docs);
-                  collection.getDB().getLastError();
                   collection.createIndex( { x : 1 } );
                   collection.createIndex( { y : 1 } );
               },
