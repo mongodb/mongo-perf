@@ -306,8 +306,6 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOption
 
     // set crud options
     new_ops.forEach(function (z) {
-        //  when true, safe mode calls GLE after every op
-        z.safe = (crudOptions.safeGLE.toLowerCase() == 'true' ? true : false)
         //  w write concern (integer)
         z.writeConcern = crudOptions.writeConcern
         if (typeof(z.writeConcern.j) == "string") {
@@ -477,7 +475,6 @@ function setFieldPathArrayToValue(object, pathAsArray, value) {
 
 function getDefaultCrudOptions() {
     var crudOptions = {};
-    crudOptions.safeGLE = 'false';
     crudOptions.writeConcern = {};
     crudOptions.writeCmdMode = 'true';
     crudOptions.readCmdMode = 'false';
