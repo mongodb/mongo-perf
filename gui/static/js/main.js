@@ -25,13 +25,6 @@ function format(d) {
     //var threads = d.threads.join(', ');
 
     if(d.crudOptions) {
-        var safe_icon = 'fa-check';
-        var safe_class = 'crudOptionTrue';
-        if (d.crudOptions.safeGLE == 'false') {
-            safe_icon = 'fa-times';
-            safe_class = 'crudOptionFalse';
-        }
-
         var writecmdmode_icon = 'fa-check';
         var writecmdmode_class = 'crudOptionTrue';
         if (d.crudOptions.writeCmdMode == 'false') {
@@ -82,7 +75,6 @@ function format(d) {
         '<td>CRUD Options:</td>' +
         '<td>' +
         (!d.crudOptions ? " unavailable " :
-        '<div class="crudOptionCell ' + safe_class + '">&nbsp;safe:&nbsp;<i class="fa fa-fw ' + safe_icon + '"></i></div>' +
         '<div class="crudOptionCell ' + writecmdmode_class + '">&nbsp;write cmd:&nbsp;<i class="fa fa-fw ' + writecmdmode_icon + '"></i></div>' +
         '<div class="crudOptionCell ' + readcmdmode_class + '">&nbsp;read cmd:&nbsp;<i class="fa fa-fw ' + readcmdmode_icon + '"></i></div>' +
         '<div class="crudOptionCell ' + j_class + '">&nbsp;j:&nbsp;<i class="fa fa-fw ' + j_icon + '"></i></div>' +

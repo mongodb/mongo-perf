@@ -57,10 +57,6 @@ def parse_arguments():
     parser.add_argument('-s', '--shell', dest='shellpath',
                         help="Path to the mongo shell executable to use.",
                         default='mongo')
-    parser.add_argument('--safe', dest='safeMode',
-                        nargs='?', const='true', choices=['true', 'false'],
-                        help='this option enables a call to GLE after every op instead of every 100 ops',
-                        default='false')
     parser.add_argument('-w', dest='w',
                         help='w write concern',
                         type=int, default=0)
@@ -180,7 +176,6 @@ def main():
 
     # put all crud options in a Map
     crud_options = {}
-    crud_options["safeGLE"] = args.safeMode
     crud_options["writeConcern"] = {}
     if (args.j):
             crud_options["writeConcern"]["j"] = args.j
