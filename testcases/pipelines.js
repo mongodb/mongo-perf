@@ -274,6 +274,96 @@ generateTestCase({
 });
 
 generateTestCase({
+    name: "Group.TenGroupsWithMinN",
+    tags: ['>=5.1.0'],
+    nDocs: 1000,
+
+    docGenerator: function basicGroupDocGenerator(i) {
+        // The _ids are monotonically decreasing. This maximizes the amount of work that $minN will
+        // do for each group.
+        return {_id: -i, _idMod10: i % 10};
+    },
+    pipeline: [{$group: {_id: "$_idMod10", minVals: {$minN: {n: 100, output: "$_id"}}}}]
+});
+
+generateTestCase({
+    name: "Group.TenGroupsWithMaxN",
+    tags: ['>=5.1.0'],
+    nDocs: 1000,
+
+    docGenerator: function basicGroupDocGenerator(i) {
+        // The _ids are monotonically increasing. This maximizes the amount of work that $maxN will
+        // do for each group.
+        return {_id: i, _idMod10: i % 10};
+    },
+    pipeline: [{$group: {_id: "$_idMod10", maxVals: {$maxN: {n: 100, output: "$_id"}}}}]
+});
+
+generateTestCase({
+    name: "Project.MinN",
+    tags: ['>=5.1.0'],
+    nDocs: 1000,
+
+    docGenerator: function basicGroupDocGenerator(i) {
+        // The values in each array are monotonically decreasing. This maximizes the amount of work
+        // that $minN will do during expression evaluation.
+        var arr = [];
+        for(var idx = 0; idx < 20; ++idx){
+            arr.push(i - idx);
+        }
+
+        return {_id: i, array: arr};
+    },
+    pipeline: [{$project: {_id: 0, output: {$minN: {n: 10, output: "$array"}}}}]
+});
+
+generateTestCase({
+    name: "Project.MaxN",
+    tags: ['>=5.1.0'],
+    nDocs: 1000,
+
+    docGenerator: function basicGroupDocGenerator(i) {
+        // The values in each array are monotonically increasing. This maximizes the amount of work
+        // that $maxN will do during expression evaluation.
+        var arr = [];
+        for(var idx = 0; idx < 20; ++idx){
+            arr.push(i + idx);
+        }
+
+        return {_id: i, array: arr};
+    },
+    pipeline: [{$project: {_id: 0, output: {$maxN: {n: 10, output: "$array"}}}}]
+});
+
+generateTestCase({
+    name: "SetWindowFields.OneHundredPartitionsWithMinN",
+    tags: ['>=5.1.0'],
+    nDocs: 1000,
+
+    docGenerator: function basicGroupDocGenerator(i) {
+        // The _ids are monotonically decreasing. This maximizes the amount of work that $minN will
+        // do for each partition.
+        return {_id: -i, _idMod100: i % 100};
+    },
+    pipeline: [{$setWindowFields: {sortBy: {_id: 1}, partitionBy: "$_idMod100",
+            output: {minVals: {$minN: {n: 10, output: "$_id"}, window: {range: [-10, 10]}}}}}]
+});
+
+generateTestCase({
+    name: "SetWindowFields.OneHundredPartitionsWithMaxN",
+    tags: ['>=5.1.0'],
+    nDocs: 1000,
+
+    docGenerator: function basicGroupDocGenerator(i) {
+        // The _ids are monotonically increasing. This maximizes the amount of work that $maxN will
+        // do for each partition.
+        return {_id: i, _idMod100: i % 100};
+    },
+    pipeline: [{$setWindowFields: {sortBy: {_id: 1}, partitionBy: "$_idMod100",
+            output: {maxVals: {$maxN: {n: 10, output: "$_id"}, window: {range: [-10, 10]}}}}}]
+});
+
+generateTestCase({
     name: "Group.TenGroupsWithSumJs",
     tags: ['js', '>=4.3.4'],
     nDocs: 10000,

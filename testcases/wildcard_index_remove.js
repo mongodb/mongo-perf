@@ -133,7 +133,7 @@ if ((typeof tests === "undefined" ? "undefined" : typeof(tests)) != "object") {
         return function(seed) {
             var arrayValue = [seed];
             for (var i = 0; i < arraySize - 1; ++i) {
-                arrayValue.push(10000 + i)
+                arrayValue.push(10000 + i);
             }
 
             var doc = {};
