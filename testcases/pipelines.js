@@ -273,6 +273,410 @@ generateTestCase({
     pipeline: [{$group: {_id: "$_idMod10", avg: {$avg: "$_id"}}}]
 });
 
+const smallCollectionSize = 100;
+const largeCollectionSize = 100000;
+
+// The intent of testing with small documents is to have small overhead associated with parsing
+// and copying them while having enough fields to run queries with different characteristics
+// such as selectivity, complex expressions, sub-fields and arrays access, etc.
+const smallDoc = function (i) {
+    return {
+        _id: i,
+        a: Random.randInt(10),
+        b: Random.randInt(1000),
+        c: Random.rand() * 100,
+        d: i % 10000,
+        e: {
+            x: Random.randInt(10),
+            y: Random.randInt(1000),
+            z: { u: Random.randInt(100), v: Random.randInt(100) },
+        },
+        f: [Random.randInt(10), Random.randInt(10), Random.randInt(10)],
+    };
+}
+
+// The intent of testing with large documents is to make it clear when there is overhead 
+// associated with parsing and copying them.
+const quotes = [
+    "Silly things do cease to be silly if they are done by sensible people in an impudent way.",
+    "I may have lost my heart, but not my self-control.",
+    "Success supposes endeavour.",
+    "One half of the world cannot understand the pleasures of the other.",
+    "It is not every man’s fate to marry the woman who loves him best"
+];
+const largeDoc = function (i) {
+    return {
+        _id: i,
+        a: Random.randInt(10),
+        b: Random.randInt(1000),
+        c: Random.rand() * 100 + 1, // no zeros in this field
+        d: i % 10000,
+        e: {
+            x: Random.randInt(10),
+            y: Random.randInt(1000),
+            z: { u: Random.randInt(100), v: Random.randInt(100) },
+            c: Random.rand() * 100 + 1,
+            g: Random.rand() * 100,
+            h: Random.rand() * 100,
+            i: Random.rand() * 100,
+        },
+        f: [Random.randInt(10), Random.randInt(10), Random.randInt(10)],
+        g: Random.rand() * 100,
+        h: Random.rand() * 100,
+        i: Random.rand() * 100,
+
+        // Fields the queries won't be accessing but might need to copy/scan over.
+        p1: [quotes, quotes, quotes, quotes, quotes],
+        p2: { author: " Jane Austen", work: "Emma", quotes: quotes },
+        p3: { a: quotes[0] + i.toString(), b: quotes[2] + (i % 10).toString(), c: quotes[4] },
+
+        // Fields towards the end of the object some of the tests will be using.
+        aa: Random.randInt(10),
+        bb: Random.randInt(1000),
+        cc: Random.rand() * 100 + 1,
+        dd: i % 10000,
+        ee: {
+            x: Random.randInt(10),
+            y: Random.randInt(1000),
+            z: { u: Random.randInt(100), v: Random.randInt(100) },
+            c: Random.rand() * 100 + 1,
+            g: Random.rand() * 100,
+            h: Random.rand() * 100,
+            i: Random.rand() * 100,
+        },
+        ff: [Random.randInt(10), Random.randInt(10), Random.randInt(10)],
+        gg: Random.rand() * 100,
+        hh: Random.rand() * 100,
+        ii: Random.rand() * 100,
+    };
+}
+
+//
+// Grouping with no accumulators.
+// Naming convention: NoAccTopField_[collection size][doc size][group cardinality]
+//
+// Top field
+//
+generateTestCase({
+    name: "Group.NoAccTopField_SS10",
+    docGenerator: smallDoc,
+    nDocs: smallCollectionSize,
+    pipeline: [{$group: {_id: "$a"}}]
+});
+generateTestCase({
+    name: "Group.NoAccTopField_LS10",
+    docGenerator: smallDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$a"}}]
+});
+generateTestCase({
+    name: "Group.NoAccTopField_LS1000",
+    docGenerator: smallDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$b"}}]
+});
+generateTestCase({
+    name: "Group.NoAccTopField_SL10",
+    docGenerator: largeDoc,
+    nDocs: smallCollectionSize,
+    pipeline: [{$group: {_id: "$a"}}]
+});
+generateTestCase({
+    name: "Group.NoAccTopField_LL10",
+    docGenerator: largeDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$a"}}]
+});
+generateTestCase({
+    name: "Group.NoAccTopField_LL1000",
+    docGenerator: largeDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$b"}}]
+});
+generateTestCase({
+    name: "Group.NoAccTopField_LLR10",
+    docGenerator: largeDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$aa"}}]
+});
+//
+// Sub-field
+//
+generateTestCase({
+    name: "Group.NoAccSubField_SS10",
+    docGenerator: smallDoc,
+    nDocs: smallCollectionSize,
+    pipeline: [{$group: {_id: "$e.x"}}]
+});
+generateTestCase({
+    name: "Group.NoAccSubField_LS10",
+    docGenerator: smallDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$e.x"}}]
+});
+generateTestCase({
+    name: "Group.NoAccSubField_SL10",
+    docGenerator: largeDoc,
+    nDocs: smallCollectionSize,
+    pipeline: [{$group: {_id: "$e.x"}}]
+});
+generateTestCase({
+    name: "Group.NoAccSubField_LL10",
+    docGenerator: largeDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$e.x"}}]
+});
+generateTestCase({
+    name: "Group.NoAccSubField_LLR10",
+    docGenerator: largeDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$ee.x"}}]
+});
+
+//
+// Grouping with various accumulators.
+// Naming convention: NoAccTopField_[collection size][doc size][group cardinality]
+//
+// $min
+//
+generateTestCase({
+    name: "Group.MinAccTopField_SS10",
+    docGenerator: smallDoc,
+    nDocs: smallCollectionSize,
+    pipeline: [{$group: {_id: "$a", min: {$min: "$c"}}}]
+});
+generateTestCase({
+    name: "Group.MinAccTopField_LS10",
+    docGenerator: smallDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$a", min: {$min: "$c"}}}]
+});
+generateTestCase({
+    name: "Group.MinAccTopField_LS1000",
+    docGenerator: smallDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$b", min: {$min: "$c"}}}]
+});
+generateTestCase({
+    name: "Group.MinAccTopField_SL10",
+    docGenerator: largeDoc,
+    nDocs: smallCollectionSize,
+    pipeline: [{$group: {_id: "$a", min: {$min: "$c"}}}]
+});
+generateTestCase({
+    name: "Group.MinAccTopField_LL10",
+    docGenerator: largeDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$a", min: {$min: "$c"}}}]
+});
+generateTestCase({
+    name: "Group.MinAccTopField_LL1000",
+    docGenerator: largeDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$b", min: {$min: "$c"}}}]
+});
+generateTestCase({
+    name: "Group.MinAccTopField_LLR10",
+    docGenerator: largeDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$aa", min: {$min: "$cc"}}}]
+});
+//
+// $sum
+//
+generateTestCase({
+    name: "Group.SumAccTopField_SS10",
+    docGenerator: smallDoc,
+    nDocs: smallCollectionSize,
+    pipeline: [{$group: {_id: "$a", sum: {$sum: "$c"}}}]
+});
+generateTestCase({
+    name: "Group.SumAccTopField_LS10",
+    docGenerator: smallDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$a", sum: {$sum: "$c"}}}]
+});
+generateTestCase({
+    name: "Group.SumAccTopField_LL10",
+    docGenerator: largeDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$a", sum: {$sum: "$c"}}}]
+});
+//
+// $avg
+//
+generateTestCase({
+    name: "Group.AvgAccTopField_SS10",
+    docGenerator: smallDoc,
+    nDocs: smallCollectionSize,
+    pipeline: [{$group: {_id: "$a", avg: {$avg: "$c"}}}]
+});
+generateTestCase({
+    name: "Group.AvgAccTopField_LS10",
+    docGenerator: smallDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$a", avg: {$avg: "$c"}}}]
+});
+generateTestCase({
+    name: "Group.AvgAccTopField_LL10",
+    docGenerator: largeDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$a", avg: {$avg: "$c"}}}]
+});
+
+//
+// Multiple accumulators on the same field.
+//
+generateTestCase({
+    name: "Group.MultipleAccSameTopField_SS10",
+    docGenerator: smallDoc,
+    nDocs: smallCollectionSize,
+    pipeline: [{$group: {_id: "$a", min: {$min: "$c"}, max: {$max: "$c"}, avg: {$avg: "$c"}}}]
+});
+generateTestCase({
+    name: "Group.MultipleAccSameTopField_LS10",
+    docGenerator: smallDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$a", min: {$min: "$c"}, max: {$max: "$c"}, avg: {$avg: "$c"}}}]
+});
+generateTestCase({
+    name: "Group.MultipleAccSameTopField_LL10",
+    docGenerator: largeDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$a", min: {$min: "$c"}, max: {$max: "$c"}, avg: {$avg: "$c"}}}]
+});
+generateTestCase({
+    name: "Group.MultipleAccSameTopField_LLR10",
+    docGenerator: largeDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$aa", min: {$min: "$cc"}, max: {$max: "$cc"}, avg: {$avg: "$cc"}}}]
+});
+//
+// Multiple accumulators on the same sub-field.
+//
+generateTestCase({
+    name: "Group.MultipleAccSameSubField_SS10",
+    docGenerator: smallDoc,
+    nDocs: smallCollectionSize,
+    pipeline: [{$group: {_id: "$a", min: {$min: "$e.c"}, max: {$max: "$e.c"}, avg: {$avg: "$e.c"}}}]
+});
+generateTestCase({
+    name: "Group.MultipleAccSameSubField_LS10",
+    docGenerator: smallDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$a", min: {$min: "$e.c"}, max: {$max: "$e.c"}, avg: {$avg: "$e.c"}}}]
+});
+generateTestCase({
+    name: "Group.MultipleAccSameSubField_LL10",
+    docGenerator: largeDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$a", min: {$min: "$e.c"}, max: {$max: "$e.c"}, avg: {$avg: "$e.c"}}}]
+});
+generateTestCase({
+    name: "Group.MultipleAccSameSubField_LLR10",
+    docGenerator: largeDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$aa", min: {$min: "$ee.c"}, max: {$max: "$ee.c"}, avg: {$avg: "$ee.c"}}}]
+});
+//
+// Multiple accumulators on different top-field.
+//
+generateTestCase({
+    name: "Group.MultipleAccDiffTopFields_SS10",
+    docGenerator: smallDoc,
+    nDocs: smallCollectionSize,
+    pipeline: [{$group: {_id: "$a", min: {$min: "$c"}, max: {$max: "$g"}, avg: {$avg: "$h"}}}]
+});
+generateTestCase({
+    name: "Group.MultipleAccDiffTopFields_LS10",
+    docGenerator: smallDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$a", min: {$min: "$c"}, max: {$max: "$g"}, avg: {$avg: "$h"}}}]
+});
+generateTestCase({
+    name: "Group.MultipleAccDiffTopFields_LL10",
+    docGenerator: largeDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$a", min: {$min: "$c"}, max: {$max: "$g"}, avg: {$avg: "$h"}}}]
+});
+generateTestCase({
+    name: "Group.MultipleAccDiffTopFields_LLR10",
+    docGenerator: largeDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$aa", min: {$min: "$cc"}, max: {$max: "$gg"}, avg: {$avg: "$hh"}}}]
+});
+//
+// Multiple accumulators on different sub-field.
+//
+generateTestCase({
+    name: "Group.MultipleAccDiffSubFields_SS10",
+    docGenerator: smallDoc,
+    nDocs: smallCollectionSize,
+    pipeline: [{$group: {_id: "$a", min: {$min: "$e.c"}, max: {$max: "$e.g"}, avg: {$avg: "$e.h"}}}]
+});
+generateTestCase({
+    name: "Group.MultipleAccDiffSubFields_LS10",
+    docGenerator: smallDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$a", min: {$min: "$e.c"}, max: {$max: "$e.g"}, avg: {$avg: "$e.h"}}}]
+});
+generateTestCase({
+    name: "Group.MultipleAccDiffSubFields_LL10",
+    docGenerator: largeDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [{$group: {_id: "$a", min: {$min: "$e.c"}, max: {$max: "$e.g"}, avg: {$avg: "$e.h"}}}]
+});
+
+generateTestCase({
+    name: "Group.MultipleAccDiffTopFieldsStress_LL10",
+    docGenerator: largeDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [
+        {$group: {_id: "$a", 
+            o1: {$min: "$b"}, o2: {$max: "$c"}, o3: {$avg: "$d"},
+            o4: {$sum: "$g"}, o5: {$first: "$h"}, o6: {$last: "$i"},
+            o7: {$sum: "$bb"}, o8: {$first: "$cc"}, o9: {$last: "$dd"},
+            o10: {$min: "$gg"}, o11: {$max: "$hh"}, o12: {$avg: "$ii"},
+        }}
+    ]
+});
+
+generateTestCase({
+    name: "Group.MultipleAccSameTopFieldStress_LL10",
+    docGenerator: largeDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [
+        {$group: {_id: "$a", 
+            o1: {$min: "$c"}, o2: {$max: "$c"}, o3: {$avg: "$c"},
+            o4: {$sum: "$c"}, o5: {$first: "$c"}, o6: {$last: "$c"},
+            o7: {$sum: "$c"}, o8: {$first: "$c"}, o9: {$last: "$c"},
+            o10: {$min: "$c"}, o11: {$max: "$c"}, o12: {$avg: "$c"},
+        }}
+    ]
+});
+
+//
+// Multiple $group stages.
+//
+generateTestCase({
+    name: "Group.MultipleGroupStages_LS",
+    docGenerator: smallDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [
+        {$group: {_id: "$b", f: {$first: "$a"}, av: {$avg: "$a"}}},
+        {$group: {_id: "$f", min: {$min: "$av"}, max: {$max: "$av"}}}
+    ]
+});
+generateTestCase({
+    name: "Group.MultipleGroupStages_LL",
+    docGenerator: largeDoc,
+    nDocs: largeCollectionSize,
+    pipeline: [
+        {$group: {_id: "$b", f: {$first: "$a"}, av: {$avg: "$a"}}},
+        {$group: {_id: "$f", min: {$min: "$av"}, max: {$max: "$av"}}}
+    ]
+});
+
 /**
  * Pair of document generator functions used for testing $minN and $maxN as accumulators and window
  * functions.
