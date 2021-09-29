@@ -257,20 +257,36 @@ generateTestCase({
 
 generateTestCase({name: "Group.All", pipeline: [{$group: {_id: "constant"}}]});
 
-generateTestCase({
-    name: "Group.TenGroups",
+ generateTestCase({
+     name: "Group.TenGroups",
+    nDocs: 100000,
     docGenerator: function basicGroupDocGenerator(i) {
-        return {_id: i, _idMod10: i % 10};
+        let quote_text =
+            'There are few people whom I really love, and still fewer of whom I think well. The more I see of the world, the more am I dissatisfied with it; and every day confirms my belief of the inconsistency of all human characters, and of the little dependence that can be placed on the appearance of merit or sense.';
+        let quote = {author: "Jane Austen", work: "Pride and Prejudice", quote: quote_text};
+        return {_id: i, _idMod10: i % 10, quotes: [quote, quote, quote, quote, quote]};
     },
     pipeline: [{$group: {_id: "$_idMod10"}}]
 });
 
 generateTestCase({
-    name: "Group.TenGroupsWithAvg",
+    name: "Group.SBECollscanOnly",
     docGenerator: function basicGroupDocGenerator(i) {
         return {_id: i, _idMod10: i % 10};
     },
-    pipeline: [{$group: {_id: "$_idMod10", avg: {$avg: "$_id"}}}]
+    pipeline: [{$_internalInhibitOptimization: {}}, {$group: {_id: "$_idMod10"}}]
+});
+
+generateTestCase({
+    name: "Group.TenGroupsWithSum",
+    nDocs: 500000,
+    docGenerator: function basicGroupDocGenerator(i) {
+	let quote_text =
+            'There are few people whom I really love, and still fewer of whom I think well. The more I see of the world, the more am I dissatisfied with it; and every day confirms my belief of the inconsistency of all human characters, and of the little dependence that can be placed on the appearance of merit or sense.';
+        let quote = {author: "Jane Austen", work: "Pride and Prejudice", quote: quote_text};
+        return {_id: i, _idMod10: i % 10, quotes: [quote, quote, quote, quote, quote]};
+    },
+    pipeline: [{$group: {_id: "$_idMod10", s: {$sum: "$_id"}}}]
 });
 
 /**
