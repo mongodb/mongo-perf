@@ -270,14 +270,6 @@ generateTestCase({name: "Group.All", pipeline: [{$group: {_id: "constant"}}]});
 });
 
 generateTestCase({
-    name: "Group.SBECollscanOnly",
-    docGenerator: function basicGroupDocGenerator(i) {
-        return {_id: i, _idMod10: i % 10};
-    },
-    pipeline: [{$_internalInhibitOptimization: {}}, {$group: {_id: "$_idMod10"}}]
-});
-
-generateTestCase({
     name: "Group.TenGroupsWithSum",
     nDocs: 50000,
     docGenerator: function basicGroupDocGenerator(i) {
