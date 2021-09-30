@@ -259,7 +259,7 @@ generateTestCase({name: "Group.All", pipeline: [{$group: {_id: "constant"}}]});
 
  generateTestCase({
      name: "Group.TenGroups",
-    nDocs: 50000,
+    nDocs: 100000,
     docGenerator: function basicGroupDocGenerator(i) {
         let quote_text =
             'There are few people whom I really love, and still fewer of whom I think well. The more I see of the world, the more am I dissatisfied with it; and every day confirms my belief of the inconsistency of all human characters, and of the little dependence that can be placed on the appearance of merit or sense.';
@@ -271,7 +271,7 @@ generateTestCase({name: "Group.All", pipeline: [{$group: {_id: "constant"}}]});
 
 generateTestCase({
     name: "Group.TenGroupsWithSum",
-    nDocs: 50000,
+    nDocs: 100000,
     docGenerator: function basicGroupDocGenerator(i) {
 	let quote_text =
             'There are few people whom I really love, and still fewer of whom I think well. The more I see of the world, the more am I dissatisfied with it; and every day confirms my belief of the inconsistency of all human characters, and of the little dependence that can be placed on the appearance of merit or sense.';
