@@ -188,8 +188,11 @@ if (typeof(tests) !== "object") {
         }
     }
 
+    // Run without 'batchSize'.
     allTests(testScan, 25, 16 * 1024 * 1024, 5, 0);
     allTests(testNonSelectiveFilter, 25, 16 * 1024 * 1024, 5, 0);
+
+    // Run with 'batchSize' that can hold up to 1MB worth of documents in each batch.
     allTests(testScan, 400, 1 * 1024 * 1024, 4, 1);
     allTests(testNonSelectiveFilter, 400, 1 * 1024 * 1024, 4, 1);
 
