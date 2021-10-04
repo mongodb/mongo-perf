@@ -223,7 +223,7 @@ if (typeof(tests) !== "object") {
         tags: ["core", "indexed"],
         nDocs: 4800,
         docs: function(i) {
-            return {_id: i};
+            return {x: i};
         },
         indexes: [{x: 1}],
         op: {op: "findOne", query: {x: {"#RAND_INT_PLUS_THREAD": [0, 100]}}}
@@ -256,7 +256,7 @@ if (typeof(tests) !== "object") {
         tags: ["indexed"],
         nDocs: 4800,
         docs: function(i) {
-            return {_id: i};
+            return {x: i};
         },
         indexes: [{x: 1}],
         op: {op: "find", query: {x: {$gt: 50, $lt: 100}}}
