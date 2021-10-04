@@ -226,7 +226,7 @@ if (typeof(tests) !== "object") {
             return {_id: i};
         },
         indexes: [{x: 1}],
-        op: {op: "findOne", query: {_id: {"#RAND_INT_PLUS_THREAD": [0, 100]}}}
+        op: {op: "findOne", query: {x: {"#RAND_INT_PLUS_THREAD": [0, 100]}}}
     });
 
     /**
