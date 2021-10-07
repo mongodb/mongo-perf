@@ -1,4 +1,4 @@
-if (typeof(tests) !== "object") {
+if (typeof (tests) !== "object") {
     tests = [];
 }
 
@@ -24,7 +24,7 @@ if (typeof(tests) !== "object") {
 
             var db = collection.getDB();
 
-            var collectionCreationSpec = {create: collection.getName()};
+            var collectionCreationSpec = { create: collection.getName() };
             assert.commandWorked(
                 db.runCommand(Object.extend(collectionCreationSpec, collectionOptions)));
             var bulkOp = collection.initializeUnorderedBulkOp();
@@ -36,48 +36,6 @@ if (typeof(tests) !== "object") {
                 assert.commandWorked(collection.createIndex(indexSpec));
             });
         };
-    }
-
-    /**
-     * Rewrites a query op in benchRun format to the equivalent aggregation command op, also in
-     * benchRun format.
-     */
-    function rewriteQueryOpAsAgg(op) {
-        var newOp = {
-            op: "command",
-            ns: "#B_DB",
-            command: {
-                aggregate: "#B_COLL",
-                pipeline: [],
-                cursor: {}
-            }
-        };
-        var pipeline = newOp.command.pipeline;
-
-        if (op.query) {
-            pipeline.push({$match: op.query});
-        }
-        if (op.sort) {
-            pipeline.push({$sort: op.sort});
-        }
-
-        if (op.skip) {
-            pipeline.push({$skip: op.skip});
-        }
-
-        if (op.limit) {
-            pipeline.push({$limit: op.limit});
-        } else if (op.op === "findOne") {
-            pipeline.push({$limit: 1});
-        }
-
-        // Confusingly, benchRun uses the name "filter" to refer to the projection (*not* the query
-        // predicate).
-        if (op.filter) {
-            pipeline.push({$project: op.filter});
-        }
-
-        return newOp;
     }
 
     /**
@@ -132,7 +90,8 @@ if (typeof(tests) !== "object") {
     }
 
     function testQuery(testName, nDocs, docSize, op) {
-        var fullName = testName+"_"+nDocs+"_"+docSize+"_"+(op.batchSize ? op.batchSize : "0");
+        var fullName = testName + " (nDocs: " + nDocs + ", docSize: " + docSize +
+                       ", batchSize: " + (op.batchSize ? op.batchSize : "0") + ")";
         addTestCase({
             name: fullName,
             tags: ["query", "getmore"],
@@ -142,7 +101,7 @@ if (typeof(tests) !== "object") {
             nDocs: nDocs,
             docs: function(i) {
                 const offsetForTheRemainderOfDoc = 37;
-                return {_id: i, x: i+1, y: 'y'.repeat(docSize - offsetForTheRemainderOfDoc)};
+                return { _id: i, x: i + 1, y: 'y'.repeat(docSize - offsetForTheRemainderOfDoc) };
             },
             op: op
         });
@@ -154,8 +113,8 @@ if (typeof(tests) !== "object") {
      * Test: Scan all documents  and expect a lot of getMore commands to fulfill the request.
      */
     function testScan(nDocs, docSize, batchSize) {
-        var op = {op: "find", query: {}};
-        if(batchSize) {
+        var op = { op: "find", query: {} };
+        if (batchSize) {
             op["batchSize"] = batchSize;
         }
         testQuery("Scan", nDocs, docSize, op);
@@ -168,8 +127,8 @@ if (typeof(tests) !== "object") {
      * getMore commands to fulfill the request.
      */
     function testNonSelectiveFilter(nDocs, docSize, batchSize) {
-        var op = {op: "find", query: { x: { $gt: Math.floor(nDocs / 10) } }};
-        if(batchSize) {
+        var op = { op: "find", query: { x: { $gt: Math.floor(nDocs / 10) } } };
+        if (batchSize) {
             op["batchSize"] = batchSize;
         }
         testQuery("Filter", nDocs, docSize, op);
@@ -181,9 +140,9 @@ if (typeof(tests) !== "object") {
      * previous call, up to 'numSteps' times.
      */
     function allTests(testFn, minNumDocs, maxDocSize, numSteps, batchSize) {
-        for(var i = 0; i < numSteps; ++i) {
-            if(maxDocSize > 64) {
-                testFn(minNumDocs << (i*4), maxDocSize >> (i*4), batchSize << (i*4));
+        for (var i = 0; i < numSteps; ++i) {
+            if (maxDocSize > 64) {
+                testFn(minNumDocs << (i * 4), maxDocSize >> (i * 4), batchSize << (i * 4));
             }
         }
     }
