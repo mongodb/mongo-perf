@@ -55,48 +55,6 @@ if (typeof(tests) !== "object") {
     }
 
     /**
-     * Rewrites a query op in benchRun format to the equivalent aggregation command op, also in
-     * benchRun format.
-     */
-    function rewriteQueryOpAsAgg(op) {
-        var newOp = {
-            op: "command",
-            ns: "#B_DB",
-            command: {
-                aggregate: "#B_COLL",
-                pipeline: [],
-                cursor: {}
-            }
-        };
-        var pipeline = newOp.command.pipeline;
-
-        if (op.query) {
-            pipeline.push({$match: op.query});
-        }
-        if (op.sort) {
-            pipeline.push({$sort: op.sort});
-        }
-
-        if (op.skip) {
-            pipeline.push({$skip: op.skip});
-        }
-
-        if (op.limit) {
-            pipeline.push({$limit: op.limit});
-        } else if (op.op === "findOne") {
-            pipeline.push({$limit: 1});
-        }
-
-        // Confusingly, benchRun uses the name "filter" to refer to the projection (*not* the query
-        // predicate).
-        if (op.filter) {
-            pipeline.push({$project: op.filter});
-        }
-
-        return newOp;
-    }
-
-    /**
      * Creates test cases and adds them to the global testing array. By default, each test case
      * specification produces several test cases:
      *  - A find on a regular collection.
