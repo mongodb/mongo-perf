@@ -105,6 +105,9 @@ def parse_arguments():
                         'equivalent to the operations performed in the list of specified JS test\n'
                         'files without actually running the test cases. A mongod process must\n'
                         'still be running while the JSON config files are being generated.')
+    parser.add_argument('--shareDataset', dest='shareDataset', nargs='?', const='true',
+                        choices=['true','false'], default='false',
+                        help='Share the dataset, created by the first test with all following tests/trials.')
     return parser
 
 
@@ -211,6 +214,7 @@ def main():
               str(json.dumps(crud_options)) + ", " +
               str(args.excludeTestbed) + ", " +
               str(args.printArgs) + ", " +
+              str(args.shareDataset) + ", " +
               str(json.dumps(mongoebench_options)) +
               authstr +
               ");")
