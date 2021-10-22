@@ -185,42 +185,6 @@ function generateTestCase(options) {
     });
 }
 
-function generateTestCaseWithLargeDataset(options) {
-    var nDocs = options.nDocs || 100000;
-    var pipeline = options.pipeline;
-    var tags = options.tags || [];
-
-    tests.push({
-        tags: ["regression", "aggregation_large_dataset"].concat(tags),
-        name: "Aggregation." + options.name,
-        gen: options.gen ||
-            function(collection) {
-                Random.setRandomSeed(258);
-                collection.drop();
-                var bulkop = collection.initializeUnorderedBulkOp();
-                for (var i = 0; i < nDocs; i++) {
-                    bulkop.insert(options.docGenerator(i));
-                }
-                bulkop.execute();
-            },
-        pre: options.pre || function (collection) {},
-        post: options.post || function(collection) {},
-        ops: [{
-            op: "command",
-            ns: "#B_DB",
-            command: {aggregate: "#B_COLL", pipeline: pipeline, cursor: {}}
-        }]
-    });
-}
-
-generateTestCaseWithLargeDataset({
-    name: "TestSharedDataset",
-    docGenerator: function basicGroupDocGenerator(i) {
-        return {_id: i, _idMod10: i % 10};
-    },
-    pipeline: [{$group: {_id: "$_idMod10"}}]
-});
-
 //
 // Empty pipeline.
 //
