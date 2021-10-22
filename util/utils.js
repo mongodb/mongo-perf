@@ -654,7 +654,9 @@ function doExecute(test, includeFilter, excludeFilter) {
  * @param excludeTestbed - Exclude testbed information from results
  * @returns {{}} the results of a run set of tests
  */
-function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, crudOptions, excludeTestbed, printArgs, mongoeBenchOptions, username, password) {
+function runTests(
+    threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard,
+    crudOptions, excludeTestbed, printArgs, shareDataset, mongoeBenchOptions, username, password) {
 
     if (typeof shard === "undefined") shard = 0;
     if (typeof crudOptions === "undefined") crudOptions = getDefaultCrudOptions();
@@ -706,7 +708,9 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilt
                 var newResults = {};
                 for (var j = 0; j < trials; j++) {
                     try {
-                        results[j] = runTest(test, threadCount, multidb, multicoll, seconds, shard, crudOptions, printArgs, mongoeBenchOptions, username, password);
+                        results[j] = runTest(
+                            test, threadCount, multidb, multicoll, seconds, shard, crudOptions,
+                            printArgs, shareDataset, mongoeBenchOptions, username, password);
                     }
                     catch(err) {
                         // Error handling to catch exceptions thrown in/by js for error
@@ -766,8 +770,12 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilt
  * @param excludeTestbed - Exclude testbed information from results
  * @returns {{}} the results of a run set of tests
  */
-function mongoPerfRunTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, crudOptions, excludeTestbed, printArgs, mongoeBenchOptions, username, password) {
-    testResults = runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, crudOptions, excludeTestbed, printArgs, mongoeBenchOptions, username, password);
+function mongoPerfRunTests(
+    threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard,
+    crudOptions, excludeTestbed, printArgs, shareDataset, mongoeBenchOptions, username, password) {
+    testResults = runTests(
+        threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard,
+        crudOptions, excludeTestbed, printArgs, shareDataset, mongoeBenchOptions, username, password);
     print("@@@RESULTS_START@@@");
     print(JSON.stringify(testResults));
     print("@@@RESULTS_END@@@");
