@@ -357,9 +357,9 @@ function runTest(
     // creating the data and setting up additional stuff, and we don't want to modify these
     // tests. On the other hand, the future tests might want to use both 'gen' and 'pre' without
     // sharing the dataset.
-    if ("gen" in test) {
+    if ("generateData" in test) {
         if (!shareDataset || collections.length == 0) {
-            initCollections(collections, env, test.name, test.gen, multidb, multicoll, shard);
+            initCollections(collections, env, test.name, test.generateData, multidb, multicoll, shard);
         }
         if ("pre" in test) {
             for (var i = 0; i < (multidb * multicoll); i++) {
