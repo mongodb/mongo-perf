@@ -351,12 +351,12 @@ function runTest(
 
     var collections = shareDataset ? sharedCollections : [];
     // For sharing of collections' data between tests in the same suite, the tests MUST provide
-    // 'gen' function that is executed once (from the test that happens to run first). The tests
-    // MIGHT also provide 'pre' and 'post' fixtures to create indexes, etc. These functions are
+    // 'generateData' function that is executed once (from the test that happens to run first). The 
+    // tests MIGHT also provide 'pre' and 'post' fixtures to create indexes, etc. These functions are
     // exectuted per test. The matter is complicated by the fact that existing tests use 'pre' for
-    // creating the data and setting up additional stuff, and we don't want to modify these
-    // tests. On the other hand, the future tests might want to use both 'gen' and 'pre' without
-    // sharing the dataset.
+    // creating the data and setting up the additional stuff, and we don't want to modify these
+    // tests. On the other hand, the future tests might want to use both 'generateData' and 'pre'
+    // without sharing the dataset.
     if ("generateData" in test) {
         if (!shareDataset || collections.length == 0) {
             initCollections(collections, env, test.name, test.generateData, multidb, multicoll, shard);
