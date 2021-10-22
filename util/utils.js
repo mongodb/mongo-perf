@@ -263,14 +263,76 @@ function CommandTracer(testName, options) {
     }
 }
 
-function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOptions, printArgs, mongoeBenchOptions, username, password) {
+var sharedCollections = [];
+function initCollections(collections, env, testName, init, multidb, multicoll, shard) {
+    for (var i = 0; i < multidb; i++) {
+        var sibling_db = db.getSiblingDB('test' + i);
+        var foo = testName.replace(/\./g, "_");
+        for (var j = 0; j < multicoll; j++) {
+            var coll = sibling_db.getCollection(foo + j);
+            collections.push(coll);
+            coll.drop();
+        }
+    }
+
+    if (init) {
+        for (var i = 0; i < (multidb * multicoll); i++) {
+            init(collections[i], env);
+        }
+    }
+
+    // If the 'dataGen' or 'pre' functions did not create the collections, then we should
+    // explicitly do so now. We want the collections to be pre-allocated so that allocation time is 
+    // not incorporated into the benchmark.
+    for (var i = 0; i < multidb; i++) {
+        var theDb = db.getSiblingDB('test' + i);
+        // This will silently fail and with no side-effects if the collection
+        // already exists.
+        for (var j = 0; j < multicoll; j++) {
+            theDb.createCollection(collections[(multicoll * i) + j].getName());
+        }
+
+        if (shard == 1) {
+            for (var j = 0; j < multicoll; j++) {
+                // when shard is enabled, we want to enable shard
+                collections[(multicoll * i) + j].createIndex({ _id: "hashed" });
+            }
+
+            sh.enableSharding("test" + i);
+            for (var j = 0; j < multicoll; j++) {
+                var t = sh.shardCollection("test" + i + "." +
+                    collections[(multicoll * i) + j].getName(), { _id: "hashed" });
+            }
+
+        } else if (shard == 2) {
+            sh.enableSharding("test" + i);
+            for (var j = 0; j < multicoll; j++) {
+                var t = sh.shardCollection("test" + i + "." +
+                    collections[(multicoll * i) + j].getName(), { _id: 1 });
+            }
+        }
+    }
+}
+
+function cleanupCollections(collections, multidb, multicoll) {
+    for (var i = 0; i < multidb; i++) {
+        for (var j = 0; j < multicoll; j++) {
+            collections[(multicoll * i) + j].drop();
+        }
+    }
+
+    // Make sure all collections have been dropped
+    checkForDroppedCollectionsTestDBs(db, multidb)
+}
+
+function runTest(
+    test, thread, multidb, multicoll, runSeconds, shard, crudOptions, printArgs, shareDataset,
+    mongoeBenchOptions, username, password) {
 
     if (typeof crudOptions === "undefined") crudOptions = getDefaultCrudOptions();
     if (typeof shard === "undefined") shard = 0;
     if (typeof includeFilter === "undefined") includeFilter = "sanity";
     if (typeof printArgs === "undefined") printArgs = false;
-
-    var collections = [];
 
     var realTracer = new CommandTracer(test.name, mongoeBenchOptions);
     var fakeTracer = {};
@@ -282,14 +344,32 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOption
     var tracer = mongoeBenchOptions.traceOnly ? realTracer : fakeTracer;
     tracer.beginPre();
 
-    for (var i = 0; i < multidb; i++) {
-        var sibling_db = db.getSiblingDB('test' + i);
-        var foo = test.name.replace(/\./g,"_");
-        for (var j = 0; j < multicoll; j++) {
-            var coll = sibling_db.getCollection(foo + j);
-            collections.push(coll);
-            coll.drop();
+    // setup an environment to pass to the pre and post
+    var env = {
+        threads: thread
+    };
+
+    var collections = shareDataset ? sharedCollections : [];
+    // For sharing of collections' data between tests in the same suite, the tests MUST provide
+    // 'generateData' function that is executed once (from the test that happens to run first). The 
+    // tests MIGHT also provide 'pre' and 'post' fixtures to create indexes, etc. These functions are
+    // exectuted per test. The matter is complicated by the fact that existing tests use 'pre' for
+    // creating the data and setting up the additional stuff, and we don't want to modify these
+    // tests. On the other hand, the future tests might want to use both 'generateData' and 'pre'
+    // without sharing the dataset.
+    if ("generateData" in test) {
+        if (!shareDataset || collections.length == 0) {
+            initCollections(collections, env, test.name, test.generateData, multidb, multicoll, shard);
         }
+        if ("pre" in test) {
+            for (var i = 0; i < (multidb * multicoll); i++) {
+                test.pre(collections[i], env);
+            }
+        }
+    }
+    else {
+        assert(!shareDataset);
+        initCollections(collections, env, test.name, test.pre, multidb, multicoll, shard);
     }
 
     var new_ops = [];
@@ -317,49 +397,6 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOption
         //  same as 'writeCmd', but for read commands
         z.readCmd = (crudOptions.readCmdMode.toLowerCase() == 'true' ? true : false)
     });
-
-    // setup an environment to pass to the pre and post
-    var env = {
-        threads: thread
-    };
-
-    if ("pre" in test) {
-        for (var i = 0; i < (multidb * multicoll); i++) {
-            test.pre(collections[i], env);
-        }
-    }
-
-    // If the 'pre' function did not create the collections, then we should
-    // explicitly do so now. We want the collections to be pre-allocated so
-    // that allocation time is not incorporated into the benchmark.
-    for (var i = 0; i < multidb; i++) {
-        var theDb = db.getSiblingDB('test' + i);
-        // This will silently fail and with no side-effects if the collection
-        // already exists.
-        for (var j = 0; j < multicoll; j++) {
-            theDb.createCollection(collections[(multicoll * i) + j].getName());
-        }
-
-        if (shard == 1) {
-            for (var j = 0; j < multicoll; j++) {
-                // when shard is enabled, we want to enable shard
-                collections[(multicoll * i) + j].createIndex({ _id: "hashed" });
-            }
-
-            sh.enableSharding("test" + i);
-            for (var j = 0; j < multicoll; j++) {
-                var t = sh.shardCollection("test" + i + "." +
-                    collections[(multicoll * i) + j].getName(), {_id: "hashed"});
-            }
-
-        } else if (shard == 2) {
-            sh.enableSharding("test" + i);
-            for (var j = 0; j < multicoll; j++) {
-                var t = sh.shardCollection("test" + i + "." +
-                    collections[(multicoll * i) + j].getName(), {_id: 1});
-                }
-        }
-    }
 
     tracer.beginOps();
 
@@ -419,14 +456,9 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOption
     tracer.done();
 
     // drop all the collections created by this case
-    for (var i = 0; i < multidb; i++) {
-        for (var j = 0; j < multicoll; j++) {
-            collections[(multicoll * i) + j].drop();
-        }
+    if (!shareDataset) {
+        cleanupCollections(collections);
     }
-
-    // Make sure all collections have been dropped
-    checkForDroppedCollectionsTestDBs(db, multidb)
 
     return { ops_per_sec: total, error_count : result["errCount"]};
 }
@@ -622,7 +654,9 @@ function doExecute(test, includeFilter, excludeFilter) {
  * @param excludeTestbed - Exclude testbed information from results
  * @returns {{}} the results of a run set of tests
  */
-function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, crudOptions, excludeTestbed, printArgs, mongoeBenchOptions, username, password) {
+function runTests(
+    threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard,
+    crudOptions, excludeTestbed, printArgs, shareDataset, mongoeBenchOptions, username, password) {
 
     if (typeof shard === "undefined") shard = 0;
     if (typeof crudOptions === "undefined") crudOptions = getDefaultCrudOptions();
@@ -674,7 +708,9 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilt
                 var newResults = {};
                 for (var j = 0; j < trials; j++) {
                     try {
-                        results[j] = runTest(test, threadCount, multidb, multicoll, seconds, shard, crudOptions, printArgs, mongoeBenchOptions, username, password);
+                        results[j] = runTest(
+                            test, threadCount, multidb, multicoll, seconds, shard, crudOptions,
+                            printArgs, shareDataset, mongoeBenchOptions, username, password);
                     }
                     catch(err) {
                         // Error handling to catch exceptions thrown in/by js for error
@@ -734,8 +770,12 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilt
  * @param excludeTestbed - Exclude testbed information from results
  * @returns {{}} the results of a run set of tests
  */
-function mongoPerfRunTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, crudOptions, excludeTestbed, printArgs, mongoeBenchOptions, username, password) {
-    testResults = runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, crudOptions, excludeTestbed, printArgs, mongoeBenchOptions, username, password);
+function mongoPerfRunTests(
+    threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard,
+    crudOptions, excludeTestbed, printArgs, shareDataset, mongoeBenchOptions, username, password) {
+    testResults = runTests(
+        threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard,
+        crudOptions, excludeTestbed, printArgs, shareDataset, mongoeBenchOptions, username, password);
     print("@@@RESULTS_START@@@");
     print(JSON.stringify(testResults));
     print("@@@RESULTS_END@@@");
