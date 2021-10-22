@@ -301,7 +301,7 @@ function maxNDocGenerator(i) {
  */
 generateTestCase({
     name: "Group.TenGroupsWithMinN",
-    tags: ['>=5.1.0'],
+    tags: ['>=5.2.0'],
     nDocs: 1000,
     docGenerator: minNDocGenerator,
     pipeline: [{$group: {_id: "$_idMod10", minVals: {$minN: {n: 10, output: "$_id"}}}}]
@@ -314,36 +314,38 @@ generateTestCase({
  */
 generateTestCase({
     name: "Group.TenGroupsWithMaxN",
-    tags: ['>=5.1.0'],
+    tags: ['>=5.2.0'],
     nDocs: 1000,
     docGenerator: maxNDocGenerator,
     pipeline: [{$group: {_id: "$_idMod10", maxVals: {$maxN: {n: 10, output: "$_id"}}}}]
 });
 
 /**
- * Generates an array of 50 elements to be used for testing the performance of $minN/$maxN as
- * aggregation expressions. In particular, if we're testing $minN, we generate an array whose
- * elements are in descending order, and if we're testing $maxN, the elements are in ascending
- * order. This maximizes the number of comparisons made during expression evaluation.
+ * Generates an array of 50 elements to be used for testing the performance of
+ * $minN/$maxN/$firstN/$lastN as aggregation expressions. In particular, if we're testing $minN, we
+ * generate an array whose elements are in descending order, and if we're testing $maxN, the
+ * elements are in ascending order. This maximizes the number of comparisons made during expression
+ * evaluation.
  *
- * @param: {Boolean} isMin: true if we're generating an array for $minN.
+ * @param: {Boolean} isDescending: true if we're generating an array in descending order.
  */
-function generateProjectArray(isMin){
+function generateProjectArray(isDescending){
     var arr = [];
     for(var idx = 0; idx < 50; ++idx){
-        arr.push(isMin ? -idx : idx);
+        arr.push(isDescending ? -idx : idx);
     }
     return arr;
 }
 
 /**
- * Function which generates a document to be used when evaluating $minN/$maxN as expressions.
+ * Function which generates a document to be used when evaluating $minN/$maxN/$firstN/$lastN as
+ * expressions.
  *
  * @param {Number} i - Which number document this is in the collection. Note that this is required
  * by the populatorGenerator when generating documents.
  * @param {Array} arr - Array to add to each document.
  */
-function minMaxNExpressionDocGenerator(i, arr){
+function accumulatorNExpressionDocGenerator(i, arr){
     return {_id: i, array: arr};
 }
 
@@ -353,9 +355,11 @@ function minMaxNExpressionDocGenerator(i, arr){
  */
 generateTestCase({
     name: "Project.MinN",
-    tags: ['>=5.1.0'],
+    tags: ['>=5.2.0'],
     nDocs: 1000,
-    docGenerator: i => minMaxNExpressionDocGenerator(i, generateProjectArray(true)),
+    docGenerator: function generator(i) {
+        return accumulatorNExpressionDocGenerator(i, generateProjectArray(true));
+    },
     pipeline: [{$project: {_id: 0, output: {$minN: {n: 10, output: "$array"}}}}]
 });
 
@@ -365,9 +369,11 @@ generateTestCase({
  */
 generateTestCase({
     name: "Project.MaxN",
-    tags: ['>=5.1.0'],
+    tags: ['>=5.2.0'],
     nDocs: 1000,
-    docGenerator: i => minMaxNExpressionDocGenerator(i, generateProjectArray(false)),
+    docGenerator: function generator(i) {
+        return accumulatorNExpressionDocGenerator(i, generateProjectArray(false));
+    },
     pipeline: [{$project: {_id: 0, output: {$maxN: {n: 10, output: "$array"}}}}]
 });
 
@@ -379,7 +385,7 @@ generateTestCase({
  */
 generateTestCase({
     name: "SetWindowFields.TenPartitionsWithMinN",
-    tags: ['>=5.1.0'],
+    tags: ['>=5.2.0'],
     nDocs: 1000,
     docGenerator: minNDocGenerator,
     pipeline: [{$setWindowFields: {sortBy: {_id: 1}, partitionBy: "$_idMod10",
@@ -394,11 +400,104 @@ generateTestCase({
  */
 generateTestCase({
     name: "SetWindowFields.TenPartitionsWithMaxN",
-    tags: ['>=5.1.0'],
+    tags: ['>=5.2.0'],
     nDocs: 1000,
     docGenerator: maxNDocGenerator,
     pipeline: [{$setWindowFields: {sortBy: {_id: 1}, partitionBy: "$_idMod10",
             output: {maxVals: {$maxN: {n: 10, output: "$_id"}, window: {range: [-10, 10]}}}}}]
+});
+
+/**
+ * Test case which splits 1000 documents into 10 groups of 100 and returns the first 10 values in
+ * each group.
+ */
+generateTestCase({
+    name: "Group.TenGroupsWithFirstN",
+    tags: ['>=5.2.0'],
+    nDocs: 1000,
+    docGenerator: function basicGroupDocGenerator(i) {
+        return {_id: i, _idMod10: i % 10};
+    },
+    pipeline: [{$group: {_id: "$_idMod10", firstVals: {$firstN: {n: 10, output: "$_id"}}}}]
+});
+
+/**
+ * Test case which splits 1000 documents into 10 groups of 100 and returns the last 10 values in
+ * each group.
+ */
+generateTestCase({
+    name: "Group.TenGroupsWithLastN",
+    tags: ['>=5.2.0'],
+    nDocs: 1000,
+    docGenerator: function basicGroupDocGenerator(i) {
+        return {_id: i, _idMod10: i % 10};
+    },
+    pipeline: [{$group: {_id: "$_idMod10", lastVals: {$lastN: {n: 10, output: "$_id"}}}}]
+});
+
+/**
+ * Test case which, for each document, evaluates taking the first 10 values of an array of 50
+ * elements.
+ */
+generateTestCase({
+    name: "Project.FirstN",
+    tags: ['>=5.2.0'],
+    nDocs: 1000,
+    docGenerator: function generator(i) {
+        return accumulatorNExpressionDocGenerator(i, generateProjectArray(false));
+    },
+    pipeline: [{$project: {_id: 0, output: {$firstN: {n: 10, output: "$array"}}}}]
+});
+
+/**
+ * Test case which, for each document, evaluates taking the last 10 values of an array of 50
+ * elements.
+ */
+generateTestCase({
+    name: "Project.LastN",
+    tags: ['>=5.2.0'],
+    nDocs: 1000,
+    docGenerator: function generator(i){
+        return accumulatorNExpressionDocGenerator(i, generateProjectArray(false));
+    },
+    pipeline: [{$project: {_id: 0, output: {$lastN: {n: 10, output: "$array"}}}}]
+});
+
+/**
+ * Test case which splits 1000 documents into 10 partitions of 100. For each document within the
+ * partition, we take the first 10 documents over a sliding window of at least 10 documents and up
+ * to 21 documents. This window consists of the 10 documents before the current document, the 10
+ * documents after the current document, and the current document itself. For $firstN, this means
+ * that the first 11 windows will produce an identical result because the first 10 values are the
+ * same over a window consisting of documents 0 through 10 and a window consisting of documents 0
+ * through 21 (the result changes only when document 0 is no longer in the current window).
+ */
+generateTestCase({
+    name: "SetWindowFields.TenPartitionsWithFirstN",
+    tags: ['>=5.2.0'],
+    nDocs: 1000,
+    docGenerator: function basicGroupDocGenerator(i) {
+        return {_id: i, _idMod10: i % 10};
+    },
+    pipeline: [{$setWindowFields: {sortBy: {_id: 1}, partitionBy: "$_idMod10",
+            output: {firstVals: {$firstN: {n: 10, output: "$_id"}, window: {range: [-10, 10]}}}}}]
+});
+
+/**
+ * Test case which splits 1000 documents into 10 partitions of 100. For each document within the
+ * partition, we take the last 10 documents over a sliding window of at least 10 documents and up
+ * to 21 documents. This window consists of the 10 documents before the current document, the 10
+ * documents after the current document, and the current document itself.
+ */
+generateTestCase({
+    name: "SetWindowFields.TenPartitionsWithLastN",
+    tags: ['>=5.2.0'],
+    nDocs: 1000,
+    docGenerator: function basicGroupDocGenerator(i) {
+        return {_id: i, _idMod10: i % 10};
+    },
+    pipeline: [{$setWindowFields: {sortBy: {_id: 1}, partitionBy: "$_idMod10",
+            output: {lastVals: {$lastN: {n: 10, output: "$_id"}, window: {range: [-10, 10]}}}}}]
 });
 
 generateTestCase({
