@@ -5,7 +5,99 @@ if (typeof (tests) != "object") {
 (function () {
 'use strict';
 
-load("testcases/docGenerators.js");
+const largeCollectionSize = 100000;
+
+// The intent of testing query or aggregation with small documents is to have small overhead
+// associated with parsing and copying them while having enough fields to run queries with different
+// characteristics such as selectivity, complex expressions, sub-fields and arrays access, etc.
+const smallDoc = function (i) {
+    return {
+        _id: i,
+        a: Random.randInt(10),
+        b: Random.randInt(1000),
+        c: Random.rand() * 100 + 1, // no zeros in this field
+        d: i % 10000,
+        e: {
+            a: Random.randInt(10),
+            b: Random.randInt(1000),
+            c: Random.rand() * 100 + 1,
+            e: { u: Random.randInt(100), v: Random.randInt(100) },
+            f: [Random.randInt(10), Random.randInt(10), Random.randInt(10)],
+            g: Random.rand() * 10,
+            h: Random.rand() * 1000,
+            i: Random.rand() * 100000,
+        },
+        f: [Random.randInt(10), Random.randInt(10), Random.randInt(10)],
+        g: Random.rand() * 10,
+        h: Random.rand() * 1000,
+        i: Random.rand() * 100000,
+    };
+}
+
+// The intent of testing query or aggregation with large documents is to make it clear when there is
+// overhead associated with parsing and copying them.
+const quotes = [
+    "Silly things do cease to be silly if they are done by sensible people in an impudent way.",
+    "I may have lost my heart, but not my self-control.",
+    "Success supposes endeavour.",
+    "One half of the world cannot understand the pleasures of the other.",
+    "It is not every man’s fate to marry the woman who loves him best.",
+    "Blessed with so many resources within myself the world was not necessary to me. I could do very well without it.",
+    "It is very difficult for the prosperous to be humble.",
+    "Better be without sense than misapply it as you do.",
+    "Surprises are foolish things. The pleasure is not enhanced, and the inconvenience is often considerable.",
+];
+const largeDoc = function (i) {
+    return {
+        _id: i,
+        a: Random.randInt(10),
+        b: Random.randInt(1000),
+        c: Random.rand() * 100 + 1, // no zeros in this field
+        d: i % 10000,
+        e: {
+            a: Random.randInt(10),
+            b: Random.randInt(1000),
+            c: Random.rand() * 100 + 1,
+            e: { u: Random.randInt(100), v: Random.randInt(100) },
+            f: [Random.randInt(10), Random.randInt(10), Random.randInt(10)],
+            g: Random.rand() * 10,
+            h: Random.rand() * 1000,
+            i: Random.rand() * 100000,
+        },
+
+        
+        f: [Random.randInt(10), Random.randInt(10), Random.randInt(10)],
+        g: Random.rand() * 10,
+        h: Random.rand() * 1000,
+        i: Random.rand() * 100000,
+
+        // Fields the queries won't be accessing but might need to copy/scan over.
+        p1: [quotes, quotes, quotes, quotes, quotes],
+        p2: { author: " Jane Austen", work: "Emma", quotes: quotes },
+        p3: { a: quotes[0] + i.toString(), b: quotes[2] + (i % 10).toString(), c: quotes[4] },
+        p4: [quotes, quotes, quotes, quotes, quotes],
+
+        // Fields towards the end of the object some of the tests will be using.
+        aa: Random.randInt(10),
+        bb: Random.randInt(1000),
+        cc: Random.rand() * 100 + 1,
+        dd: i % 10000,
+        ee: {
+            a: Random.randInt(10),
+            b: Random.randInt(1000),
+            c: Random.rand() * 100 + 1,
+            e: { u: Random.randInt(100), v: Random.randInt(100) },
+            f: [Random.randInt(10), Random.randInt(10), Random.randInt(10)],
+            g: Random.rand() * 10,
+            h: Random.rand() * 1000,
+            i: Random.rand() * 100000,
+        },
+        ff: [Random.randInt(10), Random.randInt(10), Random.randInt(10)],
+        gg: Random.rand() * 10,
+        hh: Random.rand() * 1000,
+        ii: Random.rand() * 100000,
+    };
+}
 
 /**
  * Returns a string of the given size.
@@ -1990,92 +2082,40 @@ generateTestCase({
     pipeline: [{$unionWith: {coll: '#B_COLL_unionWith', pipeline: [{$sort: {val: 1}}]}}]
 });
 
-//
-// Grouping with no accumulators.
-// Naming convention: NoAccTopField_[collection size][doc size][group cardinality]
-//
-// Top field
-//
-generateTestCase({
-    name: "Group.NoAccTopField_SS10",
-    docGenerator: smallDoc,
-    nDocs: smallCollectionSize,
-    pipeline: [{$group: {_id: "$a"}}]
+/**
+ * Benchmarks for $group with large dataset targeting soft spots of SBE.
+ * Naming convention: TestName_[collection size][doc size][group cardinality]
+ */
+
+// Group on top field, no accumulators
+generateTestCaseWithLargeDataset({
+    name: "Group.NoAccTopField_LS10", docGenerator: smallDoc, pipeline: [{$group: {_id: "$a"}}]
 });
 generateTestCaseWithLargeDataset({
-    name: "Group.NoAccTopField_LS10",
-    docGenerator: smallDoc,
-    pipeline: [{$group: {_id: "$a"}}]
+    name: "Group.NoAccTopField_LS1000", docGenerator: smallDoc, pipeline: [{$group: {_id: "$b"}}]
 });
 generateTestCaseWithLargeDataset({
-    name: "Group.NoAccTopField_LS1000",
-    docGenerator: smallDoc,
-    pipeline: [{$group: {_id: "$b"}}]
-});
-generateTestCase({
-    name: "Group.NoAccTopField_SL10",
-    docGenerator: largeDoc,
-    nDocs: smallCollectionSize,
-    pipeline: [{$group: {_id: "$a"}}]
+    name: "Group.NoAccTopField_LL10", docGenerator: largeDoc, pipeline: [{$group: {_id: "$a"}}]
 });
 generateTestCaseWithLargeDataset({
-    name: "Group.NoAccTopField_LL10",
-    docGenerator: largeDoc,
-    pipeline: [{$group: {_id: "$a"}}]
+    name: "Group.NoAccTopField_LL1000", docGenerator: largeDoc, pipeline: [{$group: {_id: "$b"}}]
 });
 generateTestCaseWithLargeDataset({
-    name: "Group.NoAccTopField_LL1000",
-    docGenerator: largeDoc,
-    pipeline: [{$group: {_id: "$b"}}]
-});
-generateTestCaseWithLargeDataset({
-    name: "Group.NoAccTopField_LLR10",
-    docGenerator: largeDoc,
-    pipeline: [{$group: {_id: "$aa"}}]
-});
-//
-// Sub-field
-//
-generateTestCase({
-    name: "Group.NoAccSubField_SS10",
-    docGenerator: smallDoc,
-    nDocs: smallCollectionSize,
-    pipeline: [{$group: {_id: "$e.a"}}]
-});
-generateTestCaseWithLargeDataset({
-    name: "Group.NoAccSubField_LS10",
-    docGenerator: smallDoc,
-    pipeline: [{$group: {_id: "$e.a"}}]
-});
-generateTestCase({
-    name: "Group.NoAccSubField_SL10",
-    docGenerator: largeDoc,
-    nDocs: smallCollectionSize,
-    pipeline: [{$group: {_id: "$e.a"}}]
-});
-generateTestCaseWithLargeDataset({
-    name: "Group.NoAccSubField_LL10",
-    docGenerator: largeDoc,
-    pipeline: [{$group: {_id: "$e.a"}}]
-});
-generateTestCaseWithLargeDataset({
-    name: "Group.NoAccSubField_LLR10",
-    docGenerator: largeDoc,
-    pipeline: [{$group: {_id: "$ee.a"}}]
+    name: "Group.NoAccTopField_LLR10", docGenerator: largeDoc, pipeline: [{$group: {_id: "$aa"}}]
 });
 
-//
-// Grouping with various accumulators.
-// Naming convention: NoAccTopField_[collection size][doc size][group cardinality]
-//
-// $min
-//
-generateTestCase({
-    name: "Group.MinAccTopField_SS10",
-    docGenerator: smallDoc,
-    nDocs: smallCollectionSize,
-    pipeline: [{$group: {_id: "$a", res: {$min: "$c"}}}]
+// Group on sub-field, no accumulators
+generateTestCaseWithLargeDataset({
+    name: "Group.NoAccSubField_LS10", docGenerator: smallDoc, pipeline: [{$group: {_id: "$e.a"}}]
 });
+generateTestCaseWithLargeDataset({
+    name: "Group.NoAccSubField_LL10", docGenerator: largeDoc, pipeline: [{$group: {_id: "$e.a"}}]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.NoAccSubField_LLR10", docGenerator: largeDoc, pipeline: [{$group: {_id: "$ee.a"}}]
+});
+
+// $min
 generateTestCaseWithLargeDataset({
     name: "Group.MinAccTopField_LS10",
     docGenerator: smallDoc,
@@ -2085,12 +2125,6 @@ generateTestCaseWithLargeDataset({
     name: "Group.MinAccTopField_LS1000",
     docGenerator: smallDoc,
     pipeline: [{$group: {_id: "$b", res: {$min: "$c"}}}]
-});
-generateTestCase({
-    name: "Group.MinAccTopField_SL10",
-    docGenerator: largeDoc,
-    nDocs: smallCollectionSize,
-    pipeline: [{$group: {_id: "$a", res: {$min: "$c"}}}]
 });
 generateTestCaseWithLargeDataset({
     name: "Group.MinAccTopField_LL10",
@@ -2107,17 +2141,15 @@ generateTestCaseWithLargeDataset({
     docGenerator: largeDoc,
     pipeline: [{$group: {_id: "$aa", res: {$min: "$cc"}}}]
 });
-//
+
 // $max
-//
 generateTestCaseWithLargeDataset({
     name: "Group.MaxAccTopField_LL10",
     docGenerator: largeDoc,
     pipeline: [{$group: {_id: "$a", res: {$max: "$c"}}}]
 });
-//
+
 // $first
-//
 generateTestCaseWithLargeDataset({
     name: "Group.FirstAccTopField_LL10",
     docGenerator: largeDoc,
@@ -2128,9 +2160,8 @@ generateTestCaseWithLargeDataset({
     docGenerator: largeDoc,
     pipeline: [{$group: {_id: "$b", res: {$first: "$c"}}}]
 });
-//
+
 // $last
-//
 generateTestCaseWithLargeDataset({
     name: "Group.LastAccTopField_LL10",
     docGenerator: largeDoc,
@@ -2141,15 +2172,8 @@ generateTestCaseWithLargeDataset({
     docGenerator: largeDoc,
     pipeline: [{$group: {_id: "$b", res: {$last: "$c"}}}]
 });
-//
+
 // $sum
-//
-generateTestCase({
-    name: "Group.SumAccTopField_SL10",
-    docGenerator: largeDoc,
-    nDocs: smallCollectionSize,
-    pipeline: [{$group: {_id: "$a", res: {$sum: "$c"}}}]
-});
 generateTestCaseWithLargeDataset({
     name: "Group.SumAccTopField_LL10",
     docGenerator: largeDoc,
@@ -2160,75 +2184,44 @@ generateTestCaseWithLargeDataset({
     docGenerator: largeDoc,
     pipeline: [{$group: {_id: "$b", res: {$sum: "$c"}}}]
 });
-//
+
 // $avg
-//
 generateTestCaseWithLargeDataset({
     name: "Group.AvgAccTopField_LL10",
     docGenerator: largeDoc,
     pipeline: [{$group: {_id: "$a", res: {$avg: "$c"}}}]
 });
-//
+
 // $stdDevPop
-//
 generateTestCaseWithLargeDataset({
     name: "Group.StdDevPopAccTopField_LL10",
     docGenerator: largeDoc,
     pipeline: [{$group: {_id: "$a", res: {$stdDevPop: "$c"}}}]
 });
-//
+
 // $stdDevSamp
-//
 generateTestCaseWithLargeDataset({
     name: "Group.StdDevSampAccTopField_LL10",
     docGenerator: largeDoc,
     pipeline: [{$group: {_id: "$a", res: {$stdDevSamp: "$c"}}}]
 });
-//
+
 // $addToSet
-//
+// TODO: Tests with larger accumulated sets (e.g. [{$group: {_id: "$a", res: {$addToSet: "$i"}}}]) 
+// would require 'allowDiskUse()'. Need to figure out whether it's possible to run them via benchrun.
 generateTestCaseWithLargeDataset({
     name: "Group.AddToSetAccTopFieldSmallResultingSet_LL10",
     docGenerator: largeDoc,
-    pipeline: [{$group: {_id: "$a", res: {$addToSet: "$g"}}}]
+    pipeline: [{$group: {_id: "$a", res: {$addToSet: "$g"}}}] // 10 sets of 10 items each
 });
-/* TODO: These tests would require allowDiskUse()
-generateTestCaseWithLargeDataset({
-    name: "Group.AddToSetAccTopFieldLargeResultingSet_LL10",
-    docGenerator: largeDoc,
-    pipeline: [{$group: {_id: "$a", res: {$addToSet: "$i"}}}]
-});
-generateTestCaseWithLargeDataset({
-    name: "Group.AddToSetAccTopArrayField_LL10",
-    docGenerator: largeDoc,
-    pipeline: [{$group: {_id: "$a", res: {$addToSet: "$f"}}}]
-});
-*/
-//
+
 // $push
-//
-/* TODO: These tests would require allowDiskUse()
-generateTestCaseWithLargeDataset({
-    name: "Group.PushAccTopField_LL10",
-    docGenerator: largeDoc,
-    // 10^5 collection, grouped on ~10^1 field => ~10^4 items in each 'res'
-    pipeline: [{$group: {_id: "$a", res: {$push: "$b"}}}]
-});
-generateTestCaseWithLargeDataset({
-    name: "Group.PushAccTopField_LL1000",
-    docGenerator: largeDoc,
-    // 10^5 collection, grouped on ~10^3 field => ~10^2 items in each 'res'
-    pipeline: [{$group: {_id: "$b", res: {$push: "$a"}}}]
-});
-generateTestCaseWithLargeDataset({
-    name: "Group.PushAccTopFieldCreateObjects_LL1000",
-    docGenerator: largeDoc,
-    pipeline: [{$group: {_id: "$b", res: {$push: {o1:"$c", o2:"$g"}}}}]
-});
-*/
-//
+// [{$group: {_id: "$a", res: {$push: "$b"}}}] (10^5 docs, 10 groups => ~10^4 items in each 'res')
+// [{$group: {_id: "$b", res: {$push: "$a"}}}] (10^5 docs, 10^3 groups => ~10^2 items ins each 'res')
+// Both queries would require 'allowDiskUse()'. Need to figure out whether it's possible to run them
+// via benchrun.
+
 // $mergeObjects
-//
 generateTestCaseWithLargeDataset({
     name: "Group.MergeObjectsAccTopField_LL10",
     docGenerator: largeDoc,
@@ -2240,9 +2233,7 @@ generateTestCaseWithLargeDataset({
     pipeline: [{$group: {_id: "$b", res: {$mergeObjects: "$e"}}}]
 });
 
-//
 // Multiple (3) accumulators on the same field.
-//
 generateTestCaseWithLargeDataset({
     name: "Group.MultipleAccSameTopField_LL10",
     docGenerator: largeDoc,
@@ -2258,9 +2249,8 @@ generateTestCaseWithLargeDataset({
     docGenerator: largeDoc,
     pipeline: [{$group: {_id: "$a", min: {$min: "$e.c"}, max: {$max: "$e.c"}, avg: {$avg: "$e.c"}}}]
 });
-//
+
 // Multiple (3) accumulators on different fields.
-//
 generateTestCaseWithLargeDataset({
     name: "Group.MultipleAccDiffTopFields_LL10",
     docGenerator: largeDoc,
@@ -2276,9 +2266,8 @@ generateTestCaseWithLargeDataset({
     docGenerator: largeDoc,
     pipeline: [{$group: {_id: "$a", min: {$min: "$e.c"}, max: {$max: "$e.g"}, avg: {$avg: "$e.h"}}}]
 });
-//
+
 // Multiple (12) accumulators on top fields.
-//
 generateTestCaseWithLargeDataset({
     name: "Group.MultipleAccDiffTopFieldsStress_LL10",
     docGenerator: largeDoc,
@@ -2303,10 +2292,20 @@ generateTestCaseWithLargeDataset({
         }}
     ]
 });
+generateTestCaseWithLargeDataset({
+    name: "Group.MultipleAccSameSubFieldStress_LL10",
+    docGenerator: largeDoc,
+    pipeline: [
+        {$group: {_id: "$a", 
+            o1: {$min: "$e.c"}, o2: {$max: "$e.c"}, o3: {$avg: "$e.c"},
+            o4: {$sum: "$e.c"}, o5: {$first: "$e.c"}, o6: {$last: "$e.c"},
+            o7: {$sum: "$e.c"}, o8: {$first: "$e.c"}, o9: {$last: "$e.c"},
+            o10: {$min: "$e.c"}, o11: {$max: "$e.c"}, o12: {$avg: "$e.c"},
+        }}
+    ]
+});
 
-//
 // Multiple $group stages.
-//
 generateTestCaseWithLargeDataset({
     name: "Group.MultipleGroupStages_LS",
     docGenerator: smallDoc,
