@@ -5,6 +5,8 @@ if (typeof(tests) !== "object") {
 (function() {
     "use strict";
 
+    load("testcases/docGenerators.js");
+
     Random.setRandomSeed(258);
 
     /**
@@ -118,6 +120,45 @@ if (typeof(tests) !== "object") {
                 collection.drop();
             },
             ops: [rewriteQueryOpAsAgg(options.op)]
+        });
+    }
+
+    /**
+     * Similar to 'addTestCase' but sets up the test to be able to share collections if running
+     * as part of a suite that opts-in for sharing.
+     * @param {query} - The query to benchmark with 'find' operation. Ignored if 'op' is defined.
+     * @param {op} - The full definition of the op to be benchmarked.
+     * @param {Number} [options.nDocs = largeCollectionSize] - The number of documents to insert in
+     * the collection. Ignored, if 'generateData' is defined.
+     * @param {function} [options.docGenerator] - To be used with populatorGenerator. Ignored, if
+     * 'generatedData' is defined.
+     * @param {function} [options.generateData = populatorGenerator] - Uses 'docGenerator' to populate
+     * the collection with 'nDocs' documents. If the test is part of a suite that uses '--shareDataset'
+     * flag, the generator is run once (for the first test in the suite).
+     * @param {function} [options.pre=noop] - Any other setup, in addition to creating the data, that
+     * the test might need. For example, creating indexes. The 'pre' fixture is run per test, so for
+     * tests that share the dataset, the effects must be undone with 'post'.
+     * @param {function} [options.post=noop] - cleanup after the test is done.
+     */
+    function addTestCaseWithLargeDataset(options) {
+        var nDocs = options.nDocs || largeCollectionSize;
+        var tags = options.tags || [];
+        tests.push({
+            tags: ["regression", "query_large_dataset"].concat(tags),
+            name: "Queries." + options.name,
+            generateData: options.generateData ||
+                function(collection) {
+                    Random.setRandomSeed(258);
+                    collection.drop();
+                    var bulkop = collection.initializeUnorderedBulkOp();
+                    for (var i = 0; i < nDocs; i++) {
+                        bulkop.insert(options.docGenerator(i));
+                    }
+                    bulkop.execute();
+                },
+            pre: options.pre || function (collection) {},
+            post: options.post || function(collection) {},
+            ops: ("op" in options) ? [options.op] : [{op: "find", query: options.query}],
         });
     }
 
@@ -829,5 +870,163 @@ if (typeof(tests) !== "object") {
             query: {x: {$gt: 0}, y: {$gt: 0}},
             sort: {y: 1},
         }
+    });
+
+    /**
+     * Benchmarks on large collections, targeting soft spots of SBE.
+     */
+
+    // Tests: point-query on a top-level field with full collection scan.
+    addTestCaseWithLargeDataset({
+        name: "PointQuery_CollScan_LS", docGenerator: smallDoc, query: {a: 7}
+    });
+    addTestCaseWithLargeDataset({
+        name: "PointQuery_CollScan_LL", docGenerator: largeDoc, query: {a: 7}
+    });
+    addTestCaseWithLargeDataset({
+        name: "PointQuery_CollScan_LLR", docGenerator: largeDoc, query: {aa: 7}
+    });
+
+    // Tests: point-query on a sub-field with full collection scan.
+    addTestCaseWithLargeDataset({
+        name: "PointQuerySubField_CollScan_LS", docGenerator: smallDoc, query: {"e.a": 7}
+    });
+    addTestCaseWithLargeDataset({
+        name: "PointQuerySubField_CollScan_LL", docGenerator: largeDoc, query: {"e.a": 7}
+    });
+    addTestCaseWithLargeDataset({
+        name: "PointQuerySubField_CollScan_LLR", docGenerator: largeDoc, query: {"ee.a": 7}
+    });
+
+    // Tests: point-query on an array field with full collection scan.
+    addTestCaseWithLargeDataset({
+        name: "PointQueryArray_CollScan_LS", docGenerator: smallDoc, query: {"f": 7}
+    });
+    addTestCaseWithLargeDataset({
+        name: "PointQueryArray_CollScan_LL", docGenerator: largeDoc, query: {"f": 7}
+    });
+    addTestCaseWithLargeDataset({
+        name: "PointQueryArray_CollScan_LLR", docGenerator: largeDoc, query: {"ff": 7}
+    });
+
+    // Tests: query with a complex expression on top-level fields with full collection scan.
+    let queryExpr = {
+        $expr:
+        {
+          $or:
+          [
+            {$and: [{$eq: ["$a", 8]}, {$eq: ["$b", 70]}]},
+            {$and: [{$eq: ["$c", 42.5]}, {$eq: ["$d", 17]}]},
+            {$eq: ["$a", 9]}, {$eq: ["$b", 200]}, {$eq: ["$c", 51.2]}, {$eq: ["$d", 400]},
+          ]
+        }
+    };
+    addTestCaseWithLargeDataset({
+        name: "ComplexExpressionQuery_CollScan_LS", docGenerator: smallDoc, query: queryExpr
+    });
+    addTestCaseWithLargeDataset({
+        name: "ComplexExpressionQuery_CollScan_LL", docGenerator: largeDoc, query: queryExpr
+    });
+
+    // Tests: query with a complex expression on a single field with full collection scan.
+    let queryExprSingleField = {
+        $expr:
+        {
+            $or:
+            [
+            {$and: [{$gt: ["$b", 69]}, {$lt: ["$b", 71]}]},
+            {$and: [{$gt: ["$b", 117]}, {$lt: ["$b", 118.5]}]},
+            {$eq: ["$b", 200]}, {$eq: ["$b", 300]}, {$eq: ["$b", 400]}, {$eq: ["$b", 500]},
+            ]
+        }
+    };
+    addTestCaseWithLargeDataset({
+        name: "ComplexExpressionSingleFieldQuery_CollScan_LS",
+        docGenerator: smallDoc,
+        query: queryExprSingleField
+    });
+    addTestCaseWithLargeDataset({
+        name: "ComplexExpressionSingleFieldQuery_CollScan_LL",
+        docGenerator: largeDoc,
+        query: queryExprSingleField
+    });
+    let queryExprSingleSubField = {
+        $expr:
+        {
+            $or:
+            [
+            {$and: [{$gt: ["$e.b", 69]}, {$lt: ["$e.b", 71]}]},
+            {$and: [{$gt: ["$e.b", 117]}, {$lt: ["$e.b", 118.5]}]},
+            {$eq: ["$e.b", 200]}, {$eq: ["$e.b", 300]}, {$eq: ["$e.b", 400]}, {$eq: ["$e.b", 500]},
+            ]
+        }
+    };
+    addTestCaseWithLargeDataset({
+        name: "ComplexExpressionSingleSubFieldQuery_CollScan_LL",
+        docGenerator: largeDoc,
+        query: queryExprSingleSubField
+    });
+
+    // Tests: projection.
+    addTestCaseWithLargeDataset({
+        name: "ProjectInclude_CollScan_LS",
+        docGenerator: smallDoc,
+        op: {op: "find", query: {}, filter: {a:1, b:1, c:1, d:1, f:1, g:1, h:1, i:1}}
+    });
+    addTestCaseWithLargeDataset({
+        name: "ProjectInclude_CollScan_LL",
+        docGenerator: largeDoc,
+        op: {op: "find", query: {}, filter: {a:1, b:1, c:1, d:1, f:1, g:1, h:1, i:1}}
+    });
+    addTestCaseWithLargeDataset({
+        name: "ProjectNoExpressions_CollScan_LS",
+        docGenerator: smallDoc,
+        op: {
+            op: "find",
+            query: {},
+            filter: {
+                a1: "$a", b1: "$b", c1: "$c", d1: "$d",
+                a2: "$a", b2: "$b", c2: "$c", d2: "$d",
+            }
+        }
+    });
+    addTestCaseWithLargeDataset({
+        name: "ProjectExclude_CollScan_LL",
+        docGenerator: largeDoc,
+        op: {op: "find", query: {}, filter: {a:0, b:0, c:0, d:0, f:0, g:0, h:0, i:0}}
+    });
+    addTestCaseWithLargeDataset({
+        name: "ProjectNoExpressions_CollScan_LL",
+        docGenerator: largeDoc,
+        op: {
+            op: "find",
+            query: {},
+            filter: {
+                a1: "$a", b1: "$b", c1: "$c", d1: "$d",
+                a2: "$a", b2: "$b", c2: "$c", d2: "$d",
+            }
+        }
+    });
+    addTestCaseWithLargeDataset({
+        name: "ProjectNoExpressions_CollScan_LLR",
+        docGenerator: smallDoc,
+        op: {
+            op: "find",
+            query: {},
+            filter: {
+                a1: "$aa", b1: "$bb", c1: "$cc", d1: "$dd",
+                a2: "$aa", b2: "$bb", c2: "$cc", d2: "$dd",
+            }
+        }
+    });
+    let projectWithArithExpressions = {
+        an: {$abs: "$a"}, bn: {$mod: ["$b", 17]}, cn: {$floor: "$c"},
+        dl: {$ln: {$add: [{$abs: "$d"}, 1]}},
+        ab: {$add: ["$a", "$b"]}, cd: {$divide: ["$d", "$c"]},
+    };
+    addTestCaseWithLargeDataset({
+        name: "ProjectWithArithExpressions_CollScan_LS",
+        docGenerator: smallDoc,
+        op: {op: "find", query: {}, filter: projectWithArithExpressions}
     });
 }());
