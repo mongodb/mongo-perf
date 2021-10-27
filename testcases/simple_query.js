@@ -7,9 +7,14 @@ if (typeof(tests) !== "object") {
 
     const largeCollectionSize = 100000;
 
-    // The intent of testing query or aggregation with small documents is to have small overhead
-    // associated with parsing and copying them while having enough fields to run queries with different
-    // characteristics such as selectivity, complex expressions, sub-fields and arrays access, etc.
+    /**
+     * The intent of testing query or aggregation with small documents is to have small overhead
+     * associated with parsing and copying them while having enough fields to run queries with different
+     * characteristics such as selectivity, complex expressions, sub-fields and arrays access, etc.
+     *
+     * @param {Number} i - the number to be used as _id
+     * @returns - a document of size ~280 bytes (Object.bsonsize(smallDoc(N)))
+     */
     const smallDoc = function (i) {
         return {
             _id: i,
@@ -34,8 +39,13 @@ if (typeof(tests) !== "object") {
         };
     }
     
-    // The intent of testing query or aggregation with large documents is to make it clear when there is
-    // overhead associated with parsing and copying them.
+    /**
+     * The intent of testing query or aggregation with large documents is to make it clear when there is
+     * overhead associated with parsing and copying them.
+     *
+     * @param {Number} i - the number to be used as _id
+     * @returns - a document of size ~8540 bytes (Object.bsonsize(largeDoc(N)))
+     */
     const quotes = [
         "Silly things do cease to be silly if they are done by sensible people in an impudent way.",
         "I may have lost my heart, but not my self-control.",
@@ -71,7 +81,8 @@ if (typeof(tests) !== "object") {
             h: Random.rand() * 1000,
             i: Random.rand() * 100000,
     
-            // Fields the queries won't be accessing but might need to copy/scan over.
+            // "Payload" fields that make the document large. The queries in the benchmarks won't be
+            // accessing them but might scan over or copy, which we are striving to minimize.
             p1: [quotes, quotes, quotes, quotes, quotes],
             p2: { author: " Jane Austen", work: "Emma", quotes: quotes },
             p3: { a: quotes[0] + i.toString(), b: quotes[2] + (i % 10).toString(), c: quotes[4] },
@@ -965,7 +976,15 @@ if (typeof(tests) !== "object") {
     });
 
     /**
-     * Benchmarks on large collections, targeting soft spots of SBE.
+     * Benchmarks for find on large collections, targeting the basic functionality of the engine in
+     * a systematic way.
+     * 
+     * Naming convention: TestName_<access_method>_<collection_size><doc_size>[R]<group_cardinality>
+     * access_method ::= CollScan
+     * collection_size ::= L
+     * doc_size ::= S | L
+     * group_cardinality :: = 10 | 100 | ...
+     * R means accessing fields at the end of the document (only applies to tests with doc_size = L)
      */
 
     // Tests: point-query on a top-level field with full collection scan.
