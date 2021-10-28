@@ -1,9 +1,11 @@
-const smallCollectionSize = 100;
-const largeCollectionSize = 100000;
-
-// The intent of testing query or aggregation with small documents is to have small overhead
-// associated with parsing and copying them while having enough fields to run queries with different
-// characteristics such as selectivity, complex expressions, sub-fields and arrays access, etc.
+/**
+ * The intent of testing query or aggregation with small documents is to have small overhead
+ * associated with parsing and copying them while having enough fields to run queries with different
+ * characteristics such as selectivity, complex expressions, sub-fields and arrays access, etc.
+ *
+ * @param {Number} i - the number to be used as _id
+ * @returns - a document of size 281 bytes (Object.bsonsize(smallDoc(1)))
+ */
 const smallDoc = function (i) {
     return {
         _id: i,
@@ -28,8 +30,13 @@ const smallDoc = function (i) {
     };
 }
 
-// The intent of testing query or aggregation with large documents is to make it clear when there is
-// overhead associated with parsing and copying them.
+/**
+ * The intent of testing query or aggregation with large documents is to make it clear when there is
+ * overhead associated with parsing and copying them.
+ *
+ * @param {Number} i - the number to be used as _id
+ * @returns - a document of size ~8540 bytes (Object.bsonsize(largeDoc(N)))
+ */
 const quotes = [
     "Silly things do cease to be silly if they are done by sensible people in an impudent way.",
     "I may have lost my heart, but not my self-control.",
