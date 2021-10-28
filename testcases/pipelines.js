@@ -185,6 +185,48 @@ function generateTestCase(options) {
     });
 }
 
+/**
+ * Similar to 'generateTestCase' but sets up the test to be able to share collections if running
+ * as part of a suite that opts-in for sharing.
+ * @param {Number} [options.nDocs = largeCollectionSize] - The number of documents to insert in the collection.
+ * @param {function} [options.docGenerator] - To be used with populatorGenerator. Ignored, if 
+ * 'generatedData' is defined.
+ * @param {function} [options.generateData = populatorGenerator] - Uses 'docGenerator' to populate
+ * the collection. If the test is part of a suite that uses '--shareDataset' flag, the generator is
+ * run once (for the first test in the suite).
+ * @param {function} [options.pre=noop] - Any other setup, in addition to creating the data, that
+ * the test might need. For example, creating indexes. The 'pre' fixture is run per test, so for
+ * tests that share the dataset, the effects must be undone with 'post'.
+ * @param {function} [options.post=noop] - cleanup after the test is done.
+ */
+const largeCollectionSize = 100000;
+function generateTestCaseWithLargeDataset(options) {
+    var nDocs = options.nDocs || largeCollectionSize;
+    var pipeline = options.pipeline;
+    var tags = options.tags || [];
+    tests.push({
+        tags: ["regression", "aggregation_large_dataset"].concat(tags),
+        name: "Aggregation." + options.name,
+        generateData: options.generateData ||
+            function(collection) {
+                Random.setRandomSeed(258);
+                collection.drop();
+                var bulkop = collection.initializeUnorderedBulkOp();
+                for (var i = 0; i < nDocs; i++) {
+                    bulkop.insert(options.docGenerator(i));
+                }
+                bulkop.execute();
+            },
+        pre: options.pre || function (collection) {},
+        post: options.post || function(collection) {},
+        ops: [{
+            op: "command",
+            ns: "#B_DB",
+            command: {aggregate: "#B_COLL", pipeline: pipeline, cursor: {}}
+        }]
+    });
+}
+
 //
 // Empty pipeline.
 //
@@ -2045,4 +2087,261 @@ generateTestCase({
     },
     pipeline: [{$unionWith: {coll: '#B_COLL_unionWith', pipeline: [{$sort: {val: 1}}]}}]
 });
+
+/**
+ * Benchmarks for $group with a large dataset targeting the basic performance of the stage in a
+ * systematic way.
+ *
+ * Naming convention: TestName_<collection_size><doc_size>[R]<group_cardinality>
+ * collection_size ::= L
+ * doc_size ::= S | L
+ * group_cardinality :: = 10 | 100 | ...
+ * R means accessing fields at the end of the document (only applies to tests with doc_size = L)
+ */
+
+// Group on top field, no accumulators
+generateTestCaseWithLargeDataset({
+    name: "Group.NoAccTopField_LS10", docGenerator: smallDoc, pipeline: [{$group: {_id: "$a"}}]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.NoAccTopField_LS1000", docGenerator: smallDoc, pipeline: [{$group: {_id: "$b"}}]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.NoAccTopField_LL10", docGenerator: largeDoc, pipeline: [{$group: {_id: "$a"}}]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.NoAccTopField_LL1000", docGenerator: largeDoc, pipeline: [{$group: {_id: "$b"}}]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.NoAccTopField_LLR10", docGenerator: largeDoc, pipeline: [{$group: {_id: "$aa"}}]
+});
+
+// Group on sub-field, no accumulators
+generateTestCaseWithLargeDataset({
+    name: "Group.NoAccSubField_LS10", docGenerator: smallDoc, pipeline: [{$group: {_id: "$e.a"}}]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.NoAccSubField_LL10", docGenerator: largeDoc, pipeline: [{$group: {_id: "$e.a"}}]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.NoAccSubField_LLR10", docGenerator: largeDoc, pipeline: [{$group: {_id: "$ee.a"}}]
+});
+
+// $min
+generateTestCaseWithLargeDataset({
+    name: "Group.MinAccTopField_LS10",
+    docGenerator: smallDoc,
+    pipeline: [{$group: {_id: "$a", res: {$min: "$c"}}}]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.MinAccTopField_LS1000",
+    docGenerator: smallDoc,
+    pipeline: [{$group: {_id: "$b", res: {$min: "$c"}}}]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.MinAccTopField_LL10",
+    docGenerator: largeDoc,
+    pipeline: [{$group: {_id: "$a", res: {$min: "$c"}}}]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.MinAccTopField_LL1000",
+    docGenerator: largeDoc,
+    pipeline: [{$group: {_id: "$b", res: {$min: "$c"}}}]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.MinAccTopField_LLR10",
+    docGenerator: largeDoc,
+    pipeline: [{$group: {_id: "$aa", res: {$min: "$cc"}}}]
+});
+
+// $max
+generateTestCaseWithLargeDataset({
+    name: "Group.MaxAccTopField_LL10",
+    docGenerator: largeDoc,
+    pipeline: [{$group: {_id: "$a", res: {$max: "$c"}}}]
+});
+
+// $first
+generateTestCaseWithLargeDataset({
+    name: "Group.FirstAccTopField_LL10",
+    docGenerator: largeDoc,
+    pipeline: [{$group: {_id: "$a", res: {$first: "$c"}}}]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.FirstAccTopField_LL1000",
+    docGenerator: largeDoc,
+    pipeline: [{$group: {_id: "$b", res: {$first: "$c"}}}]
+});
+
+// $last
+generateTestCaseWithLargeDataset({
+    name: "Group.LastAccTopField_LL10",
+    docGenerator: largeDoc,
+    pipeline: [{$group: {_id: "$a", res: {$last: "$c"}}}]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.LastAccTopField_LL1000",
+    docGenerator: largeDoc,
+    pipeline: [{$group: {_id: "$b", res: {$last: "$c"}}}]
+});
+
+// $sum
+generateTestCaseWithLargeDataset({
+    name: "Group.SumAccTopField_LL10",
+    docGenerator: largeDoc,
+    pipeline: [{$group: {_id: "$a", res: {$sum: "$c"}}}]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.SumAccTopField_LL1000",
+    docGenerator: largeDoc,
+    pipeline: [{$group: {_id: "$b", res: {$sum: "$c"}}}]
+});
+
+// $avg
+generateTestCaseWithLargeDataset({
+    name: "Group.AvgAccTopField_LL10",
+    docGenerator: largeDoc,
+    pipeline: [{$group: {_id: "$a", res: {$avg: "$c"}}}]
+});
+
+// $stdDevPop
+generateTestCaseWithLargeDataset({
+    name: "Group.StdDevPopAccTopField_LL10",
+    docGenerator: largeDoc,
+    pipeline: [{$group: {_id: "$a", res: {$stdDevPop: "$c"}}}]
+});
+
+// $stdDevSamp
+generateTestCaseWithLargeDataset({
+    name: "Group.StdDevSampAccTopField_LL10",
+    docGenerator: largeDoc,
+    pipeline: [{$group: {_id: "$a", res: {$stdDevSamp: "$c"}}}]
+});
+
+// $addToSet
+// TODO: Tests with larger accumulated sets (e.g. [{$group: {_id: "$a", res: {$addToSet: "$i"}}}]) 
+// would require 'allowDiskUse()'. Need to figure out whether it's possible to run them via benchrun.
+generateTestCaseWithLargeDataset({
+    name: "Group.AddToSetAccTopFieldSmallResultingSet_LL10",
+    docGenerator: largeDoc,
+    pipeline: [{$group: {_id: "$a", res: {$addToSet: "$g"}}}] // 10 sets of 10 items each
+});
+
+// $push
+// [{$group: {_id: "$a", res: {$push: "$b"}}}] (10^5 docs, 10 groups => ~10^4 items in each 'res')
+// [{$group: {_id: "$b", res: {$push: "$a"}}}] (10^5 docs, 10^3 groups => ~10^2 items ins each 'res')
+// Both queries would require 'allowDiskUse()'. Need to figure out whether it's possible to run them
+// via benchrun.
+
+// $mergeObjects
+generateTestCaseWithLargeDataset({
+    name: "Group.MergeObjectsAccTopField_LL10",
+    docGenerator: largeDoc,
+    pipeline: [{$group: {_id: "$a", res: {$mergeObjects: "$e"}}}]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.MergeObjectsAccTopField_LL1000",
+    docGenerator: largeDoc,
+    pipeline: [{$group: {_id: "$b", res: {$mergeObjects: "$e"}}}]
+});
+
+// Multiple (3) accumulators on the same field.
+generateTestCaseWithLargeDataset({
+    name: "Group.MultipleAccSameTopField_LL10",
+    docGenerator: largeDoc,
+    pipeline: [{$group: {_id: "$a", min: {$min: "$c"}, max: {$max: "$c"}, avg: {$avg: "$c"}}}]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.MultipleAccSameTopField_LLR10",
+    docGenerator: largeDoc,
+    pipeline: [{$group: {_id: "$aa", min: {$min: "$cc"}, max: {$max: "$cc"}, avg: {$avg: "$cc"}}}]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.MultipleAccSameSubField_LL10",
+    docGenerator: largeDoc,
+    pipeline: [{$group: {_id: "$a", min: {$min: "$e.c"}, max: {$max: "$e.c"}, avg: {$avg: "$e.c"}}}]
+});
+
+// Multiple (3) accumulators on different fields.
+generateTestCaseWithLargeDataset({
+    name: "Group.MultipleAccDiffTopFields_LL10",
+    docGenerator: largeDoc,
+    pipeline: [{$group: {_id: "$a", min: {$min: "$c"}, max: {$max: "$g"}, avg: {$avg: "$h"}}}]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.MultipleAccDiffTopFields_LLR10",
+    docGenerator: largeDoc,
+    pipeline: [{$group: {_id: "$aa", min: {$min: "$cc"}, max: {$max: "$gg"}, avg: {$avg: "$hh"}}}]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.MultipleAccDiffSubFields_LL10",
+    docGenerator: largeDoc,
+    pipeline: [{$group: {_id: "$a", min: {$min: "$e.c"}, max: {$max: "$e.g"}, avg: {$avg: "$e.h"}}}]
+});
+
+// Multiple (12) accumulators on top fields.
+generateTestCaseWithLargeDataset({
+    name: "Group.MultipleAccDiffTopFieldsStress_LL10",
+    docGenerator: largeDoc,
+    pipeline: [
+        {$group: {_id: "$a", 
+            o1: {$min: "$b"}, o2: {$max: "$c"}, o3: {$avg: "$d"},
+            o4: {$sum: "$g"}, o5: {$first: "$h"}, o6: {$last: "$i"},
+            o7: {$sum: "$bb"}, o8: {$first: "$cc"}, o9: {$last: "$dd"},
+            o10: {$min: "$gg"}, o11: {$max: "$hh"}, o12: {$avg: "$ii"},
+        }}
+    ]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.MultipleAccSameTopFieldStress_LL10",
+    docGenerator: largeDoc,
+    pipeline: [
+        {$group: {_id: "$a", 
+            o1: {$min: "$c"}, o2: {$max: "$c"}, o3: {$avg: "$c"},
+            o4: {$sum: "$c"}, o5: {$first: "$c"}, o6: {$last: "$c"},
+            o7: {$sum: "$c"}, o8: {$first: "$c"}, o9: {$last: "$c"},
+            o10: {$min: "$c"}, o11: {$max: "$c"}, o12: {$avg: "$c"},
+        }}
+    ]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.MultipleAccSameSubFieldStress_LL10",
+    docGenerator: largeDoc,
+    pipeline: [
+        {$group: {_id: "$a", 
+            o1: {$min: "$e.c"}, o2: {$max: "$e.c"}, o3: {$avg: "$e.c"},
+            o4: {$sum: "$e.c"}, o5: {$first: "$e.c"}, o6: {$last: "$e.c"},
+            o7: {$sum: "$e.c"}, o8: {$first: "$e.c"}, o9: {$last: "$e.c"},
+            o10: {$min: "$e.c"}, o11: {$max: "$e.c"}, o12: {$avg: "$e.c"},
+        }}
+    ]
+});
+
+// Multiple $group stages.
+generateTestCaseWithLargeDataset({
+    name: "Group.MultipleGroupStages_LS",
+    docGenerator: smallDoc,
+    pipeline: [
+        {$group: {_id: "$b", f: {$first: "$a"}, av: {$avg: "$a"}}},
+        {$group: {_id: "$f", min: {$min: "$av"}, max: {$max: "$av"}}}
+    ]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.MultipleGroupStages_LL",
+    docGenerator: largeDoc,
+    pipeline: [
+        {$group: {_id: "$b", f: {$first: "$a"}, av: {$avg: "$a"}}},
+        {$group: {_id: "$f", min: {$min: "$av"}, max: {$max: "$av"}}}
+    ]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.MultipleGroupStagesWithMatchBetween_LS",
+    docGenerator: smallDoc,
+    pipeline: [
+        {$group: {_id: "$b", f: {$first: "$a"}, av: {$avg: "$a"}}},
+        {$match: {av: {$gt:4.5}}},
+        {$group: {_id: "$f", min: {$min: "$av"}, max: {$max: "$av"}}}
+    ]
+});
 })();
+
