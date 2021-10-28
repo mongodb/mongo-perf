@@ -4,7 +4,7 @@
  * characteristics such as selectivity, complex expressions, sub-fields and arrays access, etc.
  *
  * @param {Number} i - the number to be used as _id
- * @returns - a document of size 281 bytes (Object.bsonsize(smallDoc(1)))
+ * @returns - a document of size ~280 bytes (Object.bsonsize(smallDoc(N)))
  */
 const smallDoc = function (i) {
     return {
@@ -35,7 +35,7 @@ const smallDoc = function (i) {
  * overhead associated with parsing and copying them.
  *
  * @param {Number} i - the number to be used as _id
- * @returns - a document of size ~8540 bytes (Object.bsonsize(largeDoc(N)))
+ * @returns - a document of size ~8500 bytes (Object.bsonsize(largeDoc(N)))
  */
 const quotes = [
     "Silly things do cease to be silly if they are done by sensible people in an impudent way.",
