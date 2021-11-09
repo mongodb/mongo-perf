@@ -2343,5 +2343,77 @@ generateTestCaseWithLargeDataset({
         {$group: {_id: "$f", min: {$min: "$av"}, max: {$max: "$av"}}}
     ]
 });
+
+// Indexed plans.
+let dropIndexesAndCaches = function(collection) {
+    collection.dropIndexes();
+    collection.getPlanCache().clear();
+}
+let createIndexes = function(collection, indexes) {
+    indexes.forEach(function(index) {
+        assert.commandWorked(collection.createIndex(index));
+    });
+}
+function generateTestCaseWithLargeDatasetAndIndexes(options) {
+    options.pre = function(collection) {
+        dropIndexesAndCaches(collection);
+        createIndexes(collection, options.indexes);
+    };
+    options.post = dropIndexesAndCaches;
+    generateTestCaseWithLargeDataset(options);
+}
+
+// Grouping on the indexed field with no accumulators creates DISTINCT_SCAN plan with a
+// $groupByDistinctScan stage, that currently isn't being lowered into SBE.
+generateTestCaseWithLargeDatasetAndIndexes({
+    name: "Group.NoAccTopField_DistinctScan_LL10", 
+    docGenerator: largeDoc,
+    indexes: [{"a":1}],
+    pipeline: [{$group: {_id: "$a"}}]
+});
+
+// The $match stage triggers IXSCAN plans, without it, the only considered plan is COLLSCAN.
+generateTestCaseWithLargeDatasetAndIndexes({
+    name: "Group.NoAccTopField_SingleIndex_LL10",
+    docGenerator: largeDoc,
+    indexes: [{"b":1}],
+    pipeline: [{$match: {b: 42}}, {$group: {_id: "$a"}}]
+});
+generateTestCaseWithLargeDatasetAndIndexes({
+    name: "Group.NoAccTopField_MultipleIndexes_LL10",
+    docGenerator: largeDoc,
+    indexes: [{"b":1}, {"b":1, "c":1}],
+    pipeline: [{$match: {b: 42}}, {$group: {_id: "$a"}}]
+});
+generateTestCaseWithLargeDatasetAndIndexes({
+    name: "Group.SumAccTopField_SingleIndex_LL10",
+    docGenerator: largeDoc,
+    indexes: [{"b":1}],
+    pipeline: [{$match: {b: 42}}, {$group: {_id: "$a", res: {$sum: "$c"}}}]
+});
+generateTestCaseWithLargeDatasetAndIndexes({
+    name: "Group.SumAccTopField_MultipleIndexes_LL10",
+    docGenerator: largeDoc,
+    indexes: [{"b":1}, {"b":1, "c":1}],
+    pipeline: [{$match: {b: 42}}, {$group: {_id: "$a", res: {$sum: "$c"}}}]
+});
+generateTestCaseWithLargeDatasetAndIndexes({
+    name: "Group.MultipleAccSameTopField_SingleIndex_LL10",
+    docGenerator: largeDoc,
+    indexes: [{"b":1}],
+    pipeline: [
+        {$match: {b: 42}},
+        {$group: {_id: "$a", min: {$min: "$c"}, max: {$max: "$c"}, avg: {$avg: "$c"}}}
+    ]
+});
+generateTestCaseWithLargeDatasetAndIndexes({
+    name: "Group.MultipleAccSameSubField_SingleIndex_LL10",
+    docGenerator: largeDoc,
+    indexes: [{"b":1}],
+    pipeline: [
+        {$match: {b: 42}},
+        {$group: {_id: "$a", min: {$min: "$e.c"}, max: {$max: "$e.c"}, avg: {$avg: "$e.c"}}}
+    ]
+});
 })();
 
