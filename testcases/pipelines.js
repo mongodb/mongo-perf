@@ -346,7 +346,7 @@ generateTestCase({
     tags: ['>=5.2.0'],
     nDocs: 1000,
     docGenerator: minNDocGenerator,
-    pipeline: [{$group: {_id: "$_idMod10", minVals: {$minN: {n: 10, output: "$_id"}}}}]
+    pipeline: [{$group: {_id: "$_idMod10", minVals: {$minN: {n: 10, input: "$_id"}}}}]
 });
 
 /**
@@ -359,7 +359,7 @@ generateTestCase({
     tags: ['>=5.2.0'],
     nDocs: 1000,
     docGenerator: maxNDocGenerator,
-    pipeline: [{$group: {_id: "$_idMod10", maxVals: {$maxN: {n: 10, output: "$_id"}}}}]
+    pipeline: [{$group: {_id: "$_idMod10", maxVals: {$maxN: {n: 10, input: "$_id"}}}}]
 });
 
 /**
@@ -402,7 +402,7 @@ generateTestCase({
     docGenerator: function generator(i) {
         return accumulatorNExpressionDocGenerator(i, generateProjectArray(true));
     },
-    pipeline: [{$project: {_id: 0, output: {$minN: {n: 10, output: "$array"}}}}]
+    pipeline: [{$project: {_id: 0, output: {$minN: {n: 10, input: "$array"}}}}]
 });
 
 /**
@@ -416,7 +416,7 @@ generateTestCase({
     docGenerator: function generator(i) {
         return accumulatorNExpressionDocGenerator(i, generateProjectArray(false));
     },
-    pipeline: [{$project: {_id: 0, output: {$maxN: {n: 10, output: "$array"}}}}]
+    pipeline: [{$project: {_id: 0, output: {$maxN: {n: 10, input: "$array"}}}}]
 });
 
 /**
@@ -431,7 +431,7 @@ generateTestCase({
     nDocs: 1000,
     docGenerator: minNDocGenerator,
     pipeline: [{$setWindowFields: {sortBy: {_id: 1}, partitionBy: "$_idMod10",
-            output: {minVals: {$minN: {n: 10, output: "$_id"}, window: {range: [-10, 10]}}}}}]
+            output: {minVals: {$minN: {n: 10, input: "$_id"}, window: {range: [-10, 10]}}}}}]
 });
 
 /**
@@ -446,7 +446,7 @@ generateTestCase({
     nDocs: 1000,
     docGenerator: maxNDocGenerator,
     pipeline: [{$setWindowFields: {sortBy: {_id: 1}, partitionBy: "$_idMod10",
-            output: {maxVals: {$maxN: {n: 10, output: "$_id"}, window: {range: [-10, 10]}}}}}]
+            output: {maxVals: {$maxN: {n: 10, input: "$_id"}, window: {range: [-10, 10]}}}}}]
 });
 
 /**
@@ -460,7 +460,7 @@ generateTestCase({
     docGenerator: function basicGroupDocGenerator(i) {
         return {_id: i, _idMod10: i % 10};
     },
-    pipeline: [{$group: {_id: "$_idMod10", firstVals: {$firstN: {n: 10, output: "$_id"}}}}]
+    pipeline: [{$group: {_id: "$_idMod10", firstVals: {$firstN: {n: 10, input: "$_id"}}}}]
 });
 
 /**
@@ -474,7 +474,7 @@ generateTestCase({
     docGenerator: function basicGroupDocGenerator(i) {
         return {_id: i, _idMod10: i % 10};
     },
-    pipeline: [{$group: {_id: "$_idMod10", lastVals: {$lastN: {n: 10, output: "$_id"}}}}]
+    pipeline: [{$group: {_id: "$_idMod10", lastVals: {$lastN: {n: 10, input: "$_id"}}}}]
 });
 
 /**
@@ -488,7 +488,7 @@ generateTestCase({
     docGenerator: function generator(i) {
         return accumulatorNExpressionDocGenerator(i, generateProjectArray(false));
     },
-    pipeline: [{$project: {_id: 0, output: {$firstN: {n: 10, output: "$array"}}}}]
+    pipeline: [{$project: {_id: 0, output: {$firstN: {n: 10, input: "$array"}}}}]
 });
 
 /**
@@ -502,7 +502,7 @@ generateTestCase({
     docGenerator: function generator(i){
         return accumulatorNExpressionDocGenerator(i, generateProjectArray(false));
     },
-    pipeline: [{$project: {_id: 0, output: {$lastN: {n: 10, output: "$array"}}}}]
+    pipeline: [{$project: {_id: 0, output: {$lastN: {n: 10, input: "$array"}}}}]
 });
 
 /**
@@ -522,7 +522,7 @@ generateTestCase({
         return {_id: i, _idMod10: i % 10};
     },
     pipeline: [{$setWindowFields: {sortBy: {_id: 1}, partitionBy: "$_idMod10",
-            output: {firstVals: {$firstN: {n: 10, output: "$_id"}, window: {range: [-10, 10]}}}}}]
+            output: {firstVals: {$firstN: {n: 10, input: "$_id"}, window: {range: [-10, 10]}}}}}]
 });
 
 /**
@@ -539,7 +539,7 @@ generateTestCase({
         return {_id: i, _idMod10: i % 10};
     },
     pipeline: [{$setWindowFields: {sortBy: {_id: 1}, partitionBy: "$_idMod10",
-            output: {lastVals: {$lastN: {n: 10, output: "$_id"}, window: {range: [-10, 10]}}}}}]
+            output: {lastVals: {$lastN: {n: 10, input: "$_id"}, window: {range: [-10, 10]}}}}}]
 });
 
 generateTestCase({
