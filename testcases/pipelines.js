@@ -189,7 +189,7 @@ function generateTestCase(options) {
  * Similar to 'generateTestCase' but sets up the test to be able to share collections if running
  * as part of a suite that opts-in for sharing.
  * @param {Number} [options.nDocs = largeCollectionSize] - The number of documents to insert in the collection.
- * @param {function} [options.docGenerator] - To be used with populatorGenerator. Ignored, if 
+ * @param {function} [options.docGenerator] - To be used with populatorGenerator. Ignored, if
  * 'generatedData' is defined.
  * @param {function} [options.generateData = populatorGenerator] - Uses 'docGenerator' to populate
  * the collection. If the test is part of a suite that uses '--shareDataset' flag, the generator is
@@ -321,49 +321,334 @@ generateTestCase({
  *
  * @param {Number} i - Which number document this is in the collection. Note that this is required
  * by the populatorGenerator when generating documents.
+ * @param {Number} groupSize - The number of documents in each group in our test case.
  */
-function minNDocGenerator(i) {
+function minNDocGenerator(groupSize, i) {
     // The _ids are monotonically decreasing. This maximizes the amount of work that $minN will do
     // for each group as the next value in the sequence will be lower than any current value seen so
     // far.
-    return {_id: -i, _idMod10: i % 10};
+    return {_id: -i, groupKey: Math.floor(i / groupSize)};
 }
 
-function maxNDocGenerator(i) {
+function maxNDocGenerator(groupSize, i) {
     // The _ids are monotonically increasing. This maximizes the amount of work that $maxN will do
     // for each group as the next value in the sequence will be higher than any current value
     // seen so far.
-    return {_id: i, _idMod10: i % 10};
+    return {_id: i, groupKey: Math.floor(i / groupSize)};
 }
 
 /**
- * Test case which splits 1000 documents into 10 groups of 100 and returns the minimum 10 values in
- * each group. Because the documents are in descending order, the number of comparisons and
- * evictions performed is maximized.
+ * Function which generates documents corresponding to a player's score in a game.
  */
-generateTestCase({
-    name: "Group.TenGroupsWithMinN",
-    tags: ['>=5.2.0'],
-    nDocs: 1000,
-    docGenerator: minNDocGenerator,
-    pipeline: [{$group: {_id: "$_idMod10", minVals: {$minN: {n: 10, input: "$_id"}}}}]
-});
+function gameScoreGenerator(groupSize, i) {
+    const players = ["Mihai", "Mickey", "Kyle", "Bob", "Joe", "Rebecca", "Jane", "Jill", "Sarah"];
+    const playerId = i % players.length;
+    const gameId = Math.floor(i / groupSize);
+    const score = i % 3 === 1 ? i : 3 * i;
+    return {
+        _id: i,
+        game: "G" + gameId,
+        player: players[playerId] + Math.floor(i / players.length),
+        score: score
+    };
+}
 
 /**
- * Test case which splits 1000 documents into 10 groups of 100 and returns the maximum 10 values in
- * each group. Because the documents are in ascending order, the number of comparisons and evictions
- * performed is maximized.
+ * Function which generates documents to be used in test cases involving
+ * $top/$topN/$bottom/$bottomN.
+ * @param {Number} i - Which number document this is in the collection. Note that this is required
+ * by the populatorGenerator when generating documents.
+ * @param {Number} direction - Direction of the sort pattern. Used to control whether the values
+ * are ascending or descending.
+ * @param {Number} groupSize - The number of documents in each group in our test case.
  */
-generateTestCase({
-    name: "Group.TenGroupsWithMaxN",
-    tags: ['>=5.2.0'],
-    nDocs: 1000,
-    docGenerator: maxNDocGenerator,
-    pipeline: [{$group: {_id: "$_idMod10", maxVals: {$maxN: {n: 10, input: "$_id"}}}}]
-});
+function topBottomDocGenerator(groupSize,direction, i) {
+    return {
+        // For bottomN/bottom direction is 1 and -1 for topN/top to maximize the amount of
+        // inserts to the accumulators internal container, similar to Group.TenGroupsWithMaxN
+        _id: i * direction,
+        groupKey: Math.floor(i / groupSize),
+        // This is just a value to output later, it doesn't really matter what it is.
+        _idMod7: i % 7
+    };
+}
 
 /**
- * Generates an array of 50 elements to be used for testing the performance of
+ * Function which generates a test case for $top/$topN/$bottom/$bottomN using the given parameters.
+ */
+function topBottomTestCaseGenerator(name, op, direction, groupSize, nDocs, n = undefined) {
+    generateTestCase({
+        name: "Group.GroupsWith" + name +  (n ? "WithNVal" + n : "") + "AndGroupsOfSize" + groupSize,
+        tags: ['>=5.2.0'],
+        nDocs: nDocs,
+        docGenerator: (i) => topBottomDocGenerator(groupSize, direction, i),
+        pipeline: [{$group: {_id: "$groupKey", result: {[op]: Object.assign(
+                        {sortBy: {_id: 1}, output: "$_idMod7"},
+                        n ? {n} : {}, // topN and bottomN also need an extra n parameter.
+                    )}}}]
+    });
+}
+
+/**
+ * Generate each test case for different group sizes and values of 'n'. In particular, we test
+ * group sizes of 100 and 250, and n values of 10 and 50 (the number of documents stays constant
+ * at 10k). As such, the set of case we generate for each test is the cross product of both
+ * dimensions: {groupSize: 100, n: 10}, {groupSize: 100, n: 50}, {groupSize: 250, n: 10},
+ * {groupSize: 250, n: 50}.
+ */
+for (const groupSize of [100, 250]) {
+    const nDocs = 10 * 1000;
+    for (const n of [10, 50]) {
+        /**
+         * This aggregation returns the top 'n' players from each game (sorted by score). It is
+         * able to do this by leveraging an index on {game: 1, score: -1}.
+         */
+        generateTestCase(
+            {
+                name: "Group.GamesSortIndexedFirst" + n + "WithGroupsOfSize" + groupSize,
+                tags: ['>=5.2.0'],
+                nDocs: nDocs,
+                indices: [{game: 1, score: -1}],
+                docGenerator: (i) => gameScoreGenerator(groupSize, i),
+                pipeline: [{$sort: {game: 1}}, {
+                    $group: {
+                        _id: "$game",
+                        leaderBoard: {
+                            $firstN: {
+                                n: n,
+                                input: {
+                                    player: "$player", score: "$score"
+                                }
+                            }
+                        }
+                    }
+                }]
+            });
+
+        /**
+         * This aggregation returns the same results as the above, but it actively sorts within the
+         * $group itself via $topN.
+         */
+        generateTestCase(
+            {
+                name: "Group.GamesUnindexedTop" + n + "WithGroupsOfSize" + groupSize,
+                tags: ['>=5.2.0'],
+                nDocs: nDocs,
+                docGenerator: (i) => gameScoreGenerator(groupSize, i),
+                pipeline: [{
+                    $group: {
+                        _id: "$game",
+                        leaderBoard: {
+                            $topN: {
+                                n: n,
+                                output: {
+                                    player: "$player", score: "$score"
+                                },
+                                sortBy: {score: -1}
+                            }
+                        }
+                    }
+                }]
+            });
+
+        /**
+         * Test case which splits 'nDocs' documents into groups containing 'groupSize' documents
+         * and returns the minimum 'n' values in each group. Because the documents are in
+         * descending order, the number of comparisons and evictions performed is maximized.
+         */
+        generateTestCase({
+            name: "Group.Min" + n + "WithGroupsOfSize" + groupSize,
+            tags: ['>=5.2.0'],
+            nDocs: nDocs,
+            docGenerator: (i) => minNDocGenerator(groupSize, i),
+            pipeline: [{$group: {_id: "$groupKey", minVals: {$minN: {n: n, input: "$_id"}}}}]
+        });
+
+        /**
+         * Test case which splits 'nDocs' documents into groups containing 'groupSize' documents
+         * and returns the maximum 'n' values in each group. Because the documents are in ascending
+         * order, the number of comparisons and evictions performed is maximized.
+         */
+        generateTestCase({
+            name: "Group.Max" + n + "WithGroupsOfSize" + groupSize,
+            tags: ['>=5.2.0'],
+            nDocs: nDocs,
+            docGenerator: (i) => maxNDocGenerator(groupSize, i),
+            pipeline: [{$group: {_id: "$groupKey", maxVals: {$maxN: {n: n, input: "$_id"}}}}]
+        });
+
+        /**
+         * Test case which splits 'nDocs' documents into partitions of 'groupSize' documents.
+         * For each document within the partition, we take the minimum 10 documents over a
+         * sliding window of at least 10 documents and up to 21 documents. This window
+         * consists of the 10 documents before the current document, the 10 documents after
+         * the current document, and the current document itself.
+         */
+        generateTestCase({
+            name: "SetWindowFields.Min" + n + "WithPartitionsOfSize" + groupSize,
+            tags: ['>=5.2.0'],
+            nDocs: nDocs,
+            docGenerator: (i) => minNDocGenerator(groupSize, i),
+            pipeline: [{
+                $setWindowFields: {
+                    sortBy: {_id: 1},
+                    partitionBy: "$groupKey",
+                    output: {
+                        minVals: {
+                            $minN: {n: n, input: "$_id"},
+                            window: {range: [-10, 10]}
+                        }
+                    }
+                }
+            }]
+        });
+
+        /**
+         * Test case which splits 'nDocs' documents into partitions of 'groupSize' documents.
+         * For each document within the partition, we take the maximum 'n' documents over a
+         * sliding window of at least 10 documents and up to 21 documents. This window
+         * consists of the 10 documents before the current document, the 10 documents after
+         * the current document, and the current document itself.
+         */
+        generateTestCase({
+            name: "SetWindowFields.Max" + n + "WithPartitionsOfSize" + groupSize,
+            tags: ['>=5.2.0'],
+            nDocs: nDocs,
+            docGenerator: (i) => maxNDocGenerator(groupSize, i),
+            pipeline: [{
+                $setWindowFields: {
+                    sortBy: {_id: 1},
+                    partitionBy: "$groupKey",
+                    output: {
+                        maxVals: {
+                            $maxN: {n: n, input: "$_id"},
+                            window: {range: [-10, 10]}
+                        }
+                    }
+                }
+            }]
+        });
+
+        /**
+         * Test case which splits 'nDocs' documents into groups of 'groupSize' and returns the
+         * first 'n' values in each group.
+         */
+        generateTestCase({
+            name: "Group.First" + n + "WithGroupsOfSize" + groupSize,
+            tags: ['>=5.2.0'],
+            nDocs: nDocs,
+            docGenerator: function basicGroupDocGenerator(i) {
+                return {_id: i, groupKey: Math.floor(i / groupSize)};
+            },
+            pipeline: [{
+                $group: {
+                    _id: "$groupKey",
+                    firstVals: {$firstN: {n: n, input: "$_id"}}
+                }
+            }]
+        });
+
+        /**
+         * Test case which splits 'nDocs' documents into groups of 'groupSize' and returns the
+         * last 'n' values in each group.
+         */
+        generateTestCase({
+            name: "Group.Last" + n + "WithGroupsOfSize" + groupSize,
+            tags: ['>=5.2.0'],
+            nDocs: nDocs,
+            docGenerator: function basicGroupDocGenerator(i) {
+                return {_id: i, groupKey: Math.floor(i / groupSize)};
+            },
+            pipeline: [{
+                $group: {
+                    _id: "$groupKey",
+                    lastVals: {$lastN: {n: n, input: "$_id"}}
+                }
+            }]
+        });
+
+        /**
+         * Test case which splits 'nDocs' documents into partitions of 'groupSize' documents.
+         * For each document within each partition, we take the first 'n' documents over a
+         * sliding window of at least 10 documents and up to 21 documents. This window
+         * consists of the 10 documents before the current document, the 10 documents after
+         * the current document, and the current document itself.
+         */
+        generateTestCase({
+            name: "SetWindowFields.First" + n + "WithPartitionsOfSize" + groupSize,
+            tags: ['>=5.2.0'],
+            nDocs: nDocs,
+            docGenerator: function basicGroupDocGenerator(i) {
+                return {_id: i, groupKey: Math.floor(i / groupSize)};
+            },
+            pipeline: [{
+                $setWindowFields: {
+                    sortBy: {_id: 1},
+                    partitionBy: "$groupKey",
+                    output: {
+                        firstVals: {
+                            $firstN: {n: n, input: "$_id"},
+                            window: {range: [-10, 10]}
+                        }
+                    }
+                }
+            }]
+        });
+
+        /**
+         * Test case which splits 'nDocs' documents into partitions of 'groupSize' documents.
+         * For each document within the partition, we take the last 10 documents
+         * over a sliding window of at least 10 documents and up to 21 documents. This
+         * window consists of the 10 documents before the current document, the 10
+         * documents after the current document, and the current document itself.
+         */
+        generateTestCase({
+            name: "SetWindowFields.Last" + n + "WithPartitionsOfSize" + groupSize,
+            tags: ['>=5.2.0'],
+            nDocs: nDocs,
+            docGenerator: function basicGroupDocGenerator(i) {
+                return {_id: i, groupKey: Math.floor(i / groupSize)};
+            },
+            pipeline: [{
+                $setWindowFields: {
+                    sortBy: {_id: 1},
+                    partitionBy: "$groupKey",
+                    output: {
+                        lastVals: {
+                            $lastN: {n: n, input: "$_id"},
+                            window: {range: [-10, 10]}
+                        }
+                    }
+                }
+            }]
+        });
+
+        /**
+         * Test cases similar to the minN/maxN group tests but for topN/bottomN. It splits
+         * 'nDocs' documents into groups of 'groupSize' documents and returns the 'n' most
+         * desired values in each group, Documents are arranged in either ascending or
+         * descending order so that the number of comparisons and evictions performed is
+         * maximized.
+         */
+        [
+            {name: "TopN", op: "$topN", direction: -1, n: n},
+            {name: "BottomN", op: "$bottomN", direction: 1, n: n}
+        ].forEach(({name, op, direction, n}) => {
+            topBottomTestCaseGenerator(name, op, direction, groupSize, nDocs, n)
+        });
+    }
+    // Same as for topN/bottomN, but for top/bottom, we don't want to generate test cases for
+    // varying values of 'n' because these accumulators will only ever return a single value.
+    [
+        {name: "Top", op: "$top", direction: -1},
+        {name: "Bottom", op: "$bottom", direction: 1},
+    ].forEach(({name, op, direction, n = undefined}) => {
+        topBottomTestCaseGenerator(name, op, direction, groupSize, nDocs, n)
+    });
+}
+
+/**
+ * Generates an array of 'arrSize' elements to be used for testing the performance of
  * $minN/$maxN/$firstN/$lastN as aggregation expressions. In particular, if we're testing $minN, we
  * generate an array whose elements are in descending order, and if we're testing $maxN, the
  * elements are in ascending order. This maximizes the number of comparisons made during expression
@@ -371,9 +656,9 @@ generateTestCase({
  *
  * @param: {Boolean} isDescending: true if we're generating an array in descending order.
  */
-function generateProjectArray(isDescending){
+function generateProjectArray(isDescending, arrSize){
     var arr = [];
-    for(var idx = 0; idx < 50; ++idx){
+    for(var idx = 0; idx < arrSize; ++idx){
         arr.push(isDescending ? -idx : idx);
     }
     return arr;
@@ -387,191 +672,70 @@ function generateProjectArray(isDescending){
  * by the populatorGenerator when generating documents.
  * @param {Array} arr - Array to add to each document.
  */
-function accumulatorNExpressionDocGenerator(i, arr){
+function accumulatorNExpressionDocGenerator(i, arr) {
     return {_id: i, array: arr};
 }
 
-/**
- * Test case which, for each document, evaluates taking the minimum 10 values of an array whose 50
- * elements are in descending order.
- */
-generateTestCase({
-    name: "Project.MinN",
-    tags: ['>=5.2.0'],
-    nDocs: 1000,
-    docGenerator: function generator(i) {
-        return accumulatorNExpressionDocGenerator(i, generateProjectArray(true));
-    },
-    pipeline: [{$project: {_id: 0, output: {$minN: {n: 10, input: "$array"}}}}]
-});
+for(const arrSize of [50, 250, 500]) {
+    for(const n of [10, 50]) {
+        const nDocs = 1000;
+        /**
+         * Test case which, for each document, evaluates taking the minimum 'n'' values of an array
+         * whose 'arrSize' elements are in descending order.
+         */
+        generateTestCase({
+            name: "Project.Min" + n + "WithArraysOfSize" + arrSize,
+            tags: ['>=5.2.0'],
+            nDocs: nDocs,
+            docGenerator: function generator(i) {
+                return accumulatorNExpressionDocGenerator(i, generateProjectArray(true, arrSize));
+            },
+            pipeline: [{$project: {_id: 0, output: {$minN: {n: n, input: "$array"}}}}]
+        });
 
-/**
- * Test case which, for each document, evaluates taking the maximum 10 values of an array whose 50
- * elements are in ascending order.
- */
-generateTestCase({
-    name: "Project.MaxN",
-    tags: ['>=5.2.0'],
-    nDocs: 1000,
-    docGenerator: function generator(i) {
-        return accumulatorNExpressionDocGenerator(i, generateProjectArray(false));
-    },
-    pipeline: [{$project: {_id: 0, output: {$maxN: {n: 10, input: "$array"}}}}]
-});
+        /**
+         * Test case which, for each document, evaluates taking the maximum 'n' values of an array
+         * whose 'arrSize' elements are in ascending order.
+         */
+        generateTestCase({
+            name: "Project.Max" + n + "WithArraysOfSize" + arrSize,
+            tags: ['>=5.2.0'],
+            nDocs: nDocs,
+            docGenerator: function generator(i) {
+                return accumulatorNExpressionDocGenerator(i, generateProjectArray(false, arrSize));
+            },
+            pipeline: [{$project: {_id: 0, output: {$maxN: {n: n, input: "$array"}}}}]
+        });
 
-/**
- * Test case which splits 1000 documents into 10 partitions of 100. For each document within the
- * partition, we take the minimum 10 documents over a sliding window of at least 10 documents and up
- * to 21 documents. This window consists of the 10 documents before the current document, the 10
- * documents after the current document, and the current document itself.
- */
-generateTestCase({
-    name: "SetWindowFields.TenPartitionsWithMinN",
-    tags: ['>=5.2.0'],
-    nDocs: 1000,
-    docGenerator: minNDocGenerator,
-    pipeline: [{$setWindowFields: {sortBy: {_id: 1}, partitionBy: "$_idMod10",
-            output: {minVals: {$minN: {n: 10, input: "$_id"}, window: {range: [-10, 10]}}}}}]
-});
+        /**
+         * Test case which, for each document, evaluates taking the first 'n' values of an array of
+         * 'arrSize' elements.
+         */
+        generateTestCase({
+            name: "Project.First" + n + "WithArraysOfSize" + arrSize,
+            tags: ['>=5.2.0'],
+            nDocs: nDocs,
+            docGenerator: function generator(i) {
+                return accumulatorNExpressionDocGenerator(i, generateProjectArray(false, arrSize));
+            },
+            pipeline: [{$project: {_id: 0, output: {$firstN: {n: n, input: "$array"}}}}]
+        });
 
-/**
- * Test case which splits 1000 documents into 10 partitions of 100. For each document within the
- * partition, we take the maximum 10 documents over a sliding window of at least 10 documents and up
- * to 21 documents. This window consists of the 10 documents before the current document, the 10
- * documents after the current document, and the current document itself.
- */
-generateTestCase({
-    name: "SetWindowFields.TenPartitionsWithMaxN",
-    tags: ['>=5.2.0'],
-    nDocs: 1000,
-    docGenerator: maxNDocGenerator,
-    pipeline: [{$setWindowFields: {sortBy: {_id: 1}, partitionBy: "$_idMod10",
-            output: {maxVals: {$maxN: {n: 10, input: "$_id"}, window: {range: [-10, 10]}}}}}]
-});
-
-/**
- * Test case which splits 1000 documents into 10 groups of 100 and returns the first 10 values in
- * each group.
- */
-generateTestCase({
-    name: "Group.TenGroupsWithFirstN",
-    tags: ['>=5.2.0'],
-    nDocs: 1000,
-    docGenerator: function basicGroupDocGenerator(i) {
-        return {_id: i, _idMod10: i % 10};
-    },
-    pipeline: [{$group: {_id: "$_idMod10", firstVals: {$firstN: {n: 10, input: "$_id"}}}}]
-});
-
-/**
- * Test case which splits 1000 documents into 10 groups of 100 and returns the last 10 values in
- * each group.
- */
-generateTestCase({
-    name: "Group.TenGroupsWithLastN",
-    tags: ['>=5.2.0'],
-    nDocs: 1000,
-    docGenerator: function basicGroupDocGenerator(i) {
-        return {_id: i, _idMod10: i % 10};
-    },
-    pipeline: [{$group: {_id: "$_idMod10", lastVals: {$lastN: {n: 10, input: "$_id"}}}}]
-});
-
-/**
- * Test case which, for each document, evaluates taking the first 10 values of an array of 50
- * elements.
- */
-generateTestCase({
-    name: "Project.FirstN",
-    tags: ['>=5.2.0'],
-    nDocs: 1000,
-    docGenerator: function generator(i) {
-        return accumulatorNExpressionDocGenerator(i, generateProjectArray(false));
-    },
-    pipeline: [{$project: {_id: 0, output: {$firstN: {n: 10, input: "$array"}}}}]
-});
-
-/**
- * Test case which, for each document, evaluates taking the last 10 values of an array of 50
- * elements.
- */
-generateTestCase({
-    name: "Project.LastN",
-    tags: ['>=5.2.0'],
-    nDocs: 1000,
-    docGenerator: function generator(i){
-        return accumulatorNExpressionDocGenerator(i, generateProjectArray(false));
-    },
-    pipeline: [{$project: {_id: 0, output: {$lastN: {n: 10, input: "$array"}}}}]
-});
-
-/**
- * Test case which splits 1000 documents into 10 partitions of 100. For each document within the
- * partition, we take the first 10 documents over a sliding window of at least 10 documents and up
- * to 21 documents. This window consists of the 10 documents before the current document, the 10
- * documents after the current document, and the current document itself. For $firstN, this means
- * that the first 11 windows will produce an identical result because the first 10 values are the
- * same over a window consisting of documents 0 through 10 and a window consisting of documents 0
- * through 21 (the result changes only when document 0 is no longer in the current window).
- */
-generateTestCase({
-    name: "SetWindowFields.TenPartitionsWithFirstN",
-    tags: ['>=5.2.0'],
-    nDocs: 1000,
-    docGenerator: function basicGroupDocGenerator(i) {
-        return {_id: i, _idMod10: i % 10};
-    },
-    pipeline: [{$setWindowFields: {sortBy: {_id: 1}, partitionBy: "$_idMod10",
-            output: {firstVals: {$firstN: {n: 10, input: "$_id"}, window: {range: [-10, 10]}}}}}]
-});
-
-/**
- * Test case which splits 1000 documents into 10 partitions of 100. For each document within the
- * partition, we take the last 10 documents over a sliding window of at least 10 documents and up
- * to 21 documents. This window consists of the 10 documents before the current document, the 10
- * documents after the current document, and the current document itself.
- */
-generateTestCase({
-    name: "SetWindowFields.TenPartitionsWithLastN",
-    tags: ['>=5.2.0'],
-    nDocs: 1000,
-    docGenerator: function basicGroupDocGenerator(i) {
-        return {_id: i, _idMod10: i % 10};
-    },
-    pipeline: [{$setWindowFields: {sortBy: {_id: 1}, partitionBy: "$_idMod10",
-            output: {lastVals: {$lastN: {n: 10, input: "$_id"}, window: {range: [-10, 10]}}}}}]
-});
-
-/**
- * Test cases similar to the minN/maxN group tests but for top/bottom/topN/bottomN. It splits 1000
- * documents into 10 groups of 100 and returns the 10 most desired values in each group, or just one
- * in the cases of top/bottom. Documents are arranged in either ascending or decending order so that
- * the number of comparisons and evictions performed is maximized.
- */
-[
-    {name: "Top", op: "$top", direction: -1},
-    {name: "Bottom", op: "$bottom", direction: 1},
-    {name: "TopN", op: "$topN", direction: -1, n: 10},
-    {name: "BottomN", op: "$bottomN", direction: 1, n: 10}
-].forEach(({name, op, direction, n}) => {
-    generateTestCase({
-        name: "Group.TenGroupsWith" + name,
-        tags: ['>=5.2.0'],
-        nDocs: 1000,
-        docGenerator: (i) => ({
-            // For bottomN/bottom direction is 1 and -1 for topN/top to maximize the amount of
-            // inserts to the accumulators internal container, similar to Group.TenGroupsWithMaxN
-            _id: i * direction,
-            _idMod10: i % 10,
-            // This is just a value to output later, it doesn't really matter what it is.
-            _idMod7: i % 7
-        }),
-        pipeline: [{$group: {_id: "$_idMod10", result: {[op]: Object.assign(
-            {sortBy: {_id: 1}, output: "$_idMod7"},
-            n ? {n} : {}, // topN and bottomN also need an extra n parameter.
-        )}}}]
-    });
-});
+        /**
+         * Test case which, for each document, evaluates taking the last 'n' values of an array of
+         * 'arrSize' elements.
+         */
+        generateTestCase({
+            name: "Project.Last" + n + "WithArraysOfSize" + arrSize,
+            tags: ['>=5.2.0'],
+            nDocs: nDocs,
+            docGenerator: function generator(i) {
+                return accumulatorNExpressionDocGenerator(i, generateProjectArray(false, arrSize));
+            },
+            pipeline: [{$project: {_id: 0, output: {$lastN: {n: n, input: "$array"}}}}]
+        });
+    }
+}
 
 generateTestCase({
     name: "Group.TenGroupsWithSumJs",
@@ -2250,7 +2414,7 @@ generateTestCaseWithLargeDataset({
 });
 
 // $addToSet
-// TODO: Tests with larger accumulated sets (e.g. [{$group: {_id: "$a", res: {$addToSet: "$i"}}}]) 
+// TODO: Tests with larger accumulated sets (e.g. [{$group: {_id: "$a", res: {$addToSet: "$i"}}}])
 // would require 'allowDiskUse()'. Need to figure out whether it's possible to run them via benchrun.
 generateTestCaseWithLargeDataset({
     name: "Group.AddToSetAccTopFieldSmallResultingSet_LL10",
@@ -2315,7 +2479,7 @@ generateTestCaseWithLargeDataset({
     name: "Group.MultipleAccDiffTopFieldsStress_LL10",
     docGenerator: largeDoc,
     pipeline: [
-        {$group: {_id: "$a", 
+        {$group: {_id: "$a",
             o1: {$min: "$b"}, o2: {$max: "$c"}, o3: {$avg: "$d"},
             o4: {$sum: "$g"}, o5: {$first: "$h"}, o6: {$last: "$i"},
             o7: {$sum: "$bb"}, o8: {$first: "$cc"}, o9: {$last: "$dd"},
@@ -2327,7 +2491,7 @@ generateTestCaseWithLargeDataset({
     name: "Group.MultipleAccSameTopFieldStress_LL10",
     docGenerator: largeDoc,
     pipeline: [
-        {$group: {_id: "$a", 
+        {$group: {_id: "$a",
             o1: {$min: "$c"}, o2: {$max: "$c"}, o3: {$avg: "$c"},
             o4: {$sum: "$c"}, o5: {$first: "$c"}, o6: {$last: "$c"},
             o7: {$sum: "$c"}, o8: {$first: "$c"}, o9: {$last: "$c"},
@@ -2339,7 +2503,7 @@ generateTestCaseWithLargeDataset({
     name: "Group.MultipleAccSameSubFieldStress_LL10",
     docGenerator: largeDoc,
     pipeline: [
-        {$group: {_id: "$a", 
+        {$group: {_id: "$a",
             o1: {$min: "$e.c"}, o2: {$max: "$e.c"}, o3: {$avg: "$e.c"},
             o4: {$sum: "$e.c"}, o5: {$first: "$e.c"}, o6: {$last: "$e.c"},
             o7: {$sum: "$e.c"}, o8: {$first: "$e.c"}, o9: {$last: "$e.c"},
@@ -2397,7 +2561,7 @@ function generateTestCaseWithLargeDatasetAndIndexes(options) {
 // Grouping on the indexed field with no accumulators creates DISTINCT_SCAN plan with a
 // $groupByDistinctScan stage, that currently isn't being lowered into SBE.
 generateTestCaseWithLargeDatasetAndIndexes({
-    name: "Group.NoAccTopField_DistinctScan_LL10", 
+    name: "Group.NoAccTopField_DistinctScan_LL10",
     docGenerator: largeDoc,
     indexes: [{"a":1}],
     pipeline: [{$group: {_id: "$a"}}]
