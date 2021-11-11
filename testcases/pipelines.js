@@ -2373,47 +2373,43 @@ generateTestCaseWithLargeDatasetAndIndexes({
 });
 
 // The $match stage triggers IXSCAN plans, without it, the only considered plan is COLLSCAN.
+// The filter might considerably reduce the size of the data the aggregation runs on, so we try with
+// filters that have artifitially low selectivity as well.
 generateTestCaseWithLargeDatasetAndIndexes({
-    name: "Group.NoAccTopField_SingleIndex_LL10",
+    name: "Group.NoAccTopField_SingleIndex_LL",
     docGenerator: largeDoc,
-    indexes: [{"b":1}],
-    pipeline: [{$match: {b: 42}}, {$group: {_id: "$a"}}]
+    indexes: [{"a":1}],
+    pipeline: [{$match: {a: 7}}, {$group: {_id: "$b"}}]
 });
 generateTestCaseWithLargeDatasetAndIndexes({
-    name: "Group.NoAccTopField_MultipleIndexes_LL10",
+    name: "Group.NoAccTopField_SingleIndex_LowSelectivityMatch_LL",
     docGenerator: largeDoc,
-    indexes: [{"b":1}, {"b":1, "c":1}],
-    pipeline: [{$match: {b: 42}}, {$group: {_id: "$a"}}]
+    indexes: [{"a":1}],
+    pipeline: [{$match: {a: {$gt: 1}}}, {$group: {_id: "$b"}}]
 });
 generateTestCaseWithLargeDatasetAndIndexes({
-    name: "Group.SumAccTopField_SingleIndex_LL10",
+    name: "Group.NoAccTopField_MultipleIndexes_LL",
     docGenerator: largeDoc,
-    indexes: [{"b":1}],
-    pipeline: [{$match: {b: 42}}, {$group: {_id: "$a", res: {$sum: "$c"}}}]
+    indexes: [{"a":1}, {"a":1, "c":1}],
+    pipeline: [{$match: {a: 7}}, {$group: {_id: "$b"}}]
 });
 generateTestCaseWithLargeDatasetAndIndexes({
-    name: "Group.SumAccTopField_MultipleIndexes_LL10",
+    name: "Group.NoAccTopField_MultipleIndexes_LowSelectivityMatch_LL",
     docGenerator: largeDoc,
-    indexes: [{"b":1}, {"b":1, "c":1}],
-    pipeline: [{$match: {b: 42}}, {$group: {_id: "$a", res: {$sum: "$c"}}}]
+    indexes: [{"a":1}, {"a":1, "c":1}],
+    pipeline: [{$match: {a: {$gt: 1}}}, {$group: {_id: "$b"}}]
 });
 generateTestCaseWithLargeDatasetAndIndexes({
-    name: "Group.MultipleAccSameTopField_SingleIndex_LL10",
+    name: "Group.SumAccTopField_SingleIndex_LL",
     docGenerator: largeDoc,
-    indexes: [{"b":1}],
-    pipeline: [
-        {$match: {b: 42}},
-        {$group: {_id: "$a", min: {$min: "$c"}, max: {$max: "$c"}, avg: {$avg: "$c"}}}
-    ]
+    indexes: [{"a":1}],
+    pipeline: [{$match: {a: 7}}, {$group: {_id: "$b", res: {$sum: "$c"}}}]
 });
 generateTestCaseWithLargeDatasetAndIndexes({
-    name: "Group.MultipleAccSameSubField_SingleIndex_LL10",
+    name: "Group.SumAccTopField_SingleIndex_LowSelectivityMatch_LL",
     docGenerator: largeDoc,
-    indexes: [{"b":1}],
-    pipeline: [
-        {$match: {b: 42}},
-        {$group: {_id: "$a", min: {$min: "$e.c"}, max: {$max: "$e.c"}, avg: {$avg: "$e.c"}}}
-    ]
+    indexes: [{"a":1}],
+    pipeline: [{$match: {a: {$gt: 1}}}, {$group: {_id: "$b", res: {$sum: "$c"}}}]
 });
 })();
 

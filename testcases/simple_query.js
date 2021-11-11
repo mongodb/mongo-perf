@@ -1063,10 +1063,22 @@ if (typeof(tests) !== "object") {
         query: {"a": 7}
     });
     addTestCaseWithLargeDatasetAndIndexes({
+        name: "PointQuery_SingleIndex_LowSelectivityMatch_LL", 
+        docGenerator: largeDoc,
+        indexes: [{"a":1}],
+        query: {"a": {$gt: 1}}
+    });
+    addTestCaseWithLargeDatasetAndIndexes({
         name: "PointQuery_MultipleIndexes_LL", 
         docGenerator: largeDoc,
         indexes: [{"a":1}, {"b":1}, {"a":1, "b":1}],
         query: {"a": 7, "b":742}
+    });
+    addTestCaseWithLargeDatasetAndIndexes({
+        name: "PointQuery_MultipleIndexes_LowSelectivityMatch_LL", 
+        docGenerator: largeDoc,
+        indexes: [{"a":1}, {"b":1}, {"a":1, "b":1}],
+        query: {"a": {$gt: 1}, "b": {$lt: 900}}
     });
     addTestCaseWithLargeDatasetAndIndexes({
         name: "PointQuerySubField_SingleIndex_LL", 
@@ -1075,9 +1087,9 @@ if (typeof(tests) !== "object") {
         query: {"e.a": 7}
     });
     addTestCaseWithLargeDatasetAndIndexes({
-        name: "PointQuerySubFields_MultipleIndexes_LL", 
+        name: "PointQuerySubField_SingleIndex_LowSelectivityMatch_LL", 
         docGenerator: largeDoc,
-        indexes: [{"e.a":1}, {"e.b":1}, {"e.a":1, "e.b":1}],
-        query: {"e.a": 7, "e.b":742}
+        indexes: [{"e.a":1}],
+        query: {"e.a": {$gt: 1}}
     });
 }());
