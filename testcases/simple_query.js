@@ -1036,4 +1036,60 @@ if (typeof(tests) !== "object") {
         docGenerator: smallDoc,
         op: {op: "find", query: {}, filter: projectWithArithExpressions}
     });
+
+    // Tests: indexed plans
+    let dropIndexesAndCaches = function(collection) {
+        collection.dropIndexes();
+        collection.getPlanCache().clear();
+    }
+    let createIndexes = function(collection, indexes) {
+        indexes.forEach(function(index) {
+            assert.commandWorked(collection.createIndex(index));
+        });
+    }
+    function addTestCaseWithLargeDatasetAndIndexes(options) {
+        options.pre = function(collection) {
+            dropIndexesAndCaches(collection);
+            createIndexes(collection, options.indexes);
+        };
+        options.post = dropIndexesAndCaches;
+        addTestCaseWithLargeDataset(options);
+    }
+
+    addTestCaseWithLargeDatasetAndIndexes({
+        name: "PointQuery_SingleIndex_LL", 
+        docGenerator: largeDoc,
+        indexes: [{"a":1}],
+        query: {"a": 7}
+    });
+    addTestCaseWithLargeDatasetAndIndexes({
+        name: "RangeQuery_SingleIndex_LowSelectivityMatch_LL", 
+        docGenerator: largeDoc,
+        indexes: [{"a":1}],
+        query: {"a": {$gt: 1}}
+    });
+    addTestCaseWithLargeDatasetAndIndexes({
+        name: "PointQuery_MultipleIndexes_LL", 
+        docGenerator: largeDoc,
+        indexes: [{"a":1}, {"b":1}, {"a":1, "b":1}],
+        query: {"a": 7, "b":742}
+    });
+    addTestCaseWithLargeDatasetAndIndexes({
+        name: "RangeQuery_MultipleIndexes_LowSelectivityMatch_LL", 
+        docGenerator: largeDoc,
+        indexes: [{"a":1}, {"b":1}, {"a":1, "b":1}],
+        query: {"a": {$gt: 1}, "b": {$lt: 900}}
+    });
+    addTestCaseWithLargeDatasetAndIndexes({
+        name: "PointQuerySubField_SingleIndex_LL", 
+        docGenerator: largeDoc,
+        indexes: [{"e.a":1}],
+        query: {"e.a": 7}
+    });
+    addTestCaseWithLargeDatasetAndIndexes({
+        name: "RangeQuerySubField_SingleIndex_LowSelectivityMatch_LL", 
+        docGenerator: largeDoc,
+        indexes: [{"e.a":1}],
+        query: {"e.a": {$gt: 1}}
+    });
 }());
