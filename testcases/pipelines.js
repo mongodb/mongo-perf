@@ -545,7 +545,7 @@ generateTestCase({
 /**
  * Test cases similar to the minN/maxN group tests but for top/bottom/topN/bottomN. It splits 1000
  * documents into 10 groups of 100 and returns the 10 most desired values in each group, or just one
- * in the cases of top/bottom. documents are arranged in either ascending or decending order so that
+ * in the cases of top/bottom. Documents are arranged in either ascending or decending order so that
  * the number of comparisons and evictions performed is maximized.
  */
 [
