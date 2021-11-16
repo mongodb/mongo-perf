@@ -542,6 +542,37 @@ generateTestCase({
             output: {lastVals: {$lastN: {n: 10, input: "$_id"}, window: {range: [-10, 10]}}}}}]
 });
 
+/**
+ * Test cases similar to the minN/maxN group tests but for top/bottom/topN/bottomN. It splits 1000
+ * documents into 10 groups of 100 and returns the 10 most desired values in each group, or just one
+ * in the cases of top/bottom. Documents are arranged in either ascending or decending order so that
+ * the number of comparisons and evictions performed is maximized.
+ */
+[
+    {name: "Top", op: "$top", direction: -1},
+    {name: "Bottom", op: "$bottom", direction: 1},
+    {name: "TopN", op: "$topN", direction: -1, n: 10},
+    {name: "BottomN", op: "$bottomN", direction: 1, n: 10}
+].forEach(({name, op, direction, n}) => {
+    generateTestCase({
+        name: "Group.TenGroupsWith" + name,
+        tags: ['>=5.2.0'],
+        nDocs: 1000,
+        docGenerator: (i) => ({
+            // For bottomN/bottom direction is 1 and -1 for topN/top to maximize the amount of
+            // inserts to the accumulators internal container, similar to Group.TenGroupsWithMaxN
+            _id: i * direction,
+            _idMod10: i % 10,
+            // This is just a value to output later, it doesn't really matter what it is.
+            _idMod7: i % 7
+        }),
+        pipeline: [{$group: {_id: "$_idMod10", result: {[op]: Object.assign(
+            {sortBy: {_id: 1}, output: "$_idMod7"},
+            n ? {n} : {}, // topN and bottomN also need an extra n parameter.
+        )}}}]
+    });
+});
+
 generateTestCase({
     name: "Group.TenGroupsWithSumJs",
     tags: ['js', '>=4.3.4'],
