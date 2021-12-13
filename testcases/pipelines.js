@@ -575,7 +575,7 @@ generateTestCase({
 
 /**
  * Test cases similar to the $minN/$maxN window function tests but for $top/$bottom/$topN/$bottomN.
- * This test calculates a rolling leader-board/looser-board so you can see who is the best and worst
+ * This test calculates a rolling leader-board/loser-board so you can see who is the best and worst
  * golf players over time. The window is over the last 20 games and it picks the top or bottom
  * 20 players for each window with $topN/$bottomN, or single best/worst player of the window for
  * $top/$bottomN. There are 3 divisions each with 20 players.
@@ -587,7 +587,7 @@ generateTestCase({
     {name: "BottomN", op: "$bottomN", n: 5}
 ].forEach(({name, op, n}) => {
     generateTestCase({
-        name: "SetWindowFields.TenPartitionsWith" + name,
+        name: "SetWindowFields.ThreePartitionsWith" + name,
         tags: ['>=5.2.0'],
         nDocs: 1000,
         docGenerator: (i) => ({
