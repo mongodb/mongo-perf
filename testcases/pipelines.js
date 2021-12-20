@@ -2442,5 +2442,90 @@ generateTestCaseWithLargeDatasetAndIndexes({
     indexes: [{"a":1}],
     pipeline: [{$match: {a: {$gt: 1}}}, {$group: {_id: "$b", res: {$sum: "$c"}}}]
 });
+
+/**
+ * Generates an array of 'numElements' elements to be used for testing the performance of the
+ * $sortArray aggregation expression. Depending on the sort direction, we specifically generate
+ * the array with elements in descending order or ascending order to maximize the number of
+ * comparisons made during expression evaluation to sort the underlying array.
+ *
+ * @param {Number} numElements: size of the array to generate and later sort.
+ * @param {Boolean} isDescending: true if we're generating an array in descending order.
+ * @param {String} variant: controls what type of data the array holds - either 'numbers', 
+ * 'strings', or 'objects'.
+ */
+ function generateArrayForSortArray(numElements, isDescending, variant){
+    let arr = [];
+    for(let idx = 0; idx < numElements; ++idx){
+        let arrVal = isDescending ? -idx : idx;
+        if (variant === "numbers") {
+            arr.push(arrVal);
+        } else if (variant === "strings") {
+            arr.push(arrVal.toString());
+        } else if (variant === "objects") {
+            arr.push({
+                a: { b: { c: arrVal } }
+            });
+        }
+    }
+    return arr;
+}
+
+/**
+ * Function which generates a document containing an array to be used when evaluating $sortArray.
+ */
+function sortArrayDocGenerator(i, arr){
+    return {_id: i, array: arr};
+}
+
+/**
+ * Function to generate a unique test case name when evaluating $sortArray with different number of
+ * elements and sort direction.
+ */
+function buildSortArrayTestCaseName(base, numElements, direction) {
+    const dirString = direction === 1 ? "Asc" : "Desc";
+    return base + "_" + numElements.toString() + "_" + dirString;
+}
+
+/**
+ * A series of generated test cases for evaluating $sortArray using ascending/descending sort
+ * directions and by sorting a varying number of elements using the expression in the pipeline.
+ */
+[-1, 1].forEach(direction => {
+    // In order to maximize the number of comparison operations, we generate the raw array
+    // in ascending order when we are sorting descending (-1) and in descending order if we
+    // are looking to sort in ascending order (1).
+    const shouldGenerateArrayInDescOrder = direction === 1;
+
+    [10, 100].forEach(numElements => {
+        generateTestCase({
+            name: buildSortArrayTestCaseName("Project.SortArray", numElements, direction),
+            tags: ['>=5.2.0'],
+            docGenerator: function generator(i) {
+                return sortArrayDocGenerator(i, generateArrayForSortArray(numElements, shouldGenerateArrayInDescOrder, "numbers"));
+            },
+            pipeline: [{$project: {_id: 0, output: {$sortArray: {input: "$array", sortBy: direction}}}}]
+        });
+
+        generateTestCase({
+            name: buildSortArrayTestCaseName("Project.SortArray_StringArray", numElements, direction),
+            tags: ['>=5.2.0'],
+            docGenerator: function generator(i) {
+                return sortArrayDocGenerator(i, generateArrayForSortArray(numElements, shouldGenerateArrayInDescOrder, "strings"));
+            },
+            pipeline: [{$project: {_id: 0, output: {$sortArray: {input: "$array", sortBy: direction}}}}]
+        });
+
+        // Test cases with arrays of objects.
+        generateTestCase({
+            name: buildSortArrayTestCaseName("Project.SortArray_ObjectArray", numElements, direction),
+            tags: ['>=5.2.0'],
+            docGenerator: function generator(i) {
+                return sortArrayDocGenerator(i, generateArrayForSortArray(numElements, shouldGenerateArrayInDescOrder, "objects"));
+            },
+            pipeline: [{$project: {_id: 0, output: {$sortArray: {input: "$array", sortBy: {"a.b.c": direction}}}}}]
+        });
+    });
+});
 })();
 
