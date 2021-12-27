@@ -384,7 +384,7 @@ function topBottomTestCaseGenerator(name, op, direction, groupSize, nDocs, n = u
         docGenerator: (i) => topBottomDocGenerator(groupSize, direction, i),
         pipeline: [{$group: {_id: "$groupKey", result: {[op]: Object.assign(
                         {sortBy: {_id: 1}, output: "$_idMod7"},
-                        n ? {n} : {}, // topN and bottomN also need an extra n parameter.
+                        n ? {n} : {} // topN and bottomN also need an extra n parameter.
                     )}}}]
     });
 }
@@ -396,9 +396,9 @@ function topBottomTestCaseGenerator(name, op, direction, groupSize, nDocs, n = u
  * dimensions: {groupSize: 100, n: 10}, {groupSize: 100, n: 50}, {groupSize: 250, n: 10},
  * {groupSize: 250, n: 50}.
  */
-for (const groupSize of [100, 250]) {
+for (let groupSize of [100, 250]) {
     const nDocs = 10 * 1000;
-    for (const n of [10, 50]) {
+    for (let n of [10, 50]) {
         /**
          * This aggregation returns the top 'n' players from each game (sorted by score). It is
          * able to do this by leveraging an index on {game: 1, score: -1}.
@@ -642,7 +642,7 @@ for (const groupSize of [100, 250]) {
     [
         {name: "Top", op: "$top", direction: -1},
         {name: "Bottom", op: "$bottom", direction: 1},
-    ].forEach(({name, op, direction, n = undefined}) => {
+    ].forEach(({name, op, direction, n}) => {
         topBottomTestCaseGenerator(name, op, direction, groupSize, nDocs, n)
     });
 }
@@ -676,8 +676,8 @@ function accumulatorNExpressionDocGenerator(i, arr) {
     return {_id: i, array: arr};
 }
 
-for(const arrSize of [50, 250, 500]) {
-    for(const n of [10, 50]) {
+for(let arrSize of [50, 250, 500]) {
+    for(let n of [10, 50]) {
         const nDocs = 1000;
         /**
          * Test case which, for each document, evaluates taking the minimum 'n'' values of an array
