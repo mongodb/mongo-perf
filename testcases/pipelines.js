@@ -737,53 +737,59 @@ for(const arrSize of [50, 250, 500]) {
     }
 }
 
-for (const groupSize of [100, 250]) {
-    const nDocs = 10 * 1000;
-    for (const n of [10, 50]) {
 /**
- * Test cases similar to the $minN/$maxN window function tests but for $top/$bottom/$topN/$bottomN.
- * This test calculates a rolling leader-board/loser-board so you can see who is the best and worst
- * golf players over time. The window is over the last 20 games and it picks the top or bottom
- * 20 players for each window with $topN/$bottomN, or single best/worst player of the window for
- * $top/$bottomN. Each division has n * 2 players.
+ * These tests are paramterized on group size and 'n'.
  */
-[
-    {name: "Top", op: "$top"},
-    {name: "Bottom", op: "$bottom"},
-    {name: "TopN", op: "$topN", n},
-    {name: "BottomN", op: "$bottomN", n}
-].forEach(({name, op, n}) => {
-    const players = n * 2;
+for (let groupSize of [100, 500]) {
+    const nDocs = 10 * 1000;
     const divisions = parseInt(nDocs / groupSize);
-    generateTestCase({
-        name: "SetWindowFields.PartitionsSizeOf" + groupSize + "With" + name + (n ? "AndN" + n : ""),
-        tags: ['>=5.2.0'],
-        nDocs,
-        docGenerator: (i) => ({
-            _id: i,
-            // The window function version always inserts so we don't need a specific direction like
-            // in the group tests. For testing purposes players always get worse with time to
-            // maximize comparisons.
-            score: i,
-            // Dividing i by players gives n * 2 players to each division at a time. If we didn't do this
-            // division1 would have all of player 1's games  and division2 would have all of player 2's games, etc...
-            division: parseInt(i / players) % nDivisions,
-            playerId: i % (players * divisions)
-        }),
-        pipeline: [{$setWindowFields: {
-            sortBy: {_id: 1},
-            partitionBy: "$division",
-            output: {vals: {
-                [op]: Object.assign(
-                    {sortBy: {score: -1}, output: "$playerId"},
-                    n ? {n} : {} // topN and bottomN also need an extra n parameter.
-                ),
-                // Current game and the 19 that came before it
-                window: {range: [-19, 0]}
-            }}
-        }}]
-    });
-});
+    for (let n of [10, 50]) {
+        const players = n * 2;
+        /**
+         * Test cases are similar to the $minN/$maxN window function tests but for
+         * $top/$bottom/$topN/$bottomN. This test calculates a rolling leader-board/loser-board so
+         * you can see who is the best and worst golf players over time. The window is over the last
+         * 20 games in the division and it picks the top or bottom n players for each window with
+         * $topN/$bottomN, or single best/worst player of the window for $top/$bottomN. Each division
+         * has n * 2 players.
+         */
+        [
+            {name: "Top", op: "$top"},
+            {name: "Bottom", op: "$bottom"},
+            {name: "TopN", op: "$topN", n},
+            {name: "BottomN", op: "$bottomN", n}
+        ].forEach(({name, op, n}) => {
+            generateTestCase({
+                name: "SetWindowFields.PartitionsSizeOf" + groupSize + "With" + name + (n ? "AndN" + n : ""),
+                tags: ['>=5.2.0'],
+                nDocs,
+                docGenerator: (i) => ({
+                    _id: i,
+                    playerId: i % (players * divisions),
+                    // The window function version always inserts so we don't need a specific direction like
+                    // in the group tests. For testing purposes players always get worse with time to
+                    // maximize comparisons.
+                    score: i,
+                    // Work backwards to find the division this player should belong to.
+                    division: parseInt(i / players) % divisions
+                }),
+                pipeline: [{$setWindowFields: {
+                    sortBy: {_id: 1},
+                    partitionBy: "$division",
+                    output: {result: {
+                        [op]: Object.assign(
+                            {sortBy: {score: 1}, output: "$playerId"},
+                            n ? {n} : {} // topN and bottomN also need an extra n parameter.
+                        ),
+                        // Window has last 19 games and the current one. In the smallest case the
+                        // amount of players is 20 so a player is never compared against themself.
+                        window: {range: [-19, 0]}
+                    }}
+                }}]
+            });
+        });
+    }
+}
 
 generateTestCase({
     name: "Group.TenGroupsWithSumJs",
