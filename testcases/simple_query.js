@@ -581,7 +581,7 @@ if (typeof(tests) !== "object") {
             op: "find",
             query: {x: {"#RAND_INT_PLUS_THREAD": [0, 100]}},
             limit: 1,
-            filter: {x: 1, _id: 0}
+            filter: {x: 1, _id: 1}
         }
     });
 
