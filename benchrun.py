@@ -5,7 +5,7 @@ from tempfile import NamedTemporaryFile
 import datetime
 import sys
 import json
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import os
 
 
@@ -122,8 +122,8 @@ def main():
 
     for testfile in args.testfiles:
         if not os.path.exists(testfile):
-            print("A test file that was passed in does not exist: %s"
-                  % testfile)
+            print(("A test file that was passed in does not exist: %s"
+                  % testfile))
             sys.exit(1)
 
     if args.multidb < 1:
@@ -144,10 +144,10 @@ def main():
 
     auth = []
     using_auth = False
-    if isinstance(args.username, basestring) and isinstance(args.password, basestring):
+    if isinstance(args.username, str) and isinstance(args.password, str):
         auth = ["-u", args.username, "-p", args.password, "--authenticationDatabase", "admin"]
         using_auth = True
-    elif isinstance(args.username, basestring) or isinstance(args.password, basestring):
+    elif isinstance(args.username, str) or isinstance(args.password, str):
         print("Warning: You specified one of username or password, but not the other.")
         print("         Benchrun will continue without authentication.")
 
@@ -220,9 +220,9 @@ def main():
               ");")
 
     commands = '\n'.join(commands)
-    print commands
+    print(commands)
 
-    with NamedTemporaryFile(suffix='.js') as js_file:
+    with NamedTemporaryFile('w', suffix='.js') as js_file:
         js_file.write(commands)
         js_file.flush()
 
@@ -252,7 +252,7 @@ def main():
                 got_results = True
                 getting_results = False
             elif readout:
-                print line
+                print(line)
             elif not got_results and getting_results:
                 line_results += line
 
@@ -263,7 +263,7 @@ def main():
         json.dump(results_parsed, out, indent=4, separators=(',', ': '))
         out.close()
     else:
-        print json.dumps(results_parsed, indent=4, separators=(',', ': '))
+        print(json.dumps(results_parsed, indent=4, separators=(',', ': ')))
 
 if __name__ == '__main__':
     try:
