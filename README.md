@@ -7,7 +7,7 @@ This repo contains scripts to run benchmark tests for MongoDB.
 
 ### DEPENDENCIES:
 *General Benchmarking Dependencies*  
-* Python >= 2.7.X < 3.0  
+* Python >= 3.0  
 * mongo shell >= 2.7.7-pre- (at revision 881b3a97fb5080b4e5d5ce11ad016da73ea23931 or newer)  
 
 *Installing Python Dependencies*
