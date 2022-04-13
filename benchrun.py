@@ -229,7 +229,7 @@ def main():
         # Open a mongo shell subprocess and load necessary files.
         mongo_proc = Popen([args.shellpath, "--norc", "--quiet", js_file.name,
                            "--host", args.hostname, "--port", args.port] + auth,
-                           stdout=PIPE)
+                           stdout=PIPE, text=True)
 
         # Read test output.
         readout = False
