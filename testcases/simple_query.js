@@ -51,6 +51,8 @@ if (typeof(tests) !== "object") {
             indexes.forEach(function(indexSpec) {
                 assert.commandWorked(collection.createIndex(indexSpec));
             });
+
+            db.setProfilingLevel(1, {enableTelemetry: true});
         };
     }
 
