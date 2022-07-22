@@ -52,7 +52,10 @@ if (typeof(tests) !== "object") {
                 assert.commandWorked(collection.createIndex(indexSpec));
             });
 
-            db.setProfilingLevel(1, {enableTelemetry: true});
+            print("NICKZ enabling telemetry");
+            db.setProfilingLevel(1, {enableTelemetry: true, filter: {"command.find": {$exists: true}}});
+            assert.commandWorked(db.runCommand({profile: 1, clearTelemetry: 1}));
+            // db.setProfilingLevel(2);
         };
     }
 

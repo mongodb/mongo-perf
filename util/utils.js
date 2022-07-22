@@ -749,6 +749,14 @@ function runTests(
     }
     testResults['end'] = new Date();
     testResults['errors'] =  errors;
+
+    let testDB = db.getSiblingDB('test0');
+    const testName = "TwoInts";
+    print("NICKZ telemetry: " +
+          tojson(testDB.getCollection("Queries_" + testName + "0")
+                     .aggregate([{$planCacheStats: {telemetryStats: 1}}])
+                     .toArray()));
+    // print("NICKZ coll count: " + testDB.Queries_IntNonIdFindOne.find().itcount());
     // End delimiter for the useful output to be displayed.
     print("@@@END@@@");
 
