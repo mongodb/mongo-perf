@@ -240,7 +240,7 @@ if ((typeof tests === "undefined" ? "undefined" : typeof(tests)) != "object") {
             var rangeStart = Random.randInt(maxValue - 10);
 
             query[fieldList[i]] = {$gte: rangeStart, $lte: (rangeStart + 10)};
-            list.push({op: "find", query: {$query: query, $orderby: sort}});
+            list.push({op: "find", query, sort});
         }
         return list;
     }
