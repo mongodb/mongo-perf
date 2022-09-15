@@ -1069,6 +1069,12 @@ if (typeof(tests) !== "object") {
         query: {"a": {$gt: 1}}
     });
     addTestCaseWithLargeDatasetAndIndexes({
+        name: "RangeQuery_SingleIndex_MultiFields_LL",
+        docGenerator: largeDoc,
+        indexes: [{"a": 1, "b": 1}],
+        query: {"a": {$gt: 1}, "b": {$lt: 900}}
+    });
+    addTestCaseWithLargeDatasetAndIndexes({
         name: "PointQuery_MultipleIndexes_LL", 
         docGenerator: largeDoc,
         indexes: [{"a":1}, {"b":1}, {"a":1, "b":1}],
