@@ -847,6 +847,299 @@ if (typeof(tests) !== "object") {
     });
 
     /**
+     * Setup: Create a collection with scalar fields x, y with no index.
+     *
+     * Test: Sort the collection by one or two fields, with and without a limit.
+     */
+    addTestCase({
+        name: "SortNoLimitCollection1K_1Key",
+        tags: ["core", "sort"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 1000,
+        docs: function (i) {
+            return { x: Random.randInt(10000), y: Random.randInt(10000) };
+        },
+        op: {
+            op: "find",
+            sort: { y: 1 },
+        }
+    });
+    addTestCase({
+        name: "SortNoLimitCollection10K_1Key",
+        tags: ["core", "sort"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 10000,
+        docs: function (i) {
+            return { x: Random.randInt(10000), y: Random.randInt(10000) };
+        },
+        op: {
+            op: "find",
+            sort: { y: 1 },
+        }
+    });
+    addTestCase({
+        name: "SortNoLimitCollection100K_1Key",
+        tags: ["core", "sort"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 100000,
+        docs: function (i) {
+            return { x: Random.randInt(10000), y: Random.randInt(10000) };
+        },
+        op: {
+            op: "find",
+            sort: { y: 1 },
+        }
+    });
+
+    addTestCase({
+        name: "SortLimitOneCollection1K_1Key",
+        tags: ["core", "sort"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 1000,
+        docs: function (i) {
+            return { x: Random.randInt(10000), y: Random.randInt(10000) };
+        },
+        op: {
+            op: "find",
+            sort: { y: 1 },
+            limit: 1,
+        }
+    });
+    addTestCase({
+        name: "SortLimitOneCollection10K_1Key",
+        tags: ["core", "sort"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 10000,
+        docs: function (i) {
+            return { x: Random.randInt(10000), y: Random.randInt(10000) };
+        },
+        op: {
+            op: "find",
+            sort: { y: 1 },
+            limit: 1,
+        }
+    });
+    addTestCase({
+        name: "SortLimitOneCollection100K_1Key",
+        tags: ["core", "sort"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 100000,
+        docs: function (i) {
+            return { x: Random.randInt(10000), y: Random.randInt(10000) };
+        },
+        op: {
+            op: "find",
+            sort: { y: 1 },
+            limit: 1,
+        }
+    });
+
+    addTestCase({
+        name: "SortLimitHundredCollection1K_1Key",
+        tags: ["core", "sort"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 1000,
+        docs: function (i) {
+            return { x: Random.randInt(10000), y: Random.randInt(10000) };
+        },
+        op: {
+            op: "find",
+            sort: { y: 1 },
+            limit: 100,
+        }
+    });
+    addTestCase({
+        name: "SortLimitHundredCollection10K_1Key",
+        tags: ["core", "sort"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 10000,
+        docs: function (i) {
+            return { x: Random.randInt(10000), y: Random.randInt(10000) };
+        },
+        op: {
+            op: "find",
+            sort: { y: 1 },
+            limit: 100,
+        }
+    });
+    addTestCase({
+        name: "SortLimitHundredCollection100K_1Key",
+        tags: ["core", "sort"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 100000,
+        docs: function (i) {
+            return { x: Random.randInt(10000), y: Random.randInt(10000) };
+        },
+        op: {
+            op: "find",
+            sort: { y: 1 },
+            limit: 100,
+        }
+    });
+
+    addTestCase({
+        name: "SortNoLimitCollection1K_2Keys",
+        tags: ["core", "sort"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 1000,
+        docs: function (i) {
+            return { x: Random.randInt(10000), y: Random.randInt(10000) };
+        },
+        op: {
+            op: "find",
+            sort: { y: 1, x: 1 },
+        }
+    });
+    addTestCase({
+        name: "SortNoLimitCollection10K_2Keys",
+        tags: ["core", "sort"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 10000,
+        docs: function (i) {
+            return { x: Random.randInt(10000), y: Random.randInt(10000) };
+        },
+        op: {
+            op: "find",
+            sort: { y: 1, x: 1 },
+        }
+    });
+    addTestCase({
+        name: "SortNoLimitCollection100K_2Keys",
+        tags: ["core", "sort"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 100000,
+        docs: function (i) {
+            return { x: Random.randInt(10000), y: Random.randInt(10000) };
+        },
+        op: {
+            op: "find",
+            sort: { y: 1, x: 1 },
+        }
+    });
+
+    addTestCase({
+        name: "SortLimitOneCollection1K_2Keys",
+        tags: ["core", "sort"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 1000,
+        docs: function (i) {
+            return { x: Random.randInt(10000), y: Random.randInt(10000) };
+        },
+        op: {
+            op: "find",
+            sort: { y: 1, x: 1 },
+            limit: 1,
+        }
+    });
+    addTestCase({
+        name: "SortLimitOneCollection10K_2Keys",
+        tags: ["core", "sort"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 10000,
+        docs: function (i) {
+            return { x: Random.randInt(10000), y: Random.randInt(10000) };
+        },
+        op: {
+            op: "find",
+            sort: { y: 1, x: 1 },
+            limit: 1,
+        }
+    });
+    addTestCase({
+        name: "SortLimitOneCollection100K_2Keys",
+        tags: ["core", "sort"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 100000,
+        docs: function (i) {
+            return { x: Random.randInt(10000), y: Random.randInt(10000) };
+        },
+        op: {
+            op: "find",
+            sort: { y: 1, x: 1 },
+            limit: 1,
+        }
+    });
+
+    addTestCase({
+        name: "SortLimitHundredCollection1K_2Keys",
+        tags: ["core", "sort"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 1000,
+        docs: function (i) {
+            return { x: Random.randInt(10000), y: Random.randInt(10000) };
+        },
+        op: {
+            op: "find",
+            sort: { y: 1, x: 1 },
+            limit: 100,
+        }
+    });
+    addTestCase({
+        name: "SortLimitHundredCollection10K_2Keys",
+        tags: ["core", "sort"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 10000,
+        docs: function (i) {
+            return { x: Random.randInt(10000), y: Random.randInt(10000) };
+        },
+        op: {
+            op: "find",
+            sort: { y: 1, x: 1 },
+            limit: 100,
+        }
+    });
+    addTestCase({
+        name: "SortLimitHundredCollection100K_2Keys",
+        tags: ["core", "sort"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 100000,
+        docs: function (i) {
+            return { x: Random.randInt(10000), y: Random.randInt(10000) };
+        },
+        op: {
+            op: "find",
+            sort: { y: 1, x: 1 },
+            limit: 100,
+        }
+    });
+
+    /**
      * Setup: Create a collection with scalar fields x, y and an index on x, y.
      *
      * Test: Sort the collection by the y field. The sort can be computed based on the index,
