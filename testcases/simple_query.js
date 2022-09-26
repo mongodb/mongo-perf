@@ -854,7 +854,7 @@ if (typeof(tests) !== "object") {
      */
     for (const limit of [[null, 'NoLimit'], [1, 'LimitOne'], [100, 'LimitHundred']]) {
         for (const numdocs of [[1000, '1K'], [10000, '10K'], [100000, '100K']]) {
-            for (const sortKey of [[{ y: 1 }, '1Key'], [{ y: 1, x: 1 }, '2Key'], [{"z.w.j": 1}, '1PathKey']]) {
+            for (const sortKey of [[{ y: 1 }, '1Key'], [{ y: 1, x: 1 }, '2Key'], [{"z.w.j": 1}, '1PathKey3Components']]) {
                 var testcase = {
                     name: "Sort"+limit[1]+"Collection"+numdocs[1]+"_"+sortKey[1],
                     tags: ["core", "sort"],
