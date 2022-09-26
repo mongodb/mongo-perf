@@ -1037,6 +1037,15 @@ if (typeof(tests) !== "object") {
         op: {op: "find", query: {}, filter: projectWithArithExpressions}
     });
 
+    let projectWithSubtract = {
+        ba: {$subtract: ["$b", "$a"]}, cb: {$subtract: ["$c", "$b"]}, dc: {$subtract: ["$d", "$c"]},
+    };
+    addTestCaseWithLargeDataset({
+        name: "ProjectWithSubtract_CollScan_LS",
+        docGenerator: smallDoc,
+        op: {op: "find", query: {}, filter: projectWithSubtract}
+    });
+
     // Tests: indexed plans
     let dropIndexesAndCaches = function(collection) {
         collection.dropIndexes();
