@@ -1038,7 +1038,10 @@ if (typeof(tests) !== "object") {
     });
 
     let projectWithArithExpressions2 = {
-        ab: {$subtract: ["$b", "$a"]}, cd: {$multiply: ["$d", "$c"]},
+        an: {$abs: "$a"}, bn: {$mod: ["$b", 17]}, cn: {$floor: "$c"},
+        dl: {$ln: {$add: [{$abs: "$d"}, 1]}},
+        ab: {$add: ["$a", "$b"]}, cd: {$multiply: ["$c", "$d"]},
+        ba: {$subtract: ["$b", "$a"]}, dc: {$divide: ["$d", "$c"]},
     };
     addTestCaseWithLargeDataset({
         name: "ProjectWithArithExpressions2_CollScan_LS",
