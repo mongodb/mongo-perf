@@ -876,7 +876,7 @@ if (typeof(tests) !== "object") {
                     testcase.op['limit'] = limit[0];
                 }
                 addTestCase(testcase);
-            } 
+            }
         }
     }
 

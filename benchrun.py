@@ -222,41 +222,39 @@ def main():
     commands = '\n'.join(commands)
     print(commands)
 
-    js_file = NamedTemporaryFile('w+', suffix='.js', delete=False)
-    js_file.write(commands)
-    js_file.close()
+    with NamedTemporaryFile('w', suffix='.js') as js_file:
+        js_file.write(commands)
+        js_file.flush()
 
-    # Open a mongo shell subprocess and load necessary files.
-    mongo_proc = Popen([args.shellpath, "--norc", "--quiet", js_file.name,
-                        "--host", args.hostname, "--port", args.port] + auth,
-                        stdout=PIPE, text=True)
+        # Open a mongo shell subprocess and load necessary files.
+        mongo_proc = Popen([args.shellpath, "--norc", "--quiet", js_file.name,
+                           "--host", args.hostname, "--port", args.port] + auth,
+                           stdout=PIPE, text=True)
 
-    # Read test output.
-    readout = False
-    getting_results = False
-    got_results = False
-    line_results = ""
-    for line in iter(mongo_proc.stdout.readline, ''):
-        line = line.strip()
-        if line == "@@@START@@@":
-            readout = True
-            getting_results = False
-        elif line == "@@@END@@@":
-            readout = False
-            getting_results = False
-        elif line == "@@@RESULTS_START@@@":
-            readout = False
-            getting_results = True
-        elif line == "@@@RESULTS_END@@@":
-            readout = False
-            got_results = True
-            getting_results = False
-        elif readout:
-            print(line)
-        elif not got_results and getting_results:
-            line_results += line
-
-    os.unlink(js_file.name)
+        # Read test output.
+        readout = False
+        getting_results = False
+        got_results = False
+        line_results = ""
+        for line in iter(mongo_proc.stdout.readline, ''):
+            line = line.strip()
+            if line == "@@@START@@@":
+                readout = True
+                getting_results = False
+            elif line == "@@@END@@@":
+                readout = False
+                getting_results = False
+            elif line == "@@@RESULTS_START@@@":
+                readout = False
+                getting_results = True
+            elif line == "@@@RESULTS_END@@@":
+                readout = False
+                got_results = True
+                getting_results = False
+            elif readout:
+                print(line)
+            elif not got_results and getting_results:
+                line_results += line
 
     print("Finished Testing.")
     results_parsed = json.loads(line_results)
