@@ -1553,6 +1553,18 @@ generateTestCase({
     pipeline: [{$project: {_id: 0, x: 1, y: 1}}]
 });
 
+generateTestCase({
+    name: "ProjectWithArithExpressions",
+    docGenerator: smallDoc,
+    pipeline: [{$project: {
+        _id: 0,
+        an: {$abs: "$a"}, bn: {$mod: ["$b", 17]}, cn: {$floor: "$c"},
+        dl: {$ln: {$add: [{$abs: "$d"}, 1]}},
+        ab: {$add: ["$a", "$b"]}, cd: {$divide: ["$d", "$c"]},
+        ba: {$subtract: ["$b", "$a"]},
+    }}]
+});
+
 // Tests the performance of the ExpressionObject class, which is used to represent object literals.
 // The easiest way to test this is with the $replaceRoot stage.
 generateTestCase({
