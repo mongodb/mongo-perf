@@ -1560,8 +1560,8 @@ generateTestCase({
         _id: 0,
         an: {$abs: "$a"}, bn: {$mod: ["$b", 17]}, cn: {$floor: "$c"},
         dl: {$ln: {$add: [{$abs: "$d"}, 1]}},
-        ab: {$add: ["$a", "$b"]}, cd: {$divide: ["$d", "$c"]},
-        ba: {$subtract: ["$b", "$a"]},
+        ab: {$add: ["$a", "$b"]}, cd: {$multiply: ["$c", "$d"]},
+        ba: {$subtract: ["$b", "$a"]}, dc: {$divide: ["$d", "$c"]},
     }}]
 });
 

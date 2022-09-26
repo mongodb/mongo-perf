@@ -1037,13 +1037,13 @@ if (typeof(tests) !== "object") {
         op: {op: "find", query: {}, filter: projectWithArithExpressions}
     });
 
-    let projectWithSubtract = {
-        ba: {$subtract: ["$b", "$a"]}, cb: {$subtract: ["$c", "$b"]}, dc: {$subtract: ["$d", "$c"]},
+    let projectWithArithExpressions2 = {
+        ab: {$subtract: ["$b", "$a"]}, cd: {$multiply: ["$d", "$c"]},
     };
     addTestCaseWithLargeDataset({
-        name: "ProjectWithSubtract_CollScan_LS",
+        name: "ProjectWithArithExpressions2_CollScan_LS",
         docGenerator: smallDoc,
-        op: {op: "find", query: {}, filter: projectWithSubtract}
+        op: {op: "find", query: {}, filter: projectWithArithExpressions2}
     });
 
     // Tests: indexed plans
