@@ -847,6 +847,40 @@ if (typeof(tests) !== "object") {
     });
 
     /**
+     * Setup: Create a collection with scalar fields x, y with no index.
+     *
+     * Test: Sort the collection by one or two fields, with simple and dotted paths,
+     * with and without a limit, for increasing number of documents.
+     */
+    for (const limit of [[null, 'NoLimit'], [1, 'LimitOne'], [100, 'LimitHundred']]) {
+        for (const numdocs of [[1000, '1K'], [10000, '10K'], [100000, '100K']]) {
+            for (const sortKey of [[{ y: 1 }, '1Key'], [{ y: 1, x: 1 }, '2Key'], [{"z.w.j": 1}, '1PathKey3Components']]) {
+                var testcase = {
+                    name: "Sort"+limit[1]+"Collection"+numdocs[1]+"_"+sortKey[1],
+                    tags: ["core", "sort"],
+                    // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+                    // sorting when running in read command mode.
+                    createViewsPassthrough: false,
+                    nDocs: numdocs[0],
+                    docs: function (i) {
+                        return {
+                            x: Random.randInt(10000), y: Random.randInt(10000), z: { w: { j: Random.randInt(10000) } }
+                        };
+                    },
+                    op: {
+                        op: "find",
+                        sort: sortKey[0]
+                    }
+                };
+                if (limit[0] != null) {
+                    testcase.op['limit'] = limit[0];
+                }
+                addTestCase(testcase);
+            }
+        }
+    }
+
+    /**
      * Setup: Create a collection with scalar fields x, y and an index on x, y.
      *
      * Test: Sort the collection by the y field. The sort can be computed based on the index,
