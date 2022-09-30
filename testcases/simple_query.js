@@ -1106,7 +1106,13 @@ if (typeof(tests) !== "object") {
         name: "RangeQuery_SingleIndex_MultiFields_LL",
         docGenerator: largeDoc,
         indexes: [{"h": 1, "b": 1}],
-        query: {"h": {$gt: 1}, "b": {$lt: 999}}
+        query: {"h": {$gt: 1}, "b": {"$in": largeArrayRandom}}
+    });
+    addTestCaseWithLargeDatasetAndIndexes({
+        name: "RangeQuery_SingleIndex_MultiFields2_LL",
+        docGenerator: largeDoc,
+        indexes: [{"h": 1, "b": 1, "a": 1}],
+        query: {"h": {$gt: 1}, "b": {"$in": largeArrayRandom}, "a": {"$in": largeArrayRandom}}
     });
     addTestCaseWithLargeDatasetAndIndexes({
         name: "PointQuery_MultipleIndexes_LL", 
