@@ -1103,18 +1103,6 @@ if (typeof(tests) !== "object") {
         query: {"a": {$gt: 1}}
     });
     addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuery_SingleIndex_MultiFields_LL",
-        docGenerator: largeDoc,
-        indexes: [{"h": 1, "b": 1}],
-        query: {"h": {$gt: 1}, "b": {"$in": largeArrayRandom}}
-    });
-    addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuery_SingleIndex_MultiFields2_LL",
-        docGenerator: largeDoc,
-        indexes: [{"h": 1, "b": 1, "a": 1}],
-        query: {"h": {$gt: 1}, "b": {"$in": largeArrayRandom}, "a": {"$in": largeArrayRandom}}
-    });
-    addTestCaseWithLargeDatasetAndIndexes({
         name: "PointQuery_MultipleIndexes_LL", 
         docGenerator: largeDoc,
         indexes: [{"a":1}, {"b":1}, {"a":1, "b":1}],
@@ -1122,7 +1110,15 @@ if (typeof(tests) !== "object") {
     });
     addTestCaseWithLargeDatasetAndIndexes({
         name: "RangeQuery_MultipleIndexes_LowSelectivityMatch_LL", 
+        tags: ["indexed"],
         docGenerator: largeDoc,
+        indexes: [{"a":1}, {"b":1}, {"a":1, "b":1}],
+        query: {"a": {$gt: 1}, "b": {$lt: 900}}
+    });
+    addTestCaseWithLargeDatasetAndIndexes({
+        name: "RangeQuery_MultipleIndexes_LowSelectivityMatch_LS", 
+        tags: ["indexed"],
+        docGenerator: smallDoc,
         indexes: [{"a":1}, {"b":1}, {"a":1, "b":1}],
         query: {"a": {$gt: 1}, "b": {$lt: 900}}
     });
@@ -1137,5 +1133,55 @@ if (typeof(tests) !== "object") {
         docGenerator: largeDoc,
         indexes: [{"e.a":1}],
         query: {"e.a": {$gt: 1}}
+    });
+
+    addTestCaseWithLargeDatasetAndIndexes({
+        name: "RangeQuery_SingleIndex_SimpleRange_LowSelectivityMatch_LS",
+        tags: ["indexed"],
+        docGenerator: smallDoc,
+        indexes: [{"b": 1}],
+        query: {"b": {$gt: 100, $lt: 109}}
+    });
+    addTestCaseWithLargeDatasetAndIndexes({
+        name: "RangeQuery_SingleIndex_SimpleRange_LS",
+        tags: ["indexed"],
+        docGenerator: smallDoc,
+        indexes: [{"b": 1}],
+        query: {"b": {$gt: 1, $lt: 999}}
+    });
+    addTestCaseWithLargeDatasetAndIndexes({
+        name: "RangeQuery_SingleIndex_MultiFields_SingleIntervals_LS",
+        tags: ["indexed"],
+        docGenerator: smallDoc,
+        indexes: [{"b": 1, "h": 1}],
+        query: {"b": {"$in": largeArrayRandom}, "h": {$gt: 100}}
+    });
+    addTestCaseWithLargeDatasetAndIndexes({
+        name: "RangeQuery_SingleIndex_GenericPlan_LS",
+        tags: ["indexed"],
+        docGenerator: smallDoc,
+        indexes: [{"b": 1}],
+        query: {$or: [{"b": {$gt: 99}}, {"b": {$lt: 9}}, {"b": {"$in": largeArrayRandom}}]}
+    });
+    addTestCaseWithLargeDatasetAndIndexes({
+        name: "RangeQuery_SingleIndex_GenericPlan_TwoFields_LS",
+        tags: ["indexed"],
+        docGenerator: smallDoc,
+        indexes: [{"h": 1, "b": 1}],
+        query: {"h": {$gt: 1}, "b": {"$in": largeArrayRandom}}
+    });
+    addTestCaseWithLargeDatasetAndIndexes({
+        name: "RangeQuery_SingleIndex_GenericPlan_ThreeFields_LS",
+        tags: ["indexed"],
+        docGenerator: smallDoc,
+        indexes: [{"h": 1, "b": 1, "a": 1}],
+        query: {"h": {$gt: 1}, "b": {"$in": largeArrayRandom}, "a": {"$in": largeArrayRandom}}
+    });
+    addTestCaseWithLargeDatasetAndIndexes({
+        name: "RangeQuery_SingleIndex_GenericPlan_TwoFields_Range_LS",
+        tags: ["indexed"],
+        docGenerator: smallDoc,
+        indexes: [{"h": 1, "b": 1}],
+        query: {"h": {$gt: 1}, "b": {$lt: 100}}
     });
 }());
