@@ -1110,17 +1110,59 @@ if (typeof(tests) !== "object") {
     });
     addTestCaseWithLargeDatasetAndIndexes({
         name: "RangeQuery_MultipleIndexes_LowSelectivityMatch_LL", 
-        tags: ["indexed"],
+        tags: ["indexed", "hint"],
         docGenerator: largeDoc,
         indexes: [{"a":1}, {"b":1}, {"a":1, "b":1}],
         query: {"a": {$gt: 1}, "b": {$lt: 900}}
     });
     addTestCaseWithLargeDatasetAndIndexes({
+        name: "RangeQuery_MultipleIndexes_LowSelectivityMatch_a_1_b_1_LL", 
+        tags: ["indexed", "hint"],
+        docGenerator: largeDoc,
+        indexes: [{"a":1, "b":1}],
+        query: {"a": {$gt: 1}, "b": {$lt: 900}},
+    });
+    addTestCaseWithLargeDatasetAndIndexes({
+        name: "RangeQuery_MultipleIndexes_LowSelectivityMatch_a_1_LL", 
+        tags: ["indexed", "hint"],
+        docGenerator: largeDoc,
+        indexes: [{"a":1}],
+        query: {"a": {$gt: 1}, "b": {$lt: 900}},
+    });
+    addTestCaseWithLargeDatasetAndIndexes({
+        name: "RangeQuery_MultipleIndexes_LowSelectivityMatch_b_1_LL", 
+        tags: ["indexed", "hint"],
+        docGenerator: largeDoc,
+        indexes: [{"b":1}],
+        query: {"a": {$gt: 1}, "b": {$lt: 900}},
+    });
+    addTestCaseWithLargeDatasetAndIndexes({
         name: "RangeQuery_MultipleIndexes_LowSelectivityMatch_LS", 
-        tags: ["indexed"],
+        tags: ["indexed", "hint"],
         docGenerator: smallDoc,
         indexes: [{"a":1}, {"b":1}, {"a":1, "b":1}],
         query: {"a": {$gt: 1}, "b": {$lt: 900}}
+    });
+    addTestCaseWithLargeDatasetAndIndexes({
+        name: "RangeQuery_MultipleIndexes_LowSelectivityMatch_a_1_b_1_LS", 
+        tags: ["indexed", "hint"],
+        docGenerator: smallDoc,
+        indexes: [{"a":1, "b":1}],
+        query: {"a": {$gt: 1}, "b": {$lt: 900}},
+    });
+    addTestCaseWithLargeDatasetAndIndexes({
+        name: "RangeQuery_MultipleIndexes_LowSelectivityMatch_a_1_LS", 
+        tags: ["indexed", "hint"],
+        docGenerator: smallDoc,
+        indexes: [{"a":1}],
+        query: {"a": {$gt: 1}, "b": {$lt: 900}},
+    });
+    addTestCaseWithLargeDatasetAndIndexes({
+        name: "RangeQuery_MultipleIndexes_LowSelectivityMatch_b_1_LS", 
+        tags: ["indexed", "hint"],
+        docGenerator: smallDoc,
+        indexes: [{"b":1}],
+        query: {"a": {$gt: 1}, "b": {$lt: 900}},
     });
     addTestCaseWithLargeDatasetAndIndexes({
         name: "PointQuerySubField_SingleIndex_LL", 
