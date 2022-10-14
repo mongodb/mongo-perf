@@ -717,6 +717,141 @@ if (typeof(tests) !== "object") {
     });
 
     /**
+     * Set of test cases which stress the performance of projections with dotted paths as well
+     * as wide projections.
+     */
+    addTestCase({
+        name: "FindInclusionProjectionDottedField.SinglePathThreeComponents",
+        tags: ["regression", "projection"],
+        nDocs: 10 * 1000,
+        // Adding a views passthrough would be redundant.
+        createViewsPassthrough: false,
+        docs: function(i) {
+            return {a: {b: {c: i, d: i}}}
+        },
+        op: {op: "find", query: {}, filter: {"a.b.c": 1, _id: 0}}
+    });
+
+    addTestCase({
+        name: "FindExclusionProjectionDottedField.SinglePathThreeComponents",
+        tags: ["regression", "projection"],
+        nDocs: 10 * 1000,
+        // Adding a views passthrough would be redundant.
+        createViewsPassthrough: false,
+        docs: function(i) {
+            return {a: {b: {c: i, d: i}}}
+        },
+        op: {op: "find", query: {}, filter: {"a.b.d": 0, _id: 1}}
+    });
+
+    const threePathComponentsDeepProjectionDocumentGenerator = function(i) {
+        return {a: [
+                {b: [{c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}]},
+                {b: [{c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}]},
+                {b: [{c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}]},
+                {b: [{c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}]},
+                {b: [{c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}]}]};
+    };
+
+    addTestCase({
+        name: "FindInclusionProjectionDottedField.SinglePathThreeComponentsNestedArrays",
+        tags: ["regression", "projection"],
+        nDocs: 10 * 1000,
+        // Adding a views passthrough would be redundant.
+        createViewsPassthrough: false,
+        docs: threePathComponentsDeepProjectionDocumentGenerator,
+        op: {op: "find", query: {}, filter: {"a.b.c": 1, _id: 0}}
+    });
+
+    addTestCase({
+        name: "FindExclusionProjectionDottedField.SinglePathThreeComponentsNestedArrays",
+        tags: ["regression", "projection"],
+        nDocs: 10 * 1000,
+        // Adding a views passthrough would be redundant.
+        createViewsPassthrough: false,
+        docs: threePathComponentsDeepProjectionDocumentGenerator,
+        op: {op: "find", query: {}, filter: {"a.b.d": 0, _id: 1}}
+    });
+
+    const sixPathComponentsDeepProjectionDocumentGenerator = function(i) {
+        const arrayElement = {b: {c: [
+                    {d: {e: [{f: i, g: i}, {f: i, g: i}, {f: i, g: i}, {f: i, g: i}, {f: i, g: i}]}},
+                    {d: {e: [{f: i, g: i}, {f: i, g: i}, {f: i, g: i}, {f: i, g: i}, {f: i, g: i}]}},
+                    {d: {e: [{f: i, g: i}, {f: i, g: i}, {f: i, g: i}, {f: i, g: i}, {f: i, g: i}]}},
+                    {d: {e: [{f: i, g: i}, {f: i, g: i}, {f: i, g: i}, {f: i, g: i}, {f: i, g: i}]}},
+                    {d: {e: [{f: i, g: i}, {f: i, g: i}, {f: i, g: i}, {f: i, g: i}, {f: i, g: i}]}}]}};
+        return {a: [arrayElement, arrayElement, arrayElement, arrayElement, arrayElement]};
+    };
+
+    addTestCase({
+        name: "FindInclusionProjectionDottedField.SinglePathSixComponentsNestedArrays",
+        tags: ["regression", "projection"],
+        nDocs: 10 * 1000,
+        // Adding a views passthrough would be redundant.
+        createViewsPassthrough: false,
+        docs: sixPathComponentsDeepProjectionDocumentGenerator,
+        op: {op: "find", query: {}, filter:  {"a.b.c.d.e.f": 1, _id: 0}}
+    });
+
+    addTestCase({
+        name: "FindExclusionProjectionDottedField.SinglePathSixComponentsNestedArrays",
+        tags: ["regression", "projection"],
+        nDocs: 10 * 1000,
+        // Adding a views passthrough would be redundant.
+        createViewsPassthrough: false,
+        docs: sixPathComponentsDeepProjectionDocumentGenerator,
+        op: {op: "find", query: {}, filter: {"a.b.c.d.e.g": 0, _id: 1}}
+    });
+
+    const topLevelWideProjectionSchema = function(i) {
+        return {a: i, b: i, c: i, d: i, e: i, f: i, g: i, h: i, i: i, j: i};
+    }
+
+    addTestCase({
+        name: "FindWideInclusionProjectionTopLevelField",
+        tags: ["regression", "projection"],
+        nDocs: 10 * 1000,
+        // Adding a views passthrough would be redundant.
+        createViewsPassthrough: false,
+        docs: topLevelWideProjectionSchema,
+        op: {op: "find", query: {}, filter: {b: 1, c: 1, d: 1, e: 1, f: 1, g: 1, h: 1, i: 1, j: 1}}
+    });
+
+    addTestCase({
+        name: "FindWideExclusionProjectionTopLevelField",
+        tags: ["regression", "projection"],
+        nDocs: 10 * 1000,
+        // Adding a views passthrough would be redundant.
+        createViewsPassthrough: false,
+        docs: topLevelWideProjectionSchema,
+        op: {op: "find", query: {}, filter: {b: 0, c: 0, d: 0, e: 0, f: 0, g: 0, h: 0, i: 0, j: 0}}
+    });
+
+    const nestedWideProjectionSchema = function(i) {
+        return {n: topLevelWideProjectionSchema(i)};
+    }
+
+    addTestCase({
+        name: "FindWideInclusionProjectionNestedField",
+        tags: ["regression", "projection"],
+        nDocs: 10 * 1000,
+        // Adding a views passthrough would be redundant.
+        createViewsPassthrough: false,
+        docs: nestedWideProjectionSchema,
+        op: {op: "find", query: {}, filter: {n: {b: 1, c: 1, d: 1, e: 1, f: 1, g: 1, h: 1, i: 1, j: 1}}}
+    });
+
+    addTestCase({
+        name: "FindWideExclusionProjectionNestedField",
+        tags: ["regression", "projection"],
+        nDocs: 10 * 1000,
+        // Adding a views passthrough would be redundant.
+        createViewsPassthrough: false,
+        docs: nestedWideProjectionSchema,
+        op: {op: "find", query: {}, filter: {n: {b: 0, c: 0, d: 0, e: 0, f: 0, g: 0, h: 0, i: 0, j: 0}}}
+    });
+
+    /**
      * Setup: Create a collection of documents with integer field x.y.
      *
      * Test: Query for a random document based on x.y field and return just x.y. Each thread
@@ -908,7 +1043,7 @@ if (typeof(tests) !== "object") {
     /**
      * Benchmarks for find on large collections, targeting the basic functionality of the engine in
      * a systematic way.
-     * 
+     *
      * Naming convention: TestName_<access_method>_<collection_size><doc_size>[R]<group_cardinality>
      * access_method ::= CollScan
      * collection_size ::= L
@@ -1091,37 +1226,37 @@ if (typeof(tests) !== "object") {
     }
 
     addTestCaseWithLargeDatasetAndIndexes({
-        name: "PointQuery_SingleIndex_LL", 
+        name: "PointQuery_SingleIndex_LL",
         docGenerator: largeDoc,
         indexes: [{"a":1}],
         query: {"a": 7}
     });
     addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuery_SingleIndex_LowSelectivityMatch_LL", 
+        name: "RangeQuery_SingleIndex_LowSelectivityMatch_LL",
         docGenerator: largeDoc,
         indexes: [{"a":1}],
         query: {"a": {$gt: 1}}
     });
     addTestCaseWithLargeDatasetAndIndexes({
-        name: "PointQuery_MultipleIndexes_LL", 
+        name: "PointQuery_MultipleIndexes_LL",
         docGenerator: largeDoc,
         indexes: [{"a":1}, {"b":1}, {"a":1, "b":1}],
         query: {"a": 7, "b":742}
     });
     addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuery_MultipleIndexes_LowSelectivityMatch_LL", 
+        name: "RangeQuery_MultipleIndexes_LowSelectivityMatch_LL",
         docGenerator: largeDoc,
         indexes: [{"a":1}, {"b":1}, {"a":1, "b":1}],
         query: {"a": {$gt: 1}, "b": {$lt: 900}}
     });
     addTestCaseWithLargeDatasetAndIndexes({
-        name: "PointQuerySubField_SingleIndex_LL", 
+        name: "PointQuerySubField_SingleIndex_LL",
         docGenerator: largeDoc,
         indexes: [{"e.a":1}],
         query: {"e.a": 7}
     });
     addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuerySubField_SingleIndex_LowSelectivityMatch_LL", 
+        name: "RangeQuerySubField_SingleIndex_LowSelectivityMatch_LL",
         docGenerator: largeDoc,
         indexes: [{"e.a":1}],
         query: {"e.a": {$gt: 1}}
