@@ -1148,7 +1148,7 @@ if (typeof(tests) !== "object") {
 
     // Select ~90% with two range predicates on two indexed fields of a compound index.
     addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuery_SingleIndex_MultiFields_SingleIntervals_LS",
+        name: "RangeQuery_CompoundIndex_SingleIntervals_LS",
         tags: ["indexed"],
         docGenerator: smallDoc,
         indexes: [{"b": 1, "h": 1}],
@@ -1157,7 +1157,7 @@ if (typeof(tests) !== "object") {
 
     // Select ~99% from a single indexed field.
     addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuery_SingleIndex_GenericPlan_LS",
+        name: "RangeQuery_SingleFieldIndex_ComplexBounds_LS",
         tags: ["indexed"],
         docGenerator: smallDoc,
         indexes: [{"b": 1}],
@@ -1167,7 +1167,7 @@ if (typeof(tests) !== "object") {
     // Select ~99% from two indexed fields of a compound index. There is a range predicate on the
     // leading field and a union of point predicates on the trailing field.
     addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuery_SingleIndex_GenericPlan_TwoFields_LS",
+        name: "RangeQuery_CompoundIndex_ComplexBounds_TwoFields_LS",
         tags: ["indexed"],
         docGenerator: smallDoc,
         indexes: [{"h": 1, "b": 1}],
@@ -1177,7 +1177,7 @@ if (typeof(tests) !== "object") {
     // Select ~99% from three indexed fields of a compound index. There is a range predicate on 
     // the leading field and unions of point intervals on the trailing fields.
     addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuery_SingleIndex_GenericPlan_ThreeFields_LS",
+        name: "RangeQuery_CompoundIndex_ComplexBounds_ThreeFields_LS",
         tags: ["indexed"],
         docGenerator: smallDoc,
         indexes: [{"h": 1, "b": 1, "a": 1}],
@@ -1186,7 +1186,7 @@ if (typeof(tests) !== "object") {
 
     // Select ~99% from two indexed fields of a compound index with range predicates on both fields.
     addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuery_SingleIndex_GenericPlan_TwoFields_Range_LS",
+        name: "RangeQuery_CompoundIndex_ComplexBounds_TwoFields_Range_LS",
         tags: ["indexed"],
         docGenerator: smallDoc,
         indexes: [{"h": 1, "b": 1}],
@@ -1196,7 +1196,7 @@ if (typeof(tests) !== "object") {
     // Select ~99% from three indexed fields of a compound index with range predicates on all
     // three fields.
     addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuery_SingleIndex_GenericPlan_ThreeFields_Range_LS",
+        name: "RangeQuery_CompoundIndex_ComplexBounds_ThreeFields_Range_LS",
         tags: ["indexed"],
         docGenerator: smallDoc,
         indexes: [{"h": 1, "b": 1, "a": 1}],
@@ -1205,7 +1205,7 @@ if (typeof(tests) !== "object") {
 
     // Select ~99% from five indexed fields of a compound index.
     addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuery_SingleIndex_GenericPlan_FiveFields_Range_LS",
+        name: "RangeQuery_CompoundIndex_ComplexBounds_FiveFields_Range_LS",
         tags: ["indexed"],
         docGenerator: smallDoc,
         indexes: [{"h": 1, "b": 1, "e.b": 1, "d": 1, "e.h": 1}],
