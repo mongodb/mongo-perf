@@ -70,6 +70,8 @@ if (typeof(tests) !== "object") {
      *
      * @param {Boolean} {options.createViewsPassthrough=true} - If false, specifies that a views
      * passthrough test should not be created, generating only one test on a regular collection.
+     * @param {Boolean} {options.createAggregationTest=true} - If false, specifies that an
+     * aggregation test should not be created.
      * @param {Object[]} {options.indexes=[]} - An array of index specifications to create on the
      * collection.
      * @param {String[]} {options.tags=[]} - Additional tags describing this test. The "query" tag
@@ -108,17 +110,19 @@ if (typeof(tests) !== "object") {
             });
         }
 
-        // Generate a test which is the aggregation equivalent of this find operation.
-        tests.push({
-            tags: ["agg_query_comparison"].concat(tags),
-            name: "Aggregation." + options.name,
-            pre: collectionPopulator(
-                !isView, options.nDocs, indexes, options.docs, options.collectionOptions),
-            post: function(collection) {
-                collection.drop();
-            },
-            ops: [rewriteQueryOpAsAgg(options.op)]
-        });
+        if (options.createAggregationTest !== false) {
+            // Generate a test which is the aggregation equivalent of this find operation.
+            tests.push({
+                tags: ["agg_query_comparison"].concat(tags),
+                name: "Aggregation." + options.name,
+                pre: collectionPopulator(
+                    !isView, options.nDocs, indexes, options.docs, options.collectionOptions),
+                post: function(collection) {
+                    collection.drop();
+                },
+                ops: [rewriteQueryOpAsAgg(options.op)]
+            });
+        }
     }
 
     /**
@@ -717,34 +721,34 @@ if (typeof(tests) !== "object") {
     });
 
     /**
+     * Utility to add a pair of inclusion/exclusion test cases.
+     */
+    const addInclusionExclusionTestCase = function(name, docGenerator, inclusionSpec, exclusionSpec) {
+        for (const [prefix, testCase] of Object.entries({"FindInclusion.": inclusionSpec, "FindExclusion.": exclusionSpec})) {
+            addTestCase({
+                name: prefix + name,
+                tags: ["regression", "projection"],
+                nDocs: 10 * 1000,
+                // Adding a views passthrough and an aggregation test would be redundant.
+                createViewsPassthrough: false,
+                createAggregationTest: false,
+                docs: docGenerator,
+                op: {op: "find", query: {}, filter: testCase}
+            });
+        }
+    }
+
+    /**
      * Set of test cases which stress the performance of projections with dotted paths as well
      * as wide projections.
      */
-    addTestCase({
-        name: "FindInclusionProjectionDottedField.SinglePathThreeComponents",
-        tags: ["regression", "projection"],
-        nDocs: 10 * 1000,
-        // Adding a views passthrough would be redundant.
-        createViewsPassthrough: false,
-        docs: function(i) {
+    const singlePathThreeComponentDocGenerator = function(i) {
             return {a: {b: {c: i, d: i}}}
-        },
-        op: {op: "find", query: {}, filter: {"a.b.c": 1, _id: 0}}
-    });
+    };
 
-    addTestCase({
-        name: "FindExclusionProjectionDottedField.SinglePathThreeComponents",
-        tags: ["regression", "projection"],
-        nDocs: 10 * 1000,
-        // Adding a views passthrough would be redundant.
-        createViewsPassthrough: false,
-        docs: function(i) {
-            return {a: {b: {c: i, d: i}}}
-        },
-        op: {op: "find", query: {}, filter: {"a.b.d": 0, _id: 1}}
-    });
+    addInclusionExclusionTestCase("ProjectionDottedField.SinglePathThreeComponents", singlePathThreeComponentDocGenerator, {"a.b.c": 1, _id: 0}, {"a.b.d": 0, _id: 1});
 
-    const threePathComponentsDeepProjectionDocumentGenerator = function(i) {
+    const singlePathThreePathComponentsDeepProjectionDocGenerator = function(i) {
         return {a: [
                 {b: [{c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}]},
                 {b: [{c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}]},
@@ -753,27 +757,9 @@ if (typeof(tests) !== "object") {
                 {b: [{c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}]}]};
     };
 
-    addTestCase({
-        name: "FindInclusionProjectionDottedField.SinglePathThreeComponentsNestedArrays",
-        tags: ["regression", "projection"],
-        nDocs: 10 * 1000,
-        // Adding a views passthrough would be redundant.
-        createViewsPassthrough: false,
-        docs: threePathComponentsDeepProjectionDocumentGenerator,
-        op: {op: "find", query: {}, filter: {"a.b.c": 1, _id: 0}}
-    });
+    addInclusionExclusionTestCase("ProjectionDottedField.SinglePathThreeComponentsNestedArrays", singlePathThreePathComponentsDeepProjectionDocGenerator, {"a.b.c": 1, _id: 0}, {"a.b.d": 0, _id: 1});
 
-    addTestCase({
-        name: "FindExclusionProjectionDottedField.SinglePathThreeComponentsNestedArrays",
-        tags: ["regression", "projection"],
-        nDocs: 10 * 1000,
-        // Adding a views passthrough would be redundant.
-        createViewsPassthrough: false,
-        docs: threePathComponentsDeepProjectionDocumentGenerator,
-        op: {op: "find", query: {}, filter: {"a.b.d": 0, _id: 1}}
-    });
-
-    const sixPathComponentsDeepProjectionDocumentGenerator = function(i) {
+    const singlePathSixPathComponentsDeepProjectionDocGenerator = function(i) {
         const arrayElement = {b: {c: [
                     {d: {e: [{f: i, g: i}, {f: i, g: i}, {f: i, g: i}, {f: i, g: i}, {f: i, g: i}]}},
                     {d: {e: [{f: i, g: i}, {f: i, g: i}, {f: i, g: i}, {f: i, g: i}, {f: i, g: i}]}},
@@ -783,73 +769,19 @@ if (typeof(tests) !== "object") {
         return {a: [arrayElement, arrayElement, arrayElement, arrayElement, arrayElement]};
     };
 
-    addTestCase({
-        name: "FindInclusionProjectionDottedField.SinglePathSixComponentsNestedArrays",
-        tags: ["regression", "projection"],
-        nDocs: 10 * 1000,
-        // Adding a views passthrough would be redundant.
-        createViewsPassthrough: false,
-        docs: sixPathComponentsDeepProjectionDocumentGenerator,
-        op: {op: "find", query: {}, filter:  {"a.b.c.d.e.f": 1, _id: 0}}
-    });
+    addInclusionExclusionTestCase("ProjectionDottedField.SinglePathSixComponentsNestedArrays", singlePathSixPathComponentsDeepProjectionDocGenerator,  {"a.b.c.d.e.f": 1, _id: 0}, {"a.b.c.d.e.g": 0, _id: 1});
 
-    addTestCase({
-        name: "FindExclusionProjectionDottedField.SinglePathSixComponentsNestedArrays",
-        tags: ["regression", "projection"],
-        nDocs: 10 * 1000,
-        // Adding a views passthrough would be redundant.
-        createViewsPassthrough: false,
-        docs: sixPathComponentsDeepProjectionDocumentGenerator,
-        op: {op: "find", query: {}, filter: {"a.b.c.d.e.g": 0, _id: 1}}
-    });
-
-    const topLevelWideProjectionSchema = function(i) {
+    const topLevelWideProjectionDocGenerator = function(i) {
         return {a: i, b: i, c: i, d: i, e: i, f: i, g: i, h: i, i: i, j: i};
     }
 
-    addTestCase({
-        name: "FindWideInclusionProjectionTopLevelField",
-        tags: ["regression", "projection"],
-        nDocs: 10 * 1000,
-        // Adding a views passthrough would be redundant.
-        createViewsPassthrough: false,
-        docs: topLevelWideProjectionSchema,
-        op: {op: "find", query: {}, filter: {b: 1, c: 1, d: 1, e: 1, f: 1, g: 1, h: 1, i: 1, j: 1}}
-    });
+    addInclusionExclusionTestCase("WideProjectionTopLevelField", topLevelWideProjectionDocGenerator, {_id: 0, b: 1, c: 1, d: 1, e: 1, f: 1, g: 1, h: 1, i: 1, j: 1}, {_id: 1, b: 0, c: 0, d: 0, e: 0, f: 0, g: 0, h: 0, i: 0, j: 0});
 
-    addTestCase({
-        name: "FindWideExclusionProjectionTopLevelField",
-        tags: ["regression", "projection"],
-        nDocs: 10 * 1000,
-        // Adding a views passthrough would be redundant.
-        createViewsPassthrough: false,
-        docs: topLevelWideProjectionSchema,
-        op: {op: "find", query: {}, filter: {b: 0, c: 0, d: 0, e: 0, f: 0, g: 0, h: 0, i: 0, j: 0}}
-    });
-
-    const nestedWideProjectionSchema = function(i) {
-        return {n: topLevelWideProjectionSchema(i)};
+    const nestedWideProjectionDocGenerator = function(i) {
+        return {n: topLevelWideProjectionDocGenerator(i)};
     }
 
-    addTestCase({
-        name: "FindWideInclusionProjectionNestedField",
-        tags: ["regression", "projection"],
-        nDocs: 10 * 1000,
-        // Adding a views passthrough would be redundant.
-        createViewsPassthrough: false,
-        docs: nestedWideProjectionSchema,
-        op: {op: "find", query: {}, filter: {n: {b: 1, c: 1, d: 1, e: 1, f: 1, g: 1, h: 1, i: 1, j: 1}}}
-    });
-
-    addTestCase({
-        name: "FindWideExclusionProjectionNestedField",
-        tags: ["regression", "projection"],
-        nDocs: 10 * 1000,
-        // Adding a views passthrough would be redundant.
-        createViewsPassthrough: false,
-        docs: nestedWideProjectionSchema,
-        op: {op: "find", query: {}, filter: {n: {b: 0, c: 0, d: 0, e: 0, f: 0, g: 0, h: 0, i: 0, j: 0}}}
-    });
+    addInclusionExclusionTestCase("WideProjectionNestedField", nestedWideProjectionDocGenerator, {_id: 0, n: {b: 1, c: 1, d: 1, e: 1, f: 1, g: 1, h: 1, i: 1, j: 1}}, {_id: 1, n: {b: 0, c: 0, d: 0, e: 0, f: 0, g: 0, h: 0, i: 0, j: 0}});
 
     /**
      * Setup: Create a collection of documents with integer field x.y.
