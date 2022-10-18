@@ -746,42 +746,62 @@ if (typeof(tests) !== "object") {
             return {a: {b: {c: i, d: i}}}
     };
 
-    addInclusionExclusionTestCase("ProjectionDottedField.SinglePathThreeComponents", singlePathThreeComponentDocGenerator, {"a.b.c": 1, _id: 0}, {"a.b.d": 0, _id: 1});
+    addInclusionExclusionTestCase(
+        "ProjectionDottedField.SinglePathThreeComponents" /* name */,
+        singlePathThreeComponentDocGenerator,
+        {"a.b.c": 1, _id: 0} /* inclusionSpec */,
+        {"a.b.d": 0, _id: 1} /* exclusionSpec */);
 
-    const singlePathThreePathComponentsDeepProjectionDocGenerator = function(i) {
-        return {a: [
-                {b: [{c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}]},
-                {b: [{c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}]},
-                {b: [{c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}]},
-                {b: [{c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}]},
-                {b: [{c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}, {c: i, d: i}]}]};
+    const singlePathThreePathComponentsDeepProjectionDocGenerator = function(i, arrSize) {
+        return {a: Array(arrSize).fill(
+            {b: Array(arrSize).fill({c: i, d: i})})};
     };
 
-    addInclusionExclusionTestCase("ProjectionDottedField.SinglePathThreeComponentsNestedArrays", singlePathThreePathComponentsDeepProjectionDocGenerator, {"a.b.c": 1, _id: 0}, {"a.b.d": 0, _id: 1});
+    addInclusionExclusionTestCase(
+        "ProjectionDottedField.SinglePathThreeComponentsNestedArraysOfSizeOne" /* name */,
+        i => singlePathThreePathComponentsDeepProjectionDocGenerator(i, 1),
+        {"a.b.c": 1, _id: 0} /* inclusionSpec */,
+        {"a.b.d": 0, _id: 1} /* exclusionSpec */);
 
-    const singlePathSixPathComponentsDeepProjectionDocGenerator = function(i) {
-        const arrayElement = {b: {c: [
-                    {d: {e: [{f: i, g: i}, {f: i, g: i}, {f: i, g: i}, {f: i, g: i}, {f: i, g: i}]}},
-                    {d: {e: [{f: i, g: i}, {f: i, g: i}, {f: i, g: i}, {f: i, g: i}, {f: i, g: i}]}},
-                    {d: {e: [{f: i, g: i}, {f: i, g: i}, {f: i, g: i}, {f: i, g: i}, {f: i, g: i}]}},
-                    {d: {e: [{f: i, g: i}, {f: i, g: i}, {f: i, g: i}, {f: i, g: i}, {f: i, g: i}]}},
-                    {d: {e: [{f: i, g: i}, {f: i, g: i}, {f: i, g: i}, {f: i, g: i}, {f: i, g: i}]}}]}};
-        return {a: [arrayElement, arrayElement, arrayElement, arrayElement, arrayElement]};
+    addInclusionExclusionTestCase(
+        "ProjectionDottedField.SinglePathThreeComponentsNestedArraysOfSizeFive" /* name */,
+        i => singlePathThreePathComponentsDeepProjectionDocGenerator(i, 5),
+        {"a.b.c": 1, _id: 0} /* inclusionSpec */,
+        {"a.b.d": 0, _id: 1} /* exclusionSpec */);
+
+    const singlePathSixPathComponentsDeepProjectionDocGenerator = function(i, arrSize) {
+        return {a: Array(5 /* arrayLength */).fill(Array(arrSize).fill(
+            {b: {c: Array(arrSize).fill(
+            {d: {e: Array(arrSize).fill({f: i, g: i})}})}}))};
     };
 
-    addInclusionExclusionTestCase("ProjectionDottedField.SinglePathSixComponentsNestedArrays", singlePathSixPathComponentsDeepProjectionDocGenerator,  {"a.b.c.d.e.f": 1, _id: 0}, {"a.b.c.d.e.g": 0, _id: 1});
+    addInclusionExclusionTestCase(
+        "ProjectionDottedField.SinglePathSixComponentsNestedArraysOfSizeOne" /* name */,
+        i => singlePathSixPathComponentsDeepProjectionDocGenerator(i, 1),
+        {"a.b.c.d.e.f": 1, _id: 0} /* inclusionSpec */,
+        {"a.b.c.d.e.g": 0, _id: 1} /* exclusionSpec */);
+
+    addInclusionExclusionTestCase(
+        "ProjectionDottedField.SinglePathSixComponentsNestedArraysOfSizeFive" /* name */,
+        i => singlePathSixPathComponentsDeepProjectionDocGenerator(i, 5),
+        {"a.b.c.d.e.f": 1, _id: 0} /* inclusionSpec */,
+        {"a.b.c.d.e.g": 0, _id: 1} /* exclusionSpec */);
 
     const topLevelWideProjectionDocGenerator = function(i) {
         return {a: i, b: i, c: i, d: i, e: i, f: i, g: i, h: i, i: i, j: i};
     }
 
-    addInclusionExclusionTestCase("WideProjectionTopLevelField", topLevelWideProjectionDocGenerator, {_id: 0, b: 1, c: 1, d: 1, e: 1, f: 1, g: 1, h: 1, i: 1, j: 1}, {_id: 1, b: 0, c: 0, d: 0, e: 0, f: 0, g: 0, h: 0, i: 0, j: 0});
+    addInclusionExclusionTestCase(
+        "WideProjectionTopLevelField" /* name */,
+        topLevelWideProjectionDocGenerator,
+        {_id: 0, b: 1, c: 1, d: 1, e: 1, f: 1, g: 1, h: 1, i: 1, j: 1} /* inclusionSpec */,
+        {_id: 1, b: 0, c: 0, d: 0, e: 0, f: 0, g: 0, h: 0, i: 0, j: 0} /* exclusionSpec */);
 
-    const nestedWideProjectionDocGenerator = function(i) {
-        return {n: topLevelWideProjectionDocGenerator(i)};
-    }
-
-    addInclusionExclusionTestCase("WideProjectionNestedField", nestedWideProjectionDocGenerator, {_id: 0, n: {b: 1, c: 1, d: 1, e: 1, f: 1, g: 1, h: 1, i: 1, j: 1}}, {_id: 1, n: {b: 0, c: 0, d: 0, e: 0, f: 0, g: 0, h: 0, i: 0, j: 0}});
+    addInclusionExclusionTestCase(
+        "WideProjectionNestedField" /* name */,
+        i => {return {n: topLevelWideProjectionDocGenerator(i)};},
+        {_id: 0, n: {b: 1, c: 1, d: 1, e: 1, f: 1, g: 1, h: 1, i: 1, j: 1}} /* inclusionSpec */,
+        {_id: 1, n: {b: 0, c: 0, d: 0, e: 0, f: 0, g: 0, h: 0, i: 0, j: 0}} /* exclusionSpec */);
 
     /**
      * Setup: Create a collection of documents with integer field x.y.
