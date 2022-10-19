@@ -1011,7 +1011,7 @@ if (typeof(tests) !== "object") {
         createAggregationTest: false,
         nDocs: 1000,
         docs: function(i) {
-            return {x: Random.randInt(10000), y: Random.randInt(10000)};
+            return {x: Random.randInt(10), y: Random.randInt(5)};
         },
         indexes: [{x: 1}],
         op: {
