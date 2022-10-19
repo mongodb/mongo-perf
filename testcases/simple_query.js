@@ -70,6 +70,8 @@ if (typeof(tests) !== "object") {
      *
      * @param {Boolean} {options.createViewsPassthrough=true} - If false, specifies that a views
      * passthrough test should not be created, generating only one test on a regular collection.
+     * @param {Boolean} {options.createAggregationTest=true} - If false, specifies that an
+     * aggregation test should not be created.
      * @param {Object[]} {options.indexes=[]} - An array of index specifications to create on the
      * collection.
      * @param {String[]} {options.tags=[]} - Additional tags describing this test. The "query" tag
@@ -108,17 +110,19 @@ if (typeof(tests) !== "object") {
             });
         }
 
-        // Generate a test which is the aggregation equivalent of this find operation.
-        tests.push({
-            tags: ["agg_query_comparison"].concat(tags),
-            name: "Aggregation." + options.name,
-            pre: collectionPopulator(
-                !isView, options.nDocs, indexes, options.docs, options.collectionOptions),
-            post: function(collection) {
-                collection.drop();
-            },
-            ops: [rewriteQueryOpAsAgg(options.op)]
-        });
+        if (options.createAggregationTest !== false) {
+            // Generate a test which is the aggregation equivalent of this find operation.
+            tests.push({
+                tags: ["agg_query_comparison"].concat(tags),
+                name: "Aggregation." + options.name,
+                pre: collectionPopulator(
+                    !isView, options.nDocs, indexes, options.docs, options.collectionOptions),
+                post: function(collection) {
+                    collection.drop();
+                },
+                ops: [rewriteQueryOpAsAgg(options.op)]
+            });
+        }
     }
 
     /**
@@ -717,6 +721,89 @@ if (typeof(tests) !== "object") {
     });
 
     /**
+     * Utility to add a pair of inclusion/exclusion test cases.
+     */
+    const addInclusionExclusionTestCase = function(name, docGenerator, inclusionSpec, exclusionSpec) {
+        for (const [prefix, testCase] of Object.entries({"FindInclusion.": inclusionSpec, "FindExclusion.": exclusionSpec})) {
+            addTestCase({
+                name: prefix + name,
+                tags: ["regression", "projection"],
+                nDocs: 10 * 1000,
+                // Adding a views passthrough and an aggregation test would be redundant.
+                createViewsPassthrough: false,
+                createAggregationTest: false,
+                docs: docGenerator,
+                op: {op: "find", query: {}, filter: testCase}
+            });
+        }
+    }
+
+    /**
+     * Set of test cases which stress the performance of projections with dotted paths as well
+     * as wide projections.
+     */
+    const singlePathThreeComponentDocGenerator = function(i) {
+            return {a: {b: {c: i, d: i}}}
+    };
+
+    addInclusionExclusionTestCase(
+        "ProjectionDottedField.SinglePathThreeComponents" /* name */,
+        singlePathThreeComponentDocGenerator,
+        {"a.b.c": 1, _id: 0} /* inclusionSpec */,
+        {"a.b.d": 0, _id: 1} /* exclusionSpec */);
+
+    const singlePathThreePathComponentsDeepProjectionDocGenerator = function(i, arrSize) {
+        return {a: Array(arrSize).fill(
+            {b: Array(arrSize).fill({c: i, d: i})})};
+    };
+
+    addInclusionExclusionTestCase(
+        "ProjectionDottedField.SinglePathThreeComponentsNestedArraysOfSizeOne" /* name */,
+        i => singlePathThreePathComponentsDeepProjectionDocGenerator(i, 1),
+        {"a.b.c": 1, _id: 0} /* inclusionSpec */,
+        {"a.b.d": 0, _id: 1} /* exclusionSpec */);
+
+    addInclusionExclusionTestCase(
+        "ProjectionDottedField.SinglePathThreeComponentsNestedArraysOfSizeFive" /* name */,
+        i => singlePathThreePathComponentsDeepProjectionDocGenerator(i, 5),
+        {"a.b.c": 1, _id: 0} /* inclusionSpec */,
+        {"a.b.d": 0, _id: 1} /* exclusionSpec */);
+
+    const singlePathSixPathComponentsDeepProjectionDocGenerator = function(i, arrSize) {
+        return {a: Array(5 /* arrayLength */).fill(Array(arrSize).fill(
+            {b: {c: Array(arrSize).fill(
+            {d: {e: Array(arrSize).fill({f: i, g: i})}})}}))};
+    };
+
+    addInclusionExclusionTestCase(
+        "ProjectionDottedField.SinglePathSixComponentsNestedArraysOfSizeOne" /* name */,
+        i => singlePathSixPathComponentsDeepProjectionDocGenerator(i, 1),
+        {"a.b.c.d.e.f": 1, _id: 0} /* inclusionSpec */,
+        {"a.b.c.d.e.g": 0, _id: 1} /* exclusionSpec */);
+
+    addInclusionExclusionTestCase(
+        "ProjectionDottedField.SinglePathSixComponentsNestedArraysOfSizeFive" /* name */,
+        i => singlePathSixPathComponentsDeepProjectionDocGenerator(i, 5),
+        {"a.b.c.d.e.f": 1, _id: 0} /* inclusionSpec */,
+        {"a.b.c.d.e.g": 0, _id: 1} /* exclusionSpec */);
+
+    const topLevelWideProjectionDocGenerator = function(i) {
+        return {a: i, b: i, c: i, d: i, e: i, f: i, g: i, h: i, i: i, j: i};
+    }
+
+    addInclusionExclusionTestCase(
+        "WideProjectionTopLevelField" /* name */,
+        topLevelWideProjectionDocGenerator,
+        {_id: 0, b: 1, c: 1, d: 1, e: 1, f: 1, g: 1, h: 1, i: 1, j: 1} /* inclusionSpec */,
+        {_id: 1, b: 0, c: 0, d: 0, e: 0, f: 0, g: 0, h: 0, i: 0, j: 0} /* exclusionSpec */);
+
+    addInclusionExclusionTestCase(
+        "WideProjectionNestedField" /* name */,
+        i => {return {n: topLevelWideProjectionDocGenerator(i)};},
+        {_id: 0, n: {b: 1, c: 1, d: 1, e: 1, f: 1, g: 1, h: 1, i: 1, j: 1}} /* inclusionSpec */,
+        {_id: 1, n: {b: 0, c: 0, d: 0, e: 0, f: 0, g: 0, h: 0, i: 0, j: 0}} /* exclusionSpec */);
+
+    /**
      * Setup: Create a collection of documents with integer field x.y.
      *
      * Test: Query for a random document based on x.y field and return just x.y. Each thread
@@ -908,7 +995,7 @@ if (typeof(tests) !== "object") {
     /**
      * Benchmarks for find on large collections, targeting the basic functionality of the engine in
      * a systematic way.
-     * 
+     *
      * Naming convention: TestName_<access_method>_<collection_size><doc_size>[R]<group_cardinality>
      * access_method ::= CollScan
      * collection_size ::= L
@@ -1091,38 +1178,38 @@ if (typeof(tests) !== "object") {
     }
 
     addTestCaseWithLargeDatasetAndIndexes({
-        name: "PointQuery_SingleIndex_LL", 
+        name: "PointQuery_SingleIndex_LL",
         docGenerator: largeDoc,
         indexes: [{"a":1}],
         query: {"a": 7}
     });
     addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuery_SingleIndex_LowSelectivityMatch_LL", 
+        name: "RangeQuery_SingleIndex_LowSelectivityMatch_LL",
         docGenerator: largeDoc,
         indexes: [{"a":1}],
         query: {"a": {$gt: 1}}
     });
     addTestCaseWithLargeDatasetAndIndexes({
-        name: "PointQuery_MultipleIndexes_LL", 
+        name: "PointQuery_MultipleIndexes_LL",
         docGenerator: largeDoc,
         indexes: [{"a":1}, {"b":1}, {"a":1, "b":1}],
         query: {"a": 7, "b":742}
     });
     addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuery_MultipleIndexes_LowSelectivityMatch_LL", 
+        name: "RangeQuery_MultipleIndexes_LowSelectivityMatch_LL",
         tags: ["indexed"],
         docGenerator: largeDoc,
         indexes: [{"a":1}, {"b":1}, {"a":1, "b":1}],
         query: {"a": {$gt: 1}, "b": {$lt: 900}}
     });
     addTestCaseWithLargeDatasetAndIndexes({
-        name: "PointQuerySubField_SingleIndex_LL", 
+        name: "PointQuerySubField_SingleIndex_LL",
         docGenerator: largeDoc,
         indexes: [{"e.a":1}],
         query: {"e.a": 7}
     });
     addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuerySubField_SingleIndex_LowSelectivityMatch_LL", 
+        name: "RangeQuerySubField_SingleIndex_LowSelectivityMatch_LL",
         docGenerator: largeDoc,
         indexes: [{"e.a":1}],
         query: {"e.a": {$gt: 1}}
@@ -1174,7 +1261,7 @@ if (typeof(tests) !== "object") {
         query: {"h": {$gt: 1}, "b": {"$in": largeArrayRandom}}
     });
 
-    // Select ~99% from three indexed fields of a compound index. There is a range predicate on 
+    // Select ~99% from three indexed fields of a compound index. There is a range predicate on
     // the leading field and unions of point intervals on the trailing fields.
     addTestCaseWithLargeDatasetAndIndexes({
         name: "RangeQuery_CompoundIndex_ComplexBounds_ThreeFields_LS",
