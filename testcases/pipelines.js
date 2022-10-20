@@ -2596,6 +2596,42 @@ generateTestCaseWithLargeDataset({
     ]
 });
 
+// Aggregating the entire collection into a single group.
+generateTestCaseWithLargeDataset({
+    name: "Group.All_SumAccTopField_LL",
+    docGenerator: largeDoc,
+    pipeline: [{$group: {_id: null, res: {$sum: "$c"}}}]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.All_MultipleAccDiffTopFields_LL",
+    docGenerator: largeDoc,
+    pipeline: [{$group: {_id: null, min: {$min: "$c"}, max: {$max: "$g"}, avg: {$avg: "$h"}}}]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.All_MultipleAccSameSubFieldStress_LL",
+    docGenerator: largeDoc,
+    pipeline: [
+        {$group: {_id: null,
+            o1: {$min: "$e.c"}, o2: {$max: "$e.c"}, o3: {$avg: "$e.c"},
+            o4: {$sum: "$e.c"}, o5: {$first: "$e.c"}, o6: {$last: "$e.c"},
+            o7: {$sum: "$e.c"}, o8: {$first: "$e.c"}, o9: {$last: "$e.c"},
+            o10: {$min: "$e.c"}, o11: {$max: "$e.c"}, o12: {$avg: "$e.c"},
+        }}
+    ]
+});
+generateTestCaseWithLargeDataset({
+    name: "Group.All_MultipleAccDiffSubFieldStress_LL",
+    docGenerator: largeDoc,
+    pipeline: [
+        {$group: {_id: null,
+            o1: {$min: "$ee.a"}, o2: {$max: "$ee.b"}, o3: {$avg: "$ee.c"},
+            o4: {$sum: "$ii"}, o5: {$first: "$ee.e.u"}, o6: {$last: "$ee.e.v"},
+            o7: {$sum: "$e.a"}, o8: {$first: "$e.b"}, o9: {$last: "$e.c"},
+            o10: {$min: "$e.e.u"}, o11: {$max: "$e.e.v"}, o12: {$avg: "$hh"},
+        }}
+    ]
+});
+
 // Indexed plans.
 let dropIndexesAndCaches = function(collection) {
     collection.dropIndexes();
