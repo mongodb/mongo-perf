@@ -727,7 +727,7 @@ if (typeof(tests) !== "object") {
         for (const [prefix, testCase] of Object.entries({"FindInclusion.": inclusionSpec, "FindExclusion.": exclusionSpec})) {
             addTestCase({
                 name: prefix + name,
-                tags: ["regression", "projection"],
+                tags: ["regression", "projection", ">=4.4.0"],
                 nDocs: 10 * 1000,
                 // Adding a views passthrough and an aggregation test would be redundant.
                 createViewsPassthrough: false,
