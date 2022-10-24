@@ -941,9 +941,12 @@ if (typeof(tests) !== "object") {
      */
     for (const limit of [[null, 'NoLimit'], [1, 'LimitOne'], [100, 'LimitHundred']]) {
         for (const numdocs of [[1000, '1K'], [10000, '10K'], [100000, '100K']]) {
-            for (const sortKey of [[{ y: 1 }, '1Key'], [{ y: 1, x: 1 }, '2Key'], [{"z.w.j": 1}, '1PathKey3Components']]) {
+            for (const sortKey of [[{ y: 1 }, '1Key'],
+                                   [{ y: 1, x: 1 }, '2Key'],
+                                   [{ "z.w.j": 1 }, '1PathKey3Components'],
+                                   [{ "k.x": 1, "k.y": 1 }, '2KeyCommonPrefix']]) {
                 var testcase = {
-                    name: "Sort"+limit[1]+"Collection"+numdocs[1]+"_"+sortKey[1],
+                    name: "Sort" + limit[1] + "Collection" + numdocs[1] + "_" + sortKey[1],
                     tags: ["core", "sort"],
                     // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
                     // sorting when running in read command mode.
@@ -951,7 +954,10 @@ if (typeof(tests) !== "object") {
                     nDocs: numdocs[0],
                     docs: function (i) {
                         return {
-                            x: Random.randInt(10000), y: Random.randInt(10000), z: { w: { j: Random.randInt(10000) } }
+                            x: Random.randInt(10000),
+                            y: Random.randInt(10000),
+                            z: { w: { j: Random.randInt(10000) } },
+                            k: { x: Random.randInt(10000), y: Random.randInt(10000) }
                         };
                     },
                     op: {
