@@ -844,24 +844,6 @@ if (typeof(tests) !== "object") {
     });
 
     /**
-     * Setup: Create a collection with unindexed scalars field 'x'.
-     *
-     * Test: Sort the collection by the 'x' field.
-     */
-    addTestCase({
-        name: "SortByScalars",
-        tags: ["core", "sort"],
-        // TODO: SERVER-5722 is fixed, should we set this (and others) to true?
-        createViewsPassthrough: false,
-        createAggregationTest: false,
-        nDocs: 1000,
-        docs: function(i) {
-            return {x: Random.randInt(10000)};
-        },
-        op: {op: "find", query:{}, sort: {x: 1}}
-    });
-
-    /**
      * Setup: Create a collection with an array of scalars x:[...].
      *
      * Test: Sort the collection by the x (array) field.
@@ -957,7 +939,7 @@ if (typeof(tests) !== "object") {
      * Test: Query the collection by 'x' field and sort by the 'y' field.
      */
     addTestCase({
-        name: "NonBlockingSortWithCollScan",
+        name: "NonCoveredNonBlockingSort",
         tags: ["core", "sort", "indexed"],
         createViewsPassthrough: false,
         createAggregationTest: false,
@@ -1046,6 +1028,32 @@ if (typeof(tests) !== "object") {
             query: {$or: [{a: 1, b: 2}, {a: {$gt: 3}, b: 3}]},
             filter: {a: 1, b: 1, c: 1, _id: 0},
             sort: {c: 1},
+        }
+    });
+
+    /**
+     * Setup: Create a collection with field 'a' and 'b'. Build two indexes {a:1, b:1}.
+     *
+     * Test: Query the collection by field 'a' using $in and sort by field 'b', a prefix of the
+     * index will be used to answer the filter predicate with a series of fixed bounds, then bounds
+     * on the suffix is used to answer the sort portion of the query. This results in a series of
+     * IXSCANs joined together with a MERGE_SORT stage.
+     */
+    addTestCase({
+        name: "ExplodeMergeSort",
+        tags: ["core", "sort", "indexed"],
+        createViewsPassthrough: false,
+        createAggregationTest: false,
+        nDocs: 1000,
+        docs: function(i) {
+            return {a: Random.randInt(10), b: Random.randInt(10000)};
+        },
+        indexes: [{a: 1, b: 1}],
+        op: {
+            op: "find",
+            query: {a: {$in: [1, 3, 5, 7, 9]}},
+            filter: {a: 1, b: 1, _id: 0},
+            sort: {b: 1},
         }
     });
 
