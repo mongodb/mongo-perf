@@ -934,6 +934,130 @@ if (typeof(tests) !== "object") {
     });
 
     /**
+     * Setup: Create a collection with field 'x' and indexed field 'y'.
+     *
+     * Test: Query the collection by 'x' field and sort by the 'y' field.
+     */
+    addTestCase({
+        name: "NonCoveredNonBlockingSort",
+        tags: ["core", "sort", "indexed"],
+        createViewsPassthrough: false,
+        createAggregationTest: false,
+        nDocs: 1000,
+        docs: function(i) {
+            return {x: Random.randInt(10000), y: Random.randInt(10000)};
+        },
+        indexes: [{y: 1}],
+        op: {
+            op: "find",
+            query: {x: {$gt: 0}},
+            filter: {x: 1, y:1, _id: 0},
+            sort: {y: 1},
+        }
+    });
+
+    /**
+     * Setup: Create a collection with indexed fields 'a', 'b', and 'c'.
+     *
+     * Test: Query the collection by 'a' and 'b' fields using $or then sort by the 'c' field, 
+     * MERGE_SORT will be used to merge two branches from $or.
+     */
+    addTestCase({
+        name: "CoveredMergeSort",
+        tags: ["core", "sort", "indexed"],
+        createViewsPassthrough: false,
+        createAggregationTest: false,
+        nDocs: 1000,
+        docs: function(i) {
+            return {a: Random.randInt(5), b: Random.randInt(5), c: Random.randInt(10000)};
+        },
+        indexes: [{a: 1, b: 1, c: 1}],
+        op: {
+            op: "find",
+            query: {$or: [{a: 1, b: 2}, {a: 2, b: 3}]},
+            filter: {a: 1, b: 1, c: 1, _id: 0},
+            sort: {c: 1},
+        }
+    });
+
+    /**
+     * Setup: Create a collection with indexed field 'x', and unindexed field 'y'.
+     *
+     * Test: Query the collection by 'x' and 'y' fields using $or then sort by the 'x' field,
+     * MERGE_SORT will be used to merge two branches from $or.
+     */
+    addTestCase({
+        name: "NonCoveredMergeSort",
+        tags: ["core", "sort", "indexed"],
+        createViewsPassthrough: false,
+        createAggregationTest: false,
+        nDocs: 1000,
+        docs: function(i) {
+            return {x: Random.randInt(10), y: Random.randInt(5)};
+        },
+        indexes: [{x: 1}],
+        op: {
+            op: "find",
+            query: {$or: [{x: 1, y: 2}, {x: 2, y: 3}]},
+            filter: {x: 1, y: 1, _id: 0},
+            sort: {x: 1},
+        }
+    });
+
+    /**
+     * Setup: Create a collection with field 'a', 'b', and 'c'. Build two indexes {a:1, b:1, c:1} 
+     * and {b:1, c:1}.
+     *
+     * Test: Query the collection by 'a' and 'b' fields using $or then sort by the 'c' field, the 
+     * first branch will choose index {a:1, b:1, c:1}, the second branch will use {b:1, c:1} 
+     * because it has 'a' range predicate for field 'a', then MERGE_SORT will be used to merge two
+     * branches.
+     */
+    addTestCase({
+        name: "NonCoveredMergeSortMultiIndexes",
+        tags: ["core", "sort", "indexed"],
+        createViewsPassthrough: false,
+        createAggregationTest: false,
+        nDocs: 1000,
+        docs: function(i) {
+            return {a: Random.randInt(5), b: Random.randInt(5), c: Random.randInt(10000)};
+        },
+        indexes: [{a: 1, b: 1, c: 1}, {b: 1, c: 1}],
+        op: {
+            op: "find",
+            query: {$or: [{a: 1, b: 2}, {a: {$gt: 3}, b: 3}]},
+            filter: {a: 1, b: 1, c: 1, _id: 0},
+            sort: {c: 1},
+        }
+    });
+
+    /**
+     * Setup: Create a collection with field 'a' and 'b'. Build two indexes {a:1, b:1}.
+     *
+     * Test: Query the collection by field 'a' using $in and sort by field 'b', a prefix of the
+     * index will be used to answer the filter predicate with a series of fixed bounds, then bounds
+     * on the suffix is used to answer the sort portion of the query. This results in a series of
+     * IXSCANs joined together with a MERGE_SORT stage.
+     */
+    addTestCase({
+        name: "ExplodeMergeSort",
+        tags: ["core", "sort", "indexed"],
+        createViewsPassthrough: false,
+        createAggregationTest: false,
+        nDocs: 1000,
+        docs: function(i) {
+            return {a: Random.randInt(30), b: Random.randInt(10000)};
+        },
+        indexes: [{a: 1, b: 1}],
+        op: {
+            op: "find",
+            query: {a: {$in: [1, 3, 5, 7, 9, 10, 11, 13, 15, 17, 19, 20, 21, 23, 25, 27, 29]}},
+            filter: {a: 1, b: 1, _id: 0},
+            sort: {b: 1},
+        }
+    });
+
+    /**
      * Setup: Create a collection with scalar fields x, y with no index.
      *
      * Test: Sort the collection by one or two fields, with simple and dotted paths,
