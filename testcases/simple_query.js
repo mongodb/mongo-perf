@@ -1046,12 +1046,12 @@ if (typeof(tests) !== "object") {
         createAggregationTest: false,
         nDocs: 1000,
         docs: function(i) {
-            return {a: Random.randInt(10), b: Random.randInt(10000)};
+            return {a: Random.randInt(30), b: Random.randInt(10000)};
         },
         indexes: [{a: 1, b: 1}],
         op: {
             op: "find",
-            query: {a: {$in: [1, 3, 5, 7, 9]}},
+            query: {a: {$in: [1, 3, 5, 7, 9, 10, 11, 13, 15, 17, 19, 20, 21, 23, 25, 27, 29]}},
             filter: {a: 1, b: 1, _id: 0},
             sort: {b: 1},
         }
