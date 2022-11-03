@@ -54,10 +54,11 @@ tests.push( { name: "Update.SetWithMultiIndex.Random",
 
 /*
  * Setup: same setup as Update.SetWithMultiIndex.Random, but this time one
- *        of the indexes should not be updated because unaffected by the change.
+ *        of the indexes should not be updated because it is unaffected by
+ *        the change.
  */
 tests.push( { name: "Update.SetWithIgnoredIndex.Random",
-              tags: ['update', 'indexed'],
+              tags: ['update','indexed'],
               pre: function (collection) {
                   collection.drop();
                   var docs = [];
@@ -102,7 +103,8 @@ tests.push( { name: "Update.SetWithMultiIndex.String",
 
 /*
  * Setup: same setup as Update.SetWithMultiIndex.String, but this time the
- *        string index should not be updated because unaffected by the change.
+ *        string index should not be updated because it is unaffected by the
+ *        change.
  */
 tests.push( { name: "Update.SetWithIgnoredIndex.String",
               tags: ['update','indexed'],
@@ -119,5 +121,5 @@ tests.push( { name: "Update.SetWithIgnoredIndex.String",
               ops: [
                   { op:  "update",
                     query: { _id : { "#RAND_INT_PLUS_THREAD" : [ 0, 100 ] } },
-                      update: { $set: { x: { "#RAND_INT": [0, 1000] } } } },
+                    update: { $set: { x: { "#RAND_INT": [0, 1000] } } } },
               ] } );
