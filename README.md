@@ -6,6 +6,8 @@ Mongo-perf (not to be confused with mongoperf) is a micro benchmarking tool for 
 This repo contains scripts to run benchmark tests for MongoDB.
 
 ### DEPENDENCIES:
+Since 6.0, the legacy "mongo" shell has been replaced with "mongosh" which does not support benchRun(). To run this micro benchmark with MongoDB 6.0 you'll also need to download the 5.0 legacy "mongo" shell and ensure it's in your path.
+
 *General Benchmarking Dependencies*  
 * Python >= 3.0  
 * mongo shell >= 2.7.7-pre- (at revision 881b3a97fb5080b4e5d5ce11ad016da73ea23931 or newer)  
