@@ -282,7 +282,7 @@ function initCollections(collections, env, testName, init, multidb, multicoll, s
     }
 
     // If the 'dataGen' or 'pre' functions did not create the collections, then we should
-    // explicitly do so now. We want the collections to be pre-allocated so that allocation time is 
+    // explicitly do so now. We want the collections to be pre-allocated so that allocation time is
     // not incorporated into the benchmark.
     for (var i = 0; i < multidb; i++) {
         var theDb = db.getSiblingDB('test' + i);
@@ -351,7 +351,7 @@ function runTest(
 
     var collections = shareDataset ? sharedCollections : [];
     // For sharing of collections' data between tests in the same suite, the tests MUST provide
-    // 'generateData' function that is executed once (from the test that happens to run first). The 
+    // 'generateData' function that is executed once (from the test that happens to run first). The
     // tests MIGHT also provide 'pre' and 'post' fixtures to create indexes, etc. These functions are
     // exectuted per test. The matter is complicated by the fact that existing tests use 'pre' for
     // creating the data and setting up the additional stuff, and we don't want to modify these
@@ -927,4 +927,162 @@ function rewriteQueryOpAsAgg(op) {
     }
 
     return newOp;
+}
+
+/**
+ * Sets up a collection and/or a view with the appropriate documents and indexes.
+ *
+ * @param {Boolean} isView - True if 'collectionOrView' is a view; false otherwise.
+ * @param {Number} nDocs - The number of documents to insert into the collection.
+ * @param {function} docGenerator - A function that takes a document number and returns a
+ * document.
+ * @param {Object[]} indexes - A list of index specs to create on the collection.
+ * @param {Object} collectionOptions - Options to use for view/collection creation.
+ */
+function collectionPopulator(isView, nDocs, indexes, docGenerator, collectionOptions) {
+    return function(collectionOrView) {
+        Random.setRandomSeed(258);
+
+        collectionOrView.drop();
+
+        var db = collectionOrView.getDB();
+        var collection;
+        if (isView) {
+            // 'collectionOrView' is a view, so specify a backing collection to serve as its
+            // source and perform the view creation.
+            var viewName = collectionOrView.getName();
+            var collectionName = viewName + "_BackingCollection";
+            collection = db.getCollection(collectionName);
+            collection.drop();
+
+            var viewCreationSpec = {create: viewName, viewOn: collectionName};
+            assert.commandWorked(
+                db.runCommand(Object.extend(viewCreationSpec, collectionOptions)));
+        } else {
+            collection = collectionOrView;
+        }
+
+        var collectionCreationSpec = {create: collection.getName()};
+        assert.commandWorked(
+            db.runCommand(Object.extend(collectionCreationSpec, collectionOptions)));
+        var bulkOp = collection.initializeUnorderedBulkOp();
+        for (var i = 0; i < nDocs; i++) {
+            bulkOp.insert(docGenerator(i));
+        }
+        bulkOp.execute();
+        indexes.forEach(function(indexSpec) {
+            assert.commandWorked(collection.createIndex(indexSpec));
+        });
+    };
+}
+
+/**
+ * Creates test cases and adds them to the global testing array. By default, each test case
+ * specification produces several test cases:
+ *  - A find on a regular collection.
+ *  - A find on an identity view.
+ *  - The equivalent aggregation operation on a regular collection.
+ *
+ * @param {Object} options - Options describing the test case.
+ * @param {String} options.name - The name of the test case. "Queries" is prepended for tests on
+ * regular collections and "Queries.IdentityView" for tests on views.
+ * @param {function} options.docs - A generator function that produces documents to insert into
+ * the collection.
+ * @param {Object[]} options.op - The operations to perform in benchRun.
+ *
+ * @param {Boolean} {options.createViewsPassthrough=true} - If false, specifies that a views
+ * passthrough test should not be created, generating only one test on a regular collection.
+ * @param {Boolean} {options.createAggregationTest=true} - If false, specifies that an
+ * aggregation test should not be created.
+ * @param {Object[]} {options.indexes=[]} - An array of index specifications to create on the
+ * collection.
+ * @param {String[]} {options.tags=[]} - Additional tags describing this test. The "query" tag
+ * is automatically added to test cases for collections. The tags "views" and
+ * "query_identityview" are added to test cases for views.
+ * @param {Object} {options.collectionOptions={}} - Options to use for view/collection creation.
+ */
+function addQueryTestCase(options) {
+    var isView = true;
+    var indexes = options.indexes || [];
+    var tags = options.tags || [];
+
+    tests.push({
+        tags: ["query"].concat(tags),
+        name: "Queries." + options.name,
+        pre: collectionPopulator(
+            !isView, options.nDocs, indexes, options.docs, options.collectionOptions),
+        post: function(collection) {
+            collection.drop();
+        },
+        ops: [options.op]
+    });
+
+    if (options.createViewsPassthrough !== false) {
+        tests.push({
+            tags: ["views", "query_identityview"].concat(tags),
+            name: "Queries.IdentityView." + options.name,
+            pre: collectionPopulator(
+                isView, options.nDocs, indexes, options.docs, options.collectionOptions),
+            post: function(view) {
+                view.drop();
+                var collName = view.getName() + "_BackingCollection";
+                view.getDB().getCollection(collName).drop();
+            },
+            ops: [options.op]
+        });
+    }
+
+    if (options.createAggregationTest !== false) {
+        // Generate a test which is the aggregation equivalent of this find operation.
+        tests.push({
+            tags: ["agg_query_comparison"].concat(tags),
+            name: "Aggregation." + options.name,
+            pre: collectionPopulator(
+                !isView, options.nDocs, indexes, options.docs, options.collectionOptions),
+            post: function(collection) {
+                collection.drop();
+            },
+            ops: [rewriteQueryOpAsAgg(options.op)]
+        });
+    }
+}
+
+/**
+ * Similar to 'addTestCase' but sets up the test to be able to share collections if running
+ * as part of a suite that opts-in for sharing.
+ * @param {query} - The query to benchmark with 'find' operation. Ignored if 'op' is defined.
+ * @param {op} - The full definition of the op to be benchmarked.
+ * @param {Number} [options.nDocs = largeCollectionSize] - The number of documents to insert in
+ * the collection. Ignored, if 'generateData' is defined.
+ * @param {function} [options.docGenerator] - To be used with populatorGenerator. Ignored, if
+ * 'generatedData' is defined.
+ * @param {function} [options.generateData = populatorGenerator] - Uses 'docGenerator' to populate
+ * the collection with 'nDocs' documents. If the test is part of a suite that uses '--shareDataset'
+ * flag, the generator is run once (for the first test in the suite).
+ * @param {function} [options.pre=noop] - Any other setup, in addition to creating the data, that
+ * the test might need. For example, creating indexes. The 'pre' fixture is run per test, so for
+ * tests that share the dataset, the effects must be undone with 'post'.
+ * @param {function} [options.post=noop] - cleanup after the test is done.
+ */
+function addTestCaseWithLargeDataset(options) {
+    const largeCollectionSize = 100000;
+    var nDocs = options.nDocs || largeCollectionSize;
+    var tags = options.tags || [];
+    tests.push({
+        tags: ["regression", "query_large_dataset"].concat(tags),
+        name: "Queries." + options.name,
+        generateData: options.generateData ||
+            function(collection) {
+                Random.setRandomSeed(258);
+                collection.drop();
+                var bulkop = collection.initializeUnorderedBulkOp();
+                for (var i = 0; i < nDocs; i++) {
+                    bulkop.insert(options.docGenerator(i));
+                }
+                bulkop.execute();
+            },
+        pre: options.pre || function (collection) {},
+        post: options.post || function(collection) {},
+        ops: ("op" in options) ? [options.op] : [{op: "find", query: options.query}],
+    });
 }
