@@ -2,6 +2,8 @@
 
 Mongo-perf (not to be confused with mongoperf) is a micro benchmarking tool for the MongoDB server. It measures throughput of commands with regards to the number of threads.
 
+**NOTE: this tool is not supported for users outside MongoDB. Use at your own risk.**
+
 ### OVERVIEW:
 This repo contains scripts to run benchmark tests for MongoDB.
 
