@@ -2,13 +2,13 @@
 
 Mongo-perf (not to be confused with mongoperf) is a micro benchmarking tool for the MongoDB server. It measures throughput of commands with regards to the number of threads.
 
-**NOTE: this tool is intended only for internal use by MongoDB's performance testing ecosystem. It is not supported for users outside MongoDB. Use at your own risk.**
+**NOTE: this tool is primarily for internal use by MongoDB's performance testing ecosystem. It is not supported for users outside MongoDB. Use at your own risk.**
 
 ### OVERVIEW:
 This repo contains scripts to run benchmark tests for MongoDB.
 
 ### DEPENDENCIES:
-Since 6.0, the legacy "mongo" shell has been replaced with "mongosh" which does not support benchRun(). To run this micro benchmark with MongoDB 6.0 you'll also need to download the 5.0 legacy "mongo" shell and ensure it's in your path.
+Since 6.0, the legacy "mongo" shell has been replaced with "mongosh" which does not support benchRun(). To run this micro benchmark with MongoDB 6.0 you'll also need to download the 5.0 legacy "mongo" shell and ensure it's in your path. The legacy mongo shell is no longer officially supported for use with the MongoDB server, so there is no guarantee of forwards compatibility between the 5.0 legacy shell and more recent versions of the MongoDB server.
 
 *General Benchmarking Dependencies*  
 * Python >= 3.0  
