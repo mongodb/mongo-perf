@@ -159,7 +159,7 @@ def main():
             args.includeFilter = '%'
 
     if args.username:
-        auth = ["-u", args.username, "-p", args.password, "--authenticationDatabase", "admin"]
+        auth = ["-u", args.username, "-p", args.password, "--authenticationDatabase", "admin", "--ssl", "--sslAllowInvalidHostnames"]
     else:
         auth = []
 
