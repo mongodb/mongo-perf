@@ -25,6 +25,51 @@ if (typeof(tests) !== "object") {
     });
 
     /**
+     * Setup: Create a collection of documents containing 5 fields other than _id.
+     *
+     * Test: Empty query that returns all documents.
+     */
+    addQueryTestCase({
+        name: "FiveField",
+        tags: ["regression"],
+        nDocs: 100,
+        docs: function(i) {
+            return {a: i, b: i, c: i, d: i, e: i};
+        },
+        op: {op: "find", query: {}}
+    });
+
+    /**
+     * Setup: Create a large collection of documents containing only an ObjectId _id field.
+     *
+     * Test: Empty query that returns all documents.
+     */
+    addQueryTestCase({
+        name: "EmptyLarge",
+        tags: ["regression"],
+        nDocs: 10000,
+        docs: function(i) {
+            return {};
+        },
+        op: {op: "find", query: {}}
+    });
+
+    /**
+     * Setup: Create a large collection of documents containing 5 fields other than _id.
+     *
+     * Test: Empty query that returns all documents.
+     */
+    addQueryTestCase({
+        name: "FiveFieldLarge",
+        tags: ["regression"],
+        nDocs: 10000,
+        docs: function(i) {
+            return {a: i, b: i, c: i, d: i, e: i};
+        },
+        op: {op: "find", query: {}}
+    });
+
+    /**
      * Setup: Create a collection of documents with only an ObjectID _id field.
      *
      * Test: Query for a document that doesn't exist. Scans all documents using a collection scan
