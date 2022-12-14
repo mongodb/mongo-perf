@@ -25,47 +25,28 @@ if (typeof(tests) !== "object") {
     });
 
     /**
-     * Setup: Create a collection of documents containing 5 fields other than _id.
+     * Setup: Create a large collection of 10k large documents.
      *
      * Test: Empty query that returns all documents.
      */
     addQueryTestCase({
-        name: "FiveField",
+        name: "Large10k",
         tags: ["regression"],
-        nDocs: 100,
-        docs: function(i) {
-            return {a: i, b: i, c: i, d: i, e: i};
-        },
+        nDocs: 10000,
+        docs: largeDoc,
         op: {op: "find", query: {}}
     });
 
     /**
-     * Setup: Create a large collection of documents containing only an ObjectId _id field.
+     * Setup: Create a large collection of 100k large documents.
      *
      * Test: Empty query that returns all documents.
      */
     addQueryTestCase({
-        name: "EmptyLarge",
+        name: "Large100k",
         tags: ["regression"],
-        nDocs: 10000,
-        docs: function(i) {
-            return {};
-        },
-        op: {op: "find", query: {}}
-    });
-
-    /**
-     * Setup: Create a large collection of documents containing 5 fields other than _id.
-     *
-     * Test: Empty query that returns all documents.
-     */
-    addQueryTestCase({
-        name: "FiveFieldLarge",
-        tags: ["regression"],
-        nDocs: 10000,
-        docs: function(i) {
-            return {a: i, b: i, c: i, d: i, e: i};
-        },
+        nDocs: 100000,
+        docs: largeDoc,
         op: {op: "find", query: {}}
     });
 
