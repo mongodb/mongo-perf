@@ -25,6 +25,21 @@ if (typeof(tests) !== "object") {
     });
 
     /**
+     * Setup: Create a large collection of large documents.
+     *
+     * Test: Empty query that returns all documents.
+     */
+    for (const numDocs of [[10000, '10K'], [100000, '100K']]) {
+        addQueryTestCase({
+            name: "Large" + numDocs[1],
+            tags: ["regression"],
+            nDocs: numDocs[0],
+            docs: largeDoc,
+            op: {op: "find", query: {}}
+        });
+    }
+
+    /**
      * Setup: Create a collection of documents with only an ObjectID _id field.
      *
      * Test: Query for a document that doesn't exist. Scans all documents using a collection scan
