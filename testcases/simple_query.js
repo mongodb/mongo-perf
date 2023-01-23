@@ -511,6 +511,35 @@ if (typeof(tests) !== "object") {
     });
 
     /**
+     * Setup: create collection and 3 indexes and enable a failpoint to force plan enumeration orderd
+     *
+     * Test: run a query with the worst indexes enumerated first to measure how quickly SBE/Classic can shift down max reads. TODO maybe this should be a latency test?
+     */
+    addQueryTestCase({
+        name: "MultiplanningBadEnumeration",
+        tags: ["core", "indexed", "TODO"],
+        createViewsPassthrough: false,
+        createAggregationTest: false,
+        nDocs: 10000,
+        pre(coll) {
+            coll.createIndexes([{a: 1}, {a: 1, b: 1}, {a: 1, b: 1, c: 1}]);
+            coll.getDB().adminCommand({configureFailPoint: "enumerateLongestIndexNamesFirst", mode: "alwaysOn"});
+            coll.getDB().adminCommand({setParameter: 1, planCacheSize: "0%"});
+            // TODO post function?
+        },
+        post(coll) {
+            coll.getDB().adminCommand({configureFailPoint: "enumerateLongestIndexNamesFirst", mode: "off"});
+            coll.getDB().adminCommand({setParameter: 1, planCacheSize: "5%"}); // TODO save previous default plan cache size instead of hard code?
+        },
+        docs(i) {
+            // for each a value there are only 2 posible b values which makes a_1_b_1 more selective than a_1
+            // for each (a, b) pair there are 100 possible c values which makes a_1_b_1_c_1 more selective than the other indexes
+            return {c: i % 100, b: parseInt(i / 100) % 10, a: parseInt(i / 100) % 5};
+        },
+        op: {op: "find", query: {a: 1, b: 1, c: {$gte: 20, $lte: 24}}}
+    });
+
+    /**
      * Similar to 'addTestCase' but sets up the test to be able to share collections if running
      * as part of a suite that opts-in for sharing.
      * @param {query} - The query to benchmark with 'find' operation. Ignored if 'op' is defined.
