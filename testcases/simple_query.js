@@ -532,6 +532,7 @@ if (typeof(tests) !== "object") {
             coll.getDB().adminCommand({setParameter: 1, planCacheSize: "5%"}); // TODO save previous default plan cache size instead of hard code?
         },
         docs(i) {
+            // TODO the throughput hasn't changed that much from before and after my multiplanner patch, clearly I need to add more docs or something
             // for each a value there are only 2 posible b values which makes a_1_b_1 more selective than a_1
             // for each (a, b) pair there are 100 possible c values which makes a_1_b_1_c_1 more selective than the other indexes
             return {c: i % 100, b: parseInt(i / 100) % 10, a: parseInt(i / 100) % 5};
