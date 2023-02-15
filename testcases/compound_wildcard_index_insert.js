@@ -105,7 +105,7 @@ function generateDocuments(perfCase) {
 for (let perfCase of cases) {
     tests.push({
         name: perfCase.name,
-        tags: ["insert"],
+        tags: ["compound-wildcard-insert"],
         pre: getSetupFunction(perfCase),
         ops: [{'op': 'insert', 'doc': generateDocuments(perfCase)}]
     });
