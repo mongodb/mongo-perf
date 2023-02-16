@@ -16,21 +16,25 @@ const baseCases = [
         name: "Compound Regular Index with 2 fields",
         indexes: [{keyPattern: {'a': 1, 'b': 1}}],
         documentGenerator: smallDoc,
+        tags: ["core"],
     },
     {
         name: "Compound Wildcard Index with 2 fields",
         indexes: [{keyPattern: {'a': 1, '$**': 1}, wildcardProjection: {'b': 1}}],
         documentGenerator: smallDoc,
+        tags: ["core", "regression"],
     },
     {
         name: "Compound Regular Index of with fields, one of which is multikey",
         indexes: [{keyPattern: {'a': 1, 'e.f': 1}}],
         documentGenerator: smallDoc,
+        tags: ["core"],
     },
     {
         name: "Compound Wildcard index with 2 fields, one of which is multikey",
         indexes: [{keyPattern: {'a': 1, '$**': 1}, wildcardProjection: {'e.f': 1}}],
         documentGenerator: smallDoc,
+        tags: ["core", "regression"],
     },
     {
         name: "Multiple Compound Regular Indexes with 2 fields",
@@ -42,6 +46,7 @@ const baseCases = [
             {keyPattern: {'a': 1, 'e.h': 1}}
         ],
         documentGenerator: smallDoc,
+        tags: ["core"],
     },
     {
         name: "Compound Wildcard Index with 2 fields and multiple fields in the projection",
@@ -50,11 +55,13 @@ const baseCases = [
             wildcardProjection: {'e.a': 1, 'e.b': 1, 'e.c': 1, 'e.g': 1, 'e.h': 1}
         }],
         documentGenerator: smallDoc,
+        tags: ["core", "regression"],
     },
     {
         name: "Compound Regular Index with 5 fields",
         indexes: [{keyPattern: {'a': 1, 'b': 1, 'c': 1, 'h': 1, 'i': 1}}],
         documentGenerator: smallDoc,
+        tags: ["core"],
     },
     {
         name: "Compound Wildcard Index with 5 fields",
@@ -62,6 +69,7 @@ const baseCases = [
             {keyPattern: {'a': 1, '$**': 1, 'c': 1, 'h': 1, 'i': 1}, wildcardProjection: {'b': 1}}
         ],
         documentGenerator: smallDoc,
+        tags: ["core", "regression"],
     },
 ];
 
@@ -105,7 +113,7 @@ function generateDocuments(perfCase) {
 for (let perfCase of cases) {
     tests.push({
         name: perfCase.name,
-        tags: ["compound-wildcard-insert"],
+        tags: ["compound-wildcard-insert"].concat(perfCase.tags),
         pre: getSetupFunction(perfCase),
         ops: [{'op': 'insert', 'doc': generateDocuments(perfCase)}]
     });
