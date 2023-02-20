@@ -25,7 +25,7 @@ const baseCases = [
         tags: ["core", "regression"],
     },
     {
-        name: "Compound Regular Index of with fields, one of which is multikey",
+        name: "Compound Regular Index with 2 fields, one of which is multikey",
         indexes: [{keyPattern: {'a': 1, 'e.f': 1}}],
         documentGenerator: smallDoc,
         tags: ["core"],
