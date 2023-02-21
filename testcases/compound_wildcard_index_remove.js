@@ -62,6 +62,20 @@ const baseCases = [
         documentGenerator: smallDoc,
         tags: ["core", "regression"],
     },
+    {
+        name: "Compound Regular Index, most of the collection removal.",
+        indexes: [{keyPattern: {'a': 1, 'e.a': 1}}],
+        query: {a: {$ne: 5}, 'e.a': {$gte: 1}},  // 0.9 * 0.9 = 0.81 = 81% of docs will be removed
+        documentGenerator: smallDoc,
+        tags: ["core"],
+    },
+    {
+        name: "Compound Wildcard Index, most of the collection removal.",
+        indexes: [{keyPattern: {'$**': 1, 'e.a': 1}, wildcardProjection: {'a': 1}}],
+        query: {a: {$ne: 5}, 'e.a': {$gte: 1}},  // 0.9 * 0.9 = 0.81 = 81% of docs will be removed
+        documentGenerator: smallDoc,
+        tags: ["core", "regression"],
+    },
 ];
 
 // Generate perfomance test cases for different document numbers to be inserted. They will be used
