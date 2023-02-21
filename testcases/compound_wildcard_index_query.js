@@ -36,12 +36,27 @@ const queries = [
         query: {a: 5, 'e.h': 5, 'e.e': 5},
     },
     {
+        description: 'Point Query with sort.',
+        query: {a: 5, 'e.h': 5, 'e.e': 5},
+        sort: {a: 1, 'e.h': -1, 'e.e': 1},
+    },
+    {
+        description: 'Covered Point Query.',
+        query: {a: 5, 'e.h': 5, 'e.e': 5},
+        filter: {_id: 0, a: 1},
+    },
+    {
         description: 'Range Query.',
         query: {a: {$gt: 10}, 'e.h': {$lt: 10}, 'e.e': {$lt: 5}},
     },
     {
         description: 'Point and Range Query.',
         query: {a: 5, 'e.h': {$lt: 10}, 'e.e': {$lt: 5}},
+    },
+    {
+        description: 'ESR Query',
+        query: {a: 5, 'e.h': {$lt: 10}, 'e.e': {$lt: 5}},
+        sort: {a: 1, 'e.h': -1, 'e.e': 1},
     },
     {
         description: 'Prefix query.',
@@ -60,25 +75,9 @@ for (let indexSpec of indexSpecs) {
                     query.description} Collection size ${numberOfDocuments} docs.`,
                 indexes: [indexSpec],
                 query: query.query,
+                sort: query.sort,
+                filter: query.filter,
                 tags: indexSpec.tags
-            });
-
-            perfCases.push({
-                name: `${namePrefix} ${indexSpec.description} ${
-                    query.description} With sort. Collection size ${numberOfDocuments} docs.`,
-                indexes: [indexSpec],
-                query: query.query,
-                sort: {a: 1, 'e.h': -1, 'e.e': 1},
-                tags: indexSpec.tags
-            });
-
-            perfCases.push({
-                name: `${namePrefix} ${indexSpec.description} ${
-                    query.description} Covered. Collection size ${numberOfDocuments} docs.`,
-                indexes: [indexSpec],
-                query: query.query,
-                filter: {_id: 0, a: 1},
-                tags: indexSpec.tags,
             });
         }
     }
