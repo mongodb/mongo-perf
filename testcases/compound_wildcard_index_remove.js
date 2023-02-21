@@ -6,7 +6,7 @@ if (typeof (tests) != "object") {
 'use strict';
 
 // Setting random seed is required for smallDoc for it uses Random.
-Random.setRandomSeed(5147);
+Random.setRandomSeed(7631);
 
 const namePrefix = '[CWI.remove]';
 
@@ -37,6 +37,21 @@ const baseCases = [
         name: "Compound Wildcard index with 2 fields, one of which is multikey.",
         indexes: [{keyPattern: {'a': 1, '$**': 1}, wildcardProjection: {'e.f': 1}}],
         query: {a: 5, 'e.f': 5},  // roughly 3*0.1*0.1 = 0.03 = 3% of docs will be removed
+        documentGenerator: smallDoc,
+        tags: ["core", "regression"],
+    },
+    {
+        name:
+            "Compound Regular Index with 2 fields, baseline for a test with prefixed wildcard component.",
+        indexes: [{keyPattern: {'a': 1, "e.a": 1}}],
+        query: {a: 5, 'e.a': 5},  // roughly 3*0.1*0.1 = 0.03 = 3% of docs will be removed
+        documentGenerator: smallDoc,
+        tags: ["core"],
+    },
+    {
+        name: "Compound Wildcard Index with prefixed wildcard component.",
+        indexes: [{keyPattern: {'a': 1, "e.$**": 1}, wildcardProjection: undefined}],
+        query: {a: 5, 'e.a': 5},  // roughly 3*0.1*0.1 = 0.03 = 3% of docs will be removed
         documentGenerator: smallDoc,
         tags: ["core", "regression"],
     },
