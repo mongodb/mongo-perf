@@ -13,4 +13,3 @@ If applicable, only required if there is a new workload being added. Form can be
 
 **Related PRs:**
 If applicable, link related PRs
-PLEASE READ AND REMOVE THE SECTION BELOW BEFORE SUBMITTING YOUR PR FOR REVIEW
