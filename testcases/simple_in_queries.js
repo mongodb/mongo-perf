@@ -8,6 +8,35 @@ if (typeof(tests) !== "object") {
     Random.setRandomSeed(258);
 
     /**
+     * Adds two string test cases for a $in query: One a small collection, and another on a
+     * large collection.
+     */
+    function addStringInTestCases({name, collation, inArray}) {
+        const collectionOptions = {};
+        if (collation) {
+            collectionOptions.collation = collation;
+        }
+        for (const [nameSuffix, size] of [["", 10], ["BigCollection", 10000]]) {
+            addQueryTestCase({
+                name: name + nameSuffix,
+                tags: ["regression", "collation"],
+                // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+                // sorting when running in read command mode.
+                createViewsPassthrough: false,
+                collectionOptions: collectionOptions,
+                nDocs: size,
+                docs: function (i) {
+                    return {x: i.toString()};
+                },
+                op: {
+                    op: "find",
+                    query: {x: {$in: inArray}},
+                    sort: {x: 1}
+                }
+            });
+        }
+    }
+    /**
      * Setup: Create a collection with a non-simple default collation and insert a small number of
      * documents with strings. We set several collation options in an attempt to make the collation
      * processing in ICU more expensive.
@@ -16,35 +45,20 @@ if (typeof(tests) !== "object") {
      * predicate. Request a sort which the query system must satisfy by sorting the documents in
      * memory according to the collation.
      */
-    addQueryTestCase({
+    addStringInTestCases({
         name: "StringUnindexedInPredWithNonSimpleCollation",
-        tags: ["regression", "collation"],
-        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
-        // sorting when running in read command mode.
-        createViewsPassthrough: false,
-        collectionOptions: {
-            collation: {
-                locale: "en",
-                strength: 5,
-                backwards: true,
-                normalization: true,
-            }
+        collation: {
+            locale: "en",
+            strength: 5,
+            backwards: true,
+            normalization: true,
         },
-        nDocs: 10,
-        docs: function (i) {
-            return {x: i.toString()};
-        },
-        op: {
-            op: "find",
-            query: {x: {$in: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]}},
-            sort: {x: 1}
-        }
+        inArray: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
     });
 
-
     /**
-     * Setup: Create a collection with the simple default collation and insert a small number of
-     * documents with strings.
+     * Setup: Create a collection with the simple default collation and insert documents with
+     * strings.
      *
      * Test: Issue queries that must perform a collection scan, filtering the documents with an $in
      * predicate. Request a sort which the query system must satisfy by sorting the documents in
@@ -55,27 +69,39 @@ if (typeof(tests) !== "object") {
      * comparison predicates are unindexed, in addition to the perf impact of an in-memory SORT
      * stage which uses a collator.
      */
-    addQueryTestCase({
+    addStringInTestCases({
         name: "StringUnindexedInPredWithSimpleCollation",
-        tags: ["regression", "collation"],
-        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
-        // sorting when running in read command mode.
-        createViewsPassthrough: false,
-        nDocs: 10,
-        docs: function (i) {
-            return {x: i.toString()};
+        inArray: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+    });
+
+    /**
+     * Setup: Same as above.
+     *
+     * Test: Issue same queries as above, but with large array of strings as $in argument.
+     */
+    const nLargeArrayElements = 1000;
+    const largeStringInArray = [];
+    for (let i = 0; i < nLargeArrayElements; i++) {
+        largeStringInArray.push(Random.randInt(nLargeArrayElements).toString());
+    }
+    addStringInTestCases({
+        name: "StringUnindexedLargeInPredWithNonSimpleCollation",
+        collation: {
+            locale: "en",
+            strength: 5,
+            backwards: true,
+            normalization: true,
         },
-        op: {
-            op: "find",
-            query: {x: {$in: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]}},
-            sort: {x: 1}
-        }
+        inArray: largeStringInArray,
+    });
+    addStringInTestCases({
+        name: "StringUnindexedLargeInPredWithSimpleCollation",
+        inArray: largeStringInArray,
     });
 
     /**
      * Large arrays used for $in queries in the subsequent test cases.
      */
-    var nLargeArrayElements = 1000;
     var largeArrayRandom = [];
     for (var i = 0; i < nLargeArrayElements; i++) {
         largeArrayRandom.push(Random.randInt(nLargeArrayElements));
