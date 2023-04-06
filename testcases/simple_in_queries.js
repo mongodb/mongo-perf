@@ -12,6 +12,10 @@ if (typeof(tests) !== "object") {
      * large collection.
      */
     function addStringInTestCases({name, collation, inArray}) {
+        const collectionOptions = {};
+        if (collation) {
+            collectionOptions.collation = collation;
+        }
         for (const [nameSuffix, size] of [["", 10], ["BigCollection", 10000]]) {
             addQueryTestCase({
                 name: name + nameSuffix,
@@ -19,7 +23,7 @@ if (typeof(tests) !== "object") {
                 // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
                 // sorting when running in read command mode.
                 createViewsPassthrough: false,
-                collectionOptions: {collation: collation},
+                collectionOptions: collectionOptions,
                 nDocs: size,
                 docs: function (i) {
                     return {x: i.toString()};
