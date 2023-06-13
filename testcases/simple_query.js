@@ -59,7 +59,7 @@ if (typeof(tests) !== "object") {
      * Setup: Create a collection of documents with only an integer _id field.
      *
      * Test: Query for a random document based on _id. Each thread accesses a distinct range of
-     * documents.
+     * documents. This test generates queries that use IDHACK plans.
      */
     addQueryTestCase({
         name: "IntIdFindOne",
