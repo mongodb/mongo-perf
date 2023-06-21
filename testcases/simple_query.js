@@ -63,7 +63,7 @@ if (typeof(tests) !== "object") {
      */
     addQueryTestCase({
         name: "IntIdFindOne",
-        tags: ["regression"],
+        tags: ["regression", "fast_running_query"],
         nDocs: 4800,
         docs: function(i) {
             return {_id: i};
@@ -79,7 +79,7 @@ if (typeof(tests) !== "object") {
      */
     addQueryTestCase({
         name: "IntNonIdFindOne",
-        tags: ["core", "indexed"],
+        tags: ["core", "indexed", "fast_running_query"],
         nDocs: 4800,
         docs: function(i) {
             return {x: i};
@@ -96,7 +96,7 @@ if (typeof(tests) !== "object") {
      */
     addQueryTestCase({
         name: "IntIDRange",
-        tags: ["regression"],
+        tags: ["regression", "fast_running_query"],
         nDocs: 4800,
         docs: function(i) {
             return {_id: i};
@@ -112,7 +112,7 @@ if (typeof(tests) !== "object") {
      */
     addQueryTestCase({
         name: "IntNonIDRange",
-        tags: ["indexed"],
+        tags: ["indexed", "fast_running_query"],
         nDocs: 4800,
         docs: function(i) {
             return {x: i};
@@ -129,7 +129,7 @@ if (typeof(tests) !== "object") {
      */
     addQueryTestCase({
         name: "RegexPrefixFindOne",
-        tags: ["core", "indexed"],
+        tags: ["core", "indexed", "fast_running_query"],
         nDocs: 4800,
         docs: function(i) {
             return {x: i.toString()};
@@ -146,7 +146,7 @@ if (typeof(tests) !== "object") {
      */
     addQueryTestCase({
         name: "TwoInts",
-        tags: ["core", "indexed"],
+        tags: ["core", "indexed", "fast_running_query"],
         nDocs: 4800,
         docs: function(i) {
             return {x: i, y: 2 * i};
@@ -220,7 +220,7 @@ if (typeof(tests) !== "object") {
      */
     addQueryTestCase({
         name: "IntNonIdFindOneProjectionCovered",
-        tags: ["core", "indexed"],
+        tags: ["core", "indexed", "fast_running_query"],
         nDocs: 4800,
         docs: function(i) {
             return {x: i};
@@ -242,7 +242,7 @@ if (typeof(tests) !== "object") {
      */
     addQueryTestCase({
         name: "IntNonIdFindOneProjection",
-        tags: ["core", "indexed"],
+        tags: ["core", "indexed", "fast_running_query"],
         nDocs: 4800,
         docs: function(i) {
             return {x: i};
@@ -343,7 +343,7 @@ if (typeof(tests) !== "object") {
      */
     addQueryTestCase({
         name: "FindProjectionThreeFieldsCovered",
-        tags: ["core", "indexed"],
+        tags: ["core", "indexed", "fast_running_query"],
         nDocs: 4800,
         docs: function(i) {
             return {x: i, y: i, z: i};
@@ -478,7 +478,7 @@ if (typeof(tests) !== "object") {
      */
     addQueryTestCase({
         name: "FindProjectionDottedField.Indexed",
-        tags: ["core", "indexed"],
+        tags: ["core", "indexed", "fast_running_query"],
         nDocs: 100,
         docs: function(i) {
             return {x: {y: i}};
@@ -738,6 +738,7 @@ if (typeof(tests) !== "object") {
 
     addTestCaseWithLargeDatasetAndIndexes({
         name: "PointQuery_SingleIndex_LL",
+        tags: ["fast_running_query"],
         docGenerator: largeDoc,
         indexes: [{"a": 1}],
         query: {"a": 7}
@@ -750,6 +751,7 @@ if (typeof(tests) !== "object") {
     });
     addTestCaseWithLargeDatasetAndIndexes({
         name: "PointQuery_MultipleIndexes_LL",
+        tags: ["fast_running_query"],
         docGenerator: largeDoc,
         indexes: [{"a": 1}, {"b": 1}, {"a": 1, "b": 1}],
         query: {"a": 7, "b": 742}
@@ -763,6 +765,7 @@ if (typeof(tests) !== "object") {
     });
     addTestCaseWithLargeDatasetAndIndexes({
         name: "PointQuerySubField_SingleIndex_LL",
+        tags: ["fast_running_query"],
         docGenerator: largeDoc,
         indexes: [{"e.a": 1}],
         query: {"e.a": 7}
@@ -777,7 +780,7 @@ if (typeof(tests) !== "object") {
     // Select ~1% from a single indexed field.
     addTestCaseWithLargeDatasetAndIndexes({
         name: "RangeQuery_SingleIndex_SimpleRange_LS",
-        tags: ["indexed"],
+        tags: ["indexed", "fast_running_query"],
         docGenerator: smallDoc,
         indexes: [{"b": 1}],
         query: {"b": {$gt: 100, $lt: 109}}
