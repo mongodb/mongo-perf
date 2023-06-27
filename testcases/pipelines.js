@@ -1699,6 +1699,41 @@ generateTestCase({
     addSkipStage: false,
 });
 
+generateTestCase({
+    name: "CountsIntIDRangeLarge",
+    tags: ["agg_query_comparison"],
+    nDocs: 4800,
+    docGenerator: function(i) {
+        return {_id: i};
+    },
+    pipeline: [{$match: {_id: {$gt: 10, $lt: 5000}}}, {$count: "n"}],
+    addSkipStage: false,
+});
+
+generateTestCase({
+    name: "CountsIntIdxRange",
+    tags: ["agg_query_comparison"],
+    nDocs: 4800,
+    docGenerator: function(i) {
+        return {_id: i, a : i};
+    },
+    indices: [{a: 1}],
+    pipeline: [{$match: {a: {$gt: 10, $lt: 100}}}, {$count: "n"}],
+    addSkipStage: false,
+});
+
+generateTestCase({
+    name: "CountsIntIdxRangeLarge",
+    tags: ["agg_query_comparison"],
+    nDocs: 4800,
+    docGenerator: function(i) {
+        return {_id: i, a : i};
+    },
+    indices: [{a: 1}],
+    pipeline: [{$match: {a: {$gt: 10, $lt: 5000}}}, {$count: "n"}],
+    addSkipStage: false,
+});
+
 //
 // Distinct operations expressed as aggregations.
 //
