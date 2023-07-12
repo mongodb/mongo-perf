@@ -694,7 +694,7 @@ function runTests(
     testResults['start'] = new Date();
 
     // Run all tests in the test file.
-    for (var i = 0; i < 3 && i < tests.length; i++) {
+    for (var i = 0; i < tests.length; i++) {
         var test = tests[i];
         var errors = [];
         // Execute if it has a matching tag to the suite that was passed in
