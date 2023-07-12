@@ -694,12 +694,16 @@ function runTests(
     testResults['start'] = new Date();
 
     // Run all tests in the test file.
-    for (var i = 0; i < tests.length; i++) {
+    for (var i = 0; i < 3 && i < tests.length; i++) {
         var test = tests[i];
         var errors = [];
         // Execute if it has a matching tag to the suite that was passed in
         if ( doExecute(test, includeFilter, excludeFilter) ) {
             print(test.name)
+
+            // Enable query stats collection.
+            db.adminCommand({setParameter: 1, internalQueryStatsCacheSize: "2MB"});
+
             var threadResults = {};
             threadResults['start'] = new Date();
             for (var t = 0; t < threadCounts.length; t++) {
@@ -741,6 +745,25 @@ function runTests(
                 threadResults[threadCount] = newResults;
             }
             threadResults['end'] = new Date();
+
+            // Collect query stats.
+            print();
+            queryStats = db.adminCommand({
+                               aggregate: 1,
+                               cursor: {},
+                               pipeline: [
+                                   {$queryStats: {}},
+                                   {$match: {"key.queryShape.cmdNs.coll": {$regex: test.name}}},
+                                   {$replaceRoot: {newRoot: "$metrics"}}
+                               ]
+                           }).cursor.firstBatch[0];
+            print(tojson(queryStats));
+            threadResults['queryStats'] = queryStats;
+            print();
+
+            // Disable query stats collection.
+            db.adminCommand({setParameter: 1, internalQueryStatsCacheSize: "0MB"});
+
             testResults['results'].push({
                 name: test.name,
                 results: threadResults
