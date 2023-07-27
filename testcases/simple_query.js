@@ -352,6 +352,33 @@ if (typeof(tests) !== "object") {
         op: {op: "find", query: {x: {$gte: "1000002400", $lt: "1000002404"}}}
     });
 
+    var nLargeArrayElements = 1000;
+    var largeStringArraySorted = [];
+    var largeStringArraySortedReverse = [];
+    for (var i = 0; i < nLargeArrayElements; i++) {
+        largeStringArraySorted.push((i * 2).toString());
+        largeStringArraySorted.push((i * 2).toString());
+    }
+
+    largeStringArraySorted.sort();
+    largeStringArraySortedReverse.sort().reverse();
+
+    var largeStringArraySortedWithNull = [null].concat(largeStringArraySorted);
+
+    var largeStringArrayRandom = [];
+    var largeStringArrayRandomWithNull = [null];
+    for (var i = 0; i < nLargeArrayElements; i++) {
+        var str = Random.randInt(nLargeArrayElements).toString();
+        largeStringArrayRandom.push(str);
+        largeStringArrayRandomWithNull.push(str);
+    }
+
+    var veryLargeStringArrayRandom = [];
+    for (var i = 0; i < nVeryLargeArrayElements; i++) {
+        var str = Random.randInt(nVeryLargeArrayElements).toString();
+        veryLargeStringArrayRandom.push(str);
+    }
+
     /**
      * Setup: Create a collection with a non-simple default collation and insert a small number of
      * documents with strings. We set several collation options in an attempt to make the collation
@@ -386,6 +413,81 @@ if (typeof(tests) !== "object") {
         }
     });
 
+    addTestCase({
+        name: "StringUnindexedLargeInPredWithNonSimpleCollation",
+        tags: ["regression", "collation"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        collectionOptions: {
+            collation: {
+                locale: "en",
+                strength: 5,
+                backwards: true,
+                normalization: true,
+            }
+        },
+        nDocs: 10,
+        docs: function(i) {
+            return {x: i.toString()};
+        },
+        op: {
+            op: "find",
+            query: {x: {$in: largeStringArraySortedReverse}},
+            sort: {x: 1}
+        }
+    });
+
+    addTestCase({
+        name: "StringUnindexedInPredWithNonSimpleCollationBigCollection",
+        tags: ["regression", "collation"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        collectionOptions: {
+            collation: {
+                locale: "en",
+                strength: 5,
+                backwards: true,
+                normalization: true,
+            }
+        },
+        nDocs: 10000,
+        docs: function(i) {
+            return {x: i.toString()};
+        },
+        op: {
+            op: "find",
+            query: {x: {$in: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]}},
+            sort: {x: 1}
+        }
+    });
+
+    addTestCase({
+        name: "StringUnindexedLargeInPredWithNonSimpleCollationBigCollection",
+        tags: ["regression", "collation"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        collectionOptions: {
+            collation: {
+                locale: "en",
+                strength: 5,
+                backwards: true,
+                normalization: true,
+            }
+        },
+        nDocs: 10000,
+        docs: function(i) {
+            return {x: i.toString()};
+        },
+        op: {
+            op: "find",
+            query: {x: {$in: largeStringArraySortedReverse}},
+            sort: {x: 1}
+        }
+    });
+
     /**
      * Setup: Create a collection with the simple default collation and insert a small number of
      * documents with strings.
@@ -416,10 +518,275 @@ if (typeof(tests) !== "object") {
         }
     });
 
+    addTestCase({
+        name: "StringUnindexedInPredWithNull",
+        tags: ["regression", "collation"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 10,
+        docs: function(i) {
+            return {x: i.toString()};
+        },
+        op: {
+            op: "find",
+            query: {x: {$in: [null, "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]}},
+            sort: {x: 1}
+        }
+    });
+
+    addTestCase({
+        name: "StringUnindexedInPredWithSimpleCollationBigCollection",
+        tags: ["regression", "collation"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 10000,
+        docs: function(i) {
+            return {x: i.toString()};
+        },
+        op: {
+            op: "find",
+            query: {x: {$in: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]}} /*,
+            sort: {x: 1}*/
+        }
+    });
+
+    addTestCase({
+        name: "StringUnindexedInPredWithNullBigCollection",
+        tags: ["regression", "collation"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 10000,
+        docs: function(i) {
+            return {x: i.toString()};
+        },
+        op: {
+            op: "find",
+            query: {x: {$in: [null, "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]}} /*,
+            sort: {x: 1}*/
+        }
+    });
+
+    addTestCase({
+        name: "StringUnindexedLargeUnsortedInPredWithNonSimpleCollation",
+        tags: ["regression", "collation"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        collectionOptions: {
+            collation: {
+                locale: "en",
+                strength: 5,
+                backwards: true,
+                normalization: true,
+            }
+        },
+        nDocs: 10,
+        docs: function(i) {
+            return {x: i.toString()};
+        },
+        op: {
+            op: "find",
+            query: {x: {$in: largeStringArrayRandom}},
+            sort: {x: 1}
+        }
+    });
+
+    addTestCase({
+        name: "StringUnindexedLargeUnsortedInPredWithNonSimpleCollationBigCollection",
+        tags: ["regression", "collation"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        collectionOptions: {
+            collation: {
+                locale: "en",
+                strength: 5,
+                backwards: true,
+                normalization: true,
+            }
+        },
+        nDocs: 10000,
+        docs: function(i) {
+            return {x: i.toString()};
+        },
+        op: {
+            op: "find",
+            query: {x: {$in: largeStringArrayRandom}},
+            sort: {x: 1}
+        }
+    });
+
+    addTestCase({
+        name: "StringUnindexedLargeUnsortedInPredWithSimpleCollation",
+        tags: ["regression", "collation"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 10,
+        docs: function(i) {
+            return {x: i.toString()};
+        },
+        op: {
+            op: "find",
+            query: {x: {$in: largeStringArrayRandom}},
+            sort: {x: 1}
+        }
+    });
+
+    addTestCase({
+        name: "StringUnindexedVeryLargeInUnsorted",
+        tags: ["regression", "collation"],
+        createViewsPassthrough: false,
+        nDocs: 10,
+        docs: function(i) {
+            return {x: i.toString()};
+        },
+        op: {
+            op: "find",
+            query: {x: {$in: veryLargeStringArrayRandom}},
+        }
+    });
+
+    addTestCase({
+        name: "StringUnindexedLargeUnsortedInPredWithNull",
+        tags: ["regression", "collation"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 10,
+        docs: function(i) {
+            return {x: i.toString()};
+        },
+        op: {
+            op: "find",
+            query: {x: {$in: largeStringArrayRandomWithNull}},
+            sort: {x: 1}
+        }
+    });
+
+    addTestCase({
+        name: "StringUnindexedLargeUnsortedInPredWithSimpleCollationBigCollection",
+        tags: ["regression", "collation"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 10000,
+        docs: function(i) {
+            return {x: i.toString()};
+        },
+        op: {
+            op: "find",
+            query: {x: {$in: largeStringArrayRandom}},
+            sort: {x: 1}
+        }
+    });
+
+    addTestCase({
+        name: "StringUnindexedVeryLargeInUnsortedBigCollection",
+        tags: ["regression", "collation"],
+        createViewsPassthrough: false,
+        nDocs: 10000,
+        docs: function(i) {
+            return {x: i.toString()};
+        },
+        op: {
+            op: "find",
+            query: {x: {$in: veryLargeStringArrayRandom}},
+        }
+    });
+
+    addTestCase({
+        name: "StringUnindexedLargeUnsortedInPredWithNullBigCollection",
+        tags: ["regression", "collation"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 10000,
+        docs: function(i) {
+            return {x: i.toString()};
+        },
+        op: {
+            op: "find",
+            query: {x: {$in: largeStringArrayRandomWithNull}},
+            sort: {x: 1}
+        }
+    });
+
+
+    addTestCase({
+        name: "StringUnindexedLargeInPredWithSimpleCollation",
+        tags: ["regression", "collation"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 10,
+        docs: function(i) {
+            return {x: i.toString()};
+        },
+        op: {
+            op: "find",
+            query: {x: {$in: largeStringArraySorted}},
+            sort: {x: 1}
+        }
+    });
+
+    addTestCase({
+        name: "StringUnindexedLargeInPredWithNull",
+        tags: ["regression", "collation"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 10,
+        docs: function(i) {
+            return {x: i.toString()};
+        },
+        op: {
+            op: "find",
+            query: {x: {$in: largeStringArraySortedWithNull}},
+            sort: {x: 1}
+        }
+    });
+
+    addTestCase({
+        name: "StringUnindexedLargeInPredWithSimpleCollationBigCollection",
+        tags: ["regression", "collation"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 10000,
+        docs: function(i) {
+            return {x: i.toString()};
+        },
+        op: {
+            op: "find",
+            query: {x: {$in: largeStringArraySorted}},
+            sort: {x: 1}
+        }
+    });
+
+    addTestCase({
+        name: "StringUnindexedLargeInPredWithNullBigCollection",
+        tags: ["regression", "collation"],
+        // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
+        // sorting when running in read command mode.
+        createViewsPassthrough: false,
+        nDocs: 10000,
+        docs: function(i) {
+            return {x: i.toString()};
+        },
+        op: {
+            op: "find",
+            query: {x: {$in: largeStringArraySortedWithNull}},
+            sort: {x: 1}
+        }
+    });
+
     /**
      * Large arrays used for $in queries in the subsequent test cases.
      */
-    var nLargeArrayElements = 1000;
     var largeArrayRandom = [];
     for (var i = 0; i < nLargeArrayElements; i++) {
         largeArrayRandom.push(Random.randInt(nLargeArrayElements));
@@ -856,14 +1223,19 @@ if (typeof(tests) !== "object") {
         createViewsPassthrough: false,
         nDocs: 1000,
         docs: function(i) {
-            var nArrayElements = 10;
-            var arrayRandom = [];
-            for (var i = 0; i < nArrayElements; i++) {
-                arrayRandom.push(Random.randInt(10000));
-            }
-            return {x: arrayRandom};
+            var str = "abcdefghijklmnopqrstuvwxyz";
+            /*if (Random.randInt(2) == 1) {
+                var nArrayElements = 10;
+                var arrayRandom = [];
+                for (var i = 0; i < nArrayElements; i++) {
+                    arrayRandom.push(Random.randInt(10000));
+                }
+                return {a: str, b: str, x: arrayRandom, c: str, y: Random.randInt(10), d: str};
+            }*/
+
+            return {a: str, b: str, x: Random.randInt(10000), c:str, y: Random.randInt(10), d: str};
         },
-        op: {op: "find", query:{}, sort: {x: 1}}
+        op: {op: "find", query:{}, sort: {x: 1, y: 1}}
     });
 
     /**
@@ -1278,9 +1650,8 @@ if (typeof(tests) !== "object") {
         }
     });
     let projectWithArithExpressions = {
-        an: {$abs: "$a"}, bn: {$mod: ["$b", 17]}, cn: {$floor: "$c"},
-        dl: {$ln: {$add: [{$abs: "$d"}, 1]}},
-        ab: {$add: ["$a", "$b"]}, cd: {$divide: ["$d", "$c"]},
+        an: {$and: ["$a", "$b", "$c"]},
+        dl: {$or: ["$d", "$e", "$f"]},
     };
     addTestCaseWithLargeDataset({
         name: "ProjectWithArithExpressions_CollScan_LS",
@@ -1328,7 +1699,7 @@ if (typeof(tests) !== "object") {
     addTestCaseWithLargeDatasetAndIndexes({
         name: "RangeQuery_MultipleIndexes_LowSelectivityMatch_LL",
         tags: ["indexed"],
-        docGenerator: largeDoc,
+        docGenerator: smallDoc,
         indexes: [{"a":1}, {"b":1}, {"a":1, "b":1}],
         query: {"a": {$gt: 1}, "b": {$lt: 900}}
     });
