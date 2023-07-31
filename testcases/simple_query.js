@@ -79,7 +79,7 @@ if (typeof(tests) !== "object") {
      */
     addQueryTestCase({
         name: "IntNonIdFindOne",
-        tags: ["core", "indexed", "fast_running_query"],
+        tags: ["core", "indexed", "fast_running_query", "view_query_regression_IntNonIdFindOne"],
         nDocs: 4800,
         docs: function(i) {
             return {x: i};
@@ -146,7 +146,7 @@ if (typeof(tests) !== "object") {
      */
     addQueryTestCase({
         name: "TwoInts",
-        tags: ["core", "indexed", "fast_running_query"],
+        tags: ["core", "indexed", "fast_running_query", "view_query_regression_TwoInts"],
         nDocs: 4800,
         docs: function(i) {
             return {x: i, y: 2 * i};
