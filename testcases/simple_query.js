@@ -1090,6 +1090,21 @@ if (typeof(tests) !== "object") {
     /**
      * Utility to add a pair of inclusion/exclusion test cases.
      */
+    const addProjectComputedFieldTestCase = function(name, docGenerator, projectionSpec) {
+        for (const [prefix, testCase] of Object.entries({"FindProjectComputedField.": projectionSpec})) {
+            addTestCase({
+                name: prefix + name,
+                tags: ["regression", "projection", ">=4.4.0"],
+                nDocs: 10 * 1000,
+                // Adding a views passthrough and an aggregation test would be redundant.
+                createViewsPassthrough: false,
+                createAggregationTest: false,
+                docs: docGenerator,
+                op: {op: "find", query: {}, filter: testCase}
+            });
+        }
+    }
+
     const addInclusionExclusionTestCase = function(name, docGenerator, inclusionSpec, exclusionSpec) {
         for (const [prefix, testCase] of Object.entries({"FindInclusion.": inclusionSpec, "FindExclusion.": exclusionSpec})) {
             addTestCase({
@@ -1119,6 +1134,11 @@ if (typeof(tests) !== "object") {
         {"a.b.c": 1, _id: 0} /* inclusionSpec */,
         {"a.b.d": 0, _id: 1} /* exclusionSpec */);
 
+    addProjectComputedFieldTestCase(
+        "ProjectionDottedField.SinglePathThreeComponents" /* name */,
+        singlePathThreeComponentDocGenerator,
+        {"a.b.c": {$literal: 123}, _id: 0} /* projectionSpec */);
+
     const singlePathThreePathComponentsDeepProjectionDocGenerator = function(i, arrSize) {
         return {a: Array(arrSize).fill(
             {b: Array(arrSize).fill({c: i, d: i})})};
@@ -1130,11 +1150,21 @@ if (typeof(tests) !== "object") {
         {"a.b.c": 1, _id: 0} /* inclusionSpec */,
         {"a.b.d": 0, _id: 1} /* exclusionSpec */);
 
+    addProjectComputedFieldTestCase(
+        "ProjectionDottedField.SinglePathThreeComponentsNestedArraysOfSizeOne" /* name */,
+        i => singlePathThreePathComponentsDeepProjectionDocGenerator(i, 1),
+        {"a.b.c": {$literal: 123}, _id: 0} /* projectionSpec */);
+
     addInclusionExclusionTestCase(
         "ProjectionDottedField.SinglePathThreeComponentsNestedArraysOfSizeFive" /* name */,
         i => singlePathThreePathComponentsDeepProjectionDocGenerator(i, 5),
         {"a.b.c": 1, _id: 0} /* inclusionSpec */,
         {"a.b.d": 0, _id: 1} /* exclusionSpec */);
+
+    addProjectComputedFieldTestCase(
+        "ProjectionDottedField.SinglePathThreeComponentsNestedArraysOfSizeFive" /* name */,
+        i => singlePathThreePathComponentsDeepProjectionDocGenerator(i, 5),
+        {"a.b.c": {$literal: 123}, _id: 0} /* projectionSpec */);
 
     const singlePathSixPathComponentsDeepProjectionDocGenerator = function(i, arrSize) {
         return {a: Array(5 /* arrayLength */).fill(Array(arrSize).fill(
@@ -1148,11 +1178,21 @@ if (typeof(tests) !== "object") {
         {"a.b.c.d.e.f": 1, _id: 0} /* inclusionSpec */,
         {"a.b.c.d.e.g": 0, _id: 1} /* exclusionSpec */);
 
+    addProjectComputedFieldTestCase(
+        "ProjectionDottedField.SinglePathSixComponentsNestedArraysOfSizeOne" /* name */,
+        i => singlePathSixPathComponentsDeepProjectionDocGenerator(i, 1),
+        {"a.b.c.d.e.f": {$literal: 123}, _id: 0} /* projectionSpec */);
+
     addInclusionExclusionTestCase(
         "ProjectionDottedField.SinglePathSixComponentsNestedArraysOfSizeFive" /* name */,
         i => singlePathSixPathComponentsDeepProjectionDocGenerator(i, 5),
         {"a.b.c.d.e.f": 1, _id: 0} /* inclusionSpec */,
         {"a.b.c.d.e.g": 0, _id: 1} /* exclusionSpec */);
+
+    addProjectComputedFieldTestCase(
+        "ProjectionDottedField.SinglePathSixComponentsNestedArraysOfSizeFive" /* name */,
+        i => singlePathSixPathComponentsDeepProjectionDocGenerator(i, 5),
+        {"a.b.c.d.e.f": {$literal: 123}, _id: 0} /* projectionSpec */);
 
     const topLevelWideProjectionDocGenerator = function(i) {
         return {a: i, b: i, c: i, d: i, e: i, f: i, g: i, h: i, i: i, j: i};
