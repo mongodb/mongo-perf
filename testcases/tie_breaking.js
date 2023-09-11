@@ -94,11 +94,14 @@ const baseCases = [
 
 const perfCases = [];
 for (let baseCase of baseCases) {
+    // Create a performance test case with the tie breaking heuristics enabled.
     const perfCaseTB = Object.assign({enableTieBreaking: true}, baseCase);
-    perfCaseTB.name = `TB.${perfCaseTB.name}`;
+    perfCaseTB.name = `TieBreaking.${perfCaseTB.name}`;
     perfCases.push(perfCaseTB);
+
+    // Create a performance test case with the tie breaking heuristics disabled.
     const perfCaseNTB = Object.assign({enableTieBreaking: false}, baseCase);
-    perfCaseNTB.name = `NTB.${perfCaseNTB.name}`;
+    perfCaseNTB.name = `Regular.${perfCaseNTB.name}`;
     perfCases.push(perfCaseNTB);
 }
 
