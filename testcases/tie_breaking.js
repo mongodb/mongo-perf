@@ -5,10 +5,20 @@ if (typeof (tests) != "object") {
 (function() {
 'use strict';
 
-const docs = [];
+// Generate documents for testing the index prefix heuristics.
+const indexPrefixDocs = [];
 for (let i = 0; i < 1000; ++i) {
-    docs.push({a: 1, b: "hello", c: i * 12, d: 111 * i - 100, h: i});
-    docs.push({a: i + 1000, b: `hello%{i}`, c: i * 77, d: -i, h: i});
+    indexPrefixDocs.push({a: 1, b: "hello", c: i * 12, d: 111 * i - 100, h: i});
+    indexPrefixDocs.push({a: i + 1000, b: `hello%{i}`, c: i * 77, d: -i, h: i});
+}
+
+// Generate documents for testing the number of documents examined heuristics.
+const docsExaminedDocs = [];
+for (let i = 0; i < 200; ++i) {
+    docsExaminedDocs.push({i: i, a: "Jerry", b: "not mouse", c: "Tom", d: "degu"});
+}
+for (let i = 0; i < 1100; i++) {
+    docsExaminedDocs.push({i: i, a: "Jerry", b: "mouse", c: "Tom", d: "degu"});
 }
 
 const baseCases = [
@@ -16,63 +26,69 @@ const baseCases = [
         name: "Longest Index Prefix",
         indexes: [{a: 1}, {b: 1, a: 1}],
         query: {a: 1, b: "hello"},
-        docs: docs,
+        docs: indexPrefixDocs,
     },
     {
         name: "Equality",
         indexes: [{a: 1, b: 1}, {b: 1, a: 1}],
         query: {a: {$gt: 0}, b: "hello"},
-        docs: docs,
+        docs: indexPrefixDocs,
     },
     {
         name: "Shortest Index",
         indexes: [{a: 1, b: 1, c: 1}, {b: 1, a: 1}],
         query: {a: 1, b: "hello"},
-        docs: docs,
+        docs: indexPrefixDocs,
     },
     {
         name: "Shortest Index With Comparisons",
         indexes: [{a: 1, b: 1, c: 1}, {a: 1, b: 1}],
         query: {a: {$gt: 1}, b: "hello"},
-        docs: docs,
+        docs: indexPrefixDocs,
     },
     {
         name: "Not Broken Tie",
         indexes: [{a: 1, b: 1}, {b: 1, a: 1}],
         query: {a: 1, b: "hello"},
-        docs: docs,
+        docs: indexPrefixDocs,
     },
     {
         name: "Multi Interval Index Bounds",
         indexes: [{a: 1, b: 1}, {a: 1, b: 1, c: 1}],
         query: {a: 10, b: {$in: [5, 6]}, c: {$gt: 3}},
-        docs: docs,
+        docs: indexPrefixDocs,
     },
     {
         name: "Non-Blocking Sort",
         indexes: [{a: 1, b: 1}, {a: 1, b: 1, c: 1}],
         query: {a: 10, b: {$in: [5, 6]}, c: {$gt: 3}},
         sort: {a: -1},
-        docs: docs,
+        docs: indexPrefixDocs,
     },
     {
         name: "Blocking Sort",
         indexes: [{a: 1, b: 1}, {a: 1, b: 1, c: 1}],
         query: {a: 10, b: {$in: [5, 6]}, c: {$gt: 3}},
         sort: {d: -1},
-        docs: docs,
+        docs: indexPrefixDocs,
     },
     {
         name: "Multi IndexScans",
         indexes: [{a: 1, b: 1}, {a: 1, b: 1, c: 1}, {d: 1}],
         query: {$or: [{a: 10, b: {$in: [5, 6]}, c: {$gt: 3}}, {d: 1}]},
-        docs: docs,
+        docs: indexPrefixDocs,
     },
     {
         name: "No Tie",
         indexes: [{a: 1, b: 1, c: 1}, {c: 1, d: 1}],
         query: {a: 1, b: "hello"},
-        docs: docs,
+        docs: indexPrefixDocs,
+    },
+    {
+        name: "Docs Examined",
+        indexes: [{i: 1, a: 1, c: 1}, {i: 1, a: 1, b: 1}],
+        query: {a: "Jerry", b: /not mouse/, c: /Tom/, d: /degu/, i: {$gt: 10}},
+        docs: docsExaminedDocs,
     },
 ];
 
