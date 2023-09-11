@@ -17,7 +17,7 @@ const docsExaminedDocs = [];
 for (let i = 0; i < 200; ++i) {
     docsExaminedDocs.push({i: i, a: "Jerry", b: "not mouse", c: "Tom", d: "degu"});
 }
-for (let i = 0; i < 1100; i++) {
+for (let i = 0; i < 1100; ++i) {
     docsExaminedDocs.push({i: i, a: "Jerry", b: "mouse", c: "Tom", d: "degu"});
 }
 
