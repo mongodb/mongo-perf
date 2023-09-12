@@ -104,10 +104,6 @@ const perfCases = [
 function getSetupFunction(perfCase) {
     return function(collection) {
         collection.drop();
-        assert.commandWorked(db.adminCommand({
-            setParameter: 1,
-            internalQueryPlanTieBreakingWithIndexHeuristics: perfCase.enableTieBreaking
-        }));
         assert.commandWorked(collection.createIndexes(perfCase.indexes));
         assert.commandWorked(collection.insertMany(perfCase.docs));
     }
