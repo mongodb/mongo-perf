@@ -1,3 +1,9 @@
+/**
+ * Additional tie breaking heuristics perfomance tests:
+ * - index prefix heuristic
+ * - docsExamined heuristic
+ */
+
 if (typeof (tests) != "object") {
     tests = [];
 }
@@ -7,21 +13,23 @@ if (typeof (tests) != "object") {
 
 // Generate documents for testing the index prefix heuristics.
 const indexPrefixDocs = [];
-for (let i = 0; i < 1000; ++i) {
+for (let i = 0; i < 100000; ++i) {
     indexPrefixDocs.push({a: 1, b: "hello", c: i * 12, d: 111 * i - 100, h: i});
     indexPrefixDocs.push({a: i + 1000, b: `hello%{i}`, c: i * 77, d: -i, h: i});
 }
 
 // Generate documents for testing the number of documents examined heuristics.
 const docsExaminedDocs = [];
+// Adding more than 101 documents to make sure we don't hit EOF.
 for (let i = 0; i < 200; ++i) {
     docsExaminedDocs.push({i: i, a: "Jerry", b: "not mouse", c: "Tom", d: "degu"});
 }
+// Some additional payload data.
 for (let i = 0; i < 1100; ++i) {
     docsExaminedDocs.push({i: i, a: "Jerry", b: "mouse", c: "Tom", d: "degu"});
 }
 
-const baseCases = [
+const perfCases = [
     {
         name: "Longest Index Prefix",
         indexes: [{a: 1}, {b: 1, a: 1}],
@@ -91,19 +99,6 @@ const baseCases = [
         docs: docsExaminedDocs,
     },
 ];
-
-const perfCases = [];
-for (let baseCase of baseCases) {
-    // Create a performance test case with the tie breaking heuristics enabled.
-    const perfCaseTB = Object.assign({enableTieBreaking: true}, baseCase);
-    perfCaseTB.name = `TieBreaking.${perfCaseTB.name}`;
-    perfCases.push(perfCaseTB);
-
-    // Create a performance test case with the tie breaking heuristics disabled.
-    const perfCaseNTB = Object.assign({enableTieBreaking: false}, baseCase);
-    perfCaseNTB.name = `Regular.${perfCaseNTB.name}`;
-    perfCases.push(perfCaseNTB);
-}
 
 // Returns setup function for the given perfomance test case.
 function getSetupFunction(perfCase) {
