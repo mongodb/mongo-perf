@@ -13,12 +13,17 @@ if (typeof (tests) != "object") {
 
 // Generate documents for testing the index prefix heuristics.
 const indexPrefixDocs = [];
-for (let i = 0; i < 100000; ++i) {
-    indexPrefixDocs.push({a: 1, b: "hello", c: i * 12, d: 111 * i - 100, h: i});
-    indexPrefixDocs.push({a: i + 1000, b: `hello%{i}`, c: i * 77, d: -i, h: i});
+for (let i = 0; i < 10000; ++i) {
+    // Matchable documents.
+    indexPrefixDocs.push({a: 1, b: "hello", c: i % 5, d: 111 * i - 100, e: i, h: i});
+
+    // Non-matchable documents.
+    for (let j = 0; j < 10; ++j) {
+        indexPrefixDocs.push(
+            {a: i + (j + 1) * 1000, b: `tie%{i}_%{j}`, c: i % 5, d: -i, e: i + 1000, h: i});
+}
 }
 
-// Generate documents for testing the number of documents examined heuristics.
 const docsExaminedDocs = [];
 // Adding more than 101 documents to make sure we don't hit EOF.
 for (let i = 0; i < 200; ++i) {
@@ -26,14 +31,14 @@ for (let i = 0; i < 200; ++i) {
 }
 // Some additional payload data.
 for (let i = 0; i < 1100; ++i) {
-    docsExaminedDocs.push({i: i, a: "Jerry", b: "mouse", c: "Tom", d: "degu"});
+    docsExaminedDocs.push({i: i + 1000, a: "Jerry", b: "mouse", c: "Tom", d: "degu"});
 }
 
 const perfCases = [
     {
         name: "Longest Index Prefix",
         indexes: [{a: 1}, {b: 1, a: 1}],
-        query: {a: 1, b: "hello"},
+        query: {a: {$gte: 1}, b: "hello"},
         docs: indexPrefixDocs,
     },
     {
@@ -62,28 +67,28 @@ const perfCases = [
     },
     {
         name: "Multi Interval Index Bounds",
-        indexes: [{a: 1, b: 1}, {a: 1, b: 1, c: 1}],
-        query: {a: 10, b: {$in: [5, 6]}, c: {$gt: 3}},
+        indexes: [{e: 1, c: 1}, {e: 1, c: 1, a: 1}],
+        query: {e: {$gt: 0, $lt: 2000}, c: {$lt: 3}, a: 1},
         docs: indexPrefixDocs,
     },
     {
         name: "Non-Blocking Sort",
-        indexes: [{a: 1, b: 1}, {a: 1, b: 1, c: 1}],
-        query: {a: 10, b: {$in: [5, 6]}, c: {$gt: 3}},
-        sort: {a: -1},
+        indexes: [{e: 1, c: 1}, {e: 1, c: 1, a: 1}],
+        query: {e: {$gt: 0, $lt: 2000}, c: {$lt: 3}, a: 1},
+        sort: {e: 1},
         docs: indexPrefixDocs,
     },
     {
         name: "Blocking Sort",
-        indexes: [{a: 1, b: 1}, {a: 1, b: 1, c: 1}],
-        query: {a: 10, b: {$in: [5, 6]}, c: {$gt: 3}},
+        indexes: [{e: 1, c: 1}, {e: 1, c: 1, a: 1}],
+        query: {e: {$gt: 0, $lt: 2000}, c: {$lt: 3}, a: 1},
         sort: {d: -1},
         docs: indexPrefixDocs,
     },
     {
         name: "Multi IndexScans",
-        indexes: [{a: 1, b: 1}, {a: 1, b: 1, c: 1}, {d: 1}],
-        query: {$or: [{a: 10, b: {$in: [5, 6]}, c: {$gt: 3}}, {d: 1}]},
+        indexes: [{e: 1, c: 1}, {e: 1, c: 1, a: 1}, {d: 1}],
+        query: {$or: [{e: {$gt: 0, $lt: 2000}, c: {$lt: 3}, a: 1}, {d: 11}]},
         docs: indexPrefixDocs,
     },
     {
