@@ -123,7 +123,7 @@ for (let perfCase of perfCases) {
 
     tests.push({
         name: perfCase.name,
-        tags: ["tie-breaking"],
+        tags: ["tie-breaking", "core", "regression"],
         pre: getSetupFunction(perfCase),
         ops: [op],
     });
