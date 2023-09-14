@@ -15,7 +15,8 @@ if (typeof (tests) != "object") {
 const indexPrefixDocs = [];
 for (let i = 0; i < 10000; ++i) {
     // Matchable documents.
-    indexPrefixDocs.push({a: 1, b: "hello", c: i % 5, d: 111 * i - 100, e: i, h: i});
+    indexPrefixDocs.push(
+        {a: 1, b: "hello", c: i % 5, d: 111 * i - 100, e: i, h: i, boolT: true, boolF: false});
 
     // Non-matchable documents.
     for (let j = 0; j < 10; ++j) {
@@ -45,6 +46,12 @@ const perfCases = [
         name: "Equality",
         indexes: [{a: 1, b: 1}, {b: 1, a: 1}],
         query: {a: {$gt: 0}, b: "hello"},
+        docs: indexPrefixDocs,
+    },
+    {
+        name: "Closed Interval",
+        indexes: [{e: 1, h: 1}, {h: 1, e: 1}],
+        query: {e: {$gt: 0}, h: {$gt: 0, $lt: 1000}},
         docs: indexPrefixDocs,
     },
     {
@@ -102,6 +109,14 @@ const perfCases = [
         indexes: [{i: 1, a: 1, c: 1}, {i: 1, a: 1, b: 1}],
         query: {a: "Jerry", b: /not mouse/, c: /Tom/, d: /degu/, i: {$gt: 10}},
         docs: docsExaminedDocs,
+    },
+    // Here is an example when the index prefix heuristic make the plan worse. We expect that the
+    // new optimizer will fix the issue.
+    {
+        name: "Failure: Longest Index Prefix",
+        indexes: [{e: 1}, {boolT: 1, boolF: 1}],
+        query: {e: {$gte: 0, $lt: 300}, boolT: true, boolF: false},
+        docs: indexPrefixDocs,
     },
 ];
 
