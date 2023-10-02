@@ -494,8 +494,7 @@ if (typeof(tests) !== "object") {
     /**
      * Setup: Create a collection of documents with one large array field and three int fields.
      *
-     * Test: Query excluding the large array. The large field should not get loaded into the cache
-     * so the query should be fast.
+     * Test: Query excluding the large array.
      */
     addQueryTestCase({
         name: "ProjectExclude_LargeArray",
