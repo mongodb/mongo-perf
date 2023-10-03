@@ -492,6 +492,30 @@ if (typeof(tests) !== "object") {
     });
 
     /**
+     * Setup: Create a collection of documents with one large array field and three int fields.
+     *
+     * Test: Query excluding the large array.
+     */
+    addQueryTestCase({
+        name: "ProjectExclude_LargeArray",
+        tags: ["core"],
+        nDocs: 100,
+        docs: function(i) {
+            var arr = [];
+            for (var j = 0; j < 40 * 1000; ++j) {
+                arr.push({d: j, e: i, msg: "Hello World!"});
+            }
+            return {a: 1, b: i, c: i, giantField: arr};
+        },
+        indexes: [],
+        op: {
+            op: "find",
+            query: {},
+            filter: {giantField: 0}
+        }
+    });
+
+    /**
      * Large string used for generating documents in the LargeDocs test.
      */
     var bigString = new Array(1024 * 1024 * 5).toString();
