@@ -959,7 +959,9 @@ function basicUncorrelatedPipelineLookupPopulator(isView, disableCache, nDocs) {
         return {_id: val};
     }
 
-    const nDocs = nDocs ? nDocs : 50;
+    if (nDocs === undefined) {
+        nDocs = 50;
+    }
     if (disableCache === undefined) {
         disableCache = false;
     }
