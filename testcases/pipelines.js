@@ -738,7 +738,7 @@ for(let arrSize of [50, 250, 500]) {
 }
 
 
-    
+
 /**
  * These tests are paramterized on group size [100, 500], operator [$top, $bottom, $topN, $bottomN]
  * and 'n' [10, 50] if the operator accepts an n value.
@@ -2743,7 +2743,7 @@ generateTestCaseWithLargeDatasetAndIndexes({
  *
  * @param {Number} numElements: size of the array to generate and later sort.
  * @param {Boolean} isDescending: true if we're generating an array in descending order.
- * @param {String} variant: controls what type of data the array holds - either 'numbers', 
+ * @param {String} variant: controls what type of data the array holds - either 'numbers',
  * 'strings', or 'objects'.
  */
  function generateArrayForSortArray(numElements, isDescending, variant){
