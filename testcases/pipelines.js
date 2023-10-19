@@ -986,7 +986,7 @@ function basicUncorrelatedPipelineLookupPopulatorDisableCache(isView) {
  */
 function basicUncorrelatedPipelineLookupPopulatorDisableCacheLargeCollection(isView) {
     const disableCache = true;
-    const nDocs = 10000;
+    const nDocs = 1000;
     return basicUncorrelatedPipelineLookupPopulator(isView, disableCache, nDocs);
 }
 
