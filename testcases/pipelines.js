@@ -950,7 +950,7 @@ function basicArrayOfObjectLookupPopulator(isView) {
 /**
  * Creates a minimal $lookup data set for uncorrelated (and uncorrelated prefix) join via $lookup.
  */
-function basicUncorrelatedPipelineLookupPopulator(isView, disableCache) {
+function basicUncorrelatedPipelineLookupPopulator(isView, disableCache, nDocs) {
     function localDocGen(val) {
         return {_id: val};
     }
@@ -959,7 +959,7 @@ function basicUncorrelatedPipelineLookupPopulator(isView, disableCache) {
         return {_id: val};
     }
 
-    var nDocs = 50;
+    const nDocs = nDocs ? nDocs : 50;
     if (disableCache === undefined) {
         disableCache = false;
     }
@@ -974,8 +974,18 @@ function basicUncorrelatedPipelineLookupPopulator(isView, disableCache) {
  * pipeline prefix.
  */
 function basicUncorrelatedPipelineLookupPopulatorDisableCache(isView) {
-    var disableCache = true;
+    const disableCache = true;
     return basicUncorrelatedPipelineLookupPopulator(isView, disableCache);
+}
+
+/**
+ * Same as 'basicUncorrelatedPipelineLookupPopulator' but disables $lookup caching for uncorrelated
+ * pipeline prefix.
+ */
+function basicUncorrelatedPipelineLookupPopulatorDisableCacheLargeCollection(isView) {
+    const disableCache = true;
+    const nDocs = 10000;
+    return basicUncorrelatedPipelineLookupPopulator(isView, disableCache, nDocs);
 }
 
 /**
@@ -1181,6 +1191,26 @@ generateTestCase({
     tags: ["lookup", ">=3.5"]
 });
 
+generateTestCase({
+    name: "Lookup.UncorrelatedJoin.NoCache.LargeCollection",
+    pre: basicUncorrelatedPipelineLookupPopulatorDisableCacheLargeCollection,
+    post: basicLookupCleanupEnableCache,
+    pipeline: [
+        {
+            $lookup: {
+                from: "#B_COLL_lookup",
+                pipeline: [
+                    {
+                        $match: {}
+                    },
+                ],
+                as: "match"
+            }
+        }
+    ],
+    tags: ["lookup", ">=3.5"]
+});
+
 /**
  * $lookup where the prefix of the foreign collection join is uncorrelated.
  */
@@ -1252,6 +1282,37 @@ generateTestCase({
     tags: ["lookup", ">=3.5"]
 });
 
+generateTestCase({
+    name: "Lookup.UncorrelatedPrefixJoin.NoCache.LargeCollection",
+    pre: basicUncorrelatedPipelineLookupPopulatorDisableCacheLargeCollection,
+    post: basicLookupCleanupEnableCache,
+    pipeline: [
+        {
+            $lookup: {
+                from: "#B_COLL_lookup",
+                let: {
+                    foreignKey: "$_id",
+                },
+                pipeline: [
+                    {
+                        $addFields: {
+                            newField: { $mod: ["$_id", 5] }
+                        }
+                    },
+                    {
+                        $match: {
+                            $expr: {
+                                $eq: ["$newField", {$mod: ["$$foreignKey", 5] }]
+                            }
+                        }
+                    }
+                ],
+                as: "match"
+            }
+        }
+    ],
+    tags: ["lookup", ">=3.5"]
+});
 /**
  * Mimics the basic 'Lookup' test using $graphLookup for comparison.
  */
