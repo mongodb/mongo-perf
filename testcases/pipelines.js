@@ -1139,12 +1139,12 @@ generateTestCase({
 
 function generateLookupUncorrelatedJoinTestCases(namePrefix, pipeline) {
     for (const disableCache of [false, true]) {
-        for (const nDocs of [50, 1000]) {
+        for (const nDocs of [50, 2000]) {
             let name = namePrefix;
             if (disableCache) {
                 name += ".NoCache";
             }
-            if (nDocs === 1000) {
+            if (nDocs !== 50) {
                 name += ".LargeCollection";
             }
             generateTestCase({
