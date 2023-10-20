@@ -972,22 +972,13 @@ function basicUncorrelatedPipelineLookupPopulator(isView, disableCache, nDocs) {
 }
 
 /**
- * Same as 'basicUncorrelatedPipelineLookupPopulator' but disables $lookup caching for uncorrelated
- * pipeline prefix.
+ * Same as 'basicUncorrelatedPipelineLookupPopulator' but allows for cache and collection size
+ * customization.
  */
-function basicUncorrelatedPipelineLookupPopulatorDisableCache(isView) {
-    const disableCache = true;
-    return basicUncorrelatedPipelineLookupPopulator(isView, disableCache);
-}
-
-/**
- * Same as 'basicUncorrelatedPipelineLookupPopulator' but disables $lookup caching for uncorrelated
- * pipeline prefix.
- */
-function basicUncorrelatedPipelineLookupPopulatorDisableCacheLargeCollection(isView) {
-    const disableCache = true;
-    const nDocs = 1000;
-    return basicUncorrelatedPipelineLookupPopulator(isView, disableCache, nDocs);
+function getBasicUncorrelatedPipelineLookupPopulator(disableCache, nDocs) {
+    return function(isView) {
+        return basicUncorrelatedPipelineLookupPopulator(isView, disableCache, nDocs);
+    }
 }
 
 /**
@@ -1146,14 +1137,33 @@ generateTestCase({
     tags: ["lookup", ">=3.5"]
 });
 
+function generateLookupUncorrelatedJoinTestCases(namePrefix, pipeline) {
+    for (const disableCache of [false, true]) {
+        for (const nDocs of [50, 1000]) {
+            let name = namePrefix;
+            if (disableCache) {
+                name += ".NoCache";
+            }
+            if (nDocs === 1000) {
+                name += ".LargeCollection";
+            }
+            generateTestCase({
+                name: name,
+                pre: getBasicUncorrelatedPipelineLookupPopulator(disableCache, nDocs),
+                post: basicLookupCleanupEnableCache,
+                pipeline: pipeline,
+                tags: ["lookup", "uncorrelated_join", ">=3.5"]
+            });
+        }
+    }
+}
+
 /**
  * $lookup with an uncorrelated join on foreign collection.
  */
-generateTestCase({
-    name: "Lookup.UncorrelatedJoin",
-    pre: basicUncorrelatedPipelineLookupPopulator,
-    post: basicLookupCleanup,
-    pipeline: [
+generateLookupUncorrelatedJoinTestCases(
+    "Lookup.UncorrelatedJoin",
+    [
         {
             $lookup: {
                 from: "#B_COLL_lookup",
@@ -1165,62 +1175,14 @@ generateTestCase({
                 as: "match"
             }
         }
-    ],
-    tags: ["lookup", ">=3.5"]
-});
-
-/**
- * Same as 'Lookup.UncorrelatedJoin' but disables caching of uncorrelated pipeline prefix for the
- * duration of the test.
- */
-generateTestCase({
-    name: "Lookup.UncorrelatedJoin.NoCache",
-    pre: basicUncorrelatedPipelineLookupPopulatorDisableCache,
-    post: basicLookupCleanupEnableCache,
-    pipeline: [
-        {
-            $lookup: {
-                from: "#B_COLL_lookup",
-                pipeline: [
-                    {
-                        $match: {}
-                    },
-                ],
-                as: "match"
-            }
-        }
-    ],
-    tags: ["lookup", ">=3.5"]
-});
-
-generateTestCase({
-    name: "Lookup.UncorrelatedJoin.NoCache.LargeCollection",
-    pre: basicUncorrelatedPipelineLookupPopulatorDisableCacheLargeCollection,
-    post: basicLookupCleanupEnableCache,
-    pipeline: [
-        {
-            $lookup: {
-                from: "#B_COLL_lookup",
-                pipeline: [
-                    {
-                        $match: {}
-                    },
-                ],
-                as: "match"
-            }
-        }
-    ],
-    tags: ["lookup", ">=3.5"]
-});
-
+    ]
+);
 /**
  * $lookup where the prefix of the foreign collection join is uncorrelated.
  */
-generateTestCase({
-    name: "Lookup.UncorrelatedPrefixJoin",
-    pre: basicUncorrelatedPipelineLookupPopulator,
-    post: basicLookupCleanup,
-    pipeline: [
+generateLookupUncorrelatedJoinTestCases(
+    "Lookup.UncorrelatedPrefixJoin",
+    [
         {
             $lookup: {
                 from: "#B_COLL_lookup",
@@ -1245,76 +1207,8 @@ generateTestCase({
             }
         }
     ],
-    tags: ["lookup", ">=3.5"]
-});
+);
 
-/**
- * Same as 'Lookup.UncorrelatedPrefixJoin' but disables caching of uncorrelated pipeline prefix for
- * the duration of the test.
- */
-generateTestCase({
-    name: "Lookup.UncorrelatedPrefixJoin.NoCache",
-    pre: basicUncorrelatedPipelineLookupPopulatorDisableCache,
-    post: basicLookupCleanupEnableCache,
-    pipeline: [
-        {
-            $lookup: {
-                from: "#B_COLL_lookup",
-                let: {
-                    foreignKey: "$_id",
-                },
-                pipeline: [
-                    {
-                        $addFields: {
-                            newField: { $mod: ["$_id", 5] }
-                        }
-                    },
-                    {
-                        $match: {
-                            $expr: {
-                                $eq: ["$newField", {$mod: ["$$foreignKey", 5] }]
-                            }
-                        }
-                    }
-                ],
-                as: "match"
-            }
-        }
-    ],
-    tags: ["lookup", ">=3.5"]
-});
-
-generateTestCase({
-    name: "Lookup.UncorrelatedPrefixJoin.NoCache.LargeCollection",
-    pre: basicUncorrelatedPipelineLookupPopulatorDisableCacheLargeCollection,
-    post: basicLookupCleanupEnableCache,
-    pipeline: [
-        {
-            $lookup: {
-                from: "#B_COLL_lookup",
-                let: {
-                    foreignKey: "$_id",
-                },
-                pipeline: [
-                    {
-                        $addFields: {
-                            newField: { $mod: ["$_id", 5] }
-                        }
-                    },
-                    {
-                        $match: {
-                            $expr: {
-                                $eq: ["$newField", {$mod: ["$$foreignKey", 5] }]
-                            }
-                        }
-                    }
-                ],
-                as: "match"
-            }
-        }
-    ],
-    tags: ["lookup", ">=3.5"]
-});
 /**
  * Mimics the basic 'Lookup' test using $graphLookup for comparison.
  */
