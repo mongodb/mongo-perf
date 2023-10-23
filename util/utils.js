@@ -1046,3 +1046,10 @@ function addQueryTestCase(options) {
         });
     }
 }
+
+function addSqlTestCase(options) {
+    options.createViewsPassthrough = false;
+    options.createAggregationTest = false;
+    options.name = "SQL" + options.name;
+    addQueryTestCase(options);
+}
