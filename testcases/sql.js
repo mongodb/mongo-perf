@@ -7,6 +7,8 @@ if (typeof (tests) !== "object") {
 
 Random.setRandomSeed(258);
 
+// TODO SMQL: These queries need to predict the name of the collection chosen elsewhere in the test
+// code. Can we improve this?
 addSqlTestCase({
     name: "Empty",
     // This generates documents to be inserted into the collection, resulting in 100 documents
@@ -15,6 +17,6 @@ addSqlTestCase({
     docs: function(i) {
         return {};
     },
-    op: {op: "sql", sqlQuery: "select * from coll"},
+    op: {op: "sql", sqlQuery: "select * from Queries_SQL_Empty0", expected: 100},
 });
 }());
