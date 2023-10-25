@@ -101,4 +101,174 @@ addSqlTestCase({
         expected: 49
     },
 });
+
+/**
+ * Convert a list of $in values into the appropriate string for an SQL where clause. For example,
+ * the array [2, "foo"] would be converted to in(2, "foo").
+ */
+function constructInClause(inArray) {
+    // Add quotes explicitly around strings so that they appear quoted in the output. The SQL parser
+    // seems to require single quotes rather than double quotes.
+    inArray = inArray.map(x => typeof x === "string" ? `'${x}'` : x);
+    return "x in(" + inArray.join(", ") + ")";
+}
+
+function constructInQuery(testName, inArray) {
+    const collName = "Queries_SQL_" + testName + "0";
+    return "select * from " + collName + " where " + constructInClause(inArray);
+}
+
+/**
+ * Adds two string test cases for an in() query: One a small collection, and another on a
+ * large collection.
+ */
+function addStringInTestCases({name, inArray}) {
+    for (const [nameSuffix, size] of [["", 10], ["BigCollection", 10000]]) {
+        const collName = "Queries_SQL_" + name + nameSuffix + "0";
+        const sqlQuery =
+            "select * from " + collName + " where " + constructInClause(inArray) + " order by x";
+        addSqlTestCase({
+            name: name + nameSuffix,
+            nDocs: size,
+            docs: function(i) {
+                return {x: i.toString()};
+            },
+            op: {op: "sql", sqlQuery}
+        });
+    }
+}
+
+addStringInTestCases({
+    name: "StringUnindexedInPredWithSimpleCollation",
+    inArray: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+});
+
+/**
+ * Setup: Same as above.
+ *
+ * Test: Issue same queries as above, but with large array of strings as in() argument.
+ */
+const nLargeArrayElements = 1000;
+const largeStringInArray = [];
+for (let i = 0; i < nLargeArrayElements; i++) {
+    largeStringInArray.push(Random.randInt(nLargeArrayElements).toString());
+}
+addStringInTestCases({
+    name: "StringUnindexedLargeInPredWithSimpleCollation",
+    inArray: largeStringInArray,
+});
+
+/**
+ * Large arrays used for in() queries in the subsequent test cases.
+ */
+var largeArrayRandom = [];
+for (var i = 0; i < nLargeArrayElements; i++) {
+    largeArrayRandom.push(Random.randInt(nLargeArrayElements));
+}
+
+var largeArraySorted = [];
+for (var i = 0; i < nLargeArrayElements; i++) {
+    largeArraySorted.push(i * 2);
+}
+
+/**
+ * Adds two test cases for an in() query: One a small collection with a in() filter that
+ * includes every document, and another on a larger collection with a selective in() filter.
+ */
+function addInTestCases({name, largeInArray}) {
+    // Setup: Create a collection and insert a small number of documents with a random even
+    // integer field x in the range [0, nLargeArrayElements * 2).
+    //
+    // Test: Issue queries that must perform a collection scan, filtering the documents with an
+    // in() predicate with a large number of elements.
+    addSqlTestCase({
+        name: name,
+        nDocs: 10,
+        docs: function(i) {
+            return {x: 2 * Random.randInt(largeInArray.length)};
+        },
+        op: {op: "sql", sqlQuery: constructInQuery(name, largeInArray)}
+    });
+
+    // Similar test to above, but with a larger collection. Only a small fraction (10%)
+    // of the documents will actually match the filter.
+    addSqlTestCase({
+        name: name + "BigCollection",
+        nDocs: 10000,
+        docs: function(i) {
+            return {x: 2 * Random.randInt(largeInArray.length * 10)};
+        },
+        op: {op: "sql", sqlQuery: constructInQuery(name + "BigCollection", largeInArray)}
+    });
+};
+
+addInTestCases({
+    name: "UnindexedLargeInMatching",
+    largeInArray: largeArraySorted,
+});
+
+addInTestCases({
+    name: "UnindexedLargeInUnsortedMatching",
+    largeInArray: largeArrayRandom,
+});
+
+/**
+ * Repeat the same test as above, increasing the number of elements in the $in array to 10000.
+ */
+var nVeryLargeArrayElements = 10000;
+var veryLargeArrayRandom = [];
+for (var i = 0; i < nVeryLargeArrayElements; i++) {
+    veryLargeArrayRandom.push(Random.randInt(nVeryLargeArrayElements));
+}
+
+var veryLargeArraySorted = [];
+for (var i = 0; i < nVeryLargeArrayElements; i++) {
+    veryLargeArraySorted.push(i * 2);
+}
+
+addInTestCases({
+    name: "UnindexedVeryLargeInSortedMatching",
+    largeInArray: veryLargeArraySorted,
+});
+
+addInTestCases({
+    name: "UnindexedVeryLargeInUnsortedMatching",
+    largeInArray: veryLargeArrayRandom,
+});
+
+/**
+ * Setup: Create a collection and insert a small number of documents with a random odd integer
+ * field x in the range [0, 2000).
+ *
+ * Test: Issue queries that must perform a collection scan, filtering the documents with an in()
+ * predicate with a large number of elements. No documents will match the predicate, since the
+ * in() array contains all even integers in the range [0, 2000).
+ */
+addSqlTestCase({
+    name: "UnindexedLargeInNonMatching",
+    nDocs: 10,
+    docs: function (i) {
+        return {x: 2 * Random.randInt(1000) + 1};
+    },
+    op: {
+        op: "sql",
+        sqlQuery: constructInQuery("UnindexedLargeInNonMatching", largeArraySorted),
+        expected: 0
+    }
+});
+
+/**
+ * Repeat the same test as above, except using the $in array of unsorted elements.
+ */
+addSqlTestCase({
+    name: "UnindexedLargeInUnsortedNonMatching",
+    nDocs: 10,
+    docs: function (i) {
+        return {x: 2 * Random.randInt(1000) + 1};
+    },
+    op: {
+        op: "sql",
+        sqlQuery: constructInQuery("UnindexedLargeInUnsortedNonMatching", largeArrayRandom)
+    }
+});
 }());
