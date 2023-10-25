@@ -1051,5 +1051,9 @@ function addSqlTestCase(options) {
     options.createViewsPassthrough = false;
     options.createAggregationTest = false;
     options.name = "SQL." + options.name;
+
+    options.tags = options.tags || [];
+    options.tags = ["sql"].concat(options.tags);
+
     addQueryTestCase(options);
 }

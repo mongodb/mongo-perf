@@ -129,11 +129,12 @@ function addStringInTestCases({name, inArray}) {
             "select * from " + collName + " where " + constructInClause(inArray) + " order by x";
         addSqlTestCase({
             name: name + nameSuffix,
+            tags: ["in"],
             nDocs: size,
             docs: function(i) {
                 return {x: i.toString()};
             },
-            op: {op: "sql", sqlQuery}
+            op: {op: "sql", sqlQuery},
         });
     }
 }
@@ -183,17 +184,19 @@ function addInTestCases({name, largeInArray}) {
     // in() predicate with a large number of elements.
     addSqlTestCase({
         name: name,
+        tags: ["in"],
         nDocs: 10,
         docs: function(i) {
             return {x: 2 * Random.randInt(largeInArray.length)};
         },
-        op: {op: "sql", sqlQuery: constructInQuery(name, largeInArray)}
+        op: {op: "sql", sqlQuery: constructInQuery(name, largeInArray)},
     });
 
     // Similar test to above, but with a larger collection. Only a small fraction (10%)
     // of the documents will actually match the filter.
     addSqlTestCase({
         name: name + "BigCollection",
+        tags: ["in"],
         nDocs: 10000,
         docs: function(i) {
             return {x: 2 * Random.randInt(largeInArray.length * 10)};
@@ -246,15 +249,16 @@ addInTestCases({
  */
 addSqlTestCase({
     name: "UnindexedLargeInNonMatching",
+    tags: ["in"],
     nDocs: 10,
-    docs: function (i) {
+    docs: function(i) {
         return {x: 2 * Random.randInt(1000) + 1};
     },
     op: {
         op: "sql",
         sqlQuery: constructInQuery("UnindexedLargeInNonMatching", largeArraySorted),
         expected: 0
-    }
+    },
 });
 
 /**
@@ -262,13 +266,87 @@ addSqlTestCase({
  */
 addSqlTestCase({
     name: "UnindexedLargeInUnsortedNonMatching",
+    tags: ["in"],
     nDocs: 10,
-    docs: function (i) {
+    docs: function(i) {
         return {x: 2 * Random.randInt(1000) + 1};
     },
     op: {
         op: "sql",
         sqlQuery: constructInQuery("UnindexedLargeInUnsortedNonMatching", largeArrayRandom)
-    }
+    },
 });
+
+/**
+ * Setup: Create a collection of documents with 3 integer fields and a compound index on those
+ * three fields.
+ *
+ * Test: Query for a specific document based on integer field x, and return the three integer
+ * fields.  Each thread accesses a distinct range of documents. Query should be a covered index
+ * scan.
+ *
+ * TODO SMQL: The regular MQL version of this benchmark chooses a random value of 'x' for each
+ * instance of the query
+ */
+addSqlTestCase({
+    name: "FindProjectionThreeFieldsCovered",
+    tags: ["projection"],
+    nDocs: 4800,
+    docs: function(i) {
+        return {x: i, y: i, z: i};
+    },
+    indexes: [{x: 1, y: 1, z: 1}],
+    op: {
+        op: "sql",
+        sqlQuery: "select x, y, z from Queries_SQL_FindProjectionThreeFieldsCovered0 where x = 50",
+        expected: 1
+    },
+});
+
+/**
+ * Setup: Create a collection of documents with 3 integer fields.
+ *
+ * Test: Query for all documents (empty query) and return the three integer fields.
+ */
+addSqlTestCase({
+    name: "FindProjectionThreeFields",
+    tags: ["projection"],
+    nDocs: 100,
+    docs: function(i) {
+        return {x: i, y: i, z: i};
+    },
+    op: {
+        op: "sql",
+        sqlQuery: "select x, y, z from Queries_SQL_FindProjectionThreeFields0",
+        expected: 100
+    },
+});
+
+addSqlTestCase({
+    name: "PointQuery_MultipleIndexes_LL",
+    nDocs: 100000,
+    docs: largeDoc,
+    indexes: [{"a": 1}, {"b": 1}, {"a": 1, "b": 1}],
+    op: {
+        op: "sql",
+        sqlQuery: "select * from Queries_SQL_PointQuery_MultipleIndexes_LL0 where a = 7 and b = 742"
+    },
+});
+
+// TODO MSQL: This test is modified from the MQL equivalent, since with plain SQL we do not support
+// referring to nested fields in the WHERE clause.
+(function() {
+let name = "RangeQuery_CompoundIndex_ComplexBounds_FiveFields_Range_LS";
+let collName = "Queries_SQL_" + name + "0";
+let predicate = "h > 1 and b < 100 and c > 1 and d < 10 and g > 0";
+let sqlQuery = "select * from " + collName + " where " + predicate;
+
+addSqlTestCase({
+    name: "RangeQuery_CompoundIndex_ComplexBounds_FiveFields_Range_LS",
+    nDocs: 100000,
+    docs: smallDoc,
+    indexes: [{"h": 1, "b": 1, "c": 1, "d": 1, "g": 1}],
+    op: {op: "sql", sqlQuery},
+});
+}());
 }());
