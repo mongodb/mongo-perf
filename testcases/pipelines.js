@@ -959,10 +959,14 @@ function basicUncorrelatedPipelineLookupPopulator(isView, disableCache, largeDat
     const paddingSize = largeDataset ? 1024*1024 : 16;
     const paddingStr = getStringOfLength(paddingSize);
     function localDocGen(val) {
+        return {_id: val};
+    }
+
+    function foreignDocGen(val) {
         return {_id: val, padding: paddingStr};
     }
 
-    return basicMultiCollectionDataPopulator({isView, localDocGen, foreignCollsInfo: [{suffix: "_lookup", docGen: localDocGen}], nDocs, postFunction: (disableCache ? (function() {
+    return basicMultiCollectionDataPopulator({isView, localDocGen, foreignCollsInfo: [{suffix: "_lookup", docGen: foreignDocGen}], nDocs, postFunction: (disableCache ? (function() {
             setDocumentSourceLookupCacheSize(0);
         })
                                     : undefined) });
@@ -1134,7 +1138,7 @@ generateTestCase({
     tags: ["lookup", ">=3.5"]
 });
 
-function generateLookupUncorrelatedJoinTestCases(namePrefix, pipeline) {
+function generateLookupUncorrelatedJoinTestCases(namePrefix, pipeline, allowLargeDataset) {
     for (const disableCache of [false, true]) {
         for (const largeDataset of [false, true]) {
             let name = namePrefix;
@@ -1143,6 +1147,9 @@ function generateLookupUncorrelatedJoinTestCases(namePrefix, pipeline) {
             }
             if (largeDataset) {
                 name += ".LargeDataset";
+                if (!allowLargeDataset) {
+                    continue;
+                }
             }
             generateTestCase({
                 name: name,
@@ -1172,7 +1179,8 @@ generateLookupUncorrelatedJoinTestCases(
                 as: "match"
             }
         }
-    ]
+    ],
+    false /*allowLargeDataset*/
 );
 /**
  * $lookup where the prefix of the foreign collection join is uncorrelated.
@@ -1189,13 +1197,13 @@ generateLookupUncorrelatedJoinTestCases(
                 pipeline: [
                     {
                         $addFields: {
-                            newField: { $mod: ["$_id", 5] }
+                            newField: { $mod: ["$_id", 20] }
                         }
                     },
                     {
                         $match: {
                             $expr: {
-                                $eq: ["$newField", {$mod: ["$$foreignKey", 5] }]
+                                $eq: ["$newField", {$mod: ["$$foreignKey", 20] }]
                             }
                         }
                     }
@@ -1204,6 +1212,7 @@ generateLookupUncorrelatedJoinTestCases(
             }
         }
     ],
+    true /*allowLargeDataset*/
 );
 
 /**
