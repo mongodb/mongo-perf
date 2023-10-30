@@ -950,22 +950,19 @@ function basicArrayOfObjectLookupPopulator(isView) {
 /**
  * Creates a minimal $lookup data set for uncorrelated (and uncorrelated prefix) join via $lookup.
  */
-function basicUncorrelatedPipelineLookupPopulator(isView, disableCache, nDocs) {
-    function localDocGen(val) {
-        return {_id: val};
-    }
-
-    function foreignDocGen(val) {
-        return {_id: val};
-    }
-
-    if (nDocs === undefined) {
-        nDocs = 50;
-    }
+function basicUncorrelatedPipelineLookupPopulator(isView, disableCache, largeDataset) {
     if (disableCache === undefined) {
         disableCache = false;
     }
-    return basicMultiCollectionDataPopulator({isView, localDocGen, foreignCollsInfo: [{suffix: "_lookup", docGen: foreignDocGen}], nDocs, postFunction: (disableCache ? (function() {
+
+    const nDocs = largeDataset ? 200 : 50;
+    const paddingSize = largeDataset ? 1024*1024 : 16;
+    const paddingStr = getStringOfLength(paddingSize);
+    function docGen(val) {
+        return {_id: val, padding: paddingStr};
+    }
+
+    return basicMultiCollectionDataPopulator({isView, docGen, foreignCollsInfo: [{suffix: "_lookup", docGen: docGen}], nDocs, postFunction: (disableCache ? (function() {
             setDocumentSourceLookupCacheSize(0);
         })
                                     : undefined) });
@@ -975,9 +972,9 @@ function basicUncorrelatedPipelineLookupPopulator(isView, disableCache, nDocs) {
  * Same as 'basicUncorrelatedPipelineLookupPopulator' but allows for cache and collection size
  * customization.
  */
-function getBasicUncorrelatedPipelineLookupPopulator(disableCache, nDocs) {
+function getBasicUncorrelatedPipelineLookupPopulator(disableCache, largeDataset) {
     return function(isView) {
-        return basicUncorrelatedPipelineLookupPopulator(isView, disableCache, nDocs);
+        return basicUncorrelatedPipelineLookupPopulator(isView, disableCache, largeDataset);
     }
 }
 
@@ -1139,20 +1136,20 @@ generateTestCase({
 
 function generateLookupUncorrelatedJoinTestCases(namePrefix, pipeline) {
     for (const disableCache of [false, true]) {
-        for (const nDocs of [50, 2000]) {
+        for (const largeDataset of [false, true]) {
             let name = namePrefix;
             if (disableCache) {
                 name += ".NoCache";
             }
-            if (nDocs !== 50) {
-                name += ".LargeCollection";
+            if (largeDataset) {
+                name += ".LargeDataset";
             }
             generateTestCase({
                 name: name,
-                pre: getBasicUncorrelatedPipelineLookupPopulator(disableCache, nDocs),
+                pre: getBasicUncorrelatedPipelineLookupPopulator(disableCache, largeDataset),
                 post: basicLookupCleanupEnableCache,
                 pipeline: pipeline,
-                tags: ["lookup", "uncorrelated_join", ">=3.5"]
+                tags: ["lookup", "uncorrelated_join", ">=3.5"],
             });
         }
     }
