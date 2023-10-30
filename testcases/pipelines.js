@@ -958,11 +958,11 @@ function basicUncorrelatedPipelineLookupPopulator(isView, disableCache, largeDat
     const nDocs = largeDataset ? 200 : 50;
     const paddingSize = largeDataset ? 1024*1024 : 16;
     const paddingStr = getStringOfLength(paddingSize);
-    function docGen(val) {
+    function localDocGen(val) {
         return {_id: val, padding: paddingStr};
     }
 
-    return basicMultiCollectionDataPopulator({isView, docGen, foreignCollsInfo: [{suffix: "_lookup", docGen: docGen}], nDocs, postFunction: (disableCache ? (function() {
+    return basicMultiCollectionDataPopulator({isView, localDocGen, foreignCollsInfo: [{suffix: "_lookup", docGen: localDocGen}], nDocs, postFunction: (disableCache ? (function() {
             setDocumentSourceLookupCacheSize(0);
         })
                                     : undefined) });
