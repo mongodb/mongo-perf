@@ -738,7 +738,7 @@ for(let arrSize of [50, 250, 500]) {
 }
 
 
-    
+
 /**
  * These tests are paramterized on group size [100, 500], operator [$top, $bottom, $topN, $bottomN]
  * and 'n' [10, 50] if the operator accepts an n value.
@@ -950,19 +950,22 @@ function basicArrayOfObjectLookupPopulator(isView) {
 /**
  * Creates a minimal $lookup data set for uncorrelated (and uncorrelated prefix) join via $lookup.
  */
-function basicUncorrelatedPipelineLookupPopulator(isView, disableCache) {
+function basicUncorrelatedPipelineLookupPopulator(isView, disableCache, largeDataset) {
+    if (disableCache === undefined) {
+        disableCache = false;
+    }
+
+    const nDocs = largeDataset ? 200 : 50;
+    const paddingSize = largeDataset ? 1024*1024 : 16;
+    const paddingStr = getStringOfLength(paddingSize);
     function localDocGen(val) {
         return {_id: val};
     }
 
     function foreignDocGen(val) {
-        return {_id: val};
+        return {_id: val, padding: paddingStr};
     }
 
-    var nDocs = 50;
-    if (disableCache === undefined) {
-        disableCache = false;
-    }
     return basicMultiCollectionDataPopulator({isView, localDocGen, foreignCollsInfo: [{suffix: "_lookup", docGen: foreignDocGen}], nDocs, postFunction: (disableCache ? (function() {
             setDocumentSourceLookupCacheSize(0);
         })
@@ -970,12 +973,13 @@ function basicUncorrelatedPipelineLookupPopulator(isView, disableCache) {
 }
 
 /**
- * Same as 'basicUncorrelatedPipelineLookupPopulator' but disables $lookup caching for uncorrelated
- * pipeline prefix.
+ * Same as 'basicUncorrelatedPipelineLookupPopulator' but allows for cache and collection size
+ * customization.
  */
-function basicUncorrelatedPipelineLookupPopulatorDisableCache(isView) {
-    var disableCache = true;
-    return basicUncorrelatedPipelineLookupPopulator(isView, disableCache);
+function getBasicUncorrelatedPipelineLookupPopulator(disableCache, largeDataset) {
+    return function(isView) {
+        return basicUncorrelatedPipelineLookupPopulator(isView, disableCache, largeDataset);
+    }
 }
 
 /**
@@ -1134,14 +1138,36 @@ generateTestCase({
     tags: ["lookup", ">=3.5"]
 });
 
+function generateLookupUncorrelatedJoinTestCases(namePrefix, pipeline, allowLargeDataset) {
+    for (const disableCache of [false, true]) {
+        for (const largeDataset of [false, true]) {
+            let name = namePrefix;
+            if (disableCache) {
+                name += ".NoCache";
+            }
+            if (largeDataset) {
+                name += ".LargeDataset";
+                if (!allowLargeDataset) {
+                    continue;
+                }
+            }
+            generateTestCase({
+                name: name,
+                pre: getBasicUncorrelatedPipelineLookupPopulator(disableCache, largeDataset),
+                post: basicLookupCleanupEnableCache,
+                pipeline: pipeline,
+                tags: ["lookup", "uncorrelated_join", ">=3.5"],
+            });
+        }
+    }
+}
+
 /**
  * $lookup with an uncorrelated join on foreign collection.
  */
-generateTestCase({
-    name: "Lookup.UncorrelatedJoin",
-    pre: basicUncorrelatedPipelineLookupPopulator,
-    post: basicLookupCleanup,
-    pipeline: [
+generateLookupUncorrelatedJoinTestCases(
+    "Lookup.UncorrelatedJoin",
+    [
         {
             $lookup: {
                 from: "#B_COLL_lookup",
@@ -1154,41 +1180,14 @@ generateTestCase({
             }
         }
     ],
-    tags: ["lookup", ">=3.5"]
-});
-
-/**
- * Same as 'Lookup.UncorrelatedJoin' but disables caching of uncorrelated pipeline prefix for the
- * duration of the test.
- */
-generateTestCase({
-    name: "Lookup.UncorrelatedJoin.NoCache",
-    pre: basicUncorrelatedPipelineLookupPopulatorDisableCache,
-    post: basicLookupCleanupEnableCache,
-    pipeline: [
-        {
-            $lookup: {
-                from: "#B_COLL_lookup",
-                pipeline: [
-                    {
-                        $match: {}
-                    },
-                ],
-                as: "match"
-            }
-        }
-    ],
-    tags: ["lookup", ">=3.5"]
-});
-
+    false /*allowLargeDataset*/
+);
 /**
  * $lookup where the prefix of the foreign collection join is uncorrelated.
  */
-generateTestCase({
-    name: "Lookup.UncorrelatedPrefixJoin",
-    pre: basicUncorrelatedPipelineLookupPopulator,
-    post: basicLookupCleanup,
-    pipeline: [
+generateLookupUncorrelatedJoinTestCases(
+    "Lookup.UncorrelatedPrefixJoin",
+    [
         {
             $lookup: {
                 from: "#B_COLL_lookup",
@@ -1198,13 +1197,13 @@ generateTestCase({
                 pipeline: [
                     {
                         $addFields: {
-                            newField: { $mod: ["$_id", 5] }
+                            newField: { $mod: ["$_id", 20] }
                         }
                     },
                     {
                         $match: {
                             $expr: {
-                                $eq: ["$newField", {$mod: ["$$foreignKey", 5] }]
+                                $eq: ["$newField", {$mod: ["$$foreignKey", 20] }]
                             }
                         }
                     }
@@ -1213,44 +1212,8 @@ generateTestCase({
             }
         }
     ],
-    tags: ["lookup", ">=3.5"]
-});
-
-/**
- * Same as 'Lookup.UncorrelatedPrefixJoin' but disables caching of uncorrelated pipeline prefix for
- * the duration of the test.
- */
-generateTestCase({
-    name: "Lookup.UncorrelatedPrefixJoin.NoCache",
-    pre: basicUncorrelatedPipelineLookupPopulatorDisableCache,
-    post: basicLookupCleanupEnableCache,
-    pipeline: [
-        {
-            $lookup: {
-                from: "#B_COLL_lookup",
-                let: {
-                    foreignKey: "$_id",
-                },
-                pipeline: [
-                    {
-                        $addFields: {
-                            newField: { $mod: ["$_id", 5] }
-                        }
-                    },
-                    {
-                        $match: {
-                            $expr: {
-                                $eq: ["$newField", {$mod: ["$$foreignKey", 5] }]
-                            }
-                        }
-                    }
-                ],
-                as: "match"
-            }
-        }
-    ],
-    tags: ["lookup", ">=3.5"]
-});
+    true /*allowLargeDataset*/
+);
 
 /**
  * Mimics the basic 'Lookup' test using $graphLookup for comparison.
@@ -2743,7 +2706,7 @@ generateTestCaseWithLargeDatasetAndIndexes({
  *
  * @param {Number} numElements: size of the array to generate and later sort.
  * @param {Boolean} isDescending: true if we're generating an array in descending order.
- * @param {String} variant: controls what type of data the array holds - either 'numbers', 
+ * @param {String} variant: controls what type of data the array holds - either 'numbers',
  * 'strings', or 'objects'.
  */
  function generateArrayForSortArray(numElements, isDescending, variant){
