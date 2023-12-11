@@ -2403,6 +2403,22 @@ generateTestCaseWithLargeDataset({
     docGenerator: largeDoc,
     pipeline: [{$group: {_id: "$aa", res: {$min: "$cc"}}}]
 });
+generateTestCaseWithLargeDataset({
+    name: "Group.MinAccTopField_LLR10_10LargeFieldNames",
+    docGenerator: largeDocLargeFieldNames,
+    pipeline: [{$group: {_id: "$order_month", res: {
+        $min: "$quantity",
+        $min: "$timestamp",
+        $min: "date_last_modified",
+        $min: "$shipping_speed",
+        $min: "$browsing_time",
+        $min: "$delivery_datetime",
+        $min: "$tracking_number",
+        $min: "$date_created",
+        $min: "$customer",
+        $min: "$customer_comments"
+    }}}]
+});
 
 // $max
 generateTestCaseWithLargeDataset({
