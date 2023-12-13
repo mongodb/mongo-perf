@@ -2409,7 +2409,7 @@ generateTestCaseWithLargeDataset({
     pipeline: [{$group: {_id: "$order_month", res: {
         $min: "$quantity",
         $min: "$timestamp",
-        $min: "date_last_modified",
+        $min: "$date_last_modified",
         $min: "$shipping_speed",
         $min: "$browsing_time",
         $min: "$delivery_datetime",
