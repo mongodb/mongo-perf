@@ -361,15 +361,17 @@ if (typeof(tests) !== "object") {
      *
      * Test: Query for all documents (empty query) and return the three integer fields.
      */
-    addQueryTestCase({
-        name: "FindProjectionThreeFields",
-        tags: ["regression"],
-        nDocs: 100,
-        docs: function(i) {
-            return {x: i, y: i, z: i};
-        },
-        op: {op: "find", query: {}, filter: {x: 1, y: 1, z: 1, _id: 0}}
-    });
+    for (const numOfDocs of [100, 10000, 1000000]) {
+        addQueryTestCase({
+            name: "FindProjectionThreeFields_Cardinality" + numOfDocs,
+            tags: ["regression"],
+            nDocs: numOfDocs,
+            docs: function(i) {
+                return {x: i, y: i, z: i};
+            },
+            op: {op: "find", query: {}, filter: {x: 1, y: 1, z: 1, _id: 0}}
+        });
+    }
 
     /**
      * Setup: Create a collection of documents with integer field x.y.
@@ -388,20 +390,23 @@ if (typeof(tests) !== "object") {
     });
 
     /**
-     * Utility to add a pair of inclusion/exclusion test cases.
+     * Utility to add a pair of inclusion/exclusion test cases. These test cases are run against
+     * collections with different cardinalities of 100, 10k, and 1M.
      */
     const addInclusionExclusionTestCase = function(name, docGenerator, inclusionSpec, exclusionSpec) {
-        for (const [prefix, testCase] of Object.entries({"FindInclusion.": inclusionSpec, "FindExclusion.": exclusionSpec})) {
-            addQueryTestCase({
-                name: prefix + name,
-                tags: ["regression", "projection", ">=4.4.0"],
-                nDocs: 10 * 1000,
-                // Adding a views passthrough and an aggregation test would be redundant.
-                createViewsPassthrough: false,
-                createAggregationTest: false,
-                docs: docGenerator,
-                op: {op: "find", query: {}, filter: testCase}
-            });
+        for (const numOfDocs of [100, 10000, 1000000]) {
+            for (const [prefix, testCase] of Object.entries({"FindInclusion.": inclusionSpec, "FindExclusion.": exclusionSpec})) {
+                addQueryTestCase({
+                    name: prefix + name + "_Cardinality" + numOfDocs,
+                    tags: ["regression", "projection", ">=4.4.0"],
+                    nDocs: numOfDocs,
+                    // Adding a views passthrough and an aggregation test would be redundant.
+                    createViewsPassthrough: false,
+                    createAggregationTest: false,
+                    docs: docGenerator,
+                    op: {op: "find", query: {}, filter: testCase}
+                });
+            }
         }
     }
 
@@ -574,6 +579,29 @@ if (typeof(tests) !== "object") {
         });
     }
 
+    function addTestCaseWithMultipleDatasets(options, cardinalities) {
+        for (const numOfDocs of cardinalities) {
+            let tags = options.tags || [];
+            tests.push({
+                tags: ["regression", "query_large_dataset"].concat(tags),
+                name: "Queries." + options.name + "_Cardinality" + numOfDocs,
+                generateData: options.generateData ||
+                    function(collection) {
+                        Random.setRandomSeed(258);
+                        collection.drop();
+                        var bulkop = collection.initializeUnorderedBulkOp();
+                        for (var i = 0; i < numOfDocs; i++) {
+                            bulkop.insert(options.docGenerator(i));
+                        }
+                        bulkop.execute();
+                    },
+                pre: options.pre || function (collection) {},
+                post: options.post || function(collection) {},
+                ops: ("op" in options) ? [options.op] : [{op: "find", query: options.query}],
+            });
+        }
+    }
+
     /**
      * Benchmarks for find on large collections, targeting the basic functionality of the engine in
      * a systematic way.
@@ -678,17 +706,17 @@ if (typeof(tests) !== "object") {
     });
 
     // Tests: projection.
-    addTestCaseWithLargeDataset({
+    addTestCaseWithMultipleDatasets({
         name: "ProjectInclude_CollScan_LS",
         docGenerator: smallDoc,
         op: {op: "find", query: {}, filter: {a:1, b:1, c:1, d:1, f:1, g:1, h:1, i:1}}
-    });
-    addTestCaseWithLargeDataset({
+    }, [100, 100000, 1000000]);
+    addTestCaseWithMultipleDatasets({
         name: "ProjectInclude_CollScan_LL",
         docGenerator: largeDoc,
         op: {op: "find", query: {}, filter: {a:1, b:1, c:1, d:1, f:1, g:1, h:1, i:1}}
-    });
-    addTestCaseWithLargeDataset({
+    }, [100, 100000, 1000000]);
+    addTestCaseWithMultipleDatasets({
         name: "ProjectNoExpressions_CollScan_LS",
         docGenerator: smallDoc,
         op: {
@@ -699,13 +727,13 @@ if (typeof(tests) !== "object") {
                 a2: "$a", b2: "$b", c2: "$c", d2: "$d",
             }
         }
-    });
-    addTestCaseWithLargeDataset({
+    }, [100, 100000, 1000000]);
+    addTestCaseWithMultipleDatasets({
         name: "ProjectExclude_CollScan_LL",
         docGenerator: largeDoc,
         op: {op: "find", query: {}, filter: {a:0, b:0, c:0, d:0, f:0, g:0, h:0, i:0}}
-    });
-    addTestCaseWithLargeDataset({
+    }, [100, 100000, 1000000]);
+    addTestCaseWithMultipleDatasets({
         name: "ProjectNoExpressions_CollScan_LL",
         docGenerator: largeDoc,
         op: {
@@ -716,7 +744,7 @@ if (typeof(tests) !== "object") {
                 a2: "$a", b2: "$b", c2: "$c", d2: "$d",
             }
         }
-    });
+    }, [100, 100000, 1000000]);
     addTestCaseWithLargeDataset({
         name: "ProjectNoExpressions_CollScan_LLR",
         docGenerator: smallDoc,
