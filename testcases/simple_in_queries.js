@@ -17,7 +17,7 @@ if (typeof(tests) !== "object") {
             collectionOptions.collation = collation;
         }
 
-        const collectionSizes = [["", 10], ["BigCollection", 10000], ["LargeCollection", 1e6]];
+        const collectionSizes = [["", 10], ["BigCollection", 10000], ["VeryBigCollection", 1e6]];
         for (const [nameSuffix, size] of collectionSizes) {
             addQueryTestCase({
                 name: name + nameSuffix,
