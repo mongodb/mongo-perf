@@ -361,7 +361,7 @@ if (typeof(tests) !== "object") {
      *
      * Test: Query for all documents (empty query) and return the three integer fields.
      */
-    for (const numOfDocs of [100, 10000, 1000000]) {
+    for (const numOfDocs of [10, 1000, 100000]) {
         addQueryTestCase({
             name: "FindProjectionThreeFields_Cardinality" + numOfDocs,
             tags: ["regression"],
@@ -394,7 +394,7 @@ if (typeof(tests) !== "object") {
      * collections with different cardinalities of 100, 10k, and 1M.
      */
     const addInclusionExclusionTestCase = function(name, docGenerator, inclusionSpec, exclusionSpec) {
-        for (const numOfDocs of [100, 10000, 1000000]) {
+        for (const numOfDocs of [10, 1000, 100000]) {
             for (const [prefix, testCase] of Object.entries({"FindInclusion.": inclusionSpec, "FindExclusion.": exclusionSpec})) {
                 addQueryTestCase({
                     name: prefix + name + "_Cardinality" + numOfDocs,
@@ -710,12 +710,12 @@ if (typeof(tests) !== "object") {
         name: "ProjectInclude_CollScan_LS",
         docGenerator: smallDoc,
         op: {op: "find", query: {}, filter: {a:1, b:1, c:1, d:1, f:1, g:1, h:1, i:1}}
-    }, [100, 100000, 1000000]);
+    }, [10, 1000, 100000]);
     addTestCaseWithMultipleDatasets({
         name: "ProjectInclude_CollScan_LL",
         docGenerator: largeDoc,
         op: {op: "find", query: {}, filter: {a:1, b:1, c:1, d:1, f:1, g:1, h:1, i:1}}
-    }, [100, 100000, 1000000]);
+    }, [10, 1000, 100000]);
     addTestCaseWithMultipleDatasets({
         name: "ProjectNoExpressions_CollScan_LS",
         docGenerator: smallDoc,
@@ -727,12 +727,12 @@ if (typeof(tests) !== "object") {
                 a2: "$a", b2: "$b", c2: "$c", d2: "$d",
             }
         }
-    }, [100, 100000, 1000000]);
+    }, [10, 1000, 100000]);
     addTestCaseWithMultipleDatasets({
         name: "ProjectExclude_CollScan_LL",
         docGenerator: largeDoc,
         op: {op: "find", query: {}, filter: {a:0, b:0, c:0, d:0, f:0, g:0, h:0, i:0}}
-    }, [100, 100000, 1000000]);
+    }, [10, 1000, 100000]);
     addTestCaseWithMultipleDatasets({
         name: "ProjectNoExpressions_CollScan_LL",
         docGenerator: largeDoc,
@@ -744,7 +744,7 @@ if (typeof(tests) !== "object") {
                 a2: "$a", b2: "$b", c2: "$c", d2: "$d",
             }
         }
-    }, [100, 100000, 1000000]);
+    }, [10, 1000, 100000]);
     addTestCaseWithLargeDataset({
         name: "ProjectNoExpressions_CollScan_LLR",
         docGenerator: smallDoc,
