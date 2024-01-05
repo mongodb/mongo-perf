@@ -215,7 +215,7 @@ if (typeof(tests) !== "object") {
                 tags: ["regression"],
                 nDocs: size,
                 docs: function (i) {
-                    return {x: 2 * Random.randInt(1000) + 1};
+                    return {x: 2 * Random.randInt(largeInArray.length) + 1};
                 },
                 op: {
                     op: "find",
