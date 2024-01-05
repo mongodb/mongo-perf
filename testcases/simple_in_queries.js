@@ -153,6 +153,21 @@ if (typeof(tests) !== "object") {
                 query: {x: {$in: largeInArray}}
             }
         });
+
+        // Similar test to above, but with an even larger collection. Only a small fraction (10%)
+        // of the documents will actually match the filter.
+        addQueryTestCase({
+            name: name + "VeryBigCollection",
+            tags: ["regression"],
+            nDocs: 1e6,
+            docs: function (i) {
+                return {x: 2 * Random.randInt(largeInArray.length * 10)};
+            },
+            op: {
+                op: "find",
+                query: {x: {$in: largeInArray}}
+            }
+        });
     };
 
 
