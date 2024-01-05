@@ -8,8 +8,7 @@ if (typeof(tests) !== "object") {
     Random.setRandomSeed(258);
 
     /**
-     * Adds two string test cases for a $in query: One a small collection, and another on a
-     * large collection.
+     * Adds three string test cases for a $in query: One per a collection of 10, 10K, and 1M documents.
      */
     function addStringInTestCases({name, collation, inArray}) {
         const collectionOptions = {};
@@ -115,8 +114,9 @@ if (typeof(tests) !== "object") {
     }
 
     /**
-     * Adds two test cases for a $in query: One a small collection with a $in filter that
-     * includes every document, and another on a larger collection with a selective $in filter.
+     * Adds three test cases for a $in query: One on a small collection with a $in filter that
+     * includes every document, and two on larger collections of 10K and 1M documents with 
+     * selective $in filters.
      */
     function addInTestCases({name, largeInArray}) {
         // Setup: Create a collection and insert a small number of documents with a random even
@@ -145,6 +145,21 @@ if (typeof(tests) !== "object") {
             name: name + "BigCollection",
             tags: ["regression"],
             nDocs: 10000,
+            docs: function (i) {
+                return {x: 2 * Random.randInt(largeInArray.length * 10)};
+            },
+            op: {
+                op: "find",
+                query: {x: {$in: largeInArray}}
+            }
+        });
+
+        // Similar test to above, but with an even larger collection. Only a small fraction (10%)
+        // of the documents will actually match the filter.
+        addQueryTestCase({
+            name: name + "VeryBigCollection",
+            tags: ["regression"],
+            nDocs: 1e6,
             docs: function (i) {
                 return {x: 2 * Random.randInt(largeInArray.length * 10)};
             },
@@ -190,41 +205,44 @@ if (typeof(tests) !== "object") {
         largeInArray: veryLargeArrayRandom,
     });
 
+    /**
+     * Adds three test cases for a $in query: One per a collection of 10, 10K, and 1M documents.
+     */
+    function addNonMatchingInTestCases({name, largeInArray}) {
+        for (const [nameSuffix, size] of [["", 10], ["BigCollection", 10000], ["VeryBigCollection", 1e6]]) {
+            addQueryTestCase({
+                name: name + nameSuffix,
+                tags: ["regression"],
+                nDocs: size,
+                docs: function (i) {
+                    return {x: 2 * Random.randInt(largeInArray.length) + 1};
+                },
+                op: {
+                    op: "find",
+                    query: {x: {$in: largeInArray}}
+                }
+            });
+        }
+    }
 
     /**
-     * Setup: Create a collection and insert a small number of documents with a random odd integer
+     * Setup: Create a collection and insert documents with a random odd integer
      * field x in the range [0, 2000).
      *
      * Test: Issue queries that must perform a collection scan, filtering the documents with an $in
      * predicate with a large number of elements. No documents will match the predicate, since the
      * $in array contains all even integers in the range [0, 2000).
      */
-    addQueryTestCase({
+    addNonMatchingInTestCases({
         name: "UnindexedLargeInNonMatching",
-        tags: ["regression"],
-        nDocs: 10,
-        docs: function (i) {
-            return {x: 2 * Random.randInt(1000) + 1};
-        },
-        op: {
-            op: "find",
-            query: {x: {$in: largeArraySorted}}
-        }
+        largeInArray: largeArraySorted,
     });
 
     /**
      * Repeat the same test as above, except using the $in array of unsorted elements.
      */
-    addQueryTestCase({
+    addNonMatchingInTestCases({
         name: "UnindexedLargeInUnsortedNonMatching",
-        tags: ["regression"],
-        nDocs: 10,
-        docs: function (i) {
-            return {x: 2 * Random.randInt(1000) + 1};
-        },
-        op: {
-            op: "find",
-            query: {x: {$in: largeArrayRandom}}
-        }
+        largeInArray: largeArrayRandom,
     });
 }());
