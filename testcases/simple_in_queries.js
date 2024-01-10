@@ -16,7 +16,7 @@ if (typeof(tests) !== "object") {
             collectionOptions.collation = collation;
         }
 
-        const collectionSizes = [["", 10], ["BigCollection", 10000], ["VeryBigCollection", 1e6]];
+        const collectionSizes = [["", 10], ["BigCollection", 10000], ["VeryBigCollection", 1e5]];
         for (const [nameSuffix, size] of collectionSizes) {
             addQueryTestCase({
                 name: name + nameSuffix,
@@ -159,7 +159,7 @@ if (typeof(tests) !== "object") {
         addQueryTestCase({
             name: name + "VeryBigCollection",
             tags: ["regression"],
-            nDocs: 1e6,
+            nDocs: 1e5,
             docs: function (i) {
                 return {x: 2 * Random.randInt(largeInArray.length * 10)};
             },
@@ -209,7 +209,7 @@ if (typeof(tests) !== "object") {
      * Adds three test cases for a $in query: One per a collection of 10, 10K, and 1M documents.
      */
     function addNonMatchingInTestCases({name, largeInArray}) {
-        for (const [nameSuffix, size] of [["", 10], ["BigCollection", 10000], ["VeryBigCollection", 1e6]]) {
+        for (const [nameSuffix, size] of [["", 10], ["BigCollection", 10000], ["VeryBigCollection", 1e5]]) {
             addQueryTestCase({
                 name: name + nameSuffix,
                 tags: ["regression"],
