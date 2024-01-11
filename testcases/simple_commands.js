@@ -201,7 +201,7 @@ tests.push({
  */
 tests.push({
     name: "Commands.FindAndModifySortedDeleteIndexed",
-    tags: ["command", "regression"],
+    tags: ["command", "regression", "BF-29843"],
     pre: function setUpFindAndModifySortedDelete(collection) {
         collection.drop();
         Random.setRandomSeed(22002);
