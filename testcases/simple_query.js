@@ -398,7 +398,7 @@ if (typeof(tests) !== "object") {
      * collections with different cardinalities of 100, 10k, and 100K.
      */
     const addInclusionExclusionTestCase = function(name, docGenerator, inclusionSpec, exclusionSpec) {
-        for (const testOpts of [{num: 100, name: ""}, {num: 10000, name: "Medium"}, {num: 100000, name: "Large"}]) {
+        for (const testOpts of [{num: 100, name: "Small"}, {num: 10000, name: ""}, {num: 100000, name: "Large"}]) {
             let tags = ["regression", "projection", ">=4.4.0"];
             if (testOpts.num >= 100000) {
                 tags.push("query_large_dataset");
@@ -553,16 +553,14 @@ if (typeof(tests) !== "object") {
      * cases depending on the options.
      * @param {query} - The query to benchmark with 'find' operation. Ignored if 'op' is defined.
      * @param {op} - The full definition of the op to be benchmarked.
-     * @param {Number} [options.nDocs = largeCollectionSize] - The number of documents to insert in
-     * the collection. Ignored, if 'generateData' is defined.
      * @param {Array} [options.names] - The names of tests to add.
      * @param {Array} [options.cardinalities] - The number of docs to insert for all tests.
      * options.cardinalities and options.names must have the same length.
      * @param {function} [options.docGenerator] - To be used with populatorGenerator. Ignored, if
      * 'generatedData' is defined.
      * @param {function} [options.generateData = populatorGenerator] - Uses 'docGenerator' to populate
-     * the collection with 'nDocs' documents. If the test is part of a suite that uses '--shareDataset'
-     * flag, the generator is run once (for the first test in the suite).
+     * the collection with corresponding 'cardinality'. If the test is part of a suite that uses
+     * '--shareDataset' flag, the generator is run once (for the first test in the suite).
      * @param {function} [options.pre=noop] - Any other setup, in addition to creating the data, that
      * the test might need. For example, creating indexes. The 'pre' fixture is run per test, so for
      * tests that share the dataset, the effects must be undone with 'post'.
@@ -570,8 +568,7 @@ if (typeof(tests) !== "object") {
      */
     function addTestCaseWithMultipleDatasets(options) {
         const largeCollectionSize = 100000;
-        const nDocs = options.nDocs || largeCollectionSize;
-        const cardinalities = options.cardinalities || [nDocs];
+        const cardinalities = options.cardinalities || [largeCollectionSize];
         assert.eq(options.names.length, cardinalities.length);
 
         let tags = options.tags || [];
