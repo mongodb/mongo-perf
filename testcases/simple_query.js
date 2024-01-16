@@ -366,15 +366,34 @@ if (typeof(tests) !== "object") {
         if (testOpts.num >= 100000) {
             tags.push("query_large_dataset");
         }
-        addQueryTestCase({
-            name: "FindProjectionThreeFields" + testOpts.name,
-            tags: tags,
-            nDocs: testOpts.num,
-            docs: function(i) {
-                return {x: i, y: i, z: i};
-            },
-            op: {op: "find", query: {}, filter: {x: 1, y: 1, z: 1, _id: 0}}
-        });
+        const docGenerator = function(i) { return {x: i, y: i, z: i}; };
+        if (tags.includes("query_large_dataset")) {
+            tests.push({
+                name: "FindProjectionThreeFields" + testOpts.name,
+                tags: tags,
+                generateData:
+                    function(collection) {
+                        Random.setRandomSeed(258);
+                        collection.drop();
+                        var bulkop = collection.initializeUnorderedBulkOp();
+                        for (var i = 0; i < testOpts.num; i++) {
+                            bulkop.insert(docGenerator(i));
+                        }
+                        bulkop.execute();
+                    },
+                pre: function (collection) {},
+                post: function(collection) {},
+                ops: [{op: "find", query: {}, filter: {x: 1, y: 1, z: 1, _id: 0}}]
+            });
+        } else {
+            addQueryTestCase({
+                name: "FindProjectionThreeFields" + testOpts.name,
+                tags: tags,
+                nDocs: testOpts.num,
+                docs: docGenerator,
+                op: {op: "find", query: {}, filter: {x: 1, y: 1, z: 1, _id: 0}}
+            });
+        }
     }
 
     /**
@@ -404,16 +423,36 @@ if (typeof(tests) !== "object") {
                 tags.push("query_large_dataset");
             }
             for (const [prefix, testCase] of Object.entries({"FindInclusion.": inclusionSpec, "FindExclusion.": exclusionSpec})) {
-                addQueryTestCase({
-                    name: prefix + name + testOpts.name,
-                    tags: tags,
-                    nDocs: testOpts.num,
-                    // Adding a views passthrough and an aggregation test would be redundant.
-                    createViewsPassthrough: false,
-                    createAggregationTest: false,
-                    docs: docGenerator,
-                    op: {op: "find", query: {}, filter: testCase}
-                });
+                if (tags.includes("query_large_dataset")) {
+                    tests.push({
+                        tags: tags,
+                        name: prefix + name + testOpts.name,
+                        generateData: testOpts.generateData ||
+                            function(collection) {
+                                Random.setRandomSeed(258);
+                                collection.drop();
+                                var bulkop = collection.initializeUnorderedBulkOp();
+                                for (var i = 0; i < testOpts.num; i++) {
+                                    bulkop.insert(docGenerator(i));
+                                }
+                                bulkop.execute();
+                            },
+                        pre: function (collection) {},
+                        post: function(collection) {},
+                        ops: [{op: "find", query: {}, filter: testCase}]
+                    });
+                } else {
+                    addQueryTestCase({
+                        name: prefix + name + testOpts.name,
+                        tags: tags,
+                        nDocs: testOpts.num,
+                        // Adding a views passthrough and an aggregation test would be redundant.
+                        createViewsPassthrough: false,
+                        createAggregationTest: false,
+                        docs: docGenerator,
+                        op: {op: "find", query: {}, filter: testCase}
+                    });
+                }
             }
         }
     }
