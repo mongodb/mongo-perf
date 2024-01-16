@@ -361,15 +361,40 @@ if (typeof(tests) !== "object") {
      *
      * Test: Query for all documents (empty query) and return the three integer fields.
      */
-    addQueryTestCase({
-        name: "FindProjectionThreeFields",
-        tags: ["regression"],
-        nDocs: 100,
-        docs: function(i) {
-            return {x: i, y: i, z: i};
-        },
-        op: {op: "find", query: {}, filter: {x: 1, y: 1, z: 1, _id: 0}}
-    });
+    for (const testOpts of [{num: 100, name: ""}, {num: 10000, name: "Medium"}, {num: 100000, name: "Large"}]) {
+        let tags = ["regression"];
+        if (testOpts.num >= 100000) {
+            tags.push("query_large_dataset");
+        }
+        const docGenerator = function(i) { return {x: i, y: i, z: i}; };
+        if (tags.includes("query_large_dataset")) {
+            tests.push({
+                name: "FindProjectionThreeFields" + testOpts.name,
+                tags: tags,
+                generateData:
+                    function(collection) {
+                        Random.setRandomSeed(258);
+                        collection.drop();
+                        var bulkop = collection.initializeUnorderedBulkOp();
+                        for (var i = 0; i < testOpts.num; i++) {
+                            bulkop.insert(docGenerator(i));
+                        }
+                        bulkop.execute();
+                    },
+                pre: function (collection) {},
+                post: function(collection) {},
+                ops: [{op: "find", query: {}, filter: {x: 1, y: 1, z: 1, _id: 0}}]
+            });
+        } else {
+            addQueryTestCase({
+                name: "FindProjectionThreeFields" + testOpts.name,
+                tags: tags,
+                nDocs: testOpts.num,
+                docs: docGenerator,
+                op: {op: "find", query: {}, filter: {x: 1, y: 1, z: 1, _id: 0}}
+            });
+        }
+    }
 
     /**
      * Setup: Create a collection of documents with integer field x.y.
@@ -388,20 +413,47 @@ if (typeof(tests) !== "object") {
     });
 
     /**
-     * Utility to add a pair of inclusion/exclusion test cases.
+     * Utility to add a pair of inclusion/exclusion test cases. These test cases are run against
+     * collections with different cardinalities of 100, 10k, and 100K.
      */
     const addInclusionExclusionTestCase = function(name, docGenerator, inclusionSpec, exclusionSpec) {
-        for (const [prefix, testCase] of Object.entries({"FindInclusion.": inclusionSpec, "FindExclusion.": exclusionSpec})) {
-            addQueryTestCase({
-                name: prefix + name,
-                tags: ["regression", "projection", ">=4.4.0"],
-                nDocs: 10 * 1000,
-                // Adding a views passthrough and an aggregation test would be redundant.
-                createViewsPassthrough: false,
-                createAggregationTest: false,
-                docs: docGenerator,
-                op: {op: "find", query: {}, filter: testCase}
-            });
+        for (const testOpts of [{num: 100, name: "Small"}, {num: 10000, name: ""}, {num: 100000, name: "Large"}]) {
+            let tags = ["regression", "projection", ">=4.4.0"];
+            if (testOpts.num >= 100000) {
+                tags.push("query_large_dataset");
+            }
+            for (const [prefix, testCase] of Object.entries({"FindInclusion.": inclusionSpec, "FindExclusion.": exclusionSpec})) {
+                if (tags.includes("query_large_dataset")) {
+                    tests.push({
+                        tags: tags,
+                        name: prefix + name + testOpts.name,
+                        generateData: testOpts.generateData ||
+                            function(collection) {
+                                Random.setRandomSeed(258);
+                                collection.drop();
+                                var bulkop = collection.initializeUnorderedBulkOp();
+                                for (var i = 0; i < testOpts.num; i++) {
+                                    bulkop.insert(docGenerator(i));
+                                }
+                                bulkop.execute();
+                            },
+                        pre: function (collection) {},
+                        post: function(collection) {},
+                        ops: [{op: "find", query: {}, filter: testCase}]
+                    });
+                } else {
+                    addQueryTestCase({
+                        name: prefix + name + testOpts.name,
+                        tags: tags,
+                        nDocs: testOpts.num,
+                        // Adding a views passthrough and an aggregation test would be redundant.
+                        createViewsPassthrough: false,
+                        createAggregationTest: false,
+                        docs: docGenerator,
+                        op: {op: "find", query: {}, filter: testCase}
+                    });
+                }
+            }
         }
     }
 
@@ -536,42 +588,53 @@ if (typeof(tests) !== "object") {
 
     /**
      * Similar to 'addTestCase' but sets up the test to be able to share collections if running
-     * as part of a suite that opts-in for sharing.
+     * as part of a suite that opts-in for sharing. This function supports adding multiple test
+     * cases depending on the options.
      * @param {query} - The query to benchmark with 'find' operation. Ignored if 'op' is defined.
      * @param {op} - The full definition of the op to be benchmarked.
-     * @param {Number} [options.nDocs = largeCollectionSize] - The number of documents to insert in
-     * the collection. Ignored, if 'generateData' is defined.
+     * @param {Array} [options.names] - The names of tests to add.
+     * @param {Array} [options.cardinalities] - The number of docs to insert for all tests.
+     * options.cardinalities and options.names must have the same length.
      * @param {function} [options.docGenerator] - To be used with populatorGenerator. Ignored, if
      * 'generatedData' is defined.
      * @param {function} [options.generateData = populatorGenerator] - Uses 'docGenerator' to populate
-     * the collection with 'nDocs' documents. If the test is part of a suite that uses '--shareDataset'
-     * flag, the generator is run once (for the first test in the suite).
+     * the collection with corresponding 'cardinality'. If the test is part of a suite that uses
+     * '--shareDataset' flag, the generator is run once (for the first test in the suite).
      * @param {function} [options.pre=noop] - Any other setup, in addition to creating the data, that
      * the test might need. For example, creating indexes. The 'pre' fixture is run per test, so for
      * tests that share the dataset, the effects must be undone with 'post'.
      * @param {function} [options.post=noop] - cleanup after the test is done.
      */
-    function addTestCaseWithLargeDataset(options) {
+    function addTestCaseWithMultipleDatasets(options) {
         const largeCollectionSize = 100000;
-        var nDocs = options.nDocs || largeCollectionSize;
-        var tags = options.tags || [];
-        tests.push({
-            tags: ["regression", "query_large_dataset"].concat(tags),
-            name: "Queries." + options.name,
-            generateData: options.generateData ||
-                function(collection) {
-                    Random.setRandomSeed(258);
-                    collection.drop();
-                    var bulkop = collection.initializeUnorderedBulkOp();
-                    for (var i = 0; i < nDocs; i++) {
-                        bulkop.insert(options.docGenerator(i));
-                    }
-                    bulkop.execute();
-                },
-            pre: options.pre || function (collection) {},
-            post: options.post || function(collection) {},
-            ops: ("op" in options) ? [options.op] : [{op: "find", query: options.query}],
-        });
+        const cardinalities = options.cardinalities || [largeCollectionSize];
+        assert.eq(options.names.length, cardinalities.length);
+
+        let tags = options.tags || [];
+        tags.push("regression");
+        
+        for (let i = 0; i < cardinalities.length; i++) {
+            if (cardinalities[i] >= 100000) {
+                tags.push("query_large_dataset"); 
+            }
+            tests.push({
+                tags: tags,
+                name: "Queries." + options.names[i],
+                generateData: options.generateData ||
+                    function(collection) {
+                        Random.setRandomSeed(258);
+                        collection.drop();
+                        let bulkop = collection.initializeUnorderedBulkOp();
+                        for (let j = 0; j < cardinalities[i]; j++) {
+                            bulkop.insert(options.docGenerator(j));
+                        }
+                        bulkop.execute();
+                    },
+                pre: options.pre || function (collection) {},
+                post: options.post || function(collection) {},
+                ops: ("op" in options) ? [options.op] : [{op: "find", query: options.query}],
+            });
+        }
     }
 
     /**
@@ -587,36 +650,36 @@ if (typeof(tests) !== "object") {
      */
 
     // Tests: point-query on a top-level field with full collection scan.
-    addTestCaseWithLargeDataset({
-        name: "PointQuery_CollScan_LS", docGenerator: smallDoc, query: {a: 7}
+    addTestCaseWithMultipleDatasets({
+        names: ["PointQuery_CollScan_LS"], cardinalities: [100000], docGenerator: smallDoc, query: {a: 7}
     });
-    addTestCaseWithLargeDataset({
-        name: "PointQuery_CollScan_LL", docGenerator: largeDoc, query: {a: 7}
+    addTestCaseWithMultipleDatasets({
+        names: ["PointQuery_CollScan_LL"], cardinalities: [100000], docGenerator: largeDoc, query: {a: 7}
     });
-    addTestCaseWithLargeDataset({
-        name: "PointQuery_CollScan_LLR", docGenerator: largeDoc, query: {aa: 7}
+    addTestCaseWithMultipleDatasets({
+        names: ["PointQuery_CollScan_LLR"], cardinalities: [100000], docGenerator: largeDoc, query: {aa: 7}
     });
 
     // Tests: point-query on a sub-field with full collection scan.
-    addTestCaseWithLargeDataset({
-        name: "PointQuerySubField_CollScan_LS", docGenerator: smallDoc, query: {"e.a": 7}
+    addTestCaseWithMultipleDatasets({
+        names: ["PointQuerySubField_CollScan_LS"], cardinalities: [100000], docGenerator: smallDoc, query: {"e.a": 7}
     });
-    addTestCaseWithLargeDataset({
-        name: "PointQuerySubField_CollScan_LL", docGenerator: largeDoc, query: {"e.a": 7}
+    addTestCaseWithMultipleDatasets({
+        names: ["PointQuerySubField_CollScan_LL"], cardinalities: [100000], docGenerator: largeDoc, query: {"e.a": 7}
     });
-    addTestCaseWithLargeDataset({
-        name: "PointQuerySubField_CollScan_LLR", docGenerator: largeDoc, query: {"ee.a": 7}
+    addTestCaseWithMultipleDatasets({
+        names: ["PointQuerySubField_CollScan_LLR"], cardinalities: [100000], docGenerator: largeDoc, query: {"ee.a": 7}
     });
 
     // Tests: point-query on an array field with full collection scan.
-    addTestCaseWithLargeDataset({
-        name: "PointQueryArray_CollScan_LS", docGenerator: smallDoc, query: {"f": 7}
+    addTestCaseWithMultipleDatasets({
+        names: ["PointQueryArray_CollScan_LS"], cardinalities: [100000], docGenerator: smallDoc, query: {"f": 7}
     });
-    addTestCaseWithLargeDataset({
-        name: "PointQueryArray_CollScan_LL", docGenerator: largeDoc, query: {"f": 7}
+    addTestCaseWithMultipleDatasets({
+        names: ["PointQueryArray_CollScan_LL"], cardinalities: [100000], docGenerator: largeDoc, query: {"f": 7}
     });
-    addTestCaseWithLargeDataset({
-        name: "PointQueryArray_CollScan_LLR", docGenerator: largeDoc, query: {"ff": 7}
+    addTestCaseWithMultipleDatasets({
+        names: ["PointQueryArray_CollScan_LLR"], cardinalities: [100000], docGenerator: largeDoc, query: {"ff": 7}
     });
 
     // Tests: query with a complex expression on top-level fields with full collection scan.
@@ -631,11 +694,11 @@ if (typeof(tests) !== "object") {
           ]
         }
     };
-    addTestCaseWithLargeDataset({
-        name: "ComplexExpressionQuery_CollScan_LS", docGenerator: smallDoc, query: queryExpr
+    addTestCaseWithMultipleDatasets({
+        names: ["ComplexExpressionQuery_CollScan_LS"], cardinalities: [100000], docGenerator: smallDoc, query: queryExpr
     });
-    addTestCaseWithLargeDataset({
-        name: "ComplexExpressionQuery_CollScan_LL", docGenerator: largeDoc, query: queryExpr
+    addTestCaseWithMultipleDatasets({
+        names: ["ComplexExpressionQuery_CollScan_LL"], cardinalities: [100000], docGenerator: largeDoc, query: queryExpr
     });
 
     // Tests: query with a complex expression on a single field with full collection scan.
@@ -650,13 +713,15 @@ if (typeof(tests) !== "object") {
             ]
         }
     };
-    addTestCaseWithLargeDataset({
-        name: "ComplexExpressionSingleFieldQuery_CollScan_LS",
+    addTestCaseWithMultipleDatasets({
+        names: ["ComplexExpressionSingleFieldQuery_CollScan_LS"],
+        cardinalities: [100000],
         docGenerator: smallDoc,
         query: queryExprSingleField
     });
-    addTestCaseWithLargeDataset({
-        name: "ComplexExpressionSingleFieldQuery_CollScan_LL",
+    addTestCaseWithMultipleDatasets({
+        names: ["ComplexExpressionSingleFieldQuery_CollScan_LL"],
+        cardinalities: [100000],
         docGenerator: largeDoc,
         query: queryExprSingleField
     });
@@ -671,25 +736,29 @@ if (typeof(tests) !== "object") {
             ]
         }
     };
-    addTestCaseWithLargeDataset({
-        name: "ComplexExpressionSingleSubFieldQuery_CollScan_LL",
+    addTestCaseWithMultipleDatasets({
+        names: ["ComplexExpressionSingleSubFieldQuery_CollScan_LL"],
+        cardinalities: [100000],
         docGenerator: largeDoc,
         query: queryExprSingleSubField
     });
 
     // Tests: projection.
-    addTestCaseWithLargeDataset({
-        name: "ProjectInclude_CollScan_LS",
+    addTestCaseWithMultipleDatasets({
+        names: ["ProjectInclude_CollScan_SS", "ProjectInclude_CollScan_MS", "ProjectInclude_CollScan_LS"],
+        cardinalities: [100, 10000, 100000],
         docGenerator: smallDoc,
         op: {op: "find", query: {}, filter: {a:1, b:1, c:1, d:1, f:1, g:1, h:1, i:1}}
     });
-    addTestCaseWithLargeDataset({
-        name: "ProjectInclude_CollScan_LL",
+    addTestCaseWithMultipleDatasets({
+        names: ["ProjectInclude_CollScan_SL", "ProjectInclude_CollScan_ML", "ProjectInclude_CollScan_LL"],
+        cardinalities: [100, 10000, 100000],
         docGenerator: largeDoc,
         op: {op: "find", query: {}, filter: {a:1, b:1, c:1, d:1, f:1, g:1, h:1, i:1}}
     });
-    addTestCaseWithLargeDataset({
-        name: "ProjectNoExpressions_CollScan_LS",
+    addTestCaseWithMultipleDatasets({
+        names: ["ProjectNoExpressions_CollScan_SS", "ProjectNoExpressions_CollScan_MS", "ProjectNoExpressions_CollScan_LS"],
+        cardinalities: [100, 10000, 100000],
         docGenerator: smallDoc,
         op: {
             op: "find",
@@ -700,13 +769,15 @@ if (typeof(tests) !== "object") {
             }
         }
     });
-    addTestCaseWithLargeDataset({
-        name: "ProjectExclude_CollScan_LL",
+    addTestCaseWithMultipleDatasets({
+        names: ["ProjectExclude_CollScan_SL", "ProjectExclude_CollScan_ML", "ProjectExclude_CollScan_LL"],
+        cardinalities: [100, 10000, 100000],
         docGenerator: largeDoc,
         op: {op: "find", query: {}, filter: {a:0, b:0, c:0, d:0, f:0, g:0, h:0, i:0}}
     });
-    addTestCaseWithLargeDataset({
-        name: "ProjectNoExpressions_CollScan_LL",
+    addTestCaseWithMultipleDatasets({
+        names: ["ProjectNoExpressions_CollScan_SL", "ProjectNoExpressions_CollScan_ML", "ProjectNoExpressions_CollScan_LL"],
+        cardinalities: [100, 10000, 100000],
         docGenerator: largeDoc,
         op: {
             op: "find",
@@ -717,8 +788,9 @@ if (typeof(tests) !== "object") {
             }
         }
     });
-    addTestCaseWithLargeDataset({
-        name: "ProjectNoExpressions_CollScan_LLR",
+    addTestCaseWithMultipleDatasets({
+        names: ["ProjectNoExpressions_CollScan_LLR"],
+        cardinalities: [100000],
         docGenerator: smallDoc,
         op: {
             op: "find",
@@ -734,8 +806,9 @@ if (typeof(tests) !== "object") {
         dl: {$ln: {$add: [{$abs: "$d"}, 1]}},
         ab: {$add: ["$a", "$b"]}, cd: {$divide: ["$d", "$c"]},
     };
-    addTestCaseWithLargeDataset({
-        name: "ProjectWithArithExpressions_CollScan_LS",
+    addTestCaseWithMultipleDatasets({
+        names: ["ProjectWithArithExpressions_CollScan_LS"],
+        cardinalities: [100000],
         docGenerator: smallDoc,
         op: {op: "find", query: {}, filter: projectWithArithExpressions}
     });
@@ -751,59 +824,66 @@ if (typeof(tests) !== "object") {
         });
     }
 
-    function addTestCaseWithLargeDatasetAndIndexes(options) {
+    function addTestCaseWithMultipleDatasetsAndIndexes(options) {
         options.pre = function (collection) {
             dropIndexesAndCaches(collection);
             createIndexes(collection, options.indexes);
         };
         options.post = dropIndexesAndCaches;
-        addTestCaseWithLargeDataset(options);
+        addTestCaseWithMultipleDatasets(options);
     }
 
-    addTestCaseWithLargeDatasetAndIndexes({
-        name: "PointQuery_SingleIndex_LL",
+    addTestCaseWithMultipleDatasetsAndIndexes({
+        names: ["PointQuery_SingleIndex_LL"],
+        cardinalities: [100000],
         tags: ["fast_running_query"],
         docGenerator: largeDoc,
         indexes: [{"a": 1}],
         query: {"a": 7}
     });
-    addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuery_SingleIndex_LowSelectivityMatch_LL",
+    addTestCaseWithMultipleDatasetsAndIndexes({
+        names: ["RangeQuery_SingleIndex_LowSelectivityMatch_LL"],
+        cardinalities: [100000],
         docGenerator: largeDoc,
         indexes: [{"a": 1}],
         query: {"a": {$gt: 1}}
     });
-    addTestCaseWithLargeDatasetAndIndexes({
-        name: "PointQuery_MultipleIndexes_LL",
+    addTestCaseWithMultipleDatasetsAndIndexes({
+        names: ["PointQuery_MultipleIndexes_LL"],
+        cardinalities: [100000],
         tags: ["fast_running_query"],
         docGenerator: largeDoc,
         indexes: [{"a": 1}, {"b": 1}, {"a": 1, "b": 1}],
         query: {"a": 7, "b": 742}
     });
-    addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuery_MultipleIndexes_LowSelectivityMatch_LL",
+    addTestCaseWithMultipleDatasetsAndIndexes({
+        names: ["RangeQuery_MultipleIndexes_LowSelectivityMatch_LL"],
+        cardinalities: [100000],
         tags: ["indexed"],
         docGenerator: largeDoc,
         indexes: [{"a": 1}, {"b": 1}, {"a": 1, "b": 1}],
         query: {"a": {$gt: 1}, "b": {$lt: 900}}
     });
-    addTestCaseWithLargeDatasetAndIndexes({
-        name: "PointQuerySubField_SingleIndex_LL",
+    addTestCaseWithMultipleDatasetsAndIndexes({
+        names: ["PointQuerySubField_SingleIndex_LL"],
+        cardinalities: [100000],
         tags: ["fast_running_query"],
         docGenerator: largeDoc,
         indexes: [{"e.a": 1}],
         query: {"e.a": 7}
     });
-    addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuerySubField_SingleIndex_LowSelectivityMatch_LL",
+    addTestCaseWithMultipleDatasetsAndIndexes({
+        names: ["RangeQuerySubField_SingleIndex_LowSelectivityMatch_LL"],
+        cardinalities: [100000],
         docGenerator: largeDoc,
         indexes: [{"e.a": 1}],
         query: {"e.a": {$gt: 1}}
     });
 
     // Select ~1% from a single indexed field.
-    addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuery_SingleIndex_SimpleRange_LS",
+    addTestCaseWithMultipleDatasetsAndIndexes({
+        names: ["RangeQuery_SingleIndex_SimpleRange_LS"],
+        cardinalities: [100000],
         tags: ["indexed", "fast_running_query"],
         docGenerator: smallDoc,
         indexes: [{"b": 1}],
@@ -811,8 +891,9 @@ if (typeof(tests) !== "object") {
     });
 
     // Select ~99% from a single indexed field.
-    addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuery_SingleIndex_SimpleRange_LowSelectivityMatch_LS",
+    addTestCaseWithMultipleDatasetsAndIndexes({
+        names: ["RangeQuery_SingleIndex_SimpleRange_LowSelectivityMatch_LS"],
+        cardinalities: [100000],
         tags: ["indexed"],
         docGenerator: smallDoc,
         indexes: [{"b": 1}],
@@ -829,8 +910,9 @@ if (typeof(tests) !== "object") {
     }
 
     // Select ~90% with two range predicates on two indexed fields of a compound index.
-    addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuery_CompoundIndex_SingleIntervals_LS",
+    addTestCaseWithMultipleDatasetsAndIndexes({
+        names: ["RangeQuery_CompoundIndex_SingleIntervals_LS"],
+        cardinalities: [100000],
         tags: ["indexed"],
         docGenerator: smallDoc,
         indexes: [{"b": 1, "h": 1}],
@@ -838,8 +920,9 @@ if (typeof(tests) !== "object") {
     });
 
     // Select ~99% from a single indexed field.
-    addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuery_SingleFieldIndex_ComplexBounds_LS",
+    addTestCaseWithMultipleDatasetsAndIndexes({
+        names: ["RangeQuery_SingleFieldIndex_ComplexBounds_LS"],
+        cardinalities: [100000],
         tags: ["indexed"],
         docGenerator: smallDoc,
         indexes: [{"b": 1}],
@@ -848,8 +931,9 @@ if (typeof(tests) !== "object") {
 
     // Select ~99% from two indexed fields of a compound index. There is a range predicate on the
     // leading field and a union of point predicates on the trailing field.
-    addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuery_CompoundIndex_ComplexBounds_TwoFields_LS",
+    addTestCaseWithMultipleDatasetsAndIndexes({
+        names: ["RangeQuery_CompoundIndex_ComplexBounds_TwoFields_LS"],
+        cardinalities: [100000],
         tags: ["indexed"],
         docGenerator: smallDoc,
         indexes: [{"h": 1, "b": 1}],
@@ -858,8 +942,9 @@ if (typeof(tests) !== "object") {
 
     // Select ~99% from three indexed fields of a compound index. There is a range predicate on
     // the leading field and unions of point intervals on the trailing fields.
-    addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuery_CompoundIndex_ComplexBounds_ThreeFields_LS",
+    addTestCaseWithMultipleDatasetsAndIndexes({
+        names: ["RangeQuery_CompoundIndex_ComplexBounds_ThreeFields_LS"],
+        cardinalities: [100000],
         tags: ["indexed"],
         docGenerator: smallDoc,
         indexes: [{"h": 1, "b": 1, "a": 1}],
@@ -867,8 +952,9 @@ if (typeof(tests) !== "object") {
     });
 
     // Select ~99% from two indexed fields of a compound index with range predicates on both fields.
-    addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuery_CompoundIndex_ComplexBounds_TwoFields_Range_LS",
+    addTestCaseWithMultipleDatasetsAndIndexes({
+        names: ["RangeQuery_CompoundIndex_ComplexBounds_TwoFields_Range_LS"],
+        cardinalities: [100000],
         tags: ["indexed"],
         docGenerator: smallDoc,
         indexes: [{"h": 1, "b": 1}],
@@ -877,8 +963,9 @@ if (typeof(tests) !== "object") {
 
     // Select ~99% from three indexed fields of a compound index with range predicates on all
     // three fields.
-    addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuery_CompoundIndex_ComplexBounds_ThreeFields_Range_LS",
+    addTestCaseWithMultipleDatasetsAndIndexes({
+        names: ["RangeQuery_CompoundIndex_ComplexBounds_ThreeFields_Range_LS"],
+        cardinalities: [100000],
         tags: ["indexed"],
         docGenerator: smallDoc,
         indexes: [{"h": 1, "b": 1, "a": 1}],
@@ -886,8 +973,9 @@ if (typeof(tests) !== "object") {
     });
 
     // Select ~99% from five indexed fields of a compound index.
-    addTestCaseWithLargeDatasetAndIndexes({
-        name: "RangeQuery_CompoundIndex_ComplexBounds_FiveFields_Range_LS",
+    addTestCaseWithMultipleDatasetsAndIndexes({
+        names: ["RangeQuery_CompoundIndex_ComplexBounds_FiveFields_Range_LS"],
+        cardinalities: [100000],
         tags: ["indexed"],
         docGenerator: smallDoc,
         indexes: [{"h": 1, "b": 1, "e.b": 1, "d": 1, "e.h": 1}],
