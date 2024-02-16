@@ -981,4 +981,15 @@ if (typeof(tests) !== "object") {
         indexes: [{"h": 1, "b": 1, "e.b": 1, "d": 1, "e.h": 1}],
         query: {"h": {$gt: 1}, "b": {$lt: 100}, "e.b": {$gt: 1}, "d": {$gt: 10}, "e.h": {$gt: 1}}
     });
+
+    // Select ~99% from two int indexed fields of a compound index with range predicates on both
+    // fields.
+    addTestCaseWithMultipleDatasetsAndIndexes({
+        names: ["RangeQuery_CompoundIndex_ComplexBounds_ThreeFields_Range_LS"],
+        cardinalities: [100000],
+        tags: ["indexed"],
+        docGenerator: smallDoc,
+        indexes: [{"a": 1, "b": 1}],
+        query: {"a": {$gt: 1}, "b": {$lt: 100000}}
+    });
 }());
