@@ -985,7 +985,7 @@ if (typeof(tests) !== "object") {
     // Select ~99% from two int indexed fields of a compound index with range predicates on both
     // fields.
     addTestCaseWithMultipleDatasetsAndIndexes({
-        names: ["RangeQuery_CompoundIndex_ComplexBounds_ThreeFields_Range_LS"],
+        names: ["RangeQuery_CompoundIndex_ComplexBounds_TwoIntFields_Range_LS"],
         cardinalities: [100000],
         tags: ["indexed"],
         docGenerator: smallDoc,
