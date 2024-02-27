@@ -2601,11 +2601,17 @@ generateTestCaseWithLargeDataset({
     ]
 });
 generateTestCaseWithLargeDataset({
+    name: "Group.GroupStageWithMatch_LS",
+    docGenerator: smallDoc,
+    pipeline:
+        [{$group: {_id: "$b", f: {$first: "$a"}, av: {$avg: "$a"}}}, {$match: {av: {$gt: 4.5}}}]
+});
+generateTestCaseWithLargeDataset({
     name: "Group.MultipleGroupStagesWithMatchBetween_LS",
     docGenerator: smallDoc,
     pipeline: [
         {$group: {_id: "$b", f: {$first: "$a"}, av: {$avg: "$a"}}},
-        {$match: {av: {$gt:4.5}}},
+        {$match: {av: {$gt: 4.5}}},
         {$group: {_id: "$f", min: {$min: "$av"}, max: {$max: "$av"}}}
     ]
 });
