@@ -23,7 +23,7 @@ tests.push({name: "Where.CompareToInt.Where.DoubleEquals",
             tags: ['where','regression'],
             pre: generateDocs(500, increasingXGenerator()),
             ops: [
-              {op: "find", query: {$where: function() {return this.x == 1;}}} 
+              {op: "find", query: {$where: function() {return this.x == 1;}}}
             ]});
 
 /**
@@ -34,7 +34,7 @@ tests.push({name: "Where.CompareToInt.Where.TripleEquals",
             tags: ['where','regression'],
             pre: generateDocs(500, increasingXGenerator()),
             ops: [
-              {op: "find", query: {$where: function() {return this.x === 1;}}} 
+              {op: "find", query: {$where: function() {return this.x === 1;}}}
             ]});
 
 /*
@@ -46,7 +46,7 @@ tests.push({name: "Where.SimpleNested.Where",
             pre: generateDocs(13, nestedGenerator(false)),
             ops: [
               {op:"find", query: {'$where': function() { return this.d.c.b.a === 1; }}}
-            ]   
+            ]
             } );
 
 /*
@@ -61,8 +61,6 @@ tests.push({name: "Where.SimpleNested.QueryLanguage",
             ]
             } );
 
-// Queries that require the use of $where
-
 /**
  * Setup: creates a collection with 40,000 documents of the form {x: i, y: j}
  * Test: Finds all documents where x == y
@@ -71,7 +69,7 @@ tests.push({name: "Where.CompareFields.Equals",
             tags: ['where','regression'],
             pre: generateDocs(500, increasingXGenerator()),
             ops: [
-              {op: "find", query: {$where: function() {return this.x == this.y; }}} 
+              {op: "find", query: {$where: function() {return this.x == this.y; }}}
             ]});
 
 /**
@@ -82,7 +80,7 @@ tests.push({name: "Where.CompareFields.Gt",
             tags: ['where','regression'],
             pre: generateDocs(200, tupleGenerator(200)),
             ops: [
-              {op: "find", query: {$where: function() {return this.x > this.y; }}} 
+              {op: "find", query: {$where: function() {return this.x > this.y; }}}
             ]});
 
 /**
@@ -93,7 +91,7 @@ tests.push({name: "Where.CompareFields.Gte",
             tags: ['where','regression'],
             pre: generateDocs(200, tupleGenerator(200)),
             ops: [
-              {op: "find", query: {$where: function() {return this.x >= this.y; }}} 
+              {op: "find", query: {$where: function() {return this.x >= this.y; }}}
             ]});
 
 /**
@@ -120,13 +118,13 @@ tests.push({name: "Where.CompareFields.Lte",
 
 /**
  * Setup: creates a collection with 40,000 documents of the form {x: i, y: j}
- * Test: Finds all documents where x == 2 or y == 3 
+ * Test: Finds all documents where x == 2 or y == 3
  */
 tests.push({name: "Where.Mixed",
             tags: ['where','regression'],
             pre: generateDocs(200, tupleGenerator(200)),
             ops: [
-              {op: "find", query: {$or : [{x: 2}, {$where: function() {return (this.y == 3);}}]}} 
+              {op: "find", query: {$or : [{x: 2}, {$where: function() {return (this.y == 3);}}]}}
             ]});
 
 /*
@@ -138,20 +136,20 @@ tests.push({name: "Where.ComplexNested",
             pre: generateDocs(10, nestedGenerator(true)),
             ops: [
               {op: "find", query: {'$where': function() { return this.d.c.b.a === this.a.b.c.d; }}}
-            ]   
+            ]
             } );
 
 // Queries to experiment with document size
 
 /*
  * Setup: Creates a collection of 10 documents, each with 4 nested levels of 26 fields
- * Test: Find document through match of a deeply nested field using $where 
+ * Test: Find document through match of a deeply nested field using $where
  */
 tests.push({name: "Where.ReallyBigNestedComparison.Where",
             tags: ['where','regression'],
             pre: generateDocs(10, nestedGenerator(true)),
             ops: [
-              {op: "find", query: {'$where': function() { return this.a.b.c.d == 1; }}} 
+              {op: "find", query: {'$where': function() { return this.a.b.c.d == 1; }}}
             ]
             } );
 
