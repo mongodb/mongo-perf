@@ -80,7 +80,7 @@ if (typeof(tests) !== "object") {
      */
     addQueryTestCase({
         name: "CoveredBlockingSort",
-        tags: ["core", "sort", "indexed"],
+        tags: ["core", "sort", "indexed", "high_value"],
         // TODO (SERVER-5722): We cannot create a views passthrough because benchRun doesn't support
         // sorting when running in read command mode.
         createViewsPassthrough: false,

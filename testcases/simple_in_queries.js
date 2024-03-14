@@ -118,7 +118,7 @@ if (typeof(tests) !== "object") {
      * includes every document, and two on larger collections of 10K and 1M documents with 
      * selective $in filters.
      */
-    function addInTestCases({name, largeInArray}) {
+    function addInTestCases({name, largeInArray, highValue = false}) {
         // Setup: Create a collection and insert a small number of documents with a random even
         // integer field x in the range [0, nLargeArrayElements * 2).
 
@@ -156,9 +156,10 @@ if (typeof(tests) !== "object") {
 
         // Similar test to above, but with an even larger collection. Only a small fraction (10%)
         // of the documents will actually match the filter.
+        var tags = highValue ? ["regression", "high_value"] : ["regression"];
         addQueryTestCase({
             name: name + "VeryBigCollection",
-            tags: ["regression"],
+            tags: tags,
             nDocs: 1e5,
             docs: function (i) {
                 return {x: 2 * Random.randInt(largeInArray.length * 10)};
@@ -203,6 +204,7 @@ if (typeof(tests) !== "object") {
     addInTestCases({
         name: "UnindexedVeryLargeInUnsortedMatching",
         largeInArray: veryLargeArrayRandom,
+        highValue: true
     });
 
     /**
