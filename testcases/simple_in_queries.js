@@ -141,9 +141,10 @@ if (typeof(tests) !== "object") {
 
         // Similar test to above, but with a larger collection. Only a small fraction (10%)
         // of the documents will actually match the filter.
+        var tags = highValue ? ["regression", "high_value"] : ["regression"];
         addQueryTestCase({
             name: name + "BigCollection",
-            tags: ["regression"],
+            tags: tags,
             nDocs: 10000,
             docs: function (i) {
                 return {x: 2 * Random.randInt(largeInArray.length * 10)};
@@ -156,10 +157,9 @@ if (typeof(tests) !== "object") {
 
         // Similar test to above, but with an even larger collection. Only a small fraction (10%)
         // of the documents will actually match the filter.
-        var tags = highValue ? ["regression", "high_value"] : ["regression"];
         addQueryTestCase({
             name: name + "VeryBigCollection",
-            tags: tags,
+            tags: ["regression"],
             nDocs: 1e5,
             docs: function (i) {
                 return {x: 2 * Random.randInt(largeInArray.length * 10)};
