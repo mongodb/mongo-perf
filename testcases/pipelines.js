@@ -909,7 +909,7 @@ function basicLookupPopulator(isView) {
         return {_id: val};
     }
 
-    var nDocs = 100;
+    var nDocs = 1000;
     return basicMultiCollectionDataPopulator({isView, localDocGen, foreignCollsInfo: [{suffix: "_lookup", docGen: foreignDocGen}], nDocs});
 }
 
@@ -926,7 +926,7 @@ function basicArrayLookupPopulator(isView) {
         return {_id: val};
     }
 
-    var nDocs = 100;
+    var nDocs = 1000;
     return basicMultiCollectionDataPopulator({isView, localDocGen, foreignCollsInfo: [{suffix: "_lookup", docGen: foreignDocGen}], nDocs});
 }
 
@@ -943,7 +943,7 @@ function basicArrayOfObjectLookupPopulator(isView) {
         return {_id: {x: val}};
     }
 
-    var nDocs = 50;
+    var nDocs = 1000;
     return basicMultiCollectionDataPopulator({isView, localDocGen, foreignCollsInfo: [{suffix: "_lookup", docGen: foreignDocGen}], nDocs});
 }
 
@@ -955,7 +955,7 @@ function basicUncorrelatedPipelineLookupPopulator(isView, disableCache, largeDat
         disableCache = false;
     }
 
-    const nDocs = largeDataset ? 200 : 50;
+    const nDocs = largeDataset ? 2000 : 1000;
     const paddingSize = largeDataset ? 1024*1024 : 16;
     const paddingStr = getStringOfLength(paddingSize);
     function localDocGen(val) {
