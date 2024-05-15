@@ -767,68 +767,86 @@ function executeOneTest(test,
  * @param variants - the variant values
  * @returns {{}} the results of a run set of tests
  */
-    function runTests(threadCounts,
-                      multidb,
-                      multicoll,
-                      seconds,
-                      trials,
-                      includeFilter,
-                      excludeFilter,
-                      shard,
-                      crudOptions,
-                      excludeTestbed,
-                      printArgs,
-                      shareDataset,
-                      variantName,
-                      variants,
-                      mongoeBenchOptions,
-                      username,
-                      password) {
-        if (typeof shard === "undefined")
-            shard = 0;
-        if (typeof crudOptions === "undefined")
-            crudOptions = getDefaultCrudOptions();
-        if (typeof includeFilter === "undefined")
-            includeFilter = "sanity";
-        if (typeof excludeTestbed === "undefined")
-            excludeTestbed = false;
-        if (typeof printArgs === "undefined")
-            printArgs = false;
+function runTests(threadCounts,
+                  multidb,
+                  multicoll,
+                  seconds,
+                  trials,
+                  includeFilter,
+                  excludeFilter,
+                  shard,
+                  crudOptions,
+                  excludeTestbed,
+                  printArgs,
+                  shareDataset,
+                  variantName,
+                  variants,
+                  mongoeBenchOptions,
+                  username,
+                  password) {
+    if (typeof shard === "undefined")
+        shard = 0;
+    if (typeof crudOptions === "undefined")
+        crudOptions = getDefaultCrudOptions();
+    if (typeof includeFilter === "undefined")
+        includeFilter = "sanity";
+    if (typeof excludeTestbed === "undefined")
+        excludeTestbed = false;
+    if (typeof printArgs === "undefined")
+        printArgs = false;
 
-        var testResults = {};
-        testResults.results = [];
+    var testResults = {};
+    testResults.results = [];
 
-        // Save basic testbed info if not running in evergreen
-        if (!excludeTestbed) {
-            var basicFields = {};
-            var bi = db.runCommand("buildInfo");
+    // Save basic testbed info if not running in evergreen
+    if (!excludeTestbed) {
+        var basicFields = {};
+        var bi = db.runCommand("buildInfo");
 
-            basicFields.commit = bi.gitVersion;
-            if (bi.sysInfo) {
-                basicFields.platform = bi.sysInfo.split(" ")[0];
-            } else if (bi.buildEnvironment.target_os) {
-                basicFields.platform = bi.buildEnvironment.target_os;
-            } else {
-                basicFields.platform = "Unknown Platform";
-            }
-            basicFields.version = bi.version;
-            basicFields.crudOptions = crudOptions;  // Map
-            testResults['basicFields'] = basicFields;
+        basicFields.commit = bi.gitVersion;
+        if (bi.sysInfo) {
+            basicFields.platform = bi.sysInfo.split(" ")[0];
+        } else if (bi.buildEnvironment.target_os) {
+            basicFields.platform = bi.buildEnvironment.target_os;
+        } else {
+            basicFields.platform = "Unknown Platform";
         }
+        basicFields.version = bi.version;
+        basicFields.crudOptions = crudOptions;  // Map
+        testResults['basicFields'] = basicFields;
+    }
 
-        // Save storage engine information
-        testResults['storageEngine'] = db.runCommand("serverStatus").storageEngine.name;
+    // Save storage engine information
+    testResults['storageEngine'] = db.runCommand("serverStatus").storageEngine.name;
 
-        print("@@@START@@@");
-        testResults['start'] = new Date();
+    print("@@@START@@@");
+    testResults['start'] = new Date();
 
-        // Run all tests in the test file.
-        for (var i = 0; i < tests.length; i++) {
-            var test = tests[i];
-            var errors = [];
-            // Execute if it has a matching tag to the suite that was passed in
-            if (doExecute(test, includeFilter, excludeFilter)) {
-                if (variantName === null) {
+    // Run all tests in the test file.
+    for (var i = 0; i < tests.length; i++) {
+        var test = tests[i];
+        var errors = [];
+        // Execute if it has a matching tag to the suite that was passed in
+        if (doExecute(test, includeFilter, excludeFilter)) {
+            if (variantName === null) {
+                var threadResults = executeOneTest(test,
+                                                   threadCounts,
+                                                   multidb,
+                                                   multicoll,
+                                                   seconds,
+                                                   trials,
+                                                   shard,
+                                                   crudOptions,
+                                                   printArgs,
+                                                   shareDataset,
+                                                   "",
+                                                   mongoeBenchOptions,
+                                                   username,
+                                                   password);
+                testResults['results'].push({name: test.name, results: threadResults});
+            } else {
+                for (var variant of variants) {
+                    db.adminCommand({setParameter: 1, [variantName]: NumberLong(variant)});
                     var threadResults = executeOneTest(test,
                                                        threadCounts,
                                                        multidb,
@@ -839,41 +857,23 @@ function executeOneTest(test,
                                                        crudOptions,
                                                        printArgs,
                                                        shareDataset,
-                                                       "",
+                                                       variant.toString(),
                                                        mongoeBenchOptions,
                                                        username,
                                                        password);
-                    testResults['results'].push({name: test.name, results: threadResults});
-                } else {
-                    for (var variant of variants) {
-                        db.adminCommand({setParameter: 1, [variantName]: NumberLong(variant)});
-                        var threadResults = executeOneTest(test,
-                                                           threadCounts,
-                                                           multidb,
-                                                           multicoll,
-                                                           seconds,
-                                                           trials,
-                                                           shard,
-                                                           crudOptions,
-                                                           printArgs,
-                                                           shareDataset,
-                                                           variant.toString(),
-                                                           mongoeBenchOptions,
-                                                           username,
-                                                           password);
-                        testResults['results'].push(
-                            {name: test.name, variant: variant, results: threadResults});
-                    }
+                    testResults['results'].push(
+                        {name: test.name, variant: variant, results: threadResults});
                 }
             }
         }
-        testResults['end'] = new Date();
-        testResults['errors'] = errors;
-        // End delimiter for the useful output to be displayed.
-        print("@@@END@@@");
-
-        return testResults;
     }
+    testResults['end'] = new Date();
+    testResults['errors'] = errors;
+    // End delimiter for the useful output to be displayed.
+    print("@@@END@@@");
+
+    return testResults;
+}
 
 /**
  * Run tests defined in a tests array (outside of the function)
