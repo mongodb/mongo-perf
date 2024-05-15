@@ -108,8 +108,29 @@ def parse_arguments():
     parser.add_argument('--shareDataset', dest='shareDataset', nargs='?', const='true',
                         choices=['true','false'], default='false',
                         help='Share the dataset, created by the first test with all following tests/trials.')
+    parser.add_argument('--variantName', dest='variantName', nargs="?",
+                        help='The variant name defined in mongod',
+                        type=str, default=None)
+    parser.add_argument('--variants', dest='variants', nargs="+",
+                        help='Compare perf for different variants',
+                        type=int, default=[])
+    parser.add_argument('--tsvSummary', dest='tsvSummary', nargs="?",
+                        help='Print a TSV format summary at the end',
+                        choices=[True, False], type=bool, default=False)
     return parser
 
+def print_summary(results_parsed):
+    print("name\tvariant\tthread_count\tops_per_sec(mean)\tops_per_sec(median)\tcount\tstdev")
+    for result in results_parsed["results"]:
+        name = result["name"]
+        variant = result["variant"]
+        for thread, values in result["results"].items():
+            if isinstance(values, dict):
+                print(
+                    f"{name}\t{variant}\t{thread}\t{values['ops_per_sec']:.4f}\t"
+                    f"{values['ops_per_sec_median']:.4f}\t{len(values['ops_per_sec_values'])}\t"
+                    f"{values['ops_per_sec_stdev']:.4f}"
+                )
 
 def main():
     parser = parse_arguments()
@@ -163,6 +184,10 @@ def main():
     else:
         auth = []
 
+    if args.variantName is not None and not args.variants:
+        print("Variants nums are not specified.")
+        sys.exit(1)
+
     check_call([args.shellpath, "--norc",
           "--host", args.hostname, "--port", args.port,
           "--eval", "print('db version: ' + db.version());"
@@ -202,6 +227,10 @@ def main():
     if using_auth:
         authstr = ", '" + args.username + "', '" + args.password + "'"
 
+    variant_name_str = "null"
+    if args.variantName:
+        variant_name_str = "'" + args.variantName + "'"
+
     commands.append("mongoPerfRunTests(" +
               str(args.threads) + ", " +
               str(args.multidb) + ", " +
@@ -215,6 +244,8 @@ def main():
               str(args.excludeTestbed) + ", " +
               str(args.printArgs) + ", " +
               str(args.shareDataset) + ", " +
+              variant_name_str + ", " +
+              str(args.variants) + ", " +
               str(json.dumps(mongoebench_options)) +
               authstr +
               ");")
@@ -264,6 +295,8 @@ def main():
         out.close()
     else:
         print(json.dumps(results_parsed, indent=4, separators=(',', ': ')))
+    if args.tsvSummary:
+        print_summary(results_parsed)
 
 if __name__ == '__main__':
     try:
