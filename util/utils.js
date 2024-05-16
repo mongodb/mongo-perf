@@ -128,7 +128,7 @@ function CommandTracer(testName, options) {
         runningPre: "running pre() function",
         runningOps: "running benchRun ops",
         runningPost: "running post() function",
-        done: "done"
+        done: "done",
     };
 
     TestData = TestData || {};
@@ -478,7 +478,6 @@ function getMedian(values) {
     if (sorted.length % 2 === 0) {
         return (sorted[middle - 1] + sorted[middle]) / 2;
     }
-
     return sorted[middle];
 }
 
@@ -487,10 +486,8 @@ function getStdev(values, mean) {
     var arr = values.map((k) => {
         return (k - mean) ** 2
     });
-
     // Calculating the sum of updated array
     let sum = arr.reduce((acc, curr) => acc + curr, 0);
-
     // Returning the standard deviation
     return Math.sqrt(sum / arr.length)
 }
@@ -692,7 +689,8 @@ function executeOneTest(test,
                         variant,
                         mongoeBenchOptions,
                         username,
-                        password) {
+                        password,
+                        errorsOutput) {
     print(test.name + (variant === "" ? "" : ", variant " + variant))
     var threadResults = {};
     threadResults['start'] = new Date();
@@ -718,7 +716,7 @@ function executeOneTest(test,
                 // Error handling to catch exceptions thrown in/by js for error
                 // Not all errors from the mongo shell are put up as js exceptions
                 print("Error running test " + test.name + ": " + err.message + ":\n" + err.stack);
-                errors.push({
+                errorsOutput.push({
                     test: test,
                     trial: j,
                     threadCount: threadCount,
@@ -729,13 +727,14 @@ function executeOneTest(test,
                     username: username,
                     password: password,
                     error: {message: err.message, code: err.code}
-                })
+                });
             }
         }
         var values = [];
         var errors = [];
         for (var j = 0; j < trials; j++) {
-            values[j] = results[j].ops_per_sec, errors[j] = results[j].error_count.toNumber()
+            values[j] = results[j].ops_per_sec;
+            errors[j] = results[j].error_count.toNumber()
         }
         // uncomment if one needs to save the trial values that comprise the mean
         newResults.ops_per_sec_values = values;
@@ -797,6 +796,7 @@ function runTests(threadCounts,
 
     var testResults = {};
     testResults.results = [];
+    testResults.errors = [];
 
     // Save basic testbed info if not running in evergreen
     if (!excludeTestbed) {
@@ -825,7 +825,6 @@ function runTests(threadCounts,
     // Run all tests in the test file.
     for (var i = 0; i < tests.length; i++) {
         var test = tests[i];
-        var errors = [];
         // Execute if it has a matching tag to the suite that was passed in
         if (doExecute(test, includeFilter, excludeFilter)) {
             if (variantName === null) {
@@ -842,7 +841,8 @@ function runTests(threadCounts,
                                                    "",
                                                    mongoeBenchOptions,
                                                    username,
-                                                   password);
+                                                   password,
+                                                   testResults.errors);
                 testResults['results'].push({name: test.name, results: threadResults});
             } else {
                 for (var variant of variants) {
@@ -860,7 +860,8 @@ function runTests(threadCounts,
                                                        variant.toString(),
                                                        mongoeBenchOptions,
                                                        username,
-                                                       password);
+                                                       password,
+                                                       testResults.errors);
                     testResults['results'].push(
                         {name: test.name, variant: variant, results: threadResults});
                 }
@@ -868,7 +869,6 @@ function runTests(threadCounts,
         }
     }
     testResults['end'] = new Date();
-    testResults['errors'] = errors;
     // End delimiter for the useful output to be displayed.
     print("@@@END@@@");
 
