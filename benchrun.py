@@ -1,13 +1,11 @@
 #!/usr/bin/env python
-from argparse import ArgumentParser, RawTextHelpFormatter
-from subprocess import Popen, PIPE, check_call
-from tempfile import NamedTemporaryFile
-import datetime
-import sys
 import json
-import urllib.request, urllib.error, urllib.parse
 import os
-
+import sys
+from argparse import ArgumentParser, RawTextHelpFormatter
+from subprocess import PIPE, Popen, check_call
+from tempfile import NamedTemporaryFile
+from tabulate import tabulate
 
 
 class MongoShellCommandError(Exception):
@@ -120,17 +118,17 @@ def parse_arguments():
     return parser
 
 def print_summary(results_parsed):
-    print("name\tvariant\tthread_count\tops_per_sec(mean)\tops_per_sec(median)\tcount\tstdev")
+    table =[]
     for result in results_parsed["results"]:
         name = result["name"]
         variant = result["variant"]
         for thread, values in result["results"].items():
             if isinstance(values, dict):
-                print(
-                    f"{name}\t{variant}\t{thread}\t{values['ops_per_sec']:.4f}\t"
-                    f"{values['ops_per_sec_median']:.4f}\t{len(values['ops_per_sec_values'])}\t"
-                    f"{values['ops_per_sec_stdev']:.4f}"
-                )
+                table.append([name, variant, thread, values['ops_per_sec'],
+                              values['ops_per_sec_median'], len(values['ops_per_sec_values']),
+                              values['ops_per_sec_stdev']])
+    print(tabulate(table, headers=["name", "variant", "thread_count", "ops_per_sec(mean)",
+                                   "ops_per_sec(median)", "count", "stdev"], floatfmt=".4f"))
 
 def main():
     parser = parse_arguments()
