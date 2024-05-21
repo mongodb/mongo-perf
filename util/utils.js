@@ -914,7 +914,7 @@ function mongoPerfRunTests(threadCounts,
                            username,
                            password) {
     var testResults = "";
-    var oldValue = db.adminCommand({getParameter: 1, [variantName]: 1});
+    var oldValue = variantName === null ? null : db.adminCommand({getParameter: 1, [variantName]: 1});
     try {
         testResults = runTests(threadCounts,
                                multidb,
@@ -934,7 +934,9 @@ function mongoPerfRunTests(threadCounts,
                                username,
                                password);
     } finally {
-        db.adminCommand({setParameter: 1, [variantName]: NumberLong(oldValue[variantName])});
+        if (variantName !== null) {
+            db.adminCommand({setParameter: 1, [variantName]: NumberLong(oldValue[variantName])});
+        }
     }
     print("@@@RESULTS_START@@@");
     print(JSON.stringify(testResults));

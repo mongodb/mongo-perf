@@ -121,7 +121,7 @@ def print_summary(results_parsed):
     table =[]
     for result in results_parsed["results"]:
         name = result["name"]
-        variant = result["variant"]
+        variant = result.get("variant", "")
         for thread, values in result["results"].items():
             if isinstance(values, dict):
                 table.append([name, variant, thread, values['ops_per_sec'],
