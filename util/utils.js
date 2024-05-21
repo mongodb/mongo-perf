@@ -534,12 +534,16 @@ function getDefaultCrudOptions() {
     return crudOptions;
 }
 
+function getRegexp(compareTo) {
+    return new RegExp("^" + compareTo + "$");
+}
+
 function doCompare(test, compareTo) {
     var tags = test.tags;
 
     if ( Array.isArray(compareTo) ) {
         for (var i = 0;i < compareTo.length; i++) {
-            const regx = new RegExp(compareTo[i] + "$");
+            const regx = getRegexp(compareTo[i]);
             if ( tags.indexOf(compareTo[i]) > -1 || test.name.match(regx)) {
                 return true;
             }
@@ -547,7 +551,7 @@ function doCompare(test, compareTo) {
         return false;
     }
     else {
-        const regx = new RegExp(compareTo + "$");
+        const regx = getRegexp(compareTo);
         if ( tags.indexOf(compareTo) > -1 || test.name.match(regx)) {
             return true;
         }
@@ -560,7 +564,7 @@ function doCompareExclude(test, compareTo) {
 
     if ( Array.isArray(compareTo) ) {
         for (var i = 0;i < compareTo.length; i++) {
-            const regx = new RegExp(compareTo[i] + "$");
+            const regx = getRegexp(compareTo[i]);
             if (!( tags.indexOf(compareTo[i]) > -1 || test.name.match(regx))) {
                 return false;
             }
@@ -568,7 +572,7 @@ function doCompareExclude(test, compareTo) {
         return true;
     }
     else {
-        const regx = new RegExp(compareTo + "$");
+        const regx = getRegexp(compareTo);
         if ( tags.indexOf(compareTo) > -1 || test.name.match(regx)) {
             return false;
         }
@@ -909,23 +913,29 @@ function mongoPerfRunTests(threadCounts,
                            mongoeBenchOptions,
                            username,
                            password) {
-    testResults = runTests(threadCounts,
-                           multidb,
-                           multicoll,
-                           seconds,
-                           trials,
-                           includeFilter,
-                           excludeFilter,
-                           shard,
-                           crudOptions,
-                           excludeTestbed,
-                           printArgs,
-                           shareDataset,
-                           variantName,
-                           variants,
-                           mongoeBenchOptions,
-                           username,
-                           password);
+    var testResults = "";
+    var oldValue = db.adminCommand({getParameter: 1, [variantName]: 1});
+    try {
+        testResults = runTests(threadCounts,
+                               multidb,
+                               multicoll,
+                               seconds,
+                               trials,
+                               includeFilter,
+                               excludeFilter,
+                               shard,
+                               crudOptions,
+                               excludeTestbed,
+                               printArgs,
+                               shareDataset,
+                               variantName,
+                               variants,
+                               mongoeBenchOptions,
+                               username,
+                               password);
+    } finally {
+        db.adminCommand({setParameter: 1, [variantName]: NumberLong(oldValue[variantName])});
+    }
     print("@@@RESULTS_START@@@");
     print(JSON.stringify(testResults));
     print("@@@RESULTS_END@@@");
