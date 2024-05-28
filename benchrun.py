@@ -1,13 +1,11 @@
 #!/usr/bin/env python
-from argparse import ArgumentParser, RawTextHelpFormatter
-from subprocess import Popen, PIPE, check_call
-from tempfile import NamedTemporaryFile
-import datetime
-import sys
 import json
-import urllib.request, urllib.error, urllib.parse
 import os
-
+import sys
+from argparse import ArgumentParser, RawTextHelpFormatter
+from subprocess import PIPE, Popen, check_call
+from tempfile import NamedTemporaryFile
+from tabulate import tabulate
 
 
 class MongoShellCommandError(Exception):
@@ -108,8 +106,29 @@ def parse_arguments():
     parser.add_argument('--shareDataset', dest='shareDataset', nargs='?', const='true',
                         choices=['true','false'], default='false',
                         help='Share the dataset, created by the first test with all following tests/trials.')
+    parser.add_argument('--variantName', dest='variantName', nargs="?",
+                        help='The variant name defined in mongod',
+                        type=str, default=None)
+    parser.add_argument('--variants', dest='variants', nargs="+",
+                        help='Compare perf for different variants',
+                        type=int, default=[])
+    parser.add_argument('--tsvSummary', dest='tsvSummary', nargs="?",
+                        help='Print a TSV format summary at the end',
+                        choices=[True, False], type=bool, default=False)
     return parser
 
+def print_summary(results_parsed):
+    table =[]
+    for result in results_parsed["results"]:
+        name = result["name"]
+        variant = result.get("variant", "")
+        for thread, values in result["results"].items():
+            if isinstance(values, dict):
+                table.append([name, variant, thread, values['ops_per_sec'],
+                              values['ops_per_sec_median'], len(values['ops_per_sec_values']),
+                              values['ops_per_sec_stdev']])
+    print(tabulate(table, headers=["name", "variant", "thread_count", "ops_per_sec(mean)",
+                                   "ops_per_sec(median)", "count", "stdev"], floatfmt=".4f"))
 
 def main():
     parser = parse_arguments()
@@ -163,6 +182,10 @@ def main():
     else:
         auth = []
 
+    if args.variantName is not None and not args.variants:
+        print("Variants nums are not specified.")
+        sys.exit(1)
+
     check_call([args.shellpath, "--norc",
           "--host", args.hostname, "--port", args.port,
           "--eval", "print('db version: ' + db.version());"
@@ -202,6 +225,10 @@ def main():
     if using_auth:
         authstr = ", '" + args.username + "', '" + args.password + "'"
 
+    variant_name_str = "null"
+    if args.variantName:
+        variant_name_str = "'" + args.variantName + "'"
+
     commands.append("mongoPerfRunTests(" +
               str(args.threads) + ", " +
               str(args.multidb) + ", " +
@@ -215,6 +242,8 @@ def main():
               str(args.excludeTestbed) + ", " +
               str(args.printArgs) + ", " +
               str(args.shareDataset) + ", " +
+              variant_name_str + ", " +
+              str(args.variants) + ", " +
               str(json.dumps(mongoebench_options)) +
               authstr +
               ");")
@@ -264,6 +293,8 @@ def main():
         out.close()
     else:
         print(json.dumps(results_parsed, indent=4, separators=(',', ': ')))
+    if args.tsvSummary:
+        print_summary(results_parsed)
 
 if __name__ == '__main__':
     try:

@@ -325,10 +325,19 @@ function cleanupCollections(collections, multidb, multicoll) {
     checkForDroppedCollectionsTestDBs(db, multidb)
 }
 
-function runTest(
-    test, thread, multidb, multicoll, runSeconds, shard, crudOptions, printArgs, shareDataset,
-    mongoeBenchOptions, username, password) {
-
+function runTest(test, {
+    thread,
+    multidb,
+    multicoll,
+    seconds,
+    shard,
+    crudOptions,
+    printArgs,
+    shareDataset,
+    mongoeBenchOptions,
+    username,
+    password
+}) {
     if (typeof crudOptions === "undefined") crudOptions = getDefaultCrudOptions();
     if (typeof shard === "undefined") shard = 0;
     if (typeof includeFilter === "undefined") includeFilter = "sanity";
@@ -404,7 +413,7 @@ function runTest(
     // these will become a BSONObj when we pass
     // control to the built-in mongo shell function, benchRun()
     var benchArgs = { ops: new_ops,
-        seconds: runSeconds,
+        seconds: seconds,
         host: db.getMongo().host,
         parallel: thread };
     if (username) {
@@ -471,6 +480,27 @@ function getMean(values) {
     return sum / values.length;
 }
 
+function getMedian(values) {
+    var sorted = Array.from(values).sort((a, b) => a - b);
+    var middle = Math.floor(sorted.length / 2);
+
+    if (sorted.length % 2 === 0) {
+        return (sorted[middle - 1] + sorted[middle]) / 2;
+    }
+    return sorted[middle];
+}
+
+function getStdev(values, mean) {
+    // Assigning (value - mean) ^ 2 to every array item
+    var arr = values.map((k) => {
+        return (k - mean) ** 2
+    });
+    // Calculating the sum of updated array
+    let sum = arr.reduce((acc, curr) => acc + curr, 0);
+    // Returning the standard deviation
+    return Math.sqrt(sum / arr.length)
+}
+
 function getNFieldNames(numFields) {
     var fieldNames = [];
     for (var i = 0; i < numFields; i++) {
@@ -513,19 +543,25 @@ function getDefaultCrudOptions() {
     return crudOptions;
 }
 
+function getRegexp(compareTo) {
+    return new RegExp("^" + compareTo + "$");
+}
+
 function doCompare(test, compareTo) {
     var tags = test.tags;
 
     if ( Array.isArray(compareTo) ) {
         for (var i = 0;i < compareTo.length; i++) {
-            if ( tags.indexOf(compareTo[i]) > -1 || test.name == compareTo[i]) {
+            const regx = getRegexp(compareTo[i]);
+            if ( tags.indexOf(compareTo[i]) > -1 || test.name.match(regx)) {
                 return true;
             }
         }
         return false;
     }
     else {
-        if ( tags.indexOf(compareTo) > -1 || test.name == compareTo) {
+        const regx = getRegexp(compareTo);
+        if ( tags.indexOf(compareTo) > -1 || test.name.match(regx)) {
             return true;
         }
     }
@@ -537,14 +573,16 @@ function doCompareExclude(test, compareTo) {
 
     if ( Array.isArray(compareTo) ) {
         for (var i = 0;i < compareTo.length; i++) {
-            if (!( tags.indexOf(compareTo[i]) > -1 || test.name == compareTo[i])) {
+            const regx = getRegexp(compareTo[i]);
+            if (!( tags.indexOf(compareTo[i]) > -1 || test.name.match(regx))) {
                 return false;
             }
         }
         return true;
     }
     else {
-        if ( tags.indexOf(compareTo) > -1 || test.name == compareTo) {
+        const regx = getRegexp(compareTo);
+        if ( tags.indexOf(compareTo) > -1 || test.name.match(regx)) {
             return false;
         }
     }
@@ -637,53 +675,104 @@ function doExecute(test, includeFilter, excludeFilter) {
     return true;
 }
 
+/**
+ * Run a single test with different threads config one or more times and measure the performance.
+ *
+ * @param test - the test to be ran
+ * @param testArgs - the test arguments
+ * @param variant - the current variant value
+ * @returns {{}} the results of a run set of tests
+ */
+function executeOneTest(test,
+                        testArgs,
+                        variant,
+                        errorsOutput) {
+    print(test.name + (variant === "" ? "" : ", variant " + variant))
+    var threadResults = {};
+    threadResults['start'] = new Date();
+    for (var t = 0; t < testArgs.threadCounts.length; t++) {
+        var threadCount = testArgs.threadCounts[t];
+        testArgs.thread = threadCount;
+        var results = [];
+        var newResults = {};
+        for (var j = 0; j < testArgs.trials; j++) {
+            try {
+                results[j] = runTest(test, testArgs);
+            } catch (err) {
+                // Error handling to catch exceptions thrown in/by js for error
+                // Not all errors from the mongo shell are put up as js exceptions
+                print("Error running test " + test.name + ": " + err.message + ":\n" + err.stack);
+                errorsOutput.push({
+                    test: test,
+                    trial: j,
+                    threadCount: threadCount,
+                    multidb: testArgs.multidb,
+                    multicoll: testArgs.multicoll,
+                    shard: testArgs.shard,
+                    crudOptions: testArgs.crudOptions,
+                    username: testArgs.username,
+                    password: testArgs.password,
+                    error: {message: err.message, code: err.code}
+                });
+            }
+        }
+        var values = [];
+        var errors = [];
+        for (var j = 0; j < testArgs.trials; j++) {
+            if (results[j] !== undefined) {
+                values[j] = results[j].ops_per_sec;
+                errors[j] = results[j].error_count.toNumber()
+            }
+        }
+        // uncomment if one needs to save the trial values that comprise the mean
+        newResults.ops_per_sec_values = values;
+        newResults.error_values = errors;
+        newResults.ops_per_sec = getMean(values);
+        newResults.ops_per_sec_median = getMedian(values);
+        newResults.ops_per_sec_stdev = getStdev(values, newResults.ops_per_sec);
+        threadResults[threadCount] = newResults;
+    }
+    threadResults['end'] = new Date();
+    return threadResults;
+}
 
 /**
  * Run tests defined in a tests array (outside of the function)
  *
- * @param threadCounts - array of threads to use
- * @param multidb - multidb (number of dbs)
- * @param multicoll - multicollection (number of collections)
- * @param seconds - the time to run each performance test for
- * @param trials - the number of trials to run
- * @param reportLabel - the label for the test run
- * @param includeFilter - tests/suites to run, default "sanity"
- * @param excludeFilter - tests / suites not to run
- * @param shard - the number of shards the test is run for (defaults to 0)
- * @param crudOptions - the crudOptions to be used with the test (see getDefaultCrudOptions() for defaults)
- * @param excludeTestbed - Exclude testbed information from results
+ * @param testArgs - the test arguments
  * @returns {{}} the results of a run set of tests
  */
-function runTests(
-    threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard,
-    crudOptions, excludeTestbed, printArgs, shareDataset, mongoeBenchOptions, username, password) {
-
-    if (typeof shard === "undefined") shard = 0;
-    if (typeof crudOptions === "undefined") crudOptions = getDefaultCrudOptions();
-    if (typeof includeFilter === "undefined") includeFilter = "sanity";
-    if (typeof excludeTestbed === "undefined") excludeTestbed = false;
-    if (typeof printArgs === "undefined") printArgs = false;
+function runTests(testArgs) {
+    if (typeof testArgs.shard === "undefined")
+        testArgs.shard = 0;
+    if (typeof testArgs.crudOptions === "undefined")
+        testArgs.crudOptions = getDefaultCrudOptions();
+    if (typeof testArgs.includeFilter === "undefined")
+        testArgs.includeFilter = "sanity";
+    if (typeof testArgs.excludeTestbed === "undefined")
+        testArgs.excludeTestbed = false;
+    if (typeof testArgs.printArgs === "undefined")
+        testArgs.printArgs = false;
 
     var testResults = {};
-    testResults.results=[];
+    testResults.results = [];
+    testResults.errors = [];
 
     // Save basic testbed info if not running in evergreen
-    if (!excludeTestbed) {
+    if (!testArgs.excludeTestbed) {
         var basicFields = {};
         var bi = db.runCommand("buildInfo");
 
         basicFields.commit = bi.gitVersion;
         if (bi.sysInfo) {
             basicFields.platform = bi.sysInfo.split(" ")[0];
-        }
-        else if (bi.buildEnvironment.target_os) {
+        } else if (bi.buildEnvironment.target_os) {
             basicFields.platform = bi.buildEnvironment.target_os;
-        }
-        else {
+        } else {
             basicFields.platform = "Unknown Platform";
         }
         basicFields.version = bi.version;
-        basicFields.crudOptions = crudOptions; // Map
+        basicFields.crudOptions = testArgs.crudOptions;  // Map
         testResults['basicFields'] = basicFields;
     }
 
@@ -696,59 +785,23 @@ function runTests(
     // Run all tests in the test file.
     for (var i = 0; i < tests.length; i++) {
         var test = tests[i];
-        var errors = [];
         // Execute if it has a matching tag to the suite that was passed in
-        if ( doExecute(test, includeFilter, excludeFilter) ) {
-            print(test.name)
-            var threadResults = {};
-            threadResults['start'] = new Date();
-            for (var t = 0; t < threadCounts.length; t++) {
-                var threadCount = threadCounts[t];
-                var results = [];
-                var newResults = {};
-                for (var j = 0; j < trials; j++) {
-                    try {
-                        results[j] = runTest(
-                            test, threadCount, multidb, multicoll, seconds, shard, crudOptions,
-                            printArgs, shareDataset, mongoeBenchOptions, username, password);
-                    }
-                    catch(err) {
-                        // Error handling to catch exceptions thrown in/by js for error
-                        // Not all errors from the mongo shell are put up as js exceptions
-                        print("Error running test " + test.name + ": " + err.message + ":\n" + err.stack);
-                        errors.push({test: test,
-                                     trial: j,
-                                     threadCount: threadCount,
-                                     multidb: multidb,
-                                     multicoll: multicoll,
-                                     shard: shard,
-                                     crudOptions: crudOptions,
-                                     username: username,
-                                     password: password,
-                                     error: {message: err.message, code: err.code}})
-                    }
+        if (doExecute(test, testArgs.includeFilter, testArgs.excludeFilter)) {
+            if (testArgs.variantName === null) {
+                var threadResults = executeOneTest(test, testArgs, "", testResults.errors);
+                testResults['results'].push({name: test.name, results: threadResults});
+            } else {
+                for (var variant of testArgs.variants) {
+                    db.adminCommand({setParameter: 1, [testArgs.variantName]: NumberLong(variant)});
+                    var threadResults =
+                        executeOneTest(test, testArgs, variant.toString(), testResults.errors);
+                    testResults['results'].push(
+                        {name: test.name, variant: variant, results: threadResults});
                 }
-                var values = [];
-                var errors = [];
-                for (var j = 0; j < trials; j++) {
-                    values[j] = results[j].ops_per_sec,
-                    errors[j] = results[j].error_count.toNumber()
-               }
-                // uncomment if one needs to save the trial values that comprise the mean
-                newResults.ops_per_sec_values = values;
-                newResults.error_values = errors;
-                newResults.ops_per_sec = getMean(values);
-                threadResults[threadCount] = newResults;
             }
-            threadResults['end'] = new Date();
-            testResults['results'].push({
-                name: test.name,
-                results: threadResults
-            });
         }
     }
     testResults['end'] = new Date();
-    testResults['errors'] =  errors;
     // End delimiter for the useful output to be displayed.
     print("@@@END@@@");
 
@@ -768,14 +821,56 @@ function runTests(
  * @param shard - the number of shards the test is run for (defaults to 0)
  * @param crudOptions - the crudOptions to be used with the test (see getDefaultCrudOptions() for defaults)
  * @param excludeTestbed - Exclude testbed information from results
+ * @param variantName - the variant name to be set in mongod
+ * @param variants - the variant values
  * @returns {{}} the results of a run set of tests
  */
-function mongoPerfRunTests(
-    threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard,
-    crudOptions, excludeTestbed, printArgs, shareDataset, mongoeBenchOptions, username, password) {
-    testResults = runTests(
-        threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard,
-        crudOptions, excludeTestbed, printArgs, shareDataset, mongoeBenchOptions, username, password);
+function mongoPerfRunTests(threadCounts,
+                           multidb,
+                           multicoll,
+                           seconds,
+                           trials,
+                           includeFilter,
+                           excludeFilter,
+                           shard,
+                           crudOptions,
+                           excludeTestbed,
+                           printArgs,
+                           shareDataset,
+                           variantName,
+                           variants,
+                           mongoeBenchOptions,
+                           username,
+                           password) {
+    var testResults = "";
+    var oldValue = variantName === null ? null : db.adminCommand({getParameter: 1, [variantName]: 1});
+    try {
+        testResults = runTests(
+            {
+                threadCounts,
+                multidb,
+                multicoll,
+                seconds,
+                trials,
+                shard,
+                crudOptions,
+                excludeTestbed,
+                printArgs,
+                shareDataset,
+                mongoeBenchOptions,
+                username,
+                password,
+                includeFilter,
+                excludeFilter,
+                variantName,
+                variants,
+            },
+        );
+    } finally {
+        if (variantName !== null) {
+            db.adminCommand({setParameter: 1, [variantName]: NumberLong(oldValue[variantName])});
+        }
+    }
     print("@@@RESULTS_START@@@");
     print(JSON.stringify(testResults));
     print("@@@RESULTS_END@@@");
