@@ -5,35 +5,58 @@ if (typeof (tests) != "object") {
 (function() {
 'use strict';
 
-// Setting random seed is required for smallDoc for it uses Random.
+// Setting random seed is required for smallDocNoId for it uses Random.
 Random.setRandomSeed(5147);
 
 const namePrefix = '[CWI.insert]';
+
+const smallDocNoId = function (i) {
+    return {
+        a: Random.randInt(10),
+        b: Random.randInt(1000),
+        c: Random.rand() * 100 + 1, // no zeros in this field
+        d: i % 10000,
+        e: {
+            a: Random.randInt(10),
+            b: Random.randInt(1000),
+            c: Random.rand() * 100 + 1,
+            e: { u: Random.randInt(100), v: Random.randInt(100) },
+            f: [Random.randInt(10), Random.randInt(10), Random.randInt(10)],
+            g: Random.rand() * 10,
+            h: Random.rand() * 1000,
+            i: Random.rand() * 100000,
+        },
+        f: [Random.randInt(10), Random.randInt(10), Random.randInt(10)],
+        g: Random.rand() * 10,
+        h: Random.rand() * 1000,
+        i: Random.rand() * 100000,
+    };
+}
 
 // Base perfomance test cases which will be used to generate performance test cases.
 const baseCases = [
     {
         name: "Compound Regular Index with 2 fields",
         indexes: [{keyPattern: {'a': 1, 'b': 1}}],
-        documentGenerator: smallDoc,
+        documentGenerator: smallDocNoId,
         tags: ["core"],
     },
     {
         name: "Compound Wildcard Index with 2 fields",
         indexes: [{keyPattern: {'a': 1, '$**': 1}, wildcardProjection: {'b': 1}}],
-        documentGenerator: smallDoc,
+        documentGenerator: smallDocNoId,
         tags: ["core", "regression"],
     },
     {
         name: "Compound Regular Index with 2 fields, one of which is multikey",
         indexes: [{keyPattern: {'a': 1, 'e.f': 1}}],
-        documentGenerator: smallDoc,
+        documentGenerator: smallDocNoId,
         tags: ["core"],
     },
     {
         name: "Compound Wildcard index with 2 fields, one of which is multikey",
         indexes: [{keyPattern: {'a': 1, '$**': 1}, wildcardProjection: {'e.f': 1}}],
-        documentGenerator: smallDoc,
+        documentGenerator: smallDocNoId,
         tags: ["core", "regression"],
     },
     {
@@ -45,7 +68,7 @@ const baseCases = [
             {keyPattern: {'a': 1, 'e.g': 1}},
             {keyPattern: {'a': 1, 'e.h': 1}}
         ],
-        documentGenerator: smallDoc,
+        documentGenerator: smallDocNoId,
         tags: ["core"],
     },
     {
@@ -54,13 +77,13 @@ const baseCases = [
             keyPattern: {'a': 1, '$**': 1},
             wildcardProjection: {'e.a': 1, 'e.b': 1, 'e.c': 1, 'e.g': 1, 'e.h': 1}
         }],
-        documentGenerator: smallDoc,
+        documentGenerator: smallDocNoId,
         tags: ["core", "regression"],
     },
     {
         name: "Compound Regular Index with 5 fields",
         indexes: [{keyPattern: {'a': 1, 'b': 1, 'c': 1, 'h': 1, 'i': 1}}],
-        documentGenerator: smallDoc,
+        documentGenerator: smallDocNoId,
         tags: ["core"],
     },
     {
@@ -68,7 +91,7 @@ const baseCases = [
         indexes: [
             {keyPattern: {'a': 1, '$**': 1, 'c': 1, 'h': 1, 'i': 1}, wildcardProjection: {'b': 1}}
         ],
-        documentGenerator: smallDoc,
+        documentGenerator: smallDocNoId,
         tags: ["core", "regression"],
     },
 ];
