@@ -56,6 +56,90 @@ if (typeof(tests) !== "object") {
     });
 
     /**
+     * Setup: Create a large collection of large documents.
+     *
+     * Test: Query for a document that doesn't exist. Scans all documents using a collection scan
+     * and returns no documents.
+     */
+    for (const [n, title] of [[10000, "10K"], [100000, "100K"]]) {
+        addQueryTestCase({
+            name: "NoMatchLarge" + title,
+            tags: ["regression"],
+            nDocs: n,
+            docs: largeDoc,
+            op: {op: "find", query: {nonexistent: 5}}
+        });
+    }
+
+    /**
+     * Setup: Create a collection of documents with ObjectID '_id' and 'a' fields.
+     *
+     * Test: Query with an equality predicate matches returns every other document. Scans all documents using a collection scan.
+     */
+    for (const [n, title] of [[100, "100"], [10000, "10K"], [100000, "100K"]]) {
+        addQueryTestCase({
+            name: "HalfMatchEqInt" + title,
+            tags: ["regression"],
+            nDocs: n,
+            docs: function(i) {
+                return {a: i % 2};
+            },
+            op: {op: "find", query: {a: 0}}
+        });
+    }
+
+    /**
+     * Setup: Create a collection of documents with ObjectID '_id' and 'a' fields.
+     *
+     * Test: Query with a $lt predicate that matches every other document. Scans all documents using a collection scan.
+     */
+    for (const [n, title] of [[100, "100"], [10000, "10K"], [100000, "100K"]]) {
+        addQueryTestCase({
+            name: "HalfMatchLtInt" + title,
+            tags: ["regression"],
+            nDocs: n,
+            docs: function(i) {
+                return {a: i % 2};
+            },
+            op: {op: "find", query: {a: {$lt: 1}}}
+        });
+    }
+
+    /**
+     * Setup: Create a collection of documents with ObjectID '_id' and 'a' fields.
+     *
+     * Test: Query with an equality predicate that matches every other document. Scans all documents using a collection scan.
+     */
+    for (const [n, title] of [[100, "100"], [10000, "10K"], [100000, "100K"]]) {
+        addQueryTestCase({
+            name: "HalfMatchEqNaN" + title,
+            tags: ["regression"],
+            nDocs: n,
+            docs: function(i) {
+                return {a: (i % 2 == 0 ? NaN : 0)};
+            },
+            op: {op: "find", query: {a: NaN}}
+        });
+    }
+
+    /**
+     * Setup: Create a collection of documents with ObjectID '_id' and 'a' fields.
+     *
+     * Test: Query with a $lt predicate that matches every other document. Scans all documents using a collection scan.
+     */
+    for (const [n, title] of [[100, "100"], [10000, "10K"], [100000, "100K"]]) {
+        addQueryTestCase({
+            name: "HalfMatchLteNaN" + title,
+            tags: ["regression"],
+            nDocs: n,
+            docs: function(i) {
+                return {a: (i % 2 == 0 ? NaN : 0)};
+            },
+            op: {op: "find", query: {a: {$lte: NaN}}}
+        });
+    }
+
+    /**
      * Setup: Create a collection of documents with only an integer _id field.
      *
      * Test: Query for a random document based on _id. Each thread accesses a distinct range of
