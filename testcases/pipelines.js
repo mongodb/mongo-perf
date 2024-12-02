@@ -299,21 +299,251 @@ generateTestCase({
 
 generateTestCase({name: "Group.All", pipeline: [{$group: {_id: "constant"}}]});
 
-generateTestCase({
-    name: "Group.TenGroups",
+ generateTestCase({
+     name: "Group.TenGroups",
+    nDocs: 200000,
     docGenerator: function basicGroupDocGenerator(i) {
-        return {_id: i, _idMod10: i % 10};
+        let quote_text =
+            'There are few people whom I really love, and still fewer of whom I think well. The more I see of the world, the more am I dissatisfied with it; and every day confirms my belief of the inconsistency of all human characters, and of the little dependence that can be placed on the appearance of merit or sense.';
+        let quote = {author: "Jane Austen", work: "Pride and Prejudice", quote: quote_text};
+        return {_id: i, _idMod10: i % 10, quotes: [quote, quote, quote, quote, quote, quote, quote, quote]};
     },
     pipeline: [{$group: {_id: "$_idMod10"}}]
 });
 
 generateTestCase({
-    name: "Group.TenGroupsWithAvg",
+    name: "Group.TenGroupsTwoStackedNoAcc",
+    nDocs: 200000,
     docGenerator: function basicGroupDocGenerator(i) {
-        return {_id: i, _idMod10: i % 10};
+        let quote_text =
+            'There are few people whom I really love, and still fewer of whom I think well. The more I see of the world, the more am I dissatisfied with it; and every day confirms my belief of the inconsistency of all human characters, and of the little dependence that can be placed on the appearance of merit or sense.';
+        let quote = {author: "Jane Austen", work: "Pride and Prejudice", quote: quote_text};
+        return {_id: i, _idMod10: i % 10,
+            a: (i + 1) % 10000,
+            b: i + 2,
+            c: i + 3,
+            d: i + 4,
+            e: i + 5,
+            f: i + 6,
+            g: i + 7,
+            h: i + 8,
+	    quotes: [quote, quote, quote, quote, quote]};
     },
-    pipeline: [{$group: {_id: "$_idMod10", avg: {$avg: "$_id"}}}]
+    pipeline: [{$group: {_id: "$a"}}, {$group: {_id: "$b"}}]
 });
+
+generateTestCase({
+    name: "Group.TenGroupsThreeStackedNoAcc",
+    nDocs: 200000,
+    docGenerator: function basicGroupDocGenerator(i) {
+        let quote_text =
+            'There are few people whom I really love, and still fewer of whom I think well. The more I see of the world, the more am I dissatisfied with it; and every day confirms my belief of the inconsistency of all human characters, and of the little dependence that can be placed on the appearance of merit or sense.';
+        let quote = {author: "Jane Austen", work: "Pride and Prejudice", quote: quote_text};
+        return {_id: i, _idMod10: i % 10,
+            a: (i + 1) % 10000,
+            b: i + 2,
+            c: i + 3,
+            d: i + 4,
+            e: i + 5,
+            f: i + 6,
+            g: i + 7,
+            h: i + 8,
+	    quotes: [quote, quote, quote, quote, quote]};
+    },
+    pipeline:
+        [{$group: {_id: "$a"}}, {$group: {_id: "$b"}}, {$group: {_id: "$c"}}]
+});
+
+generateTestCase({
+    name: "Group.TenGroupsFourStackedNoAcc",
+    nDocs: 200000,
+    docGenerator: function basicGroupDocGenerator(i) {
+        let quote_text =
+            'There are few people whom I really love, and still fewer of whom I think well. The more I see of the world, the more am I dissatisfied with it; and every day confirms my belief of the inconsistency of all human characters, and of the little dependence that can be placed on the appearance of merit or sense.';
+        let quote = {author: "Jane Austen", work: "Pride and Prejudice", quote: quote_text};
+        return {_id: i, _idMod10: i % 10,
+            a: (i + 1) % 10000,
+            b: i + 2,
+            c: i + 3,
+            d: i + 4,
+            e: i + 5,
+            f: i + 6,
+            g: i + 7,
+            h: i + 8,
+            quotes: [quote, quote, quote, quote, quote]};
+    },
+    pipeline:
+        [{$group: {_id: "$a"}}, {$group: {_id: "$b"}}, {$group: {_id: "$c"}}, {$group: {_id: "$d"}}]
+});
+
+generateTestCase({
+    name: "Group.TenGroupsEightStackedNoAcc",
+    nDocs: 200000,
+    docGenerator: function basicGroupDocGenerator(i) {
+        let quote_text =
+            'There are few people whom I really love, and still fewer of whom I think well. The more I see of the world, the more am I dissatisfied with it; and every day confirms my belief of the inconsistency of all human characters, and of the little dependence that can be placed on the appearance of merit or sense.';
+        let quote = {author: "Jane Austen", work: "Pride and Prejudice", quote: quote_text};
+        return {_id: i, _idMod10: i % 10, 
+            a: (i + 1) % 10000,
+            b: i + 2,
+            c: i + 3,
+            d: i + 4,
+            e: i + 5,
+            f: i + 6,
+            g: i + 7,
+            h: i + 8,
+            quotes: [quote, quote, quote, quote, quote]};
+    },
+    pipeline:
+        [{$group: {_id: "$a"}}, {$group: {_id: "$b"}}, {$group: {_id: "$c"}}, {$group: {_id: "$d"}},
+         {$group: {_id: "$e"}}, {$group: {_id: "$f"}}, {$group: {_id: "$g"}}, {$group: {_id: "$h"}}]
+});
+
+generateTestCase({
+    name: "Group.TenGroupsWithSum",
+    nDocs: 200000,
+    docGenerator: function basicGroupDocGenerator(i) {
+	let quote_text =
+            'There are few people whom I really love, and still fewer of whom I think well. The more I see of the world, the more am I dissatisfied with it; and every day confirms my belief of the inconsistency of all human characters, and of the little dependence that can be placed on the appearance of merit or sense.';
+        let quote = {author: "Jane Austen", work: "Pride and Prejudice", quote: quote_text};
+        return {_id: i, _idMod10: i % 10, quotes: [quote, quote, quote, quote, quote, quote, quote, quote]};
+    },
+    pipeline: [{$group: {_id: "$_idMod10", s: {$sum: "$_id"}}}]
+});
+
+generateTestCase({
+    name: "Group.TenGroupsWithTwoSums",
+    nDocs: 200000,
+    docGenerator: function basicGroupDocGenerator(i) {
+        let quote_text =
+            'There are few people whom I really love, and still fewer of whom I think well. The more I see of the world, the more am I dissatisfied with it; and every day confirms my belief of the inconsistency of all human characters, and of the little dependence that can be placed on the appearance of merit or sense.';
+        let quote = {author: "Jane Austen", work: "Pride and Prejudice", quote: quote_text};
+        return {_id: i, _idMod10: i % 10, quotes: [quote, quote, quote, quote, quote]};
+    },
+    pipeline: [{$group: {_id: "$_idMod10", s1: {$sum: "$_id"}, s2: {$sum: "$_id"}}}]
+});
+
+generateTestCase({
+    name: "Group.TenGroupsWithFourSums",
+    nDocs: 200000,
+    docGenerator: function basicGroupDocGenerator(i) {
+        let quote_text =
+            'There are few people whom I really love, and still fewer of whom I think well. The more I see of the world, the more am I dissatisfied with it; and every day confirms my belief of the inconsistency of all human characters, and of the little dependence that can be placed on the appearance of merit or sense.';
+        let quote = {author: "Jane Austen", work: "Pride and Prejudice", quote: quote_text};
+        return {_id: i, _idMod10: i % 10, quotes: [quote, quote, quote, quote, quote]};
+    },
+    pipeline:
+        [{$group: {_id: "$_idMod10", s1: {$sum: "$_id"}, s2: {$sum: "$_id"}, s3: {$sum: "$_id"}}}]
+});
+
+generateTestCase({
+    name: "Group.TenGroupsWithSixSums",
+    nDocs: 200000,
+    docGenerator: function basicGroupDocGenerator(i) {
+        let quote_text =
+            'There are few people whom I really love, and still fewer of whom I think well. The more I see of the world, the more am I dissatisfied with it; and every day confirms my belief of the inconsistency of all human characters, and of the little dependence that can be placed on the appearance of merit or sense.';
+        let quote = {author: "Jane Austen", work: "Pride and Prejudice", quote: quote_text};
+        return {_id: i, _idMod10: i % 10, quotes: [quote, quote, quote, quote, quote]};
+    },
+    pipeline: [{
+        $group: {
+            _id: "$_idMod10",
+            s1: {$sum: "$_id"},
+            s2: {$sum: "$_id"},
+            s3: {$sum: "$_id"},
+            s4: {$sum: "$_id"},
+            s5: {$sum: "$_id"},
+            s6: {$sum: "$_id"}
+        }
+    }]
+});
+
+generateTestCase({
+    name: "Group.TenGroupsWithEightSums",
+    nDocs: 200000,
+    docGenerator: function basicGroupDocGenerator(i) {
+        let quote_text =
+            'There are few people whom I really love, and still fewer of whom I think well. The more I see of the world, the more am I dissatisfied with it; and every day confirms my belief of the inconsistency of all human characters, and of the little dependence that can be placed on the appearance of merit or sense.';
+        let quote = {author: "Jane Austen", work: "Pride and Prejudice", quote: quote_text};
+        return {_id: i, _idMod10: i % 10, quotes: [quote, quote, quote, quote, quote]};
+    },
+    pipeline: [{
+        $group: {
+            _id: "$_idMod10",
+            s1: {$sum: "$_id"},
+            s2: {$sum: "$_id"},
+            s3: {$sum: "$_id"},
+            s4: {$sum: "$_id"},
+            s5: {$sum: "$_id"},
+            s6: {$sum: "$_id"},
+            s7: {$sum: "$_id"},
+            s8: {$sum: "$_id"}
+        }
+    }]
+});
+
+generateTestCase({
+    name: "Group.TenGroupsWithTenSums",
+    nDocs: 200000,
+    docGenerator: function basicGroupDocGenerator(i) {
+        let quote_text =
+            'There are few people whom I really love, and still fewer of whom I think well. The more I see of the world, the more am I dissatisfied with it; and every day confirms my belief of the inconsistency of all human characters, and of the little dependence that can be placed on the appearance of merit or sense.';
+        let quote = {author: "Jane Austen", work: "Pride and Prejudice", quote: quote_text};
+        return {_id: i, _idMod10: i % 10, quotes: [quote, quote, quote, quote, quote]};
+    },
+    pipeline: [{
+        $group: {
+            _id: "$_idMod10",
+            s1: {$sum: "$_id"},
+            s2: {$sum: "$_id"},
+            s3: {$sum: "$_id"},
+            s4: {$sum: "$_id"},
+            s5: {$sum: "$_id"},
+            s6: {$sum: "$_id"},
+            s7: {$sum: "$_id"},
+            s8: {$sum: "$_id"},
+            s9: {$sum: "$_id"},
+            s10: {$sum: "$_id"}
+        }
+    }]
+});
+
+generateTestCase({
+    name: "Group.TenGroupsWithTwentySums",
+    nDocs: 200000,
+    docGenerator: function basicGroupDocGenerator(i) {
+        let quote_text =
+            'There are few people whom I really love, and still fewer of whom I think well. The more I see of the world, the more am I dissatisfied with it; and every day confirms my belief of the inconsistency of all human characters, and of the little dependence that can be placed on the appearance of merit or sense.';
+        let quote = {author: "Jane Austen", work: "Pride and Prejudice", quote: quote_text};
+        return {_id: i, _idMod10: i % 10, quotes: [quote, quote, quote, quote, quote]};
+    },
+    pipeline: [{
+        $group: {
+            _id: "$_idMod10",
+            s1: {$sum: "$_id"},
+            s2: {$sum: "$_id"},
+            s3: {$sum: "$_id"},
+            s4: {$sum: "$_id"},
+            s5: {$sum: "$_id"},
+            s6: {$sum: "$_id"},
+            s7: {$sum: "$_id"},
+            s8: {$sum: "$_id"},
+            s9: {$sum: "$_id"},
+            s10: {$sum: "$_id"},
+            s11: {$sum: "$_id"},
+            s12: {$sum: "$_id"},
+            s13: {$sum: "$_id"},
+            s14: {$sum: "$_id"},
+            s15: {$sum: "$_id"},
+            s16: {$sum: "$_id"},
+            s17: {$sum: "$_id"},
+            s18: {$sum: "$_id"},
+            s19: {$sum: "$_id"},
+            s20: {$sum: "$_id"}
+        }
+    }]
+});
+
 
 /**
  * Pair of document generator functions used for testing $minN and $maxN as accumulators and window
