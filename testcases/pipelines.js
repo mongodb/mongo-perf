@@ -2463,6 +2463,56 @@ generateTestCaseWithLargeDataset({
     pipeline: [{$group: {_id: "$b", res: {$sum: "$c"}}}]
 });
 
+[1000, 10000,100000,1000000].forEach(keys => {
+    [
+        {size:1, pipeline: [{$group: {_id: "$a", res: {$sum: "$b"}}}]},
+        {size:2, pipeline: [{$group: {_id: "$a", b1: {$sum: "$b"},b2: {$sum: "$b"}}}]},
+        {size:5, pipeline: [{$group: {_id: "$a", b1: {$sum: "$b"},b2: {$sum: "$b"},b3: {$sum: "$b"},b4: {$sum: "$b"},b5: {$sum: "$b"}}}]},
+        {size:10, pipeline: [{$group: {_id: "$a", b1: {$sum: "$b"},b2: {$sum: "$b"},b3: {$sum: "$b"},b4: {$sum: "$b"},b5: {$sum: "$b"},b6: {$sum: "$b"},b7: {$sum: "$b"},b8: {$sum: "$b"},b9: {$sum: "$b"},b10: {$sum: "$b"}}}]},
+        {size:20, pipeline: [{$group: {_id: "$a", b1: {$sum: "$b"},b2: {$sum: "$b"},b3: {$sum: "$b"},b4: {$sum: "$b"},b5: {$sum: "$b"},b6: {$sum: "$b"},b7: {$sum: "$b"},b8: {$sum: "$b"},b9: {$sum: "$b"},b10: {$sum: "$b"},b11: {$sum: "$b"},b12: {$sum: "$b"},b13: {$sum: "$b"},b14: {$sum: "$b"},b15: {$sum: "$b"},b16: {$sum: "$b"},b17: {$sum: "$b"},b18: {$sum: "$b"},b19: {$sum: "$b"},b20: {$sum: "$b"}}}]},
+        {size:100, pipeline: [{$group: {_id: "$a", b1: {$sum: "$b"},b2: {$sum: "$b"},b3: {$sum: "$b"},b4: {$sum: "$b"},b5: {$sum: "$b"},b6: {$sum: "$b"},b7: {$sum: "$b"},b8: {$sum: "$b"},b9: {$sum: "$b"},b10: {$sum: "$b"},b11: {$sum: "$b"},b12: {$sum: "$b"},b13: {$sum: "$b"},b14: {$sum: "$b"},b15: {$sum: "$b"},b16: {$sum: "$b"},b17: {$sum: "$b"},b18: {$sum: "$b"},b19: {$sum: "$b"},b20: {$sum: "$b"},b21: {$sum: "$b"},b22: {$sum: "$b"},b23: {$sum: "$b"},b24: {$sum: "$b"},b25: {$sum: "$b"},b26: {$sum: "$b"},b27: {$sum: "$b"},b28: {$sum: "$b"},b29: {$sum: "$b"},b30: {$sum: "$b"},b31: {$sum: "$b"},b32: {$sum: "$b"},b33: {$sum: "$b"},b34: {$sum: "$b"},b35: {$sum: "$b"},b36: {$sum: "$b"},b37: {$sum: "$b"},b38: {$sum: "$b"},b39: {$sum: "$b"},b40: {$sum: "$b"},b41: {$sum: "$b"},b42: {$sum: "$b"},b43: {$sum: "$b"},b44: {$sum: "$b"},b45: {$sum: "$b"},b46: {$sum: "$b"},b47: {$sum: "$b"},b48: {$sum: "$b"},b49: {$sum: "$b"},b50: {$sum: "$b"},b51: {$sum: "$b"},b52: {$sum: "$b"},b53: {$sum: "$b"},b54: {$sum: "$b"},b55: {$sum: "$b"},b56: {$sum: "$b"},b57: {$sum: "$b"},b58: {$sum: "$b"},b59: {$sum: "$b"},b60: {$sum: "$b"},b61: {$sum: "$b"},b62: {$sum: "$b"},b63: {$sum: "$b"},b64: {$sum: "$b"},b65: {$sum: "$b"},b66: {$sum: "$b"},b67: {$sum: "$b"},b68: {$sum: "$b"},b69: {$sum: "$b"},b70: {$sum: "$b"},b71: {$sum: "$b"},b72: {$sum: "$b"},b73: {$sum: "$b"},b74: {$sum: "$b"},b75: {$sum: "$b"},b76: {$sum: "$b"},b77: {$sum: "$b"},b78: {$sum: "$b"},b79: {$sum: "$b"},b80: {$sum: "$b"},b81: {$sum: "$b"},b82: {$sum: "$b"},b83: {$sum: "$b"},b84: {$sum: "$b"},b85: {$sum: "$b"},b86: {$sum: "$b"},b87: {$sum: "$b"},b88: {$sum: "$b"},b89: {$sum: "$b"},b90: {$sum: "$b"},b91: {$sum: "$b"},b92: {$sum: "$b"},b93: {$sum: "$b"},b94: {$sum: "$b"},b95: {$sum: "$b"},b96: {$sum: "$b"},b97: {$sum: "$b"},b98: {$sum: "$b"},b99: {$sum: "$b"},b100: {$sum: "$b"}}}]}
+    ].forEach(aggs => {
+        generateTestCaseWithLargeDataset({
+            name: "Group.SumAccDoubleField_LS1000000_K"+keys+"_A"+aggs.size,
+            docGenerator: function(i) {
+                return {
+                    _id: i,
+                    a: Random.randInt(keys),
+                    b: Random.rand() * 1000,
+                };
+            },
+            nDocs: 1000000,
+            pipeline: aggs.pipeline
+        });
+    });
+});
+
+generateTestCaseWithLargeDataset({
+    name: "Group.SumAccDoubleField_LS1e7_Uniq",
+    docGenerator: function(i) {
+        return {
+            _id: i,
+            a: Random.randInt(1e8),
+            b: Random.rand() * 1000,
+        };
+    },
+    nDocs: 10000000,
+    pipeline: [{$group: {_id: "$a", b1: {$sum: "$b"},b2: {$sum: "$b"}}}]
+});
+
+generateTestCaseWithLargeDataset({
+    name: "Group.SumAccDoubleField_LS1e8_Uniq",
+    docGenerator: function(i) {
+        return {
+            _id: i,
+            a: Random.randInt(1e9),
+            b: Random.rand() * 1000,
+        };
+    },
+    nDocs: 100000000,
+    pipeline: [{$group: {_id: "$a", b1: {$sum: "$b"},b2: {$sum: "$b"}}}]
+});
+
 // $avg
 generateTestCaseWithLargeDataset({
     name: "Group.AvgAccTopField_LL10",
