@@ -250,7 +250,7 @@ generateTestCase({
             boolFilter: i % 2 === 0
         };
     },
-    tags: ["geoNear"],
+    tags: ["geo"],
     indices: [{geo: "2d"}],
     pipeline: [
         {
@@ -280,7 +280,7 @@ generateTestCase({
             boolFilter: i % 2 === 0
         };
     },
-    tags: ["geoNear"],
+    tags: ["geo"],
     indices: [{geo: "2dsphere"}],
     pipeline: [
         {
@@ -314,7 +314,7 @@ generateTestCase({
         };
     },
     nDocs: 1000,
-    tags: ["geoNear"],
+    tags: ["geo"],
     indices: [{geo: "2d"}],
     pipeline: [
         {
@@ -344,7 +344,7 @@ generateTestCase({
         };
     },
     nDocs: 1000,
-    tags: ["geoNear"],
+    tags: ["geo"],
     indices: [{geo: "2dsphere"}],
     pipeline: [
         {
