@@ -250,6 +250,7 @@ generateTestCase({
             boolFilter: i % 2 === 0
         };
     },
+    tags: ["geoNear"],
     indices: [{geo: "2d"}],
     pipeline: [
         {
@@ -269,7 +270,6 @@ generateTestCase({
 
 generateTestCase({
     name: "GeoNear2dSphere",
-    indices: [{geo: "2dsphere"}],
     docGenerator: function geoNear2dGenerator(i) {
         return {
             _id: i,
@@ -280,6 +280,8 @@ generateTestCase({
             boolFilter: i % 2 === 0
         };
     },
+    tags: ["geoNear"],
+    indices: [{geo: "2dsphere"}],
     pipeline: [
         {
             $geoNear: {
@@ -294,6 +296,68 @@ generateTestCase({
         // For $geoNear, we limit the number of results to 100 documents, to match the default
         // behavior the $geoNear stage prior to 4.2.
         {$limit: 100},
+    ]
+});
+
+generateTestCase({
+    name: "GeoNear2dBigDocuments",
+    docGenerator: function geoNear2dGenerator(i) {
+        return {
+            _id: i,
+            geo: [
+                // Two random values in range [-100, 100).
+                Random.randInt(200) - 100,
+                Random.randInt(200) - 100
+            ],
+            boolFilter: i % 2 === 0,
+            padding: "x".repeat(1024 * 1024),
+        };
+    },
+    nDocs: 1000,
+    tags: ["geoNear"],
+    indices: [{geo: "2d"}],
+    pipeline: [
+        {
+            $geoNear: {
+                near: [0, 0],
+                minDistance: 0,
+                maxDistance: 300,
+                distanceField: "foo",
+                query: {boolFilter: true}
+            }
+        },
+        {$limit: 200},
+    ]
+});
+
+generateTestCase({
+    name: "GeoNear2dSphereBigDocuments",
+    docGenerator: function geoNear2dGenerator(i) {
+        return {
+            _id: i,
+            geo: [
+                (Random.rand() * 360) - 180,  // Longitude, in range [-180, 180).
+                (Random.rand() * 180) - 90    // Latitude, in range [-90, 90).
+            ],
+            boolFilter: i % 2 === 0,
+            padding: "x".repeat(1024 * 1024),
+        };
+    },
+    nDocs: 1000,
+    tags: ["geoNear"],
+    indices: [{geo: "2dsphere"}],
+    pipeline: [
+        {
+            $geoNear: {
+                near: [0, 0],
+                minDistance: 0,
+                maxDistance: 300,
+                distanceField: "foo",
+                query: {boolFilter: true},
+                spherical: true
+            }
+        },
+        {$limit: 200},
     ]
 });
 
